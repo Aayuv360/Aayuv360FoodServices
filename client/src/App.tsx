@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { queryClient } from "./lib/queryClient";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { Container, Box } from "@mui/material";
+import { SnackbarProvider } from 'notistack';
 import { AuthProvider } from "@/hooks/use-auth";
 import { CartProvider } from "@/hooks/use-cart";
 
@@ -20,9 +18,9 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
-    <div className="flex flex-col min-h-screen">
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
       <Header />
-      <main className="flex-grow">
+      <Box component="main" sx={{ flexGrow: 1 }}>
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/menu" component={Menu} />
@@ -34,24 +32,21 @@ function Router() {
           {/* Fallback to 404 */}
           <Route component={NotFound} />
         </Switch>
-      </main>
+      </Box>
       <Footer />
-    </div>
+    </Box>
   );
 }
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <CartProvider>
-            <Toaster />
-            <Router />
-          </CartProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <AuthProvider>
+      <CartProvider>
+        <SnackbarProvider maxSnack={3}>
+          <Router />
+        </SnackbarProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }
 
