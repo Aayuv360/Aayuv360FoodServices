@@ -70,6 +70,8 @@ const Subscription = () => {
   // State for selected meal plan date and selected meals
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedMealsByDay, setSelectedMealsByDay] = useState<{[key: number]: number}>({});
+  // State to store meal options for each day of the week
+  const [mealOptionsByDay, setMealOptionsByDay] = useState<{[key: number]: any[]}>({});
   
   // Fetch available meals
   const { data: meals, isLoading: mealsLoading } = useQuery({
@@ -206,6 +208,34 @@ const Subscription = () => {
       }
     }
   }, [selectedPlanFromParams, form]);
+  
+  // Distribute meals for each day when meals data is loaded
+  useEffect(() => {
+    if (meals && meals.length > 0) {
+      // Shuffle meals to get a random distribution
+      const shuffledMeals = [...meals].sort(() => Math.random() - 0.5);
+      const mealCount = shuffledMeals.length;
+      const mealsPerDay = 7; // Show 7 unique meals per day
+      
+      // Create a distribution of meals for each day of the week
+      const mealsByDay: {[key: number]: any[]} = {};
+      
+      for (let day = 0; day < 7; day++) {
+        // Get a unique set of meals for this day, cycling through the array if needed
+        const startIndex = (day * mealsPerDay) % mealCount;
+        let dayMeals = [];
+        
+        for (let i = 0; i < mealsPerDay; i++) {
+          const index = (startIndex + i) % mealCount;
+          dayMeals.push(shuffledMeals[index]);
+        }
+        
+        mealsByDay[day] = dayMeals;
+      }
+      
+      setMealOptionsByDay(mealsByDay);
+    }
+  }, [meals]);
 
   return (
     <div className="min-h-screen bg-neutral-light py-12">
@@ -474,24 +504,29 @@ const Subscription = () => {
                         <div className="space-y-6">
                           <div className="grid grid-cols-1 gap-4">
                             {/* Day selection */}
-                            <div className="flex flex-wrap gap-2 mb-4">
-                              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                                <Button
-                                  key={day}
-                                  type="button"
-                                  variant={selectedDate && getDay(selectedDate) === day ? "default" : "outline"}
-                                  onClick={() => {
-                                    // Set the selected date to the next occurrence of this day
-                                    const today = new Date();
-                                    const currentDay = getDay(today);
-                                    const daysUntilNext = (day - currentDay + 7) % 7;
-                                    const nextOccurrence = addDays(today, daysUntilNext);
-                                    setSelectedDate(nextOccurrence);
-                                  }}
-                                >
-                                  {getDayName(day)}
-                                </Button>
-                              ))}
+                            <div>
+                              <p className="text-sm text-gray-600 mb-3">
+                                Each day of the week features 7 unique meal options. Select a day to see its special menu.
+                              </p>
+                              <div className="flex flex-wrap gap-2 mb-4">
+                                {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                                  <Button
+                                    key={day}
+                                    type="button"
+                                    variant={selectedDate && getDay(selectedDate) === day ? "default" : "outline"}
+                                    onClick={() => {
+                                      // Set the selected date to the next occurrence of this day
+                                      const today = new Date();
+                                      const currentDay = getDay(today);
+                                      const daysUntilNext = (day - currentDay + 7) % 7;
+                                      const nextOccurrence = addDays(today, daysUntilNext);
+                                      setSelectedDate(nextOccurrence);
+                                    }}
+                                  >
+                                    {getDayName(day)}
+                                  </Button>
+                                ))}
+                              </div>
                             </div>
 
                             {/* Meal options for selected day */}
@@ -501,7 +536,7 @@ const Subscription = () => {
                                   Select meal for {format(selectedDate, "EEEE")}:
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                                  {meals && meals.map((meal: any) => (
+                                  {mealOptionsByDay[getDay(selectedDate)] && mealOptionsByDay[getDay(selectedDate)].map((meal: any) => (
                                     <Card 
                                       key={meal.id}
                                       className={`cursor-pointer hover:border-primary ${
