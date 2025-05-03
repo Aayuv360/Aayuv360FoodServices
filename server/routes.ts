@@ -13,7 +13,8 @@ import {
   insertOrderItemSchema, 
   insertSubscriptionSchema,
   insertUserPreferencesSchema, 
-  insertReviewSchema
+  insertReviewSchema,
+  insertCustomMealPlanSchema
 } from "@shared/schema";
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "millet-meal-service-secret";
@@ -463,6 +464,108 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedSubscription);
     } catch (err) {
       res.status(500).json({ message: "Error updating subscription" });
+    }
+  });
+  
+  // Custom Meal Plan routes
+  app.get("/api/custom-meal-plans/:subscriptionId", isAuthenticated, async (req, res) => {
+    try {
+      const subscriptionId = parseInt(req.params.subscriptionId);
+      const subscription = await storage.getSubscription(subscriptionId);
+      
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      // Check if subscription belongs to the authenticated user
+      if (subscription.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const customMealPlans = await storage.getCustomMealPlans(subscriptionId);
+      
+      // Fetch meal details for each custom meal plan
+      const plansWithMealDetails = await Promise.all(
+        customMealPlans.map(async (plan) => {
+          const meal = await storage.getMeal(plan.mealId);
+          return {
+            ...plan,
+            meal,
+          };
+        })
+      );
+      
+      res.json(plansWithMealDetails);
+    } catch (err) {
+      res.status(500).json({ message: "Error fetching custom meal plans" });
+    }
+  });
+  
+  app.post("/api/custom-meal-plans", isAuthenticated, async (req, res) => {
+    try {
+      const customMealPlanData = insertCustomMealPlanSchema.parse(req.body);
+      
+      // Verify subscription exists and belongs to user
+      const subscription = await storage.getSubscription(customMealPlanData.subscriptionId);
+      
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      if (subscription.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      // Verify meal exists
+      const meal = await storage.getMeal(customMealPlanData.mealId);
+      
+      if (!meal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      const customMealPlan = await storage.createCustomMealPlan(customMealPlanData);
+      
+      res.status(201).json({
+        ...customMealPlan,
+        meal,
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        res.status(500).json({ message: "Error creating custom meal plan" });
+      }
+    }
+  });
+  
+  app.delete("/api/custom-meal-plans/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      
+      // Fetch all custom meal plans and find the one we need
+      const allCustomMealPlans = await storage.getCustomMealPlans(0); // Passing 0 as a dummy value
+      const customMealPlan = allCustomMealPlans.find(plan => plan.id === id);
+      
+      if (!customMealPlan) {
+        return res.status(404).json({ message: "Custom meal plan not found" });
+      }
+      
+      // Verify subscription belongs to user
+      const subscription = await storage.getSubscription(customMealPlan.subscriptionId);
+      
+      if (!subscription || subscription.userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+      
+      const success = await storage.deleteCustomMealPlan(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Custom meal plan not found" });
+      }
+      
+      res.json({ message: "Custom meal plan deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ message: "Error deleting custom meal plan" });
     }
   });
   

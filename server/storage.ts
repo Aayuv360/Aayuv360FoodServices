@@ -1,9 +1,10 @@
 import {
-  users, meals, subscriptions, orders, orderItems, userPreferences, cartItems, reviews,
+  users, meals, subscriptions, orders, orderItems, userPreferences, cartItems, reviews, customMealPlans,
   type User, type InsertUser, type Meal, type InsertMeal,
   type Subscription, type InsertSubscription, type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem, type CartItem, type InsertCartItem,
-  type UserPreferences, type InsertUserPreferences, type Review, type InsertReview
+  type UserPreferences, type InsertUserPreferences, type Review, type InsertReview,
+  type CustomMealPlan, type InsertCustomMealPlan
 } from "@shared/schema";
 
 export interface IStorage {
@@ -27,6 +28,11 @@ export interface IStorage {
   getSubscriptionsByUserId(userId: number): Promise<Subscription[]>;
   createSubscription(subscription: InsertSubscription): Promise<Subscription>;
   updateSubscription(id: number, subscription: Partial<Subscription>): Promise<Subscription | undefined>;
+  
+  // Custom Meal Plan operations
+  getCustomMealPlans(subscriptionId: number): Promise<CustomMealPlan[]>;
+  createCustomMealPlan(customMealPlan: InsertCustomMealPlan): Promise<CustomMealPlan>;
+  deleteCustomMealPlan(id: number): Promise<boolean>;
   
   // Order operations
   getOrder(id: number): Promise<Order | undefined>;
@@ -60,6 +66,7 @@ export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private meals: Map<number, Meal>;
   private subscriptions: Map<number, Subscription>;
+  private customMealPlans: Map<number, CustomMealPlan>;
   private orders: Map<number, Order>;
   private orderItems: Map<number, OrderItem>;
   private userPreferences: Map<number, UserPreferences>;
@@ -69,6 +76,7 @@ export class MemStorage implements IStorage {
   private userId: number;
   private mealId: number;
   private subscriptionId: number;
+  private customMealPlanId: number;
   private orderId: number;
   private orderItemId: number;
   private userPreferencesId: number;
@@ -79,6 +87,7 @@ export class MemStorage implements IStorage {
     this.users = new Map();
     this.meals = new Map();
     this.subscriptions = new Map();
+    this.customMealPlans = new Map();
     this.orders = new Map();
     this.orderItems = new Map();
     this.userPreferences = new Map();
@@ -88,6 +97,7 @@ export class MemStorage implements IStorage {
     this.userId = 1;
     this.mealId = 1;
     this.subscriptionId = 1;
+    this.customMealPlanId = 1;
     this.orderId = 1;
     this.orderItemId = 1;
     this.userPreferencesId = 1;
@@ -347,6 +357,23 @@ export class MemStorage implements IStorage {
     const updatedSubscription: Subscription = { ...existingSubscription, ...subscription };
     this.subscriptions.set(id, updatedSubscription);
     return updatedSubscription;
+  }
+  
+  // Custom Meal Plan operations
+  async getCustomMealPlans(subscriptionId: number): Promise<CustomMealPlan[]> {
+    return Array.from(this.customMealPlans.values()).filter(plan => plan.subscriptionId === subscriptionId);
+  }
+  
+  async createCustomMealPlan(customMealPlan: InsertCustomMealPlan): Promise<CustomMealPlan> {
+    const id = this.customMealPlanId++;
+    const newCustomMealPlan: CustomMealPlan = { ...customMealPlan, id };
+    this.customMealPlans.set(id, newCustomMealPlan);
+    return newCustomMealPlan;
+  }
+  
+  async deleteCustomMealPlan(id: number): Promise<boolean> {
+    if (!this.customMealPlans.has(id)) return false;
+    return this.customMealPlans.delete(id);
   }
   
   // Order operations
