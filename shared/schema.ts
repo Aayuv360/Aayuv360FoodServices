@@ -6,6 +6,7 @@ import { z } from "zod";
 export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
 export const orderStatusEnum = pgEnum('order_status', ['pending', 'confirmed', 'delivered', 'cancelled']);
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['basic', 'premium', 'family']);
+export const subscriptionTypeEnum = pgEnum('subscription_type', ['default', 'customized']);
 export const mealTypeEnum = pgEnum('meal_type', ['breakfast', 'lunch', 'dinner']);
 export const dietaryPreferenceEnum = pgEnum('dietary_preference', ['vegetarian', 'non-vegetarian', 'vegan', 'gluten-free', 'low-carb', 'high-protein', 'spicy']);
 
@@ -48,11 +49,20 @@ export const subscriptions = pgTable('subscriptions', {
   id: serial('id').primaryKey(),
   userId: integer('user_id').references(() => users.id).notNull(),
   plan: subscriptionPlanEnum('plan').notNull(),
+  subscriptionType: subscriptionTypeEnum('subscription_type').default('default').notNull(),
   startDate: timestamp('start_date').notNull(),
   endDate: timestamp('end_date'),
   isActive: boolean('is_active').default(true),
   mealsPerMonth: integer('meals_per_month').notNull(),
   price: integer('price').notNull(), // Monthly price in paise/cents
+});
+
+// Custom Meal Plans for Subscriptions
+export const customMealPlans = pgTable('custom_meal_plans', {
+  id: serial('id').primaryKey(),
+  subscriptionId: integer('subscription_id').references(() => subscriptions.id).notNull(),
+  dayOfWeek: integer('day_of_week').notNull(), // 0 = Sunday, 1 = Monday, etc.
+  mealId: integer('meal_id').references(() => meals.id).notNull(),
 });
 
 // Orders
@@ -116,6 +126,10 @@ export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
   id: true,
 });
 
+export const insertCustomMealPlanSchema = createInsertSchema(customMealPlans).omit({
+  id: true,
+});
+
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
   createdAt: true,
@@ -163,3 +177,6 @@ export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
 
 export type Review = typeof reviews.$inferSelect;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
+
+export type CustomMealPlan = typeof customMealPlans.$inferSelect;
+export type InsertCustomMealPlan = z.infer<typeof insertCustomMealPlanSchema>;
