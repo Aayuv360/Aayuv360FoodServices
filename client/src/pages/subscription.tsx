@@ -3,8 +3,8 @@ import { useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { useMutation } from "@tanstack/react-query";
-import { Loader2, Check, X } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2, Check, X, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,16 +24,20 @@ import {
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { format, addMonths } from "date-fns";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { format, addMonths, addDays, startOfWeek, getDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 // Subscription form schema
 const subscriptionSchema = z.object({
   plan: z.enum(["basic", "premium", "family"]),
+  subscriptionType: z.enum(["default", "customized"]).default("default"),
   startDate: z.date({
     required_error: "Please select a start date",
   }),
@@ -42,6 +46,10 @@ const subscriptionSchema = z.object({
   cardExpiry: z.string().optional(),
   cardCvv: z.string().optional(),
   upiId: z.string().optional(),
+  customMealSelections: z.array(z.object({
+    dayOfWeek: z.number(),
+    mealId: z.number()
+  })).optional(),
 });
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
@@ -59,15 +67,30 @@ const Subscription = () => {
     return null;
   }
 
+  // State for selected meal plan date and selected meals
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedMealsByDay, setSelectedMealsByDay] = useState<{[key: number]: number}>({});
+  
+  // Fetch available meals
+  const { data: meals, isLoading: mealsLoading } = useQuery({
+    queryKey: ["/api/meals"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/meals");
+      return res.json();
+    }
+  });
+
   // Default form values
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as "basic" | "premium" | "family") || "basic",
+    subscriptionType: "default",
     startDate: new Date(),
     paymentMethod: "card",
     cardNumber: "",
     cardExpiry: "",
     cardCvv: "",
     upiId: "",
+    customMealSelections: [],
   };
 
   // Form setup
@@ -86,14 +109,33 @@ const Subscription = () => {
       const plan = SUBSCRIPTION_PLANS.find(p => p.id === data.plan);
       const payload = {
         plan: data.plan,
+        subscriptionType: data.subscriptionType,
         startDate: data.startDate.toISOString(),
         mealsPerMonth: plan?.mealsPerMonth || 0,
         price: plan?.price || 0,
         isActive: true,
+        customMealSelections: data.customMealSelections || []
       };
       
+      // First create the subscription
       const res = await apiRequest("POST", "/api/subscriptions", payload);
-      return res.json();
+      const subscription = await res.json();
+      
+      // If customized plan and has meal selections, save the custom meal plans
+      if (data.subscriptionType === "customized" && data.customMealSelections && data.customMealSelections.length > 0) {
+        // Save each meal selection
+        const customMealPromises = data.customMealSelections.map(selection => 
+          apiRequest("POST", "/api/custom-meal-plans", {
+            subscriptionId: subscription.id,
+            dayOfWeek: selection.dayOfWeek,
+            mealId: selection.mealId
+          })
+        );
+        
+        await Promise.all(customMealPromises);
+      }
+      
+      return subscription;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
@@ -112,8 +154,43 @@ const Subscription = () => {
     },
   });
 
+  // Watch subscription type to show custom meal selection
+  const subscriptionType = form.watch("subscriptionType");
+
+  // Update custom meal selections when user makes changes
+  const updateMealSelection = (dayOfWeek: number, mealId: number) => {
+    setSelectedMealsByDay(prev => ({
+      ...prev,
+      [dayOfWeek]: mealId
+    }));
+    
+    // Convert to array format for the form
+    const mealSelections = Object.entries(selectedMealsByDay).map(([day, mealId]) => ({
+      dayOfWeek: parseInt(day),
+      mealId: mealId as number
+    }));
+    
+    form.setValue("customMealSelections", mealSelections);
+  };
+
+  // Get day name from day number (0-6)
+  const getDayName = (dayNumber: number): string => {
+    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    return days[dayNumber];
+  };
+
   // Form submission handler
   const onSubmit = (values: SubscriptionFormValues) => {
+    // Add the meal selections to the form data if using a customized plan
+    if (values.subscriptionType === "customized" && Object.keys(selectedMealsByDay).length > 0) {
+      const mealSelections = Object.entries(selectedMealsByDay).map(([day, mealId]) => ({
+        dayOfWeek: parseInt(day),
+        mealId: mealId as number
+      }));
+      
+      values.customMealSelections = mealSelections;
+    }
+    
     subscriptionMutation.mutate(values);
   };
 
@@ -218,6 +295,31 @@ const Subscription = () => {
                                 ))}
                               </SelectContent>
                             </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="subscriptionType"
+                        render={({ field }) => (
+                          <FormItem className="mt-4">
+                            <FormLabel>Subscription Type</FormLabel>
+                            <RadioGroup
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                              className="flex flex-col space-y-1"
+                            >
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="default" id="default" />
+                                <Label htmlFor="default">Default Plan</Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="customized" id="customized" />
+                                <Label htmlFor="customized">Customized (Select meals for each day)</Label>
+                              </div>
+                            </RadioGroup>
                             <FormMessage />
                           </FormItem>
                         )}
@@ -360,6 +462,98 @@ const Subscription = () => {
                       )}
                     </div>
                   </div>
+
+                  {subscriptionType === "customized" && (
+                    <div className="border-t pt-6 mb-6">
+                      <h3 className="text-lg font-semibold mb-4">Customize Your Weekly Meal Plan</h3>
+                      {mealsLoading ? (
+                        <div className="flex items-center justify-center h-40">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="grid grid-cols-1 gap-4">
+                            {/* Day selection */}
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                                <Button
+                                  key={day}
+                                  type="button"
+                                  variant={selectedDate && getDay(selectedDate) === day ? "default" : "outline"}
+                                  onClick={() => {
+                                    // Set the selected date to the next occurrence of this day
+                                    const today = new Date();
+                                    const currentDay = getDay(today);
+                                    const daysUntilNext = (day - currentDay + 7) % 7;
+                                    const nextOccurrence = addDays(today, daysUntilNext);
+                                    setSelectedDate(nextOccurrence);
+                                  }}
+                                >
+                                  {getDayName(day)}
+                                </Button>
+                              ))}
+                            </div>
+
+                            {/* Meal options for selected day */}
+                            {selectedDate && (
+                              <div>
+                                <h4 className="text-md font-medium mb-3">
+                                  Select meal for {format(selectedDate, "EEEE")}:
+                                </h4>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                                  {meals && meals.map((meal: any) => (
+                                    <Card 
+                                      key={meal.id}
+                                      className={`cursor-pointer hover:border-primary ${
+                                        selectedMealsByDay[getDay(selectedDate)] === meal.id 
+                                          ? "border-2 border-primary" 
+                                          : ""
+                                      }`}
+                                      onClick={() => updateMealSelection(getDay(selectedDate), meal.id)}
+                                    >
+                                      <CardContent className="p-3">
+                                        <div className="flex items-start gap-2">
+                                          {selectedMealsByDay[getDay(selectedDate)] === meal.id && (
+                                            <div className="bg-primary text-white rounded-full p-1 mt-1">
+                                              <Check className="h-3 w-3" />
+                                            </div>
+                                          )}
+                                          <div>
+                                            <h5 className="font-medium text-sm">{meal.name}</h5>
+                                            <p className="text-xs text-gray-500 line-clamp-2">{meal.description}</p>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Selected meal summary */}
+                          <div className="bg-neutral-light p-4 rounded-lg">
+                            <h4 className="font-medium mb-2">Your Weekly Meal Selections</h4>
+                            {Object.keys(selectedMealsByDay).length > 0 ? (
+                              <ul className="space-y-1">
+                                {Object.entries(selectedMealsByDay).map(([day, mealId]) => {
+                                  const meal = meals?.find((m: any) => m.id === mealId);
+                                  return (
+                                    <li key={day} className="flex justify-between">
+                                      <span className="font-medium">{getDayName(parseInt(day))}:</span>
+                                      <span>{meal ? meal.name : "No meal selected"}</span>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            ) : (
+                              <p className="text-sm text-gray-500">No meals selected yet. Select a day and choose your meal.</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   <div className="border-t pt-6">
                     <div className="flex justify-between mb-2">
