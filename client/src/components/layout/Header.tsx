@@ -39,31 +39,32 @@ const Header = () => {
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           {/* Logo */}
-          <Link href="/">
-            <a className="flex items-center">
-              <div className="h-10 w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
-                M
-              </div>
-              <h1 className="text-2xl font-bold text-primary">MealMillet</h1>
-            </a>
+          <Link href="/" className="flex items-center">
+            <div className="h-10 w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
+              M
+            </div>
+            <h1 className="text-2xl font-bold text-primary">MealMillet</h1>
           </Link>
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex space-x-6 items-center">
-            <Link href="/">
-              <a className={`hover:text-primary transition duration-200 ${location === "/" ? "text-primary" : "text-neutral-dark"}`}>
-                Home
-              </a>
+            <Link 
+              href="/" 
+              className={`hover:text-primary transition duration-200 ${location === "/" ? "text-primary" : "text-neutral-dark"}`}
+            >
+              Home
             </Link>
-            <Link href="/menu">
-              <a className={`hover:text-primary transition duration-200 ${location === "/menu" ? "text-primary" : "text-neutral-dark"}`}>
-                Menu
-              </a>
+            <Link 
+              href="/menu" 
+              className={`hover:text-primary transition duration-200 ${location === "/menu" ? "text-primary" : "text-neutral-dark"}`}
+            >
+              Menu
             </Link>
-            <Link href="/subscription">
-              <a className={`hover:text-primary transition duration-200 ${location === "/subscription" ? "text-primary" : "text-neutral-dark"}`}>
-                Plans
-              </a>
+            <Link 
+              href="/subscription" 
+              className={`hover:text-primary transition duration-200 ${location === "/subscription" ? "text-primary" : "text-neutral-dark"}`}
+            >
+              Plans
             </Link>
           </nav>
           
@@ -97,13 +98,13 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link href="/profile">
-                      <a className="w-full">Your Profile</a>
+                    <Link href="/profile" className="w-full">
+                      Your Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
-                    <Link href="/subscription">
-                      <a className="w-full">Subscription</a>
+                    <Link href="/subscription" className="w-full">
+                      Subscription
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -115,14 +116,10 @@ const Header = () => {
             ) : (
               <div className="flex items-center space-x-2">
                 <Button variant="ghost" asChild className="hidden md:flex">
-                  <Link href="/login">
-                    <a>Login</a>
-                  </Link>
+                  <Link href="/login">Login</Link>
                 </Button>
                 <Button variant="default" asChild className="hidden md:flex">
-                  <Link href="/register">
-                    <a>Register</a>
-                  </Link>
+                  <Link href="/register">Register</Link>
                 </Button>
               </div>
             )}
@@ -142,32 +139,37 @@ const Header = () => {
         {/* Mobile Navigation (Hidden by default) */}
         <div className={`md:hidden ${mobileMenuOpen ? "block" : "hidden"}`}>
           <div className="px-2 pt-2 pb-3 space-y-1">
-            <Link href="/">
-              <a className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light">
-                Home
-              </a>
+            <Link 
+              href="/" 
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light"
+            >
+              Home
             </Link>
-            <Link href="/menu">
-              <a className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light">
-                Menu
-              </a>
+            <Link 
+              href="/menu" 
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light"
+            >
+              Menu
             </Link>
-            <Link href="/subscription">
-              <a className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light">
-                Plans
-              </a>
+            <Link 
+              href="/subscription" 
+              className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light"
+            >
+              Plans
             </Link>
             {!user && (
               <>
-                <Link href="/login">
-                  <a className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light">
-                    Login
-                  </a>
+                <Link 
+                  href="/login" 
+                  className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light"
+                >
+                  Login
                 </Link>
-                <Link href="/register">
-                  <a className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light">
-                    Register
-                  </a>
+                <Link 
+                  href="/register" 
+                  className="block px-3 py-2 rounded-md text-base font-medium hover:bg-neutral-light"
+                >
+                  Register
                 </Link>
               </>
             )}
