@@ -20,18 +20,14 @@ const HeroSection = () => {
                 variant="secondary"
                 className="bg-white text-primary font-medium hover:bg-neutral-light"
               >
-                <Link href="/menu">
-                  <a>View Today's Menu</a>
-                </Link>
+                <Link href="/menu">View Today's Menu</Link>
               </Button>
               <Button 
                 asChild
                 size="lg"
                 className="bg-accent hover:bg-accent/90 text-white font-medium"
               >
-                <Link href="/subscription">
-                  <a>Browse Meal Plans</a>
-                </Link>
+                <Link href="/subscription">Browse Meal Plans</Link>
               </Button>
             </div>
           </div>
