@@ -1,0 +1,475 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Loader2, UserCircle, ClockIcon, History, LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { format } from "date-fns";
+
+// User profile form schema
+const profileSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phone: z.string().optional(),
+  address: z.string().min(1, "Address is required"),
+});
+
+type ProfileFormValues = z.infer<typeof profileSchema>;
+
+const Profile = () => {
+  const [currentTab, setCurrentTab] = useState("profile");
+  const [_, navigate] = useLocation();
+  const { toast } = useToast();
+  const { user, logout } = useAuth();
+
+  // Redirect to login if not authenticated
+  if (!user) {
+    navigate("/login");
+    return null;
+  }
+
+  // Fetch user orders
+  const { data: orders, isLoading: isLoadingOrders } = useQuery({
+    queryKey: ["/api/orders"],
+    enabled: currentTab === "orders",
+  });
+
+  // Fetch user subscriptions
+  const { data: subscriptions, isLoading: isLoadingSubscriptions } = useQuery({
+    queryKey: ["/api/subscriptions"],
+    enabled: currentTab === "subscriptions",
+  });
+
+  // Format price in Indian Rupees
+  const formatPrice = (price: number) => {
+    return `₹${(price / 100).toFixed(2)}`;
+  };
+
+  // Default form values
+  const defaultValues: ProfileFormValues = {
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
+  };
+
+  // Form setup
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileSchema),
+    defaultValues,
+  });
+
+  // Profile update mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async (data: ProfileFormValues) => {
+      const res = await apiRequest("PUT", "/api/profile", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      toast({
+        title: "Profile updated",
+        description: "Your profile information has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "There was an error updating your profile",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Form submission handler
+  const onSubmit = (values: ProfileFormValues) => {
+    updateProfileMutation.mutate(values);
+  };
+
+  // Get subscription status badge class
+  const getSubscriptionStatusClass = (isActive: boolean) => {
+    return isActive
+      ? "bg-green-100 text-green-800"
+      : "bg-red-100 text-red-800";
+  };
+
+  // Get order status badge class
+  const getOrderStatusClass = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "confirmed":
+        return "bg-blue-100 text-blue-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-neutral-light py-12">
+      <div className="container mx-auto px-4">
+        <div className="flex flex-col md:flex-row gap-6">
+          {/* Sidebar */}
+          <div className="w-full md:w-64 space-y-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex flex-col items-center space-y-4 py-6">
+                  <UserCircle className="h-20 w-20 text-primary" />
+                  <div className="text-center">
+                    <h2 className="text-xl font-bold">{user.name}</h2>
+                    <p className="text-gray-500 text-sm">{user.email}</p>
+                  </div>
+                </div>
+                <div className="space-y-2 mt-6">
+                  <Button
+                    variant={currentTab === "profile" ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setCurrentTab("profile")}
+                  >
+                    <UserCircle className="mr-2 h-4 w-4" />
+                    Profile
+                  </Button>
+                  <Button
+                    variant={currentTab === "subscriptions" ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setCurrentTab("subscriptions")}
+                  >
+                    <ClockIcon className="mr-2 h-4 w-4" />
+                    Subscriptions
+                  </Button>
+                  <Button
+                    variant={currentTab === "orders" ? "default" : "ghost"}
+                    className="w-full justify-start"
+                    onClick={() => setCurrentTab("orders")}
+                  >
+                    <History className="mr-2 h-4 w-4" />
+                    Order History
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                    onClick={logout}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Main Content */}
+          <div className="flex-1">
+            {currentTab === "profile" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Profile</CardTitle>
+                  <CardDescription>
+                    Manage your account information and delivery address
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...form}>
+                    <form
+                      onSubmit={form.handleSubmit(onSubmit)}
+                      className="space-y-6"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="email"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Email</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="phone"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Delivery Address</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <Button
+                        type="submit"
+                        className="bg-primary hover:bg-primary/90"
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        {updateProfileMutation.isPending ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : null}
+                        {updateProfileMutation.isPending
+                          ? "Saving..."
+                          : "Save Changes"}
+                      </Button>
+                    </form>
+                  </Form>
+                </CardContent>
+              </Card>
+            )}
+
+            {currentTab === "subscriptions" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Your Subscriptions</CardTitle>
+                  <CardDescription>
+                    Manage your active meal plans and subscriptions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingSubscriptions ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : !subscriptions || subscriptions.length === 0 ? (
+                    <div className="text-center py-8 bg-neutral-light rounded-lg">
+                      <h3 className="text-lg font-medium mb-2">No active subscriptions</h3>
+                      <p className="text-gray-600 mb-4">
+                        You don't have any active subscriptions yet.
+                      </p>
+                      <Button
+                        asChild
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        <a href="/subscription">Browse Plans</a>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {subscriptions.map((subscription: any) => (
+                        <div
+                          key={subscription.id}
+                          className="border rounded-lg p-4 flex flex-col md:flex-row justify-between gap-4"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-lg font-bold capitalize">
+                                {subscription.plan} Plan
+                              </h3>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(
+                                  subscription.isActive
+                                )}`}
+                              >
+                                {subscription.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                            <p className="text-gray-600 mb-2">
+                              {subscription.mealsPerMonth} meals per month
+                            </p>
+                            <div className="text-sm text-gray-500">
+                              <p>
+                                Started:{" "}
+                                {format(
+                                  new Date(subscription.startDate),
+                                  "MMMM d, yyyy"
+                                )}
+                              </p>
+                              {subscription.endDate && (
+                                <p>
+                                  Ends:{" "}
+                                  {format(
+                                    new Date(subscription.endDate),
+                                    "MMMM d, yyyy"
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex flex-col justify-center items-end">
+                            <p className="text-xl font-bold text-primary mb-2">
+                              {formatPrice(subscription.price)}
+                              <span className="text-sm text-gray-500">/month</span>
+                            </p>
+                            <Button
+                              variant="outline"
+                              className="border-primary text-primary hover:bg-primary hover:text-white"
+                            >
+                              Manage
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {currentTab === "orders" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Order History</CardTitle>
+                  <CardDescription>
+                    View your past orders and delivery status
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {isLoadingOrders ? (
+                    <div className="flex justify-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : !orders || orders.length === 0 ? (
+                    <div className="text-center py-8 bg-neutral-light rounded-lg">
+                      <h3 className="text-lg font-medium mb-2">No orders yet</h3>
+                      <p className="text-gray-600 mb-4">
+                        You haven't placed any orders yet.
+                      </p>
+                      <Button
+                        asChild
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        <a href="/menu">Browse Menu</a>
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {orders.map((order: any) => (
+                        <div
+                          key={order.id}
+                          className="border rounded-lg p-4"
+                        >
+                          <div className="flex flex-col md:flex-row justify-between mb-4 gap-2">
+                            <div>
+                              <p className="text-sm text-gray-500">
+                                Order #{order.id}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                {format(
+                                  new Date(order.createdAt),
+                                  "MMMM d, yyyy"
+                                )}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded-full capitalize ${getOrderStatusClass(
+                                  order.status
+                                )}`}
+                              >
+                                {order.status}
+                              </span>
+                              <p className="font-bold text-primary">
+                                {formatPrice(order.totalPrice)}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="border-t pt-4">
+                            <h4 className="font-medium mb-2">Order Items</h4>
+                            <div className="space-y-2">
+                              {order.items?.map((item: any) => (
+                                <div
+                                  key={item.id}
+                                  className="flex justify-between items-center bg-neutral-light p-2 rounded"
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 rounded overflow-hidden">
+                                      <img
+                                        src={item.meal?.imageUrl}
+                                        alt={item.meal?.name}
+                                        className="w-full h-full object-cover"
+                                      />
+                                    </div>
+                                    <div>
+                                      <p className="font-medium">
+                                        {item.meal?.name}
+                                      </p>
+                                      <p className="text-sm text-gray-500">
+                                        Qty: {item.quantity}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <p className="font-medium">
+                                    {formatPrice(item.price * item.quantity)}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          {order.deliveryTime && (
+                            <div className="mt-4 text-sm text-gray-600">
+                              <p>
+                                Delivery Time:{" "}
+                                {format(
+                                  new Date(order.deliveryTime),
+                                  "MMMM d, yyyy 'at' h:mm a"
+                                )}
+                              </p>
+                              <p>Delivery Address: {order.deliveryAddress}</p>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Profile;
