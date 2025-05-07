@@ -140,7 +140,8 @@ const Subscription = () => {
 
   // Default form values
   const defaultValues: SubscriptionFormValues = {
-    plan: (selectedPlanFromParams as any) || "basic-veg",
+    plan: (selectedPlanFromParams as any) || "basic",
+    dietaryPreference: "vegetarian",
     subscriptionType: "default",
     startDate: new Date(),
     // Address details
@@ -426,6 +427,46 @@ const Subscription = () => {
 
                 <FormField
                   control={form.control}
+                  name="dietaryPreference"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel>Dietary Preference</FormLabel>
+                      <div className="flex flex-wrap gap-3">
+                        <Button 
+                          type="button"
+                          variant={field.value === "vegetarian" ? "default" : "outline"}
+                          className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                          onClick={() => field.onChange("vegetarian")}
+                        >
+                          <Check className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`} />
+                          Vegetarian
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={field.value === "veg-with-egg" ? "default" : "outline"}
+                          className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
+                          onClick={() => field.onChange("veg-with-egg")}
+                        >
+                          <Check className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`} />
+                          Veg with Egg
+                        </Button>
+                        <Button 
+                          type="button"
+                          variant={field.value === "non-vegetarian" ? "default" : "outline"}
+                          className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
+                          onClick={() => field.onChange("non-vegetarian")}
+                        >
+                          <Check className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`} />
+                          Non-Vegetarian
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
                   name="subscriptionType"
                   render={({ field }) => (
                     <FormItem className="mt-4">
@@ -494,8 +535,22 @@ const Subscription = () => {
                       <p className="text-xl font-semibold text-primary">
                         {currentPlan.name}
                       </p>
-                      <Badge variant="outline" className={currentPlan.type === "vegetarian" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
-                        {currentPlan.type === "vegetarian" ? "Vegetarian" : "Non-Vegetarian"}
+                      <Badge 
+                        variant="outline" 
+                        className={
+                          form.watch("dietaryPreference") === "vegetarian" 
+                            ? "bg-green-100 text-green-800" 
+                            : form.watch("dietaryPreference") === "veg-with-egg"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-red-100 text-red-800"
+                        }
+                      >
+                        {form.watch("dietaryPreference") === "vegetarian" 
+                          ? "Vegetarian" 
+                          : form.watch("dietaryPreference") === "veg-with-egg"
+                            ? "Veg with Egg"
+                            : "Non-Vegetarian"
+                        }
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">
@@ -514,21 +569,32 @@ const Subscription = () => {
                       ))}
                     </ul>
                     
-                    {/* Weekly meal schedule */}
+                    {/* Meal schedule based on plan duration */}
                     <div className="mt-4 pt-4 border-t">
-                      <h4 className="font-medium text-sm mb-2">Weekly Meal Schedule</h4>
+                      <h4 className="font-medium text-sm mb-2">Meal Schedule ({currentPlan.duration} days)</h4>
                       <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
-                        {currentPlan.weeklyMeals && Object.entries(currentPlan.weeklyMeals).map(([day, meals]: [string, any]) => (
-                          <div key={day} className="bg-white p-2 rounded border">
-                            <p className="font-medium capitalize">{day}</p>
-                            <div className="mt-1">
-                              <p className="text-sm font-medium">{meals.main}</p>
-                              <p className="text-xs text-gray-600">
-                                With: {meals.sides.join(", ")}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                        {currentPlan.weeklyMeals && 
+                          Array.from({ length: Math.min(currentPlan.duration, 30) }).map((_, index) => {
+                            // Calculate which day of the week this is (0-6)
+                            const dayOfWeek = index % 7;
+                            // Map to the day name
+                            const dayName = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][dayOfWeek];
+                            // Get the meals for this day
+                            const meals = currentPlan.weeklyMeals[dayName as keyof typeof currentPlan.weeklyMeals];
+                            
+                            return (
+                              <div key={index} className="bg-white p-2 rounded border">
+                                <p className="font-medium capitalize">Day {index + 1}: {dayName}</p>
+                                <div className="mt-1">
+                                  <p className="text-sm font-medium">{meals.main}</p>
+                                  <p className="text-xs text-gray-600">
+                                    With: {meals.sides.join(", ")}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })
+                        }
                       </div>
                     </div>
                   </div>
@@ -546,27 +612,37 @@ const Subscription = () => {
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      {/* Day selection */}
+                      {/* Day selection based on plan duration */}
                       <div>
                         <p className="text-sm text-gray-600 mb-3">
-                          Select a day to customize your meal:
+                          Select a day to customize your meal (Plan duration: {currentPlan.duration} days):
                         </p>
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                            <Button
-                              key={day}
-                              type="button"
-                              variant={selectedDate?.getDay() === day ? "default" : "outline"}
-                              onClick={() => {
-                                const today = new Date();
-                                today.setDate(today.getDate() + ((day - today.getDay() + 7) % 7));
-                                setSelectedDate(today);
-                              }}
-                              className="flex-1"
-                            >
-                              {getDayName(day)}
-                            </Button>
-                          ))}
+                          {Array.from({ length: Math.min(currentPlan.duration, 30) }).map((_, index) => {
+                            // Calculate which day of the week this is (0-6)
+                            const dayOfWeek = index % 7;
+                            // Map to the day name
+                            const dayName = getDayName(dayOfWeek);
+                            
+                            return (
+                              <Button
+                                key={index}
+                                type="button"
+                                variant={selectedDate?.getDay() === dayOfWeek && 
+                                        Math.floor(index / 7) === Math.floor((selectedDate?.getDate() || 0) / 7) 
+                                        ? "default" : "outline"}
+                                onClick={() => {
+                                  const startDate = new Date(form.watch("startDate"));
+                                  const newDate = new Date(startDate);
+                                  newDate.setDate(startDate.getDate() + index);
+                                  setSelectedDate(newDate);
+                                }}
+                                className="flex-1"
+                              >
+                                Day {index + 1}: {dayName}
+                              </Button>
+                            );
+                          })}
                         </div>
                       </div>
 
