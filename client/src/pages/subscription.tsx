@@ -4,9 +4,15 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { 
-  Loader2, Check, X, CalendarIcon, 
-  ChevronLeft, ChevronRight, ArrowLeft, ArrowRight
+import {
+  Loader2,
+  Check,
+  X,
+  CalendarIcon,
+  ChevronLeft,
+  ChevronRight,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,17 +26,28 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  CardFooter,
+} from "@/components/ui/card";
 import { format, addMonths, addDays, startOfWeek, getDay } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -70,10 +87,14 @@ const subscriptionSchema = z.object({
   cardExpiry: z.string().optional(),
   cardCvv: z.string().optional(),
   upiId: z.string().optional(),
-  customMealSelections: z.array(z.object({
-    dayOfWeek: z.number(),
-    mealId: z.number()
-  })).optional(),
+  customMealSelections: z
+    .array(
+      z.object({
+        dayOfWeek: z.number(),
+        mealId: z.number(),
+      }),
+    )
+    .optional(),
 });
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
@@ -96,13 +117,17 @@ const Subscription = () => {
 
   // State for multi-step form
   const [formStep, setFormStep] = useState<FormStep>("plan");
-  
+
   // State for selected meal plan date and selected meals
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedMealsByDay, setSelectedMealsByDay] = useState<{[key: number]: number}>({});
+  const [selectedMealsByDay, setSelectedMealsByDay] = useState<{
+    [key: number]: number;
+  }>({});
   // State to store meal options for each day of the week
-  const [mealOptionsByDay, setMealOptionsByDay] = useState<{[key: number]: any[]}>({});
-  
+  const [mealOptionsByDay, setMealOptionsByDay] = useState<{
+    [key: number]: any[];
+  }>({});
+
   // Mock user addresses (in a real app, these would come from the API)
   const [addresses, setAddresses] = useState([
     {
@@ -114,7 +139,7 @@ const Subscription = () => {
       state: "Telangana",
       pincode: "500032",
       phone: "9876543210",
-      isDefault: true
+      isDefault: true,
     },
     {
       id: 2,
@@ -125,17 +150,17 @@ const Subscription = () => {
       state: "Telangana",
       pincode: "500081",
       phone: "9876543210",
-      isDefault: false
-    }
+      isDefault: false,
+    },
   ]);
-  
+
   // Fetch available meals
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/meals");
       return res.json();
-    }
+    },
   });
 
   // Default form values
@@ -169,12 +194,12 @@ const Subscription = () => {
   // Subscription creation mutation
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
-      const plan = SUBSCRIPTION_PLANS.find(p => p.id === data.plan);
-      
+      const plan = SUBSCRIPTION_PLANS.find((p) => p.id === data.plan);
+
       if (!plan) {
         throw new Error("Invalid plan selected");
       }
-      
+
       const payload = {
         userId: user?.id,
         plan: data.plan,
@@ -183,35 +208,39 @@ const Subscription = () => {
         mealsPerMonth: plan.mealsPerMonth || 0,
         price: plan.price || 0,
         status: "active",
-        paymentMethod: data.paymentMethod
+        paymentMethod: data.paymentMethod,
       };
-      
+
       // Create the subscription directly
       const response = await apiRequest("POST", "/api/subscriptions", payload);
       const subscription = await response.json();
-      
+
       // Save custom meal selections if needed
-      if (data.subscriptionType === "customized" && data.customMealSelections && data.customMealSelections.length > 0) {
+      if (
+        data.subscriptionType === "customized" &&
+        data.customMealSelections &&
+        data.customMealSelections.length > 0
+      ) {
         for (const mealSelection of data.customMealSelections) {
           await apiRequest("POST", "/api/custom-meal-plans", {
             subscriptionId: subscription.id,
             dayOfWeek: mealSelection.dayOfWeek,
-            mealId: mealSelection.mealId
+            mealId: mealSelection.mealId,
           });
         }
       }
-      
+
       // Display success message
       toast({
         title: "Subscription Successful!",
         description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
         variant: "default",
       });
-      
+
       // Clear form after successful subscription
       form.reset();
       setFormStep("plan");
-      
+
       return subscription;
     },
     onSuccess: () => {
@@ -221,7 +250,8 @@ const Subscription = () => {
     onError: (error: any) => {
       toast({
         title: "Error processing subscription",
-        description: error.message || "There was an error with your subscription",
+        description:
+          error.message || "There was an error with your subscription",
         variant: "destructive",
       });
     },
@@ -229,23 +259,33 @@ const Subscription = () => {
 
   // Update custom meal selections when user makes changes
   const updateMealSelection = (dayOfWeek: number, mealId: number) => {
-    setSelectedMealsByDay(prev => ({
+    setSelectedMealsByDay((prev) => ({
       ...prev,
-      [dayOfWeek]: mealId
+      [dayOfWeek]: mealId,
     }));
-    
+
     // Convert to array format for the form
-    const mealSelections = Object.entries(selectedMealsByDay).map(([day, mealId]) => ({
-      dayOfWeek: parseInt(day),
-      mealId: mealId as number
-    }));
-    
+    const mealSelections = Object.entries(selectedMealsByDay).map(
+      ([day, mealId]) => ({
+        dayOfWeek: parseInt(day),
+        mealId: mealId as number,
+      }),
+    );
+
     form.setValue("customMealSelections", mealSelections);
   };
 
   // Get day name from day number (0-6)
   const getDayName = (dayNumber: number): string => {
-    const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const days = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
     return days[dayNumber];
   };
 
@@ -280,26 +320,30 @@ const Subscription = () => {
       form.setValue("selectedAddressId", undefined);
     }
   };
-  
+
   // Form submission handler
   const onSubmit = (values: SubscriptionFormValues) => {
     // Handle multi-step form
     if (formStep === "plan") {
       // Validate plan and meals selection
-      if (values.subscriptionType === "customized" && Object.keys(selectedMealsByDay).length === 0) {
+      if (
+        values.subscriptionType === "customized" &&
+        Object.keys(selectedMealsByDay).length === 0
+      ) {
         toast({
           title: "Meal selection required",
-          description: "Please select at least one meal for your customized plan",
+          description:
+            "Please select at least one meal for your customized plan",
           variant: "destructive",
         });
         return;
       }
-      
+
       // Go to address step
       goToNextStep();
       return;
     }
-    
+
     if (formStep === "address") {
       // Validate address selection
       if (!values.selectedAddressId && !values.useNewAddress) {
@@ -310,7 +354,7 @@ const Subscription = () => {
         });
         return;
       }
-      
+
       // Validate new address if selected
       if (values.useNewAddress && !values.newAddress) {
         toast({
@@ -320,47 +364,78 @@ const Subscription = () => {
         });
         return;
       }
-      
+
       // Go to payment step
       goToNextStep();
       return;
     }
-    
+
     // We're on the payment step, submit everything
-    
+
     // Add the meal selections to the form data if using a customized plan
-    if (values.subscriptionType === "customized" && Object.keys(selectedMealsByDay).length > 0) {
-      const mealSelections = Object.entries(selectedMealsByDay).map(([day, mealId]) => ({
-        dayOfWeek: parseInt(day),
-        mealId: mealId as number
-      }));
-      
+    if (
+      values.subscriptionType === "customized" &&
+      Object.keys(selectedMealsByDay).length > 0
+    ) {
+      const mealSelections = Object.entries(selectedMealsByDay).map(
+        ([day, mealId]) => ({
+          dayOfWeek: parseInt(day),
+          mealId: mealId as number,
+        }),
+      );
+
       values.customMealSelections = mealSelections;
     }
-    
+
     // Show toast notification on submit
     toast({
       title: "Processing subscription...",
       description: "Your subscription request is being processed.",
     });
-    
+
     // Submit the form
     subscriptionMutation.mutate(values);
   };
 
-  // Get current selected plan details
-  const currentPlan = SUBSCRIPTION_PLANS.find(p => p.id === selectedPlan) || SUBSCRIPTION_PLANS[0];
+  // Calculate price adjustments based on dietary preference
+  const getPriceAdjustment = (preference: string) => {
+    switch(preference) {
+      case "vegetarian":
+        return 0; // Base price, no adjustment
+      case "veg-with-egg":
+        return 200; // Add ₹200 for veg with egg
+      case "non-vegetarian":
+        return 500; // Add ₹500 for non-veg
+      default:
+        return 0;
+    }
+  };
+
+  // Get current selected plan details and apply price adjustment
+  const basePlan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlan) || SUBSCRIPTION_PLANS[0];
+  const dietaryPreference = form.watch("dietaryPreference");
+  const priceAdjustment = getPriceAdjustment(dietaryPreference);
+  
+  // Create modified plan with adjusted price
+  const currentPlan = {
+    ...basePlan,
+    price: basePlan.price + priceAdjustment,
+    adjustedPrice: true,
+    basePriceText: `₹${(basePlan.price / 100).toFixed(0)} + ₹${(priceAdjustment / 100).toFixed(0)}`
+  };
 
   // Set plan from URL params
   useEffect(() => {
     if (selectedPlanFromParams) {
-      const validPlan = SUBSCRIPTION_PLANS.find(p => p.id === selectedPlanFromParams);
+      const validPlan = SUBSCRIPTION_PLANS.find(
+        (p) => p.id === selectedPlanFromParams,
+      );
       if (validPlan) {
         form.setValue("plan", validPlan.id as any);
       }
     }
   }, [selectedPlanFromParams, form]);
-  
+
   // Distribute meals for each day when meals data is loaded
   useEffect(() => {
     if (meals && meals.length > 0) {
@@ -368,23 +443,23 @@ const Subscription = () => {
       const shuffledMeals = [...meals].sort(() => Math.random() - 0.5);
       const mealCount = shuffledMeals.length;
       const mealsPerDay = 7; // Show 7 unique meals per day
-      
+
       // Create a distribution of meals for each day of the week
-      const mealsByDay: {[key: number]: any[]} = {};
-      
+      const mealsByDay: { [key: number]: any[] } = {};
+
       for (let day = 0; day < 7; day++) {
         // Get a unique set of meals for this day, cycling through the array if needed
         const startIndex = (day * mealsPerDay) % mealCount;
         let dayMeals = [];
-        
+
         for (let i = 0; i < mealsPerDay; i++) {
           const index = (startIndex + i) % mealCount;
           dayMeals.push(shuffledMeals[index]);
         }
-        
+
         mealsByDay[day] = dayMeals;
       }
-      
+
       setMealOptionsByDay(mealsByDay);
     }
   }, [meals]);
@@ -395,50 +470,6 @@ const Subscription = () => {
       case "plan":
         return (
           <div className="space-y-6">
-            <div className="flex items-center mb-6">
-              <h2 className="text-2xl font-bold mr-4">Subscribe to MealMillet</h2>
-              <FormField
-                control={form.control}
-                name="dietaryPreference"
-                render={({ field }) => (
-                  <FormItem className="space-y-0 flex-1">
-                    <div className="flex flex-wrap gap-2">
-                      <Button 
-                        type="button"
-                        variant={field.value === "vegetarian" ? "default" : "outline"}
-                        className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                        onClick={() => field.onChange("vegetarian")}
-                        size="sm"
-                      >
-                        <Check className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`} />
-                        Vegetarian
-                      </Button>
-                      <Button 
-                        type="button"
-                        variant={field.value === "veg-with-egg" ? "default" : "outline"}
-                        className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
-                        onClick={() => field.onChange("veg-with-egg")}
-                        size="sm"
-                      >
-                        <Check className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`} />
-                        Veg with Egg
-                      </Button>
-                      <Button 
-                        type="button"
-                        variant={field.value === "non-vegetarian" ? "default" : "outline"}
-                        className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
-                        onClick={() => field.onChange("non-vegetarian")}
-                        size="sm"
-                      >
-                        <Check className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`} />
-                        Non-Veg
-                      </Button>
-                    </div>
-                  </FormItem>
-                )}
-              />
-            </div>
-            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex space-x-2 mb-4">
@@ -446,9 +477,16 @@ const Subscription = () => {
                     <Button
                       key={plan.id}
                       type="button"
-                      variant={form.watch("plan") === plan.id ? "default" : "outline"}
+                      variant={
+                        form.watch("plan") === plan.id ? "default" : "outline"
+                      }
                       className={`flex-1 ${form.watch("plan") === plan.id ? "bg-primary" : ""}`}
-                      onClick={() => form.setValue("plan", plan.id as "basic" | "premium" | "family")}
+                      onClick={() =>
+                        form.setValue(
+                          "plan",
+                          plan.id as "basic" | "premium" | "family",
+                        )
+                      }
                     >
                       {plan.name}
                     </Button>
@@ -472,7 +510,9 @@ const Subscription = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="customized" id="customized" />
-                          <Label htmlFor="customized">Customized (Select meals for each day)</Label>
+                          <Label htmlFor="customized">
+                            Customized (Select meals for each day)
+                          </Label>
                         </div>
                       </RadioGroup>
                       <FormMessage />
@@ -525,22 +565,21 @@ const Subscription = () => {
                       <p className="text-xl font-semibold text-primary">
                         {currentPlan.name}
                       </p>
-                      <Badge 
-                        variant="outline" 
+                      <Badge
+                        variant="outline"
                         className={
-                          form.watch("dietaryPreference") === "vegetarian" 
-                            ? "bg-green-100 text-green-800" 
+                          form.watch("dietaryPreference") === "vegetarian"
+                            ? "bg-green-100 text-green-800"
                             : form.watch("dietaryPreference") === "veg-with-egg"
                               ? "bg-amber-100 text-amber-800"
                               : "bg-red-100 text-red-800"
                         }
                       >
-                        {form.watch("dietaryPreference") === "vegetarian" 
-                          ? "Vegetarian" 
+                        {form.watch("dietaryPreference") === "vegetarian"
+                          ? "Vegetarian"
                           : form.watch("dietaryPreference") === "veg-with-egg"
                             ? "Veg with Egg"
-                            : "Non-Vegetarian"
-                        }
+                            : "Non-Vegetarian"}
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600 mt-1">
@@ -558,55 +597,79 @@ const Subscription = () => {
                         </li>
                       ))}
                     </ul>
-                    
+
                     {/* Meal schedule based on plan duration and start date */}
                     <div className="mt-4 pt-4 border-t">
-                      <h4 className="font-medium text-sm mb-2">Meal Schedule ({currentPlan.duration} days)</h4>
+                      <h4 className="font-medium text-sm mb-2">
+                        Meal Schedule ({currentPlan.duration} days)
+                      </h4>
                       <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
-                        {currentPlan.weeklyMeals && 
-                          Array.from({ length: Math.min(currentPlan.duration, 30) }).map((_, index) => {
+                        {currentPlan.weeklyMeals &&
+                          Array.from({
+                            length: Math.min(currentPlan.duration, 30),
+                          }).map((_, index) => {
                             // Get the start date and create a date for this meal day
                             const startDate = new Date(form.watch("startDate"));
                             const mealDate = new Date(startDate);
                             mealDate.setDate(startDate.getDate() + index);
-                            
+
                             // Calculate which day of the week this is (0-6)
                             const dayOfWeek = mealDate.getDay();
-                            
+
                             // Map to the day name
-                            const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                            const dayNames = [
+                              "sunday",
+                              "monday",
+                              "tuesday",
+                              "wednesday",
+                              "thursday",
+                              "friday",
+                              "saturday",
+                            ];
                             const dayName = dayNames[dayOfWeek];
-                            
+
                             // Get a formatted date string
                             const formattedDate = format(mealDate, "MMM d");
-                            
+
                             // Get the meals for this day
-                            const meals = currentPlan.weeklyMeals[dayName as keyof typeof currentPlan.weeklyMeals];
-                            
+                            const meals =
+                              currentPlan.weeklyMeals[
+                                dayName as keyof typeof currentPlan.weeklyMeals
+                              ];
+
                             // Get curry options based on dietary preference
-                            const curryType = 
-                              form.watch("dietaryPreference") === "vegetarian" 
-                                ? "Vegetable curry" 
-                                : form.watch("dietaryPreference") === "veg-with-egg"
+                            const curryType =
+                              form.watch("dietaryPreference") === "vegetarian"
+                                ? "Vegetable curry"
+                                : form.watch("dietaryPreference") ===
+                                    "veg-with-egg"
                                   ? "Egg curry"
                                   : "Chicken curry";
-                            
+
                             return (
-                              <div key={index} className="bg-white p-2 rounded border">
+                              <div
+                                key={index}
+                                className="bg-white p-2 rounded border"
+                              >
                                 <p className="font-medium capitalize flex justify-between">
-                                  <span>Day {index + 1}: {dayName}</span>
-                                  <span className="text-gray-500 text-sm">{formattedDate}</span>
+                                  <span>
+                                    Day {index + 1}: {dayName}
+                                  </span>
+                                  <span className="text-gray-500 text-sm">
+                                    {formattedDate}
+                                  </span>
                                 </p>
                                 <div className="mt-1">
-                                  <p className="text-sm font-medium">{meals.main}</p>
+                                  <p className="text-sm font-medium">
+                                    {meals.main}
+                                  </p>
                                   <p className="text-xs text-gray-600">
                                     With: {curryType}, {meals.sides.join(", ")}
                                   </p>
                                 </div>
                               </div>
                             );
-                          })
-                        }
+                          })}
                       </div>
                     </div>
                   </div>
@@ -616,7 +679,9 @@ const Subscription = () => {
 
             {subscriptionType === "customized" && (
               <div className="border-t pt-6 mb-2">
-                <h3 className="text-lg font-semibold mb-4">Customize Your Weekly Meal Plan</h3>
+                <h3 className="text-lg font-semibold mb-4">
+                  Customize Your Weekly Meal Plan
+                </h3>
                 {mealsLoading ? (
                   <div className="flex items-center justify-center h-40">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -627,39 +692,49 @@ const Subscription = () => {
                       {/* Day selection based on plan duration and start date */}
                       <div>
                         <p className="text-sm text-gray-600 mb-3">
-                          Select a day to customize your meal (Plan duration: {currentPlan.duration} days):
+                          Select a day to customize your meal (Plan duration:{" "}
+                          {currentPlan.duration} days):
                         </p>
                         <div className="flex flex-wrap gap-2 mb-4">
-                          {Array.from({ length: Math.min(currentPlan.duration, 30) }).map((_, index) => {
+                          {Array.from({
+                            length: Math.min(currentPlan.duration, 30),
+                          }).map((_, index) => {
                             // Get the start date and create a date for this meal day
                             const startDate = new Date(form.watch("startDate"));
                             const mealDate = new Date(startDate);
                             mealDate.setDate(startDate.getDate() + index);
-                            
+
                             // Calculate which day of the week this is (0-6)
                             const dayOfWeek = mealDate.getDay();
-                            
+
                             // Map to the day name
                             const dayName = getDayName(dayOfWeek);
-                            
+
                             // Get a formatted date string
                             const formattedDate = format(mealDate, "d");
-                            
+
                             return (
                               <Button
                                 key={index}
                                 type="button"
-                                variant={selectedDate && 
-                                        selectedDate.getDate() === mealDate.getDate() && 
-                                        selectedDate.getMonth() === mealDate.getMonth() 
-                                        ? "default" : "outline"}
+                                variant={
+                                  selectedDate &&
+                                  selectedDate.getDate() ===
+                                    mealDate.getDate() &&
+                                  selectedDate.getMonth() ===
+                                    mealDate.getMonth()
+                                    ? "default"
+                                    : "outline"
+                                }
                                 onClick={() => {
                                   setSelectedDate(mealDate);
                                 }}
                                 className="flex-1"
                               >
                                 <span className="text-xs">Day {index + 1}</span>
-                                <span className="block text-xs">{dayName} {formattedDate}</span>
+                                <span className="block text-xs">
+                                  {dayName} {formattedDate}
+                                </span>
                               </Button>
                             );
                           })}
@@ -670,48 +745,69 @@ const Subscription = () => {
                       {selectedDate && (
                         <div>
                           <p className="text-sm text-gray-600 mb-3">
-                            Select a meal for {getDayName(selectedDate.getDay())}:
+                            Select a meal for{" "}
+                            {getDayName(selectedDate.getDay())}:
                           </p>
                           <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
-                            {mealOptionsByDay[selectedDate.getDay()]?.map((meal: any) => (
-                              <Card
-                                key={meal.id}
-                                className={`cursor-pointer transition-all ${
-                                  selectedMealsByDay[selectedDate.getDay()] === meal.id
-                                    ? "border-primary"
-                                    : ""
-                                }`}
-                                onClick={() => updateMealSelection(selectedDate.getDay(), meal.id)}
-                              >
-                                <div className="flex items-center p-2">
-                                  <div className="w-16 h-16 rounded-md overflow-hidden mr-3 flex-shrink-0">
-                                    <img
-                                      src={meal.image || "https://via.placeholder.com/150?text=Millet+Meal"}
-                                      alt={meal.name}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                  <div className="flex-1">
-                                    <h4 className="font-medium text-sm">{meal.name}</h4>
-                                    <p className="text-xs text-gray-500 line-clamp-2">{meal.description}</p>
-                                    <div className="flex gap-1 mt-1">
-                                      {meal.dietaryPreferences?.map((pref: string) => (
-                                        <Badge
-                                          key={pref}
-                                          variant="outline"
-                                          className="text-xs px-1 py-0"
-                                        >
-                                          {pref}
-                                        </Badge>
-                                      ))}
+                            {mealOptionsByDay[selectedDate.getDay()]?.map(
+                              (meal: any) => (
+                                <Card
+                                  key={meal.id}
+                                  className={`cursor-pointer transition-all ${
+                                    selectedMealsByDay[
+                                      selectedDate.getDay()
+                                    ] === meal.id
+                                      ? "border-primary"
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    updateMealSelection(
+                                      selectedDate.getDay(),
+                                      meal.id,
+                                    )
+                                  }
+                                >
+                                  <div className="flex items-center p-2">
+                                    <div className="w-16 h-16 rounded-md overflow-hidden mr-3 flex-shrink-0">
+                                      <img
+                                        src={
+                                          meal.image ||
+                                          "https://via.placeholder.com/150?text=Millet+Meal"
+                                        }
+                                        alt={meal.name}
+                                        className="w-full h-full object-cover"
+                                      />
                                     </div>
+                                    <div className="flex-1">
+                                      <h4 className="font-medium text-sm">
+                                        {meal.name}
+                                      </h4>
+                                      <p className="text-xs text-gray-500 line-clamp-2">
+                                        {meal.description}
+                                      </p>
+                                      <div className="flex gap-1 mt-1">
+                                        {meal.dietaryPreferences?.map(
+                                          (pref: string) => (
+                                            <Badge
+                                              key={pref}
+                                              variant="outline"
+                                              className="text-xs px-1 py-0"
+                                            >
+                                              {pref}
+                                            </Badge>
+                                          ),
+                                        )}
+                                      </div>
+                                    </div>
+                                    {selectedMealsByDay[
+                                      selectedDate.getDay()
+                                    ] === meal.id && (
+                                      <Check className="h-5 w-5 text-primary ml-2" />
+                                    )}
                                   </div>
-                                  {selectedMealsByDay[selectedDate.getDay()] === meal.id && (
-                                    <Check className="h-5 w-5 text-primary ml-2" />
-                                  )}
-                                </div>
-                              </Card>
-                            ))}
+                                </Card>
+                              ),
+                            )}
                           </div>
                         </div>
                       )}
@@ -721,34 +817,48 @@ const Subscription = () => {
                       <h4 className="font-medium mb-3">Your Selected Meals</h4>
                       {Object.keys(selectedMealsByDay).length > 0 ? (
                         <ul className="space-y-2">
-                          {Object.entries(selectedMealsByDay).map(([day, mealId]) => {
-                            const selectedMeal = meals?.find((m: any) => m.id === mealId);
-                            return (
-                              <li key={day} className="flex justify-between items-center p-2 bg-neutral-light rounded-lg">
-                                <div>
-                                  <span className="font-medium">{getDayName(parseInt(day))}</span>
-                                  <p className="text-sm">{selectedMeal?.name}</p>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => {
-                                    setSelectedMealsByDay(prev => {
-                                      const newState = { ...prev };
-                                      delete newState[parseInt(day)];
-                                      return newState;
-                                    });
-                                  }}
+                          {Object.entries(selectedMealsByDay).map(
+                            ([day, mealId]) => {
+                              const selectedMeal = meals?.find(
+                                (m: any) => m.id === mealId,
+                              );
+                              return (
+                                <li
+                                  key={day}
+                                  className="flex justify-between items-center p-2 bg-neutral-light rounded-lg"
                                 >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </li>
-                            );
-                          })}
+                                  <div>
+                                    <span className="font-medium">
+                                      {getDayName(parseInt(day))}
+                                    </span>
+                                    <p className="text-sm">
+                                      {selectedMeal?.name}
+                                    </p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setSelectedMealsByDay((prev) => {
+                                        const newState = { ...prev };
+                                        delete newState[parseInt(day)];
+                                        return newState;
+                                      });
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </li>
+                              );
+                            },
+                          )}
                         </ul>
                       ) : (
-                        <p className="text-sm text-gray-500">No meals selected yet. Select a day and choose your meal.</p>
+                        <p className="text-sm text-gray-500">
+                          No meals selected yet. Select a day and choose your
+                          meal.
+                        </p>
                       )}
                     </div>
                   </div>
@@ -758,9 +868,15 @@ const Subscription = () => {
 
             <div className="border-t pt-6">
               <div className="flex justify-between mb-2">
-                <span>Plan Price</span>
-                <span>₹{(currentPlan.price / 100).toFixed(2)}/month</span>
+                <span>Base Plan Price</span>
+                <span>₹{(basePlan.price / 100).toFixed(2)}/month</span>
               </div>
+              {priceAdjustment > 0 && (
+                <div className="flex justify-between mb-2">
+                  <span>{dietaryPreference === "veg-with-egg" ? "Egg Option" : "Non-Veg Option"}</span>
+                  <span>+ ₹{(priceAdjustment / 100).toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between mb-2">
                 <span>Tax</span>
                 <span>₹{((currentPlan.price * 0.05) / 100).toFixed(2)}</span>
@@ -768,11 +884,15 @@ const Subscription = () => {
               <div className="flex justify-between font-bold text-lg border-t pt-2 mt-2">
                 <span>Total</span>
                 <span className="text-primary">
-                  ₹{((currentPlan.price + currentPlan.price * 0.05) / 100).toFixed(2)}
+                  ₹
+                  {(
+                    (currentPlan.price + currentPlan.price * 0.05) /
+                    100
+                  ).toFixed(2)}
                 </span>
               </div>
             </div>
-            
+
             <Button
               type="submit"
               className="w-full bg-primary hover:bg-primary/90"
@@ -782,23 +902,25 @@ const Subscription = () => {
             </Button>
           </div>
         );
-        
+
       case "address":
         return (
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-4">Delivery Address</h3>
-              
+
               {/* Existing addresses */}
               {addresses.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-sm mb-3">Select an existing address</h4>
+                  <h4 className="font-medium text-sm mb-3">
+                    Select an existing address
+                  </h4>
                   <div className="space-y-3">
-                    {addresses.map(address => (
-                      <div 
+                    {addresses.map((address) => (
+                      <div
                         key={address.id}
                         className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          form.watch("selectedAddressId") === address.id 
+                          form.watch("selectedAddressId") === address.id
                             ? "border-primary ring-1 ring-primary"
                             : "hover:border-gray-400"
                         }`}
@@ -807,7 +929,11 @@ const Subscription = () => {
                         <div className="flex justify-between">
                           <div className="flex gap-2 items-center">
                             <h5 className="font-medium">{address.name}</h5>
-                            {address.isDefault && <Badge variant="outline" className="text-xs">Default</Badge>}
+                            {address.isDefault && (
+                              <Badge variant="outline" className="text-xs">
+                                Default
+                              </Badge>
+                            )}
                           </div>
                           <div className="flex items-center">
                             {form.watch("selectedAddressId") === address.id && (
@@ -815,24 +941,30 @@ const Subscription = () => {
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">{address.addressLine1}</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {address.addressLine1}
+                        </p>
                         {address.addressLine2 && (
-                          <p className="text-sm text-gray-600">{address.addressLine2}</p>
+                          <p className="text-sm text-gray-600">
+                            {address.addressLine2}
+                          </p>
                         )}
                         <p className="text-sm text-gray-600">
                           {address.city}, {address.state} - {address.pincode}
                         </p>
-                        <p className="text-sm text-gray-600 mt-1">Phone: {address.phone}</p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          Phone: {address.phone}
+                        </p>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              
+
               {/* Add new address toggle */}
               <div className="flex items-center space-x-2 mb-4">
-                <Checkbox 
-                  id="add-new-address" 
+                <Checkbox
+                  id="add-new-address"
                   checked={form.watch("useNewAddress")}
                   onCheckedChange={() => toggleNewAddressForm()}
                 />
@@ -843,12 +975,12 @@ const Subscription = () => {
                   Add a new address
                 </label>
               </div>
-              
+
               {/* New address form */}
               {form.watch("useNewAddress") && (
                 <div className="space-y-4 border p-4 rounded-lg">
                   <h4 className="font-medium">New Address Details</h4>
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -857,13 +989,16 @@ const Subscription = () => {
                         <FormItem>
                           <FormLabel>Address Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="Home, Office, etc." {...field} />
+                            <Input
+                              placeholder="Home, Office, etc."
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="newAddress.phone"
@@ -871,14 +1006,17 @@ const Subscription = () => {
                         <FormItem>
                           <FormLabel>Phone Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="10-digit mobile number" {...field} />
+                            <Input
+                              placeholder="10-digit mobile number"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="newAddress.addressLine1"
@@ -886,13 +1024,16 @@ const Subscription = () => {
                       <FormItem>
                         <FormLabel>Address Line 1</FormLabel>
                         <FormControl>
-                          <Input placeholder="House/Flat No., Street, Locality" {...field} />
+                          <Input
+                            placeholder="House/Flat No., Street, Locality"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="newAddress.addressLine2"
@@ -900,13 +1041,16 @@ const Subscription = () => {
                       <FormItem>
                         <FormLabel>Address Line 2 (Optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="Landmark, Area, etc." {...field} />
+                          <Input
+                            placeholder="Landmark, Area, etc."
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <FormField
                       control={form.control}
@@ -915,13 +1059,17 @@ const Subscription = () => {
                         <FormItem>
                           <FormLabel>City</FormLabel>
                           <FormControl>
-                            <Input placeholder="City" defaultValue="Hyderabad" {...field} />
+                            <Input
+                              placeholder="City"
+                              defaultValue="Hyderabad"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="newAddress.state"
@@ -929,13 +1077,17 @@ const Subscription = () => {
                         <FormItem>
                           <FormLabel>State</FormLabel>
                           <FormControl>
-                            <Input placeholder="State" defaultValue="Telangana" {...field} />
+                            <Input
+                              placeholder="State"
+                              defaultValue="Telangana"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="newAddress.pincode"
@@ -950,7 +1102,7 @@ const Subscription = () => {
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="newAddress.isDefault"
@@ -963,9 +1115,7 @@ const Subscription = () => {
                           />
                         </FormControl>
                         <div className="space-y-1 leading-none">
-                          <FormLabel>
-                            Set as default address
-                          </FormLabel>
+                          <FormLabel>Set as default address</FormLabel>
                           <FormDescription>
                             This address will be used for all future deliveries
                           </FormDescription>
@@ -975,12 +1125,15 @@ const Subscription = () => {
                   />
                 </div>
               )}
-              
+
               <div className="border-t pt-4 mt-6">
                 <div className="text-sm text-gray-500 mb-4">
-                  <p>Note: We currently deliver only in Hyderabad, within a 10km radius of our service locations.</p>
+                  <p>
+                    Note: We currently deliver only in Hyderabad, within a 10km
+                    radius of our service locations.
+                  </p>
                 </div>
-                
+
                 <div className="flex items-center justify-between">
                   <Button
                     type="button"
@@ -990,7 +1143,7 @@ const Subscription = () => {
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Back to Plan
                   </Button>
-                  
+
                   <Button
                     type="submit"
                     className="bg-primary hover:bg-primary/90"
@@ -1003,7 +1156,7 @@ const Subscription = () => {
             </div>
           </div>
         );
-        
+
       case "payment":
         return (
           <div className="space-y-6">
@@ -1015,8 +1168,8 @@ const Subscription = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Payment Method</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
+                      <Select
+                        onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -1025,7 +1178,9 @@ const Subscription = () => {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="card">Credit/Debit Card</SelectItem>
+                          <SelectItem value="card">
+                            Credit/Debit Card
+                          </SelectItem>
                           <SelectItem value="upi">UPI</SelectItem>
                           <SelectItem value="bank">Bank Transfer</SelectItem>
                         </SelectContent>
@@ -1044,7 +1199,10 @@ const Subscription = () => {
                         <FormItem>
                           <FormLabel>Card Number</FormLabel>
                           <FormControl>
-                            <Input placeholder="1234 5678 9012 3456" {...field} />
+                            <Input
+                              placeholder="1234 5678 9012 3456"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -1100,9 +1258,15 @@ const Subscription = () => {
                 {paymentMethod === "bank" && (
                   <div className="bg-neutral-light p-4 rounded-lg mt-4">
                     <h3 className="font-medium mb-2">Bank Transfer Details</h3>
-                    <p className="text-sm text-gray-600 mb-1">Account Name: MealMillet Services</p>
-                    <p className="text-sm text-gray-600 mb-1">Account Number: 1234567890</p>
-                    <p className="text-sm text-gray-600 mb-1">IFSC Code: MEAL0001234</p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Account Name: MealMillet Services
+                    </p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      Account Number: 1234567890
+                    </p>
+                    <p className="text-sm text-gray-600 mb-1">
+                      IFSC Code: MEAL0001234
+                    </p>
                     <p className="text-sm text-gray-600">Bank: Millet Bank</p>
                   </div>
                 )}
@@ -1112,29 +1276,40 @@ const Subscription = () => {
                 <div className="bg-neutral-light p-4 rounded-lg">
                   <h3 className="font-medium mb-2">Order Summary</h3>
                   <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Plan:</span> {currentPlan.name}
+                    <span className="font-medium">Plan:</span>{" "}
+                    {currentPlan.name}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Type:</span> {subscriptionType === "default" ? "Default" : "Customized"}
+                    <span className="font-medium">Type:</span>{" "}
+                    {subscriptionType === "default" ? "Default" : "Customized"}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Start Date:</span> {format(form.watch("startDate"), "PPP")}
+                    <span className="font-medium">Start Date:</span>{" "}
+                    {format(form.watch("startDate"), "PPP")}
                   </p>
-                  
+
                   <div className="border-t my-3"></div>
-                  
+
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Plan Price</span>
-                    <span className="text-sm">₹{(currentPlan.price / 100).toFixed(2)}/month</span>
+                    <span className="text-sm">
+                      ₹{(currentPlan.price / 100).toFixed(2)}/month
+                    </span>
                   </div>
                   <div className="flex justify-between mb-2">
                     <span className="text-sm">Tax (5%)</span>
-                    <span className="text-sm">₹{((currentPlan.price * 0.05) / 100).toFixed(2)}</span>
+                    <span className="text-sm">
+                      ₹{((currentPlan.price * 0.05) / 100).toFixed(2)}
+                    </span>
                   </div>
                   <div className="flex justify-between font-bold">
                     <span>Total</span>
                     <span className="text-primary">
-                      ₹{((currentPlan.price + currentPlan.price * 0.05) / 100).toFixed(2)}
+                      ₹
+                      {(
+                        (currentPlan.price + currentPlan.price * 0.05) /
+                        100
+                      ).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -1151,7 +1326,7 @@ const Subscription = () => {
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to Address
                 </Button>
-                
+
                 <Button
                   type="submit"
                   className="bg-primary hover:bg-primary/90"
@@ -1175,15 +1350,72 @@ const Subscription = () => {
     <div className="min-h-screen bg-neutral-light py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">Subscribe to MealMillet</h1>
-          <p className="text-gray-600 mb-8">Select a plan and customize your subscription</p>
+          <h1 className="text-3xl font-bold mb-2">
+            Subscribe to MealMillet
+            <FormField
+              control={form.control}
+              name="dietaryPreference"
+              render={({ field }) => (
+                <FormItem className="space-y-0 flex-1">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant={
+                        field.value === "vegetarian" ? "default" : "outline"
+                      }
+                      className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                      onClick={() => field.onChange("vegetarian")}
+                      size="sm"
+                    >
+                      <Check
+                        className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`}
+                      />
+                      Vegetarian
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={
+                        field.value === "veg-with-egg" ? "default" : "outline"
+                      }
+                      className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
+                      onClick={() => field.onChange("veg-with-egg")}
+                      size="sm"
+                    >
+                      <Check
+                        className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`}
+                      />
+                      Veg with Egg
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={
+                        field.value === "non-vegetarian" ? "default" : "outline"
+                      }
+                      className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
+                      onClick={() => field.onChange("non-vegetarian")}
+                      size="sm"
+                    >
+                      <Check
+                        className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`}
+                      />
+                      Non-Veg
+                    </Button>
+                  </div>
+                </FormItem>
+              )}
+            />
+          </h1>
+
+          <p className="text-gray-600 mb-8">
+            Select a plan and customize your subscription
+          </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {SUBSCRIPTION_PLANS.map((plan) => (
-              <Card 
-                key={plan.id} 
+              <Card
+                key={plan.id}
                 className={`cursor-pointer transition duration-300 hover:shadow-md ${
-                  selectedPlan === plan.id 
+                  selectedPlan === plan.id
                     ? "border-2 border-primary ring-2 ring-primary ring-opacity-50"
                     : ""
                 }`}
@@ -1213,7 +1445,9 @@ const Subscription = () => {
                         ) : (
                           <X className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
                         )}
-                        <span className={feature.included ? "" : "text-gray-400"}>
+                        <span
+                          className={feature.included ? "" : "text-gray-400"}
+                        >
                           {feature.text}
                         </span>
                       </li>
@@ -1232,34 +1466,46 @@ const Subscription = () => {
                 {formStep === "payment" && "Payment Information"}
               </CardTitle>
               <CardDescription>
-                {formStep === "plan" && "Select a plan and customize your meals"}
+                {formStep === "plan" &&
+                  "Select a plan and customize your meals"}
                 {formStep === "address" && "Choose delivery location"}
-                {formStep === "payment" && "Complete your subscription purchase"}
+                {formStep === "payment" &&
+                  "Complete your subscription purchase"}
               </CardDescription>
-              
+
               {/* Progress steps indicator */}
               <div className="mt-4">
                 <div className="flex justify-between">
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "plan" ? "bg-primary text-white" : "bg-gray-200"}`}>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "plan" ? "bg-primary text-white" : "bg-gray-200"}`}
+                    >
                       1
                     </div>
                     <span className="text-xs mt-1">Plan</span>
                   </div>
                   <div className="flex-1 flex items-center mx-2">
-                    <div className={`h-1 w-full ${formStep !== "plan" ? "bg-primary" : "bg-gray-200"}`}></div>
+                    <div
+                      className={`h-1 w-full ${formStep !== "plan" ? "bg-primary" : "bg-gray-200"}`}
+                    ></div>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "address" ? "bg-primary text-white" : formStep === "payment" ? "bg-primary text-white" : "bg-gray-200"}`}>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "address" ? "bg-primary text-white" : formStep === "payment" ? "bg-primary text-white" : "bg-gray-200"}`}
+                    >
                       2
                     </div>
                     <span className="text-xs mt-1">Address</span>
                   </div>
                   <div className="flex-1 flex items-center mx-2">
-                    <div className={`h-1 w-full ${formStep === "payment" ? "bg-primary" : "bg-gray-200"}`}></div>
+                    <div
+                      className={`h-1 w-full ${formStep === "payment" ? "bg-primary" : "bg-gray-200"}`}
+                    ></div>
                   </div>
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "payment" ? "bg-primary text-white" : "bg-gray-200"}`}>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "payment" ? "bg-primary text-white" : "bg-gray-200"}`}
+                    >
                       3
                     </div>
                     <span className="text-xs mt-1">Payment</span>
@@ -1269,7 +1515,10 @@ const Subscription = () => {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
                   {renderStepContent()}
                 </form>
               </Form>
