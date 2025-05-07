@@ -136,6 +136,9 @@ const Subscription = () => {
     plan: (selectedPlanFromParams as "basic" | "premium" | "family") || "basic",
     subscriptionType: "default",
     startDate: new Date(),
+    // Address details
+    useNewAddress: false,
+    // Payment details
     paymentMethod: "card",
     cardNumber: "",
     cardExpiry: "",
@@ -230,8 +233,85 @@ const Subscription = () => {
     return days[dayNumber];
   };
 
+  // Handle next step in the multi-step form
+  const goToNextStep = () => {
+    if (formStep === "plan") {
+      setFormStep("address");
+    } else if (formStep === "address") {
+      setFormStep("payment");
+    }
+  };
+
+  // Handle going back to previous step
+  const goToPreviousStep = () => {
+    if (formStep === "payment") {
+      setFormStep("address");
+    } else if (formStep === "address") {
+      setFormStep("plan");
+    }
+  };
+
+  // Select an existing address
+  const selectAddress = (addressId: number) => {
+    form.setValue("selectedAddressId", addressId);
+    form.setValue("useNewAddress", false);
+  };
+
+  // Toggle new address form
+  const toggleNewAddressForm = () => {
+    form.setValue("useNewAddress", !form.watch("useNewAddress"));
+    if (form.watch("useNewAddress")) {
+      form.setValue("selectedAddressId", undefined);
+    }
+  };
+  
   // Form submission handler
   const onSubmit = (values: SubscriptionFormValues) => {
+    // Handle multi-step form
+    if (formStep === "plan") {
+      // Validate plan and meals selection
+      if (values.subscriptionType === "customized" && Object.keys(selectedMealsByDay).length === 0) {
+        toast({
+          title: "Meal selection required",
+          description: "Please select at least one meal for your customized plan",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Go to address step
+      goToNextStep();
+      return;
+    }
+    
+    if (formStep === "address") {
+      // Validate address selection
+      if (!values.selectedAddressId && !values.useNewAddress) {
+        toast({
+          title: "Address required",
+          description: "Please select an existing address or add a new one",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Validate new address if selected
+      if (values.useNewAddress && !values.newAddress) {
+        toast({
+          title: "New address details required",
+          description: "Please fill in all the required address fields",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Go to payment step
+      goToNextStep();
+      return;
+    }
+    
+    // We're on the payment step, submit everything
+    
     // Add the meal selections to the form data if using a customized plan
     if (values.subscriptionType === "customized" && Object.keys(selectedMealsByDay).length > 0) {
       const mealSelections = Object.entries(selectedMealsByDay).map(([day, mealId]) => ({
@@ -242,6 +322,7 @@ const Subscription = () => {
       values.customMealSelections = mealSelections;
     }
     
+    // Submit the form
     subscriptionMutation.mutate(values);
   };
 
@@ -341,10 +422,46 @@ const Subscription = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle>Customize Your Subscription</CardTitle>
+              <CardTitle>
+                {formStep === "plan" && "Choose Your Plan"}
+                {formStep === "address" && "Delivery Address"}
+                {formStep === "payment" && "Payment Information"}
+              </CardTitle>
               <CardDescription>
-                Set your preferences and payment details
+                {formStep === "plan" && "Select a plan and customize your meals"}
+                {formStep === "address" && "Choose delivery location"}
+                {formStep === "payment" && "Complete your subscription purchase"}
               </CardDescription>
+              
+              {/* Progress steps indicator */}
+              <div className="mt-4">
+                <div className="flex justify-between">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "plan" ? "bg-primary text-white" : "bg-gray-200"}`}>
+                      1
+                    </div>
+                    <span className="text-xs mt-1">Plan</span>
+                  </div>
+                  <div className="flex-1 flex items-center mx-2">
+                    <div className={`h-1 w-full ${formStep !== "plan" ? "bg-primary" : "bg-gray-200"}`}></div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "address" ? "bg-primary text-white" : formStep === "payment" ? "bg-primary text-white" : "bg-gray-200"}`}>
+                      2
+                    </div>
+                    <span className="text-xs mt-1">Address</span>
+                  </div>
+                  <div className="flex-1 flex items-center mx-2">
+                    <div className={`h-1 w-full ${formStep === "payment" ? "bg-primary" : "bg-gray-200"}`}></div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "payment" ? "bg-primary text-white" : "bg-gray-200"}`}>
+                      3
+                    </div>
+                    <span className="text-xs mt-1">Payment</span>
+                  </div>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Form {...form}>
