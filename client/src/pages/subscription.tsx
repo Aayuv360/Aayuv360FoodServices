@@ -395,75 +395,65 @@ const Subscription = () => {
       case "plan":
         return (
           <div className="space-y-6">
+            <div className="flex items-center mb-6">
+              <h2 className="text-2xl font-bold mr-4">Subscribe to MealMillet</h2>
+              <FormField
+                control={form.control}
+                name="dietaryPreference"
+                render={({ field }) => (
+                  <FormItem className="space-y-0 flex-1">
+                    <div className="flex flex-wrap gap-2">
+                      <Button 
+                        type="button"
+                        variant={field.value === "vegetarian" ? "default" : "outline"}
+                        className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                        onClick={() => field.onChange("vegetarian")}
+                        size="sm"
+                      >
+                        <Check className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`} />
+                        Vegetarian
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant={field.value === "veg-with-egg" ? "default" : "outline"}
+                        className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
+                        onClick={() => field.onChange("veg-with-egg")}
+                        size="sm"
+                      >
+                        <Check className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`} />
+                        Veg with Egg
+                      </Button>
+                      <Button 
+                        type="button"
+                        variant={field.value === "non-vegetarian" ? "default" : "outline"}
+                        className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
+                        onClick={() => field.onChange("non-vegetarian")}
+                        size="sm"
+                      >
+                        <Check className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`} />
+                        Non-Veg
+                      </Button>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <FormField
-                  control={form.control}
-                  name="plan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Selected Plan</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a plan" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {SUBSCRIPTION_PLANS.map((plan) => (
-                            <SelectItem key={plan.id} value={plan.id}>
-                              {plan.name} - ₹{(plan.price / 100).toFixed(0)}/month
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="dietaryPreference"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Dietary Preference</FormLabel>
-                      <div className="flex flex-wrap gap-3">
-                        <Button 
-                          type="button"
-                          variant={field.value === "vegetarian" ? "default" : "outline"}
-                          className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                          onClick={() => field.onChange("vegetarian")}
-                        >
-                          <Check className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`} />
-                          Vegetarian
-                        </Button>
-                        <Button 
-                          type="button"
-                          variant={field.value === "veg-with-egg" ? "default" : "outline"}
-                          className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
-                          onClick={() => field.onChange("veg-with-egg")}
-                        >
-                          <Check className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`} />
-                          Veg with Egg
-                        </Button>
-                        <Button 
-                          type="button"
-                          variant={field.value === "non-vegetarian" ? "default" : "outline"}
-                          className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
-                          onClick={() => field.onChange("non-vegetarian")}
-                        >
-                          <Check className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`} />
-                          Non-Vegetarian
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="flex space-x-2 mb-4">
+                  {SUBSCRIPTION_PLANS.map((plan) => (
+                    <Button
+                      key={plan.id}
+                      type="button"
+                      variant={form.watch("plan") === plan.id ? "default" : "outline"}
+                      className={`flex-1 ${form.watch("plan") === plan.id ? "bg-primary" : ""}`}
+                      onClick={() => form.setValue("plan", plan.id as "basic" | "premium" | "family")}
+                    >
+                      {plan.name}
+                    </Button>
+                  ))}
+                </div>
 
                 <FormField
                   control={form.control}
@@ -569,26 +559,48 @@ const Subscription = () => {
                       ))}
                     </ul>
                     
-                    {/* Meal schedule based on plan duration */}
+                    {/* Meal schedule based on plan duration and start date */}
                     <div className="mt-4 pt-4 border-t">
                       <h4 className="font-medium text-sm mb-2">Meal Schedule ({currentPlan.duration} days)</h4>
                       <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
                         {currentPlan.weeklyMeals && 
                           Array.from({ length: Math.min(currentPlan.duration, 30) }).map((_, index) => {
+                            // Get the start date and create a date for this meal day
+                            const startDate = new Date(form.watch("startDate"));
+                            const mealDate = new Date(startDate);
+                            mealDate.setDate(startDate.getDate() + index);
+                            
                             // Calculate which day of the week this is (0-6)
-                            const dayOfWeek = index % 7;
+                            const dayOfWeek = mealDate.getDay();
+                            
                             // Map to the day name
-                            const dayName = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"][dayOfWeek];
+                            const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+                            const dayName = dayNames[dayOfWeek];
+                            
+                            // Get a formatted date string
+                            const formattedDate = format(mealDate, "MMM d");
+                            
                             // Get the meals for this day
                             const meals = currentPlan.weeklyMeals[dayName as keyof typeof currentPlan.weeklyMeals];
                             
+                            // Get curry options based on dietary preference
+                            const curryType = 
+                              form.watch("dietaryPreference") === "vegetarian" 
+                                ? "Vegetable curry" 
+                                : form.watch("dietaryPreference") === "veg-with-egg"
+                                  ? "Egg curry"
+                                  : "Chicken curry";
+                            
                             return (
                               <div key={index} className="bg-white p-2 rounded border">
-                                <p className="font-medium capitalize">Day {index + 1}: {dayName}</p>
+                                <p className="font-medium capitalize flex justify-between">
+                                  <span>Day {index + 1}: {dayName}</span>
+                                  <span className="text-gray-500 text-sm">{formattedDate}</span>
+                                </p>
                                 <div className="mt-1">
                                   <p className="text-sm font-medium">{meals.main}</p>
                                   <p className="text-xs text-gray-600">
-                                    With: {meals.sides.join(", ")}
+                                    With: {curryType}, {meals.sides.join(", ")}
                                   </p>
                                 </div>
                               </div>
@@ -612,34 +624,42 @@ const Subscription = () => {
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      {/* Day selection based on plan duration */}
+                      {/* Day selection based on plan duration and start date */}
                       <div>
                         <p className="text-sm text-gray-600 mb-3">
                           Select a day to customize your meal (Plan duration: {currentPlan.duration} days):
                         </p>
                         <div className="flex flex-wrap gap-2 mb-4">
                           {Array.from({ length: Math.min(currentPlan.duration, 30) }).map((_, index) => {
+                            // Get the start date and create a date for this meal day
+                            const startDate = new Date(form.watch("startDate"));
+                            const mealDate = new Date(startDate);
+                            mealDate.setDate(startDate.getDate() + index);
+                            
                             // Calculate which day of the week this is (0-6)
-                            const dayOfWeek = index % 7;
+                            const dayOfWeek = mealDate.getDay();
+                            
                             // Map to the day name
                             const dayName = getDayName(dayOfWeek);
+                            
+                            // Get a formatted date string
+                            const formattedDate = format(mealDate, "d");
                             
                             return (
                               <Button
                                 key={index}
                                 type="button"
-                                variant={selectedDate?.getDay() === dayOfWeek && 
-                                        Math.floor(index / 7) === Math.floor((selectedDate?.getDate() || 0) / 7) 
+                                variant={selectedDate && 
+                                        selectedDate.getDate() === mealDate.getDate() && 
+                                        selectedDate.getMonth() === mealDate.getMonth() 
                                         ? "default" : "outline"}
                                 onClick={() => {
-                                  const startDate = new Date(form.watch("startDate"));
-                                  const newDate = new Date(startDate);
-                                  newDate.setDate(startDate.getDate() + index);
-                                  setSelectedDate(newDate);
+                                  setSelectedDate(mealDate);
                                 }}
                                 className="flex-1"
                               >
-                                Day {index + 1}: {dayName}
+                                <span className="text-xs">Day {index + 1}</span>
+                                <span className="block text-xs">{dayName} {formattedDate}</span>
                               </Button>
                             );
                           })}
