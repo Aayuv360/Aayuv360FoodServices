@@ -31,8 +31,7 @@ function Router() {
           <Route path="/register" component={Register} />
           <Route path="/profile" component={Profile} />
           <Route path="/subscription" component={Subscription} />
-          <Route path="/checkout" component={Checkout} />
-          <Route path="/checkout/subscription" component={Checkout} />
+          <Route path="/checkout/:type" component={Checkout} />
           <Route path="/payment-success" component={PaymentSuccess} />
           {/* Fallback to 404 */}
           <Route component={NotFound} />

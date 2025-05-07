@@ -192,7 +192,8 @@ const Subscription = () => {
       }
       
       // Redirect to checkout with plan price and ID
-      window.location.href = `/checkout/subscription?amount=${plan.price / 100}&planId=${plan.id}`;
+      // The price should be in the original form (not divided)
+      window.location.href = `/checkout/subscription?amount=${plan.price}&planId=${plan.id}`;
       
       // Return a placeholder as we're redirecting away
       return { success: true };
