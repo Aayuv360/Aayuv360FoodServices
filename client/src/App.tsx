@@ -8,6 +8,7 @@ import { CartProvider } from "@/hooks/use-cart";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import TopNav from "@/components/layout/TopNav";
 import { AuthProtection } from "@/components/auth/AuthProtection";
 import Home from "@/pages/home";
 import Menu from "@/pages/menu";

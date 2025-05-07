@@ -160,7 +160,11 @@ export default function MealPlannerCalendar({ onSelectMeal }: MealPlannerCalenda
                         variant="ghost" 
                         size="sm" 
                         className="mt-1 w-full text-xs h-7"
-                        onClick={() => onSelectMeal && onSelectMeal(dayPlan.meal)}
+                        onClick={() => {
+                          if (dayPlan.meal && onSelectMeal) {
+                            onSelectMeal(dayPlan.meal);
+                          }
+                        }}
                       >
                         View Details
                       </Button>
