@@ -81,7 +81,7 @@ const Checkout = () => {
     },
   });
   
-  // Get order details on mount
+  // Initialize order details on mount
   useEffect(() => {
     if (!amount || !planId) {
       toast({

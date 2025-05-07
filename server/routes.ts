@@ -847,13 +847,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Create a new order
-      const order = await storage.createOrder({
+      const orderData = {
         userId: (req.user as any).id,
         totalPrice: totalAmount,
-        deliveryAddress: req.body.address || '',
-        deliveryTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Delivery tomorrow
-        status: 'confirmed' as any, // Auto-confirm since we're removing payment processing
-      });
+        deliveryAddress: req.body.address || ''
+      };
+      
+      // Add delivery time (optional in schema)
+      if (req.body.deliveryTime) {
+        (orderData as any).deliveryTime = new Date(req.body.deliveryTime);
+      } else {
+        (orderData as any).deliveryTime = new Date(Date.now() + 24 * 60 * 60 * 1000); // Delivery tomorrow
+      }
+      
+      const order = await storage.createOrder(orderData);
+      
+      // Update order status to confirmed
+      await storage.updateOrderStatus(order.id, 'confirmed');
       
       res.json({
         success: true,
