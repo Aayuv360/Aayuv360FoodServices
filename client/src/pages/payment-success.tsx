@@ -42,8 +42,7 @@ export default function PaymentSuccess() {
         // Now create the actual subscription
         const res = await apiRequest("POST", "/api/subscriptions", {
           ...subscriptionData,
-          isActive: true,
-          paymentStatus: "paid"
+          isActive: true
         });
         
         const subscription = await res.json();

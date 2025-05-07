@@ -831,7 +831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Check if user already has this subscription plan
         const userSubscriptions = await storage.getSubscriptionsByUserId(userId);
-        const existingSubscription = userSubscriptions.find(sub => sub.plan === planId && sub.isActive);
+        const existingSubscription = userSubscriptions.find(sub => sub.plan === planId && sub.isActive) as any;
         
         if (existingSubscription) {
           return res.status(400).json({ message: "You already have an active subscription for this plan" });
@@ -854,7 +854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           metadata: {
             userId: userId.toString(),
             planId: planId,
-            subscriptionId: existingSubscription?.id.toString() || "new",
+            subscriptionId: (existingSubscription ? existingSubscription.id.toString() : "new"),
           },
         });
         
@@ -906,17 +906,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Update existing subscription
               await storage.updateSubscription(parseInt(subscriptionId), {
                 isActive: true,
-                // Remove paymentStatus as it's not in our schema
               });
             } else if (planId) {
-              // Create new subscription
+              // Create new subscription with the plan ID as the plan value
               await storage.createSubscription({
                 userId: parseInt(userId),
-                planId: planId,
+                plan: planId as "basic" | "premium" | "family",
                 startDate: new Date(),
                 endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
                 isActive: true,
-                paymentStatus: "paid",
+                price: 0, // This will be updated with actual price
+                mealsPerMonth: 0, // This will be updated based on plan
               });
             }
             break;
