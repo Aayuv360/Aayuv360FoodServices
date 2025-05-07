@@ -201,14 +201,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           deliveryAddress = `${newAddress.name}, ${newAddress.address}, ${newAddress.city}, ${newAddress.state} - ${newAddress.pincode}, ${newAddress.phone}`;
         }
         
-        // Create order
+        // Create order - only sending required fields based on schema
         const orderData = {
           userId: user?.id,
-          totalAmount: total,
-          status: "confirmed",
+          totalPrice: total,
           deliveryAddress,
-          paymentMethod: paymentData.method,
-          paymentStatus: paymentData.method === "cod" ? "pending" : "paid"
+          status: "confirmed" // Adding status even though it's optional in schema
         };
         
         const response = await apiRequest("POST", "/api/orders", orderData);
