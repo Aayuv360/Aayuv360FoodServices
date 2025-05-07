@@ -852,7 +852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         totalPrice: totalAmount,
         deliveryAddress: req.body.address || '',
         deliveryTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Delivery tomorrow
-        status: 'confirmed', // Auto-confirm since we're removing payment processing
+        status: 'confirmed' as any, // Auto-confirm since we're removing payment processing
       });
       
       res.json({
