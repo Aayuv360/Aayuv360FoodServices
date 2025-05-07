@@ -13,9 +13,10 @@ import {
   Building,
   ChevronRight,
   ChevronLeft,
+  ShoppingCart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart, CartItem } from "@/hooks/use-cart";
+import { useCart } from "@/hooks/use-cart";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -88,21 +89,12 @@ const userAddresses = [
   },
 ];
 
-// Extended Meal type with curry option
-interface ExtendedMeal extends Meal {
-  curryOption?: {
-    id: string;
-    name: string;
-    priceAdjustment: number;
-  };
-  originalName?: string;
-  imageUrl?: string;
-}
-
-// Extended CartItem with the extended meal
-interface ExtendedCartItem extends Omit<CartItem, 'meal'> {
-  meal?: ExtendedMeal;
-}
+// Type definitions for curry option
+type CurryOption = {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+};
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [loading, setLoading] = useState(false);
@@ -845,22 +837,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   );
 };
 
-// Fallback component for cart icon
-const ShoppingCart = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    className="w-full h-full"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-    />
-  </svg>
-);
+// Using ShoppingCart from lucide-react now
 
 export default CartSidebar;
