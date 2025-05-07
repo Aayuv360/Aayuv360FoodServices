@@ -182,6 +182,13 @@ const Subscription = () => {
         customMealSelections: data.customMealSelections || []
       };
       
+      // Display success message before redirecting
+      toast({
+        title: "Subscription Successful!",
+        description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
+        variant: "default",
+      });
+      
       // Instead of creating a subscription immediately, we'll direct to the payment page
       // Store the subscription data temporarily (could use localStorage)
       sessionStorage.setItem('pendingSubscription', JSON.stringify(payload));
@@ -200,7 +207,10 @@ const Subscription = () => {
         subscriptionType: data.subscriptionType
       });
       
-      navigate(`/checkout/${encodeURIComponent("subscription")}?amount=${plan.price}&planId=${plan.id}`);
+      // Add a slight delay to allow the toast to be seen before redirecting
+      setTimeout(() => {
+        navigate(`/checkout/${encodeURIComponent("subscription")}?amount=${plan.price}&planId=${plan.id}`);
+      }, 1500);
       
       // Return a placeholder as we're redirecting away
       return { success: true };
@@ -324,6 +334,12 @@ const Subscription = () => {
       
       values.customMealSelections = mealSelections;
     }
+    
+    // Show toast notification on submit
+    toast({
+      title: "Processing subscription...",
+      description: "Your subscription request is being processed.",
+    });
     
     // Submit the form
     subscriptionMutation.mutate(values);
@@ -1025,7 +1041,7 @@ const Subscription = () => {
                   ) : null}
                   {subscriptionMutation.isPending
                     ? "Processing..."
-                    : "Complete Subscription"}
+                    : "Subscribe"}
                 </Button>
               </div>
             </div>
