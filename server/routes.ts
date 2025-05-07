@@ -15,8 +15,22 @@ import {
   insertSubscriptionSchema,
   insertUserPreferencesSchema, 
   insertReviewSchema,
-  insertCustomMealPlanSchema
+  insertCustomMealPlanSchema,
+  Meal,
+  CartItem
 } from "@shared/schema";
+
+// Augmented CartItem interface for server use that includes meal data
+interface CartItemWithMeal extends CartItem {
+  meal?: Meal & {
+    curryOption?: {
+      id: string;
+      name: string;
+      priceAdjustment: number;
+    };
+    originalName?: string;
+  };
+}
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "millet-meal-service-secret";
 const MemoryStoreInstance = MemoryStore(session);
@@ -417,8 +431,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error(`Meal with id ${item.mealId} not found`);
           }
           
+          // Cast item to CartItemWithMeal to handle the meal property correctly
+          const cartItem = item as unknown as CartItemWithMeal;
+          
           // Get meal from cart item if available, otherwise use the meal from storage
-          const mealData = item.meal || meal;
+          const mealData = cartItem.meal || meal;
           
           // Check if the meal in cart has curry options (using optional chaining)
           const mealPrice = mealData.price || meal.price;
