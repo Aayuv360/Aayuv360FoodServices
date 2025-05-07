@@ -6,6 +6,7 @@ import MemoryStore from "memorystore";
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { z } from "zod";
+import Stripe from "stripe";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
@@ -16,6 +17,15 @@ import {
   insertReviewSchema,
   insertCustomMealPlanSchema
 } from "@shared/schema";
+
+// Initialize Stripe with the secret key
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.warn('Warning: Missing Stripe secret key. Stripe payment features will not work.');
+}
+
+const stripe = process.env.STRIPE_SECRET_KEY 
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2023-10-16" as any })
+  : null;
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "millet-meal-service-secret";
 const MemoryStoreInstance = MemoryStore(session);
@@ -754,6 +764,189 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching locations" });
     }
   });
+  
+  // Stripe payment routes
+  if (stripe) {
+    // Create a payment intent for one-time payments
+    app.post("/api/create-payment-intent", isAuthenticated, async (req, res) => {
+      try {
+        const { amount, planId } = req.body;
+        
+        if (!amount) {
+          return res.status(400).json({ message: "Amount is required" });
+        }
+        
+        // Convert amount to cents (Stripe uses smallest currency unit)
+        const amountInCents = Math.round(amount * 100);
+        
+        // Create a PaymentIntent with the order amount and currency
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amountInCents,
+          currency: "inr",
+          payment_method_types: ["card"],
+          metadata: {
+            userId: (req.user as any).id.toString(),
+            planId: planId || "",
+          },
+        });
+        
+        // Calculate tax
+        const taxAmount = Math.round(amountInCents * 0.05); // 5% tax
+        const totalAmount = amountInCents + taxAmount;
+        
+        // Construct order details
+        const orderDetails = {
+          amount: amountInCents,
+          tax: taxAmount,
+          total: totalAmount,
+        };
+        
+        if (planId) {
+          // If it's a subscription, add the plan details
+          const plans = await storage.getSubscription(parseInt(planId));
+          if (plans) {
+            orderDetails.planName = plans.name;
+          }
+        }
+        
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          orderDetails,
+        });
+      } catch (error: any) {
+        console.error("Error creating payment intent:", error);
+        res.status(500).json({ message: error.message });
+      }
+    });
+    
+    // Create or get subscription for subscription payments
+    app.post("/api/get-or-create-subscription", isAuthenticated, async (req, res) => {
+      try {
+        const { planId } = req.body;
+        const userId = (req.user as any).id;
+        
+        if (!planId) {
+          return res.status(400).json({ message: "Plan ID is required" });
+        }
+        
+        // Check if user already has this subscription plan
+        const userSubscriptions = await storage.getSubscriptionsByUserId(userId);
+        const existingSubscription = userSubscriptions.find(sub => sub.planId === planId && sub.isActive);
+        
+        if (existingSubscription) {
+          return res.status(400).json({ message: "You already have an active subscription for this plan" });
+        }
+        
+        // Get subscription plan details
+        const subscriptionPlan = await storage.getSubscription(parseInt(planId));
+        if (!subscriptionPlan) {
+          return res.status(404).json({ message: "Subscription plan not found" });
+        }
+        
+        // Convert to cents (Stripe uses smallest currency unit)
+        const amountInCents = Math.round(subscriptionPlan.price * 100);
+        
+        // Create a PaymentIntent for the initial payment
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount: amountInCents,
+          currency: "inr",
+          payment_method_types: ["card"],
+          metadata: {
+            userId: userId.toString(),
+            planId: planId,
+            subscriptionId: existingSubscription?.id.toString() || "new",
+          },
+        });
+        
+        // Calculate tax
+        const taxAmount = Math.round(amountInCents * 0.05); // 5% tax
+        const totalAmount = amountInCents + taxAmount;
+        
+        // Construct order details
+        const orderDetails = {
+          amount: amountInCents,
+          tax: taxAmount,
+          total: totalAmount,
+          planName: subscriptionPlan.name,
+        };
+        
+        res.json({
+          clientSecret: paymentIntent.client_secret,
+          orderDetails,
+        });
+      } catch (error: any) {
+        console.error("Error with subscription payment:", error);
+        res.status(500).json({ message: error.message });
+      }
+    });
+    
+    // Webhook to handle Stripe events (payment succeeded, failed, etc.)
+    app.post("/api/stripe-webhook", async (req, res) => {
+      const signature = req.headers["stripe-signature"] as string;
+      
+      if (!process.env.STRIPE_WEBHOOK_SECRET) {
+        return res.status(400).json({ message: "Stripe webhook secret is not configured" });
+      }
+      
+      try {
+        const event = stripe.webhooks.constructEvent(
+          req.body,
+          signature,
+          process.env.STRIPE_WEBHOOK_SECRET
+        );
+        
+        // Handle the event
+        switch (event.type) {
+          case "payment_intent.succeeded":
+            // Payment was successful, update subscription or order status
+            const paymentIntent = event.data.object as Stripe.PaymentIntent;
+            const { userId, planId, subscriptionId } = paymentIntent.metadata;
+            
+            if (subscriptionId && subscriptionId !== "new") {
+              // Update existing subscription
+              await storage.updateSubscription(parseInt(subscriptionId), {
+                isActive: true,
+                paymentStatus: "paid",
+              });
+            } else if (planId) {
+              // Create new subscription
+              await storage.createSubscription({
+                userId: parseInt(userId),
+                planId: planId,
+                startDate: new Date(),
+                endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
+                isActive: true,
+                paymentStatus: "paid",
+              });
+            }
+            break;
+            
+          case "payment_intent.payment_failed":
+            // Payment failed, update subscription or order status
+            const failedPayment = event.data.object as Stripe.PaymentIntent;
+            console.log("Payment failed:", failedPayment.id);
+            break;
+            
+          default:
+            console.log(`Unhandled event type ${event.type}`);
+        }
+        
+        res.json({ received: true });
+      } catch (err: any) {
+        console.error("Webhook error:", err.message);
+        return res.status(400).json({ message: `Webhook Error: ${err.message}` });
+      }
+    });
+  } else {
+    // Stripe is not configured, return error responses
+    app.post("/api/create-payment-intent", (req, res) => {
+      res.status(503).json({ message: "Stripe is not configured. Please set the STRIPE_SECRET_KEY environment variable." });
+    });
+    
+    app.post("/api/get-or-create-subscription", (req, res) => {
+      res.status(503).json({ message: "Stripe is not configured. Please set the STRIPE_SECRET_KEY environment variable." });
+    });
+  }
 
   const httpServer = createServer(app);
   return httpServer;
