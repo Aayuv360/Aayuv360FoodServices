@@ -430,10 +430,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/subscriptions", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const subscriptionData = insertSubscriptionSchema.parse({
-        ...req.body,
-        userId,
-      });
+      
+      // Parse the startDate string to a Date object if it's a string
+      let requestData = { ...req.body, userId };
+      if (requestData.startDate && typeof requestData.startDate === 'string') {
+        requestData.startDate = new Date(requestData.startDate);
+      }
+      
+      const subscriptionData = insertSubscriptionSchema.parse(requestData);
       
       const subscription = await storage.createSubscription(subscriptionData);
       res.status(201).json(subscription);
@@ -441,6 +445,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (err instanceof z.ZodError) {
         res.status(400).json({ message: "Validation error", errors: err.errors });
       } else {
+        console.error("Subscription error:", err);
         res.status(500).json({ message: "Error creating subscription" });
       }
     }

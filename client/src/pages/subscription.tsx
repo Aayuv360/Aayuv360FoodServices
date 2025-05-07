@@ -112,7 +112,7 @@ const Subscription = () => {
       const payload = {
         plan: data.plan,
         subscriptionType: data.subscriptionType,
-        startDate: data.startDate.toISOString(),
+        startDate: data.startDate.toISOString(), // Convert to ISO string for consistency
         mealsPerMonth: plan?.mealsPerMonth || 0,
         price: plan?.price || 0,
         isActive: true,
