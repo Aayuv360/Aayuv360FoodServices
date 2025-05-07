@@ -1,10 +1,15 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "./use-auth";
 import { useToast } from "./use-toast";
 import { Meal } from "@shared/schema";
 
-// Define the CartItem type
 interface CartItem {
   id: number;
   userId: number;
@@ -13,7 +18,6 @@ interface CartItem {
   meal?: Meal;
 }
 
-// Define the cart context type
 interface CartContextType {
   cartItems: CartItem[];
   loading: boolean;
@@ -23,17 +27,14 @@ interface CartContextType {
   clearCart: () => Promise<void>;
 }
 
-// Create the cart context
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// CartProvider component
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Fetch cart items when user changes
   useEffect(() => {
     const fetchCartItems = async () => {
       if (user) {
@@ -49,7 +50,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
           setLoading(false);
         }
       } else {
-        // Clear cart when user logs out
         setCartItems([]);
       }
     };
@@ -75,20 +75,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         quantity,
       });
       const newCartItem = await res.json();
-      
-      // Update local cart state
-      // Check if item already exists in cart
+
       const existingItemIndex = cartItems.findIndex(
-        (item) => item.mealId === meal.id
+        (item) => item.mealId === meal.id,
       );
-      
+
       if (existingItemIndex >= 0) {
-        // Update existing item
         const updatedItems = [...cartItems];
         updatedItems[existingItemIndex] = newCartItem;
         setCartItems(updatedItems);
       } else {
-        // Add new item
         setCartItems([...cartItems, newCartItem]);
       }
     } catch (error) {
@@ -103,7 +99,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Update cart item quantity
   const updateCartItem = async (id: number, quantity: number) => {
     if (!user) return;
 
@@ -111,10 +106,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const res = await apiRequest("PUT", `/api/cart/${id}`, { quantity });
       const updatedItem = await res.json();
-      
-      // Update local cart state
+
       setCartItems(
-        cartItems.map((item) => (item.id === id ? updatedItem : item))
+        cartItems.map((item) => (item.id === id ? updatedItem : item)),
       );
     } catch (error) {
       console.error("Error updating cart item:", error);
@@ -128,15 +122,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Remove item from cart
   const removeCartItem = async (id: number) => {
     if (!user) return;
 
     try {
       setLoading(true);
       await apiRequest("DELETE", `/api/cart/${id}`);
-      
-      // Update local cart state
+
       setCartItems(cartItems.filter((item) => item.id !== id));
     } catch (error) {
       console.error("Error removing cart item:", error);
@@ -150,15 +142,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Clear cart
   const clearCart = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
       await apiRequest("DELETE", "/api/cart");
-      
-      // Update local cart state
+
       setCartItems([]);
     } catch (error) {
       console.error("Error clearing cart:", error);
@@ -188,7 +178,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook to use the cart context
 export function useCart() {
   const context = useContext(CartContext);
   if (context === undefined) {

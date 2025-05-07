@@ -21,6 +21,10 @@ import { useToast } from "@/hooks/use-toast";
 interface Location {
   id: number;
   name: string;
+  pincode: string;
+  lat: number;
+  lng: number;
+  available: boolean;
 }
 
 // Type definition for meal
@@ -90,6 +94,28 @@ const Header = () => {
     setCartOpen(!cartOpen);
   };
 
+  // Fetch locations by coordinates
+  const fetchLocationsByCoordinates = async (lat: number, lng: number) => {
+    try {
+      const params = new URLSearchParams();
+      params.append('lat', lat.toString());
+      params.append('lng', lng.toString());
+      params.append('radius', '10'); // 10km radius
+      
+      const response = await fetch(`/api/locations?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch nearby locations');
+      }
+      
+      const nearbyLocations: Location[] = await response.json();
+      return nearbyLocations;
+    } catch (error) {
+      console.error("Error fetching locations by coordinates:", error);
+      return [];
+    }
+  };
+
   const fetchCurrentLocation = () => {
     if (!navigator.geolocation) {
       toast({
@@ -106,18 +132,27 @@ const Header = () => {
     });
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        // In a real app we'd use these coordinates to find the nearest location
-        // For now we'll just default to first Hyderabad location
-        if (locations.length > 0) {
-          setUserLocation(locations[0].name);
+      async (position) => {
+        console.log(position); // For debugging
+        
+        const { latitude, longitude } = position.coords;
+        const nearbyLocations = await fetchLocationsByCoordinates(latitude, longitude);
+        
+        if (nearbyLocations.length > 0) {
+          // Use the closest location (first in the returned list)
+          const closestLocation = nearbyLocations[0];
+          setUserLocation(`${closestLocation.name} - ${closestLocation.pincode}`);
+          toast({
+            title: "Location Set",
+            description: `Your location is set to ${closestLocation.name}`,
+          });
         } else {
-          setUserLocation("Hyderabad, Gachibowli");
+          toast({
+            title: "No Delivery Available",
+            description: "Sorry, we don't deliver to your current location yet",
+            variant: "destructive",
+          });
         }
-        toast({
-          title: "Location Set",
-          description: "Your location has been updated",
-        });
       },
       (error) => {
         toast({
@@ -126,20 +161,25 @@ const Header = () => {
           variant: "destructive",
         });
       },
+      {
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
     );
   };
 
   const selectLocation = (location: Location) => {
-    setUserLocation(location.name);
+    setUserLocation(`${location.name} - ${location.pincode}`);
     setLocationQuery("");
   };
   
-  // Handle search submission (e.g., redirect to search results page)
+  // Handle search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim().length > 0) {
-      // In a real app, we might redirect to a search results page
-      setShowSearchResults(true);
+      // Redirect to menu page with search query
+      window.location.href = `/menu?search=${encodeURIComponent(searchQuery)}`;
     }
   };
   
@@ -203,8 +243,13 @@ const Header = () => {
                         onClick={() => selectLocation(loc)}
                         className="cursor-pointer"
                       >
-                        <MapPin className="h-4 w-4 mr-2 text-primary" />
-                        {loc.name}
+                        <div className="flex items-start">
+                          <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0 mt-0.5" />
+                          <div>
+                            <div className="font-medium">{loc.name}</div>
+                            <div className="text-xs text-muted-foreground">PIN: {loc.pincode}</div>
+                          </div>
+                        </div>
                       </DropdownMenuItem>
                     ))
                   ) : (

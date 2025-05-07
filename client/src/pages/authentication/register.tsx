@@ -18,10 +18,11 @@ import { useToast } from "@/hooks/use-toast";
 import { insertUserSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
-// Register form schema with additional validation
 const registerSchema = insertUserSchema
   .extend({
-    confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .min(6, "Password must be at least 6 characters"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -35,7 +36,6 @@ const Register = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
 
-  // Default form values
   const defaultValues: RegisterFormValues = {
     username: "",
     password: "",
@@ -46,33 +46,30 @@ const Register = () => {
     address: "",
   };
 
-  // Form setup
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
     defaultValues,
   });
 
-  // Form submission handler
   const onSubmit = async (values: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      // Remove confirmPassword before sending to API
       const { confirmPassword, ...userData } = values;
-      
-      // Send registration request
+
       const res = await apiRequest("POST", "/api/auth/register", userData);
       const data = await res.json();
-      
+      console.log("data", data);
       toast({
         title: "Registration successful",
         description: "Your account has been created. Please login.",
       });
-      
+
       navigate("/login");
     } catch (error: any) {
       toast({
         title: "Registration failed",
-        description: error.message || "There was an error creating your account",
+        description:
+          error.message || "There was an error creating your account",
         variant: "destructive",
       });
     } finally {
@@ -84,9 +81,11 @@ const Register = () => {
     <div className="min-h-screen bg-neutral-light py-12 px-4 flex items-center justify-center">
       <div className="max-w-md w-full bg-white p-8 rounded-lg shadow-md">
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-neutral-dark">Create Account</h1>
+          <h1 className="text-3xl font-bold text-neutral-dark">
+            Create Account
+          </h1>
           <p className="text-gray-600 mt-2">
-            Sign up for MealMillet subscription service
+            Sign up for Aayuv subscription service
           </p>
         </div>
 
@@ -113,7 +112,11 @@ const Register = () => {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="Enter your email" {...field} />
+                    <Input
+                      type="email"
+                      placeholder="Enter your email"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -142,7 +145,11 @@ const Register = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -156,7 +163,11 @@ const Register = () => {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -171,21 +182,11 @@ const Register = () => {
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter your phone number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="address"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Delivery Address</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Enter your address" {...field} />
+                    <Input
+                      placeholder="Enter your phone number"
+                      {...field}
+                      value={field?.value ?? ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

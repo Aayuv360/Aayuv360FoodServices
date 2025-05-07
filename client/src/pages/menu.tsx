@@ -6,15 +6,51 @@ import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
 import { format } from "date-fns";
 import { Meal } from "@shared/schema";
+import { useLocation } from "wouter";
 
 const Menu = () => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [location] = useLocation();
   const today = format(new Date(), "MMMM d, yyyy");
 
-  // Fetch all meals
+  // Parse query parameters from URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const searchParam = params.get("search");
+    if (searchParam) {
+      setSearchQuery(searchParam);
+    }
+    
+    const mealId = params.get("id");
+    if (mealId) {
+      // If a specific meal ID is provided, we could scroll to it or highlight it
+      // For now we'll just log it
+      console.log("Viewing meal ID:", mealId);
+    }
+    
+    const filterParam = params.get("filter");
+    if (filterParam) {
+      setFilter(filterParam);
+    }
+  }, [location]);
+
+  // Fetch meals with search query if provided
   const { data: meals, isLoading, error } = useQuery<Meal[]>({
-    queryKey: ["/api/meals"],
+    queryKey: ["/api/meals", searchQuery],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) {
+        params.append("query", searchQuery);
+      }
+      const response = await fetch(`/api/meals${params.toString() ? `?${params.toString()}` : ''}`);
+      
+      if (!response.ok) {
+        throw new Error("Failed to fetch meals");
+      }
+      
+      return response.json();
+    },
   });
 
   // Filter meals based on selected filter and search query

@@ -11,42 +11,53 @@ const TodaysMenu = () => {
   const [filter, setFilter] = useState("all");
   const today = format(new Date(), "MMMM d, yyyy");
 
-  // Fetch all meals
-  const { data: meals, isLoading, error } = useQuery<Meal[]>({
+  const {
+    data: meals,
+    isLoading,
+    error,
+  } = useQuery<Meal[]>({
     queryKey: ["/api/meals"],
   });
 
-  // Filter meals based on selected filter
   const filteredMeals = meals
     ? filter === "all"
       ? meals
       : meals.filter((meal) => {
-          if (filter === "breakfast" || filter === "lunch" || filter === "dinner") {
+          if (
+            filter === "breakfast" ||
+            filter === "lunch" ||
+            filter === "dinner"
+          ) {
             return meal.mealType === filter;
           }
           return meal.dietaryPreferences?.includes(filter as any);
         })
     : [];
 
-  // Only show first 6 meals on homepage
   const displayedMeals = filteredMeals.slice(0, 6);
 
   return (
-    <section id="menu" className="py-16 bg-neutral-light">
+    <section id="menu" className="bg-neutral-light">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-3xl font-bold">Today's Menu</h2>
           <div className="flex items-center space-x-2">
             <span className="text-gray-600">{today}</span>
-            <Button variant="outline" size="icon" className="rounded-full bg-white">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full bg-white"
+            >
               <Calendar className="h-5 w-5 text-primary" />
             </Button>
           </div>
         </div>
 
-        {/* Menu Filters */}
         <div className="mb-8 flex flex-wrap gap-2">
-          <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
+          <FilterButton
+            active={filter === "all"}
+            onClick={() => setFilter("all")}
+          >
             All Meals
           </FilterButton>
           <FilterButton
@@ -55,10 +66,16 @@ const TodaysMenu = () => {
           >
             Breakfast
           </FilterButton>
-          <FilterButton active={filter === "lunch"} onClick={() => setFilter("lunch")}>
+          <FilterButton
+            active={filter === "lunch"}
+            onClick={() => setFilter("lunch")}
+          >
             Lunch
           </FilterButton>
-          <FilterButton active={filter === "dinner"} onClick={() => setFilter("dinner")}>
+          <FilterButton
+            active={filter === "dinner"}
+            onClick={() => setFilter("dinner")}
+          >
             Dinner
           </FilterButton>
           <FilterButton
@@ -75,7 +92,6 @@ const TodaysMenu = () => {
           </FilterButton>
         </div>
 
-        {/* Menu Items Grid */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -94,7 +110,6 @@ const TodaysMenu = () => {
           </div>
         )}
 
-        {/* See More Button */}
         <div className="text-center mt-8">
           <Button
             asChild

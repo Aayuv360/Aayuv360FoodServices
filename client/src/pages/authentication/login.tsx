@@ -31,19 +31,16 @@ const Login = () => {
   const { toast } = useToast();
   const { login } = useAuth();
 
-  // Default form values
   const defaultValues: LoginFormValues = {
     username: "",
     password: "",
   };
 
-  // Form setup
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues,
   });
 
-  // Form submission handler
   const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
     try {
@@ -70,7 +67,7 @@ const Login = () => {
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-neutral-dark">Welcome Back</h1>
           <p className="text-gray-600 mt-2">
-            Login to access your MealMillet subscription
+            Login to access your Aayuv subscription
           </p>
         </div>
 

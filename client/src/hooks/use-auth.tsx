@@ -1,8 +1,13 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "./use-toast";
 
-// Define the User type
 type User = {
   id: number;
   username: string;
@@ -13,7 +18,6 @@ type User = {
   role: string;
 };
 
-// Define the auth context type
 interface AuthContextType {
   user: User | null;
   loading: boolean;
@@ -22,16 +26,13 @@ interface AuthContextType {
   updateUser: (newUserData: Partial<User>) => void;
 }
 
-// Create the auth context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// AuthProvider component
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Function to fetch the current user
   const fetchCurrentUser = async () => {
     try {
       setLoading(true);
@@ -39,25 +40,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const userData = await res.json();
       setUser(userData);
     } catch (error) {
-      // User is not authenticated, clear user state
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // On mount, check if the user is logged in
   useEffect(() => {
     fetchCurrentUser();
   }, []);
 
-  // Login function
   const login = async (username: string, password: string) => {
     try {
-      const res = await apiRequest("POST", "/api/auth/login", { username, password });
+      const res = await apiRequest("POST", "/api/auth/login", {
+        username,
+        password,
+      });
       const userData = await res.json();
       setUser(userData);
-      // Invalidate queries that depend on auth state
       queryClient.invalidateQueries();
     } catch (error: any) {
       console.error("Login error:", error);
@@ -65,12 +65,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Logout function
   const logout = async () => {
     try {
       await apiRequest("POST", "/api/auth/logout");
       setUser(null);
-      // Invalidate queries that depend on auth state
       queryClient.invalidateQueries();
       toast({
         title: "Logged out",
@@ -86,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Update user data locally (used after profile updates)
   const updateUser = (newUserData: Partial<User>) => {
     if (user) {
       setUser({ ...user, ...newUserData });
@@ -108,7 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Hook to use the auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

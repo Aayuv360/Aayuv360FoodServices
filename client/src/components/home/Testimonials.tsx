@@ -42,18 +42,22 @@ const Testimonials = () => {
   ];
 
   return (
-    <section className="py-16 bg-neutral-light">
+    <section className="bg-neutral-light">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">What Our Customers Say</h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Hear from our satisfied subscribers who have transformed their eating habits.
+            Hear from our satisfied subscribers who have transformed their
+            eating habits.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {testimonials.map((testimonial) => (
-            <div key={testimonial.id} className="bg-white p-6 rounded-lg card-shadow">
+            <div
+              key={testimonial.id}
+              className="bg-white p-6 rounded-lg card-shadow"
+            >
               <div className="flex items-center mb-4">
                 <img
                   src={testimonial.image}
@@ -61,7 +65,9 @@ const Testimonials = () => {
                   className="w-12 h-12 rounded-full mr-4"
                 />
                 <div>
-                  <h4 className="font-accent font-semibold">{testimonial.name}</h4>
+                  <h4 className="font-accent font-semibold">
+                    {testimonial.name}
+                  </h4>
                   <p className="text-sm text-gray-500">
                     {testimonial.plan} · {testimonial.duration}
                   </p>

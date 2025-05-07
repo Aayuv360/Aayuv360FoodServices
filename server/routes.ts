@@ -695,27 +695,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Location API
   app.get("/api/locations", async (req, res) => {
     try {
-      const { query } = req.query;
+      const { query, lat, lng, radius = 10 } = req.query; // radius in km
+      
       const defaultLocations = [
-        { id: 1, name: "Hyderabad, Gachibowli" },
-        { id: 2, name: "Hyderabad, Madhapur" },
-        { id: 3, name: "Hyderabad, Hitech City" },
-        { id: 4, name: "Hyderabad, Jubilee Hills" },
-        { id: 5, name: "Hyderabad, Banjara Hills" },
-        { id: 6, name: "Hyderabad, Secunderabad" },
-        { id: 7, name: "Hyderabad, Kukatpally" },
-        { id: 8, name: "Hyderabad, Ameerpet" }
+        { id: 1, name: "Hyderabad, Gachibowli", pincode: "500032", lat: 17.4401, lng: 78.3489, available: true },
+        { id: 2, name: "Hyderabad, Madhapur", pincode: "500081", lat: 17.4486, lng: 78.3908, available: true },
+        { id: 3, name: "Hyderabad, Hitech City", pincode: "500084", lat: 17.4435, lng: 78.3772, available: true },
+        { id: 4, name: "Hyderabad, Jubilee Hills", pincode: "500033", lat: 17.4275, lng: 78.4069, available: true },
+        { id: 5, name: "Hyderabad, Banjara Hills", pincode: "500034", lat: 17.4138, lng: 78.4369, available: true },
+        { id: 6, name: "Hyderabad, Secunderabad", pincode: "500003", lat: 17.4399, lng: 78.4983, available: false },
+        { id: 7, name: "Hyderabad, Kukatpally", pincode: "500072", lat: 17.4849, lng: 78.4138, available: true },
+        { id: 8, name: "Hyderabad, Ameerpet", pincode: "500016", lat: 17.4374, lng: 78.4487, available: true },
+        { id: 9, name: "Hyderabad, Kokapet", pincode: "500075", lat: 17.3889, lng: 78.3315, available: true },
+        { id: 10, name: "Hyderabad, Kondapur", pincode: "500084", lat: 17.4606, lng: 78.3664, available: true },
+        { id: 11, name: "Hyderabad, Miyapur", pincode: "500049", lat: 17.4979, lng: 78.3595, available: false },
+        { id: 12, name: "Hyderabad, Manikonda", pincode: "500089", lat: 17.4005, lng: 78.3752, available: true }
       ];
       
+      let filteredLocations = [...defaultLocations];
+      
+      // Filter by search query if provided
       if (query && typeof query === 'string') {
         const searchQuery = query.toLowerCase();
-        const filteredLocations = defaultLocations.filter(location => 
-          location.name.toLowerCase().includes(searchQuery)
+        filteredLocations = filteredLocations.filter(location => 
+          location.name.toLowerCase().includes(searchQuery) || 
+          location.pincode.includes(searchQuery)
         );
-        return res.json(filteredLocations);
       }
       
-      res.json(defaultLocations);
+      // Filter by coordinates and radius if provided
+      if (lat && lng && typeof lat === 'string' && typeof lng === 'string') {
+        const userLat = parseFloat(lat);
+        const userLng = parseFloat(lng);
+        const radiusKm = typeof radius === 'string' ? parseFloat(radius) : 10;
+        
+        // Only include locations within the specified radius
+        filteredLocations = filteredLocations.filter(location => {
+          // Calculate distance using Haversine formula
+          const R = 6371; // Earth radius in km
+          const dLat = (location.lat - userLat) * Math.PI / 180;
+          const dLon = (location.lng - userLng) * Math.PI / 180;
+          const a = 
+            Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(userLat * Math.PI / 180) * Math.cos(location.lat * Math.PI / 180) * 
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+          const distance = R * c; // Distance in km
+          
+          return distance <= radiusKm;
+        });
+      }
+      
+      // Only return available locations
+      filteredLocations = filteredLocations.filter(location => location.available);
+      
+      res.json(filteredLocations);
     } catch (err) {
       res.status(500).json({ message: "Error fetching locations" });
     }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React from "react";
 import { useLocation } from "wouter";
 import { CheckIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,22 +65,21 @@ const SubscriptionPlans = () => {
   ];
 
   const handleSelectPlan = (plan: Plan) => {
-    if (!user) {
-      toast({
-        title: "Please login",
-        description: "You need to be logged in to select a subscription plan",
-        variant: "destructive",
-      });
-      navigate("/login");
-      return;
-    }
+    // if (!user) {
+    //   toast({
+    //     title: "Please login",
+    //     description: "You need to be logged in to select a subscription plan",
+    //     variant: "destructive",
+    //   });
+    //   navigate("/login");
+    //   return;
+    // }
 
-    // Navigate to subscription page with selected plan
     navigate(`/subscription?plan=${plan.id}`);
   };
 
   return (
-    <section id="plans" className="py-16 bg-white">
+    <section id="plans" className="bg-white">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Subscription Plans</h2>
@@ -114,8 +113,8 @@ const SubscriptionPlans = () => {
                   {plan.id === "basic"
                     ? "Perfect for individuals looking to try our millet meals."
                     : plan.id === "premium"
-                    ? "Ideal for regular healthy eating with greater variety."
-                    : "Complete solution for families seeking healthy millet meals."}
+                      ? "Ideal for regular healthy eating with greater variety."
+                      : "Complete solution for families seeking healthy millet meals."}
                 </p>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, index) => (
