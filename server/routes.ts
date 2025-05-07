@@ -829,14 +829,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(400).json({ message: "Plan ID is required" });
         }
         
-        // Check if user already has this subscription plan
-        // For now, we'll skip this check and always create a new payment intent
-        // In a production app, you would want to check for existing active subscriptions
+        // We're always creating a new subscription payment rather than checking for existing ones
+        // In a production app, you'd check for existing active subscriptions
         // const userSubscriptions = await storage.getSubscriptionsByUserId(userId);
-        // const existingSubscription = userSubscriptions.find(sub => sub.plan === planId && sub.isActive) as any;
-        
-        // Temporarily set to null since we'll create a new one
-        const existingSubscription = null;
+        // and prevent duplicate subscriptions
         
         // Get subscription plan details from the SUBSCRIPTION_PLANS constant
         // This is a workaround since we're using constant plans instead of database records
