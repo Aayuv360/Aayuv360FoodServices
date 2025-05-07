@@ -54,7 +54,8 @@ const addressSchema = z.object({
 
 // Subscription form schema
 const subscriptionSchema = z.object({
-  plan: z.enum(["basic-veg", "premium-veg", "family-veg", "basic-nonveg", "premium-nonveg", "family-nonveg"]),
+  plan: z.enum(["basic", "premium", "family"]),
+  dietaryPreference: z.enum(["vegetarian", "veg-with-egg", "non-vegetarian"]),
   subscriptionType: z.enum(["default", "customized"]).default("default"),
   startDate: z.date({
     required_error: "Please select a start date",

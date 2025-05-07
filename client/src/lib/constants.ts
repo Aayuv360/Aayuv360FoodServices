@@ -1,15 +1,14 @@
 // Subscription plans with pricing and features
 export const SUBSCRIPTION_PLANS = [
-  // Vegetarian options
   {
-    id: "basic-veg",
-    name: "Basic Plan (Veg)",
+    id: "basic",
+    name: "Basic Plan (7 Days)",
     price: 299900, // ₹2,999
-    description: "Perfect for individuals looking to try our vegetarian millet meals.",
-    mealsPerMonth: 12,
-    type: "vegetarian",
+    description: "Perfect for individuals looking to try our millet meals for a week.",
+    mealsPerMonth: 7,
+    duration: 7, // 7 days (1 week)
     features: [
-      { text: "12 vegetarian meals per month", included: true },
+      { text: "7 meals for one week", included: true },
       { text: "Flexible delivery schedule", included: true },
       { text: "Basic customization options", included: true },
       { text: "Nutrition consultation", included: false },
@@ -25,14 +24,14 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    id: "premium-veg",
-    name: "Premium Plan (Veg)",
+    id: "premium",
+    name: "Premium Plan (14 Days)",
     price: 499900, // ₹4,999
-    description: "Ideal for regular healthy eating with greater vegetarian variety.",
-    mealsPerMonth: 20,
-    type: "vegetarian",
+    description: "Experience more variety with our premium millet meal plan for two weeks.",
+    mealsPerMonth: 14,
+    duration: 14, // 14 days (2 weeks)
     features: [
-      { text: "20 vegetarian meals per month", included: true },
+      { text: "14 meals for two weeks", included: true },
       { text: "Priority delivery slots", included: true },
       { text: "Full customization options", included: true },
       { text: "Monthly nutrition consultation", included: true },
@@ -48,17 +47,17 @@ export const SUBSCRIPTION_PLANS = [
     }
   },
   {
-    id: "family-veg",
-    name: "Family Plan (Veg)",
+    id: "family",
+    name: "Family Plan (30 Days)",
     price: 899900, // ₹8,999
-    description: "Complete vegetarian solution for families seeking healthy millet meals.",
-    mealsPerMonth: 40,
-    type: "vegetarian",
+    description: "Feed the whole family with our millet meals for a full month.",
+    mealsPerMonth: 30,
+    duration: 30, // 30 days (1 month)
     features: [
-      { text: "40 vegetarian meals per month", included: true },
+      { text: "30 meals for one month", included: true },
       { text: "Preferred delivery window", included: true },
-      { text: "Full customization with family portions", included: true },
-      { text: "Bi-weekly nutrition consultation", included: true },
+      { text: "Full customization options", included: true },
+      { text: "Family nutrition consultation", included: true },
     ],
     weeklyMeals: {
       monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Tomato Chutney"] },
@@ -69,78 +68,7 @@ export const SUBSCRIPTION_PLANS = [
       saturday: { main: "Pearl Millet Khichdi", sides: ["Kadhi", "Papad"] },
       sunday: { main: "Kodo Millet Bisibelebath", sides: ["Raita", "Pickle"] }
     }
-  },
-  
-  // Non-vegetarian options
-  {
-    id: "basic-nonveg",
-    name: "Basic Plan (Non-Veg)",
-    price: 349900, // ₹3,499
-    description: "Perfect for individuals looking to try our non-vegetarian millet meals.",
-    mealsPerMonth: 12,
-    type: "non-vegetarian",
-    features: [
-      { text: "12 non-veg meals per month", included: true },
-      { text: "Flexible delivery schedule", included: true },
-      { text: "Basic customization options", included: true },
-      { text: "Nutrition consultation", included: false },
-    ],
-    weeklyMeals: {
-      monday: { main: "Ragi Chicken Biryani", sides: ["Raita", "Salan"] },
-      tuesday: { main: "Jowar Chicken Curry", sides: ["Jowar Roti"] },
-      wednesday: { main: "Millet Fish Pulao", sides: ["Raita", "Papad"] },
-      thursday: { main: "Pearl Millet Mutton Curry", sides: ["Pearl Millet Roti"] },
-      friday: { main: "Little Millet Chicken Pongal", sides: ["Pickle", "Papad"] },
-      saturday: { main: "Foxtail Millet Keema", sides: ["Millet Roti", "Salad"] },
-      sunday: { main: "Kodo Millet Egg Curry", sides: ["Kodo Millet Rice", "Pickle"] }
-    }
-  },
-  {
-    id: "premium-nonveg",
-    name: "Premium Plan (Non-Veg)",
-    price: 549900, // ₹5,499
-    description: "Ideal for regular healthy eating with greater non-veg variety.",
-    mealsPerMonth: 20,
-    type: "non-vegetarian",
-    features: [
-      { text: "20 non-veg meals per month", included: true },
-      { text: "Priority delivery slots", included: true },
-      { text: "Full customization options", included: true },
-      { text: "Monthly nutrition consultation", included: true },
-    ],
-    weeklyMeals: {
-      monday: { main: "Ragi Chicken Biryani", sides: ["Raita", "Salan"] },
-      tuesday: { main: "Jowar Chicken Curry", sides: ["Jowar Roti"] },
-      wednesday: { main: "Millet Fish Pulao", sides: ["Raita", "Papad"] },
-      thursday: { main: "Pearl Millet Mutton Curry", sides: ["Pearl Millet Roti"] },
-      friday: { main: "Little Millet Chicken Pongal", sides: ["Pickle", "Papad"] },
-      saturday: { main: "Foxtail Millet Keema", sides: ["Millet Roti", "Salad"] },
-      sunday: { main: "Kodo Millet Egg Curry", sides: ["Kodo Millet Rice", "Pickle"] }
-    }
-  },
-  {
-    id: "family-nonveg",
-    name: "Family Plan (Non-Veg)",
-    price: 949900, // ₹9,499
-    description: "Complete non-vegetarian solution for families seeking healthy millet meals.",
-    mealsPerMonth: 40,
-    type: "non-vegetarian",
-    features: [
-      { text: "40 non-veg meals per month", included: true },
-      { text: "Preferred delivery window", included: true },
-      { text: "Full customization with family portions", included: true },
-      { text: "Bi-weekly nutrition consultation", included: true },
-    ],
-    weeklyMeals: {
-      monday: { main: "Ragi Chicken Biryani", sides: ["Raita", "Salan"] },
-      tuesday: { main: "Jowar Chicken Curry", sides: ["Jowar Roti"] },
-      wednesday: { main: "Millet Fish Pulao", sides: ["Raita", "Papad"] },
-      thursday: { main: "Pearl Millet Mutton Curry", sides: ["Pearl Millet Roti"] },
-      friday: { main: "Little Millet Chicken Pongal", sides: ["Pickle", "Papad"] },
-      saturday: { main: "Foxtail Millet Keema", sides: ["Millet Roti", "Salad"] },
-      sunday: { main: "Kodo Millet Egg Curry", sides: ["Kodo Millet Rice", "Pickle"] }
-    }
-  },
+  }
 ];
 
 // Delivery time slots
@@ -166,6 +94,8 @@ export const MEAL_TYPES = [
 // Dietary preferences for filtering
 export const DIETARY_PREFERENCES = [
   { id: "vegetarian", name: "Vegetarian", color: "bg-green-100 text-green-800" },
+  { id: "veg-with-egg", name: "Veg with Egg", color: "bg-amber-100 text-amber-800" },
+  { id: "non-vegetarian", name: "Non-Vegetarian", color: "bg-red-100 text-red-800" },
   { id: "gluten-free", name: "Gluten-Free", color: "bg-yellow-100 text-yellow-800" },
   { id: "high-protein", name: "High Protein", color: "bg-blue-100 text-blue-800" },
   { id: "low-carb", name: "Low Carb", color: "bg-purple-100 text-purple-800" },
