@@ -417,9 +417,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error(`Meal with id ${item.mealId} not found`);
           }
           
-          // Check if the meal in cart has curry options
-          const mealPrice = item.meal?.price || meal.price;
-          const hasCurryOption = item.meal?.curryOption !== undefined;
+          // Get meal from cart item if available, otherwise use the meal from storage
+          const mealData = item.meal || meal;
+          
+          // Check if the meal in cart has curry options (using optional chaining)
+          const mealPrice = mealData.price || meal.price;
+          const hasCurryOption = mealData.curryOption !== undefined;
           
           const orderItemData = {
             orderId: order.id,
@@ -429,8 +432,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Store curry option details in the notes field
             notes: hasCurryOption ? 
               JSON.stringify({
-                curryOption: item.meal.curryOption,
-                originalName: item.meal.originalName || meal.name
+                curryOption: mealData.curryOption,
+                originalName: mealData.originalName || meal.name
               }) : 
               undefined
           };

@@ -10,7 +10,7 @@ import { useAuth } from "./use-auth";
 import { useToast } from "./use-toast";
 import { Meal } from "@shared/schema";
 
-interface CartItem {
+export interface CartItem {
   id: number;
   userId: number;
   mealId: number;
