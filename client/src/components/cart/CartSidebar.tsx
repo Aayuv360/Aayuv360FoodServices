@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+// import { Meal } from "@shared/schema";
 import {
   X,
   Minus,
@@ -14,7 +15,7 @@ import {
   ChevronLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart } from "@/hooks/use-cart";
+import { useCart, CartItem } from "@/hooks/use-cart";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -86,6 +87,22 @@ const userAddresses = [
     pincode: "500081",
   },
 ];
+
+// Extended Meal type with curry option
+interface ExtendedMeal extends Meal {
+  curryOption?: {
+    id: string;
+    name: string;
+    priceAdjustment: number;
+  };
+  originalName?: string;
+  imageUrl?: string;
+}
+
+// Extended CartItem with the extended meal
+interface ExtendedCartItem extends Omit<CartItem, 'meal'> {
+  meal?: ExtendedMeal;
+}
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [loading, setLoading] = useState(false);
@@ -317,69 +334,73 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {cartItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center space-x-4 bg-neutral-light p-3 rounded-lg"
-                      >
-                        <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                          <img
-                            src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
-                            alt={item.meal?.name || "Meal item"}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium text-sm">
-                            {item.meal?.name}
-                          </h4>
-                          {item.meal?.curryOption && (
-                            <p className="text-xs text-gray-500">
-                              {item.meal.curryOption.id === 'veg' ? 'With Vegetarian Curry' : 'With Non-Vegetarian Curry'}
-                              {item.meal.curryOption.priceAdjustment > 0 && (
-                                <span className="text-primary ml-1">
-                                  (+₹{(item.meal.curryOption.priceAdjustment / 100).toFixed(2)})
-                                </span>
-                              )}
-                            </p>
-                          )}
-                          <p className="text-primary text-sm font-semibold">
-                            {formatPrice(item.meal?.price || 0)}
-                          </p>
-                        </div>
-                        <div className="flex items-center border rounded">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              handleQuantityChange(item.id, item.quantity - 1)
-                            }
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="px-2 py-1">{item.quantity}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              handleQuantityChange(item.id, item.quantity + 1)
-                            }
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-gray-400 hover:text-destructive"
-                          onClick={() => handleRemoveItem(item.id)}
+                    {cartItems.map((item) => {
+                      // Cast meal to any to access curry option properties
+                      const meal = item.meal as any;
+                      return (
+                        <div
+                          key={item.id}
+                          className="flex items-center space-x-4 bg-neutral-light p-3 rounded-lg"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                          <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                            <img
+                              src={meal?.imageUrl || "/placeholder-meal.jpg"}
+                              alt={meal?.name || "Meal item"}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-grow">
+                            <h4 className="font-medium text-sm">
+                              {meal?.name}
+                            </h4>
+                            {meal?.curryOption && (
+                              <p className="text-xs text-gray-500">
+                                {meal.curryOption.id === 'veg' ? 'With Vegetarian Curry' : 'With Non-Vegetarian Curry'}
+                                {meal.curryOption.priceAdjustment > 0 && (
+                                  <span className="text-primary ml-1">
+                                    (+₹{(meal.curryOption.priceAdjustment / 100).toFixed(2)})
+                                  </span>
+                                )}
+                              </p>
+                            )}
+                            <p className="text-primary text-sm font-semibold">
+                              {formatPrice(meal?.price || 0)}
+                            </p>
+                          </div>
+                          <div className="flex items-center border rounded">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 p-0"
+                              onClick={() =>
+                                handleQuantityChange(item.id, item.quantity - 1)
+                              }
+                            >
+                              <Minus className="h-3 w-3" />
+                            </Button>
+                            <span className="px-2 py-1">{item.quantity}</span>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 p-0"
+                              onClick={() =>
+                                handleQuantityChange(item.id, item.quantity + 1)
+                              }
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-gray-400 hover:text-destructive"
+                            onClick={() => handleRemoveItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
