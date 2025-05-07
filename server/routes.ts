@@ -73,12 +73,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Middleware to check if user is authenticated
+  // Middleware that bypasses authentication (removed protection)
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (req.isAuthenticated()) {
-      return next();
+    // Always allow access without authentication
+    // Add a default user for routes that need a user object
+    if (!req.isAuthenticated()) {
+      (req as any).user = {
+        id: 1,
+        username: 'guest',
+        name: 'Guest User',
+        email: 'guest@example.com',
+        role: 'user',
+        createdAt: new Date()
+      };
     }
-    res.status(401).json({ message: "Unauthorized" });
+    return next();
   };
 
   // Authentication routes
