@@ -1291,11 +1291,19 @@ const Subscription = () => {
                   <div className="border-t my-3"></div>
 
                   <div className="flex justify-between mb-1">
-                    <span className="text-sm">Plan Price</span>
+                    <span className="text-sm">Base Plan Price</span>
                     <span className="text-sm">
-                      ₹{(currentPlan.price / 100).toFixed(2)}/month
+                      ₹{(basePlan.price / 100).toFixed(2)}/month
                     </span>
                   </div>
+                  {priceAdjustment > 0 && (
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm">{dietaryPreference === "veg-with-egg" ? "Egg Option" : "Non-Veg Option"}</span>
+                      <span className="text-sm">
+                        + ₹{(priceAdjustment / 100).toFixed(2)}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between mb-2">
                     <span className="text-sm">Tax (5%)</span>
                     <span className="text-sm">
@@ -1350,13 +1358,13 @@ const Subscription = () => {
     <div className="min-h-screen bg-neutral-light py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-2">
-            Subscribe to MealMillet
+          <div className="flex items-center justify-between flex-wrap mb-2">
+            <h1 className="text-3xl font-bold mr-4">Subscribe to MealMillet</h1>
             <FormField
               control={form.control}
               name="dietaryPreference"
               render={({ field }) => (
-                <FormItem className="space-y-0 flex-1">
+                <FormItem className="space-y-0">
                   <div className="flex flex-wrap gap-2">
                     <Button
                       type="button"
@@ -1404,7 +1412,7 @@ const Subscription = () => {
                 </FormItem>
               )}
             />
-          </h1>
+          </div>
 
           <p className="text-gray-600 mb-8">
             Select a plan and customize your subscription
@@ -1433,9 +1441,16 @@ const Subscription = () => {
                   <CardDescription>{plan.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-semibold text-primary mb-2">
-                    ₹{(plan.price / 100).toFixed(0)}
-                    <span className="text-sm text-gray-500">/month</span>
+                  <div>
+                    <div className="text-2xl font-semibold text-primary">
+                      ₹{((plan.price + getPriceAdjustment(dietaryPreference)) / 100).toFixed(0)}
+                      <span className="text-sm text-gray-500">/month</span>
+                    </div>
+                    {priceAdjustment > 0 && (
+                      <div className="text-xs text-gray-500">
+                        Base: ₹{(plan.price / 100).toFixed(0)} + {dietaryPreference === "veg-with-egg" ? "Egg" : "Non-veg"}: ₹{(getPriceAdjustment(dietaryPreference) / 100).toFixed(0)}
+                      </div>
+                    )}
                   </div>
                   <ul className="space-y-2 text-sm">
                     {plan.features.map((feature, index) => (
