@@ -54,7 +54,7 @@ const addressSchema = z.object({
 
 // Subscription form schema
 const subscriptionSchema = z.object({
-  plan: z.enum(["basic", "premium", "family"]),
+  plan: z.enum(["basic-veg", "premium-veg", "family-veg", "basic-nonveg", "premium-nonveg", "family-nonveg"]),
   subscriptionType: z.enum(["default", "customized"]).default("default"),
   startDate: z.date({
     required_error: "Please select a start date",
@@ -139,7 +139,7 @@ const Subscription = () => {
 
   // Default form values
   const defaultValues: SubscriptionFormValues = {
-    plan: (selectedPlanFromParams as "basic" | "premium" | "family") || "basic",
+    plan: (selectedPlanFromParams as any) || "basic-veg",
     subscriptionType: "default",
     startDate: new Date(),
     // Address details
@@ -354,7 +354,7 @@ const Subscription = () => {
     if (selectedPlanFromParams) {
       const validPlan = SUBSCRIPTION_PLANS.find(p => p.id === selectedPlanFromParams);
       if (validPlan) {
-        form.setValue("plan", validPlan.id as "basic" | "premium" | "family");
+        form.setValue("plan", validPlan.id as any);
       }
     }
   }, [selectedPlanFromParams, form]);
