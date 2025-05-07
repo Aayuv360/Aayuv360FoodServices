@@ -174,46 +174,47 @@ const Subscription = () => {
       }
       
       const payload = {
+        userId: user?.id,
         plan: data.plan,
         subscriptionType: data.subscriptionType,
-        startDate: data.startDate.toISOString(), // Convert to ISO string for consistency
+        startDate: data.startDate.toISOString(),
         mealsPerMonth: plan.mealsPerMonth || 0,
         price: plan.price || 0,
-        customMealSelections: data.customMealSelections || []
+        status: "active",
+        paymentMethod: data.paymentMethod
       };
       
-      // Display success message before redirecting
+      // Create the subscription directly
+      const response = await apiRequest("POST", "/api/subscriptions", payload);
+      const subscription = await response.json();
+      
+      // Save custom meal selections if needed
+      if (data.subscriptionType === "customized" && data.customMealSelections && data.customMealSelections.length > 0) {
+        for (const mealSelection of data.customMealSelections) {
+          await apiRequest("POST", "/api/custom-meal-plans", {
+            subscriptionId: subscription.id,
+            dayOfWeek: mealSelection.dayOfWeek,
+            mealId: mealSelection.mealId
+          });
+        }
+      }
+      
+      // Display success message
       toast({
         title: "Subscription Successful!",
         description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
         variant: "default",
       });
       
-      // Instead of creating a subscription immediately, we'll direct to the payment page
-      // Store the subscription data temporarily (could use localStorage)
-      sessionStorage.setItem('pendingSubscription', JSON.stringify(payload));
+      // Clear form after successful subscription
+      form.reset();
+      setFormStep("plan");
       
-      // If customized plan and has meal selections, store these too
-      if (data.subscriptionType === "customized" && data.customMealSelections && data.customMealSelections.length > 0) {
-        sessionStorage.setItem('pendingMealSelections', JSON.stringify(data.customMealSelections));
-      }
-      
-      // Redirect to checkout with plan price and ID
-      // Using navigate instead of window.location to avoid page refresh
-      // Make sure we have the exact plan price (not divided by 100)
-      console.log("Redirecting to checkout with:", { 
-        planPrice: plan.price,
-        planId: plan.id,
-        subscriptionType: data.subscriptionType
-      });
-      
-      // Add a slight delay to allow the toast to be seen before redirecting
-      setTimeout(() => {
-        navigate(`/checkout/${encodeURIComponent("subscription")}?amount=${plan.price}&planId=${plan.id}`);
-      }, 1500);
-      
-      // Return a placeholder as we're redirecting away
-      return { success: true };
+      return subscription;
+    },
+    onSuccess: () => {
+      // Invalidate subscriptions cache to refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
     },
     onError: (error: any) => {
       toast({

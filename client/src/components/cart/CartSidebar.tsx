@@ -62,10 +62,49 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       });
       return;
     }
-
-    // Navigate to checkout with type 'cart' and pass the amount
-    navigate(`/checkout/${encodeURIComponent("cart")}?amount=${total}&planId=cart`);
-    onClose();
+    
+    setLoading(true);
+    
+    try {
+      // Show processing message
+      toast({
+        title: "Processing your order",
+        description: "Please wait while we process your order...",
+      });
+      
+      // Create order directly
+      const orderData = {
+        userId: user.id,
+        totalAmount: total,
+        status: "confirmed",
+        deliveryAddress: "Default address",
+        paymentMethod: "cash",
+        paymentStatus: "pending"
+      };
+      
+      const response = await apiRequest("POST", "/api/orders", orderData);
+      const order = await response.json();
+      
+      // Clear cart after successful order
+      await clearCart();
+      
+      // Show success message
+      toast({
+        title: "Order placed successfully!",
+        description: `Your order #${order.id} has been placed. You'll receive your millet meal according to the schedule.`,
+        variant: "default",
+      });
+      
+      onClose();
+    } catch (error) {
+      toast({
+        title: "Failed to place order",
+        description: "There was an error processing your order. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -193,7 +232,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               onClick={handleCheckout}
               disabled={cartItems.length === 0 || loading}
             >
-              Proceed to Checkout
+              {loading ? "Processing..." : "Place Order"}
             </Button>
           </div>
         </div>

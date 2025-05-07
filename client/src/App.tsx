@@ -13,8 +13,6 @@ import Home from "@/pages/home";
 import Menu from "@/pages/menu";
 import Profile from "@/pages/profile";
 import Subscription from "@/pages/subscription";
-import Checkout from "@/pages/checkout";
-import PaymentSuccess from "@/pages/payment-success";
 import MealPlanner from "@/pages/meal-planner";
 import NotFound from "@/pages/not-found";
 
@@ -37,12 +35,6 @@ function Router() {
           <Route path="/subscription">
             <Subscription />
           </Route>
-
-          <Route path="/checkout/:type">
-            <Checkout />
-          </Route>
-
-          <Route path="/payment-success" component={PaymentSuccess} />
 
           {/* <Route path="/meal-planner" component={MealPlanner} />
            */}
