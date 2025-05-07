@@ -7,6 +7,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { z } from "zod";
 import Stripe from "stripe";
+import { mealPlannerService } from "./mealPlanner";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
