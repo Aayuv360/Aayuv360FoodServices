@@ -395,10 +395,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/orders", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const orderData = insertOrderSchema.parse({
-        ...req.body,
-        userId,
-      });
+      
+      // Convert string deliveryTime to Date object if needed
+      let requestData = { ...req.body, userId };
+      if (requestData.deliveryTime && typeof requestData.deliveryTime === 'string') {
+        requestData.deliveryTime = new Date(requestData.deliveryTime);
+      }
+      
+      const orderData = insertOrderSchema.parse(requestData);
       
       const order = await storage.createOrder(orderData);
       

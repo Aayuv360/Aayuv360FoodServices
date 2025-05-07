@@ -1,18 +1,30 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { X, Minus, Plus, Trash2, Check, CreditCard, MapPin, Home, Building, ChevronRight, ChevronLeft } from "lucide-react";
+import {
+  X,
+  Minus,
+  Plus,
+  Trash2,
+  Check,
+  CreditCard,
+  MapPin,
+  Home,
+  Building,
+  ChevronRight,
+  ChevronLeft,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +33,14 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 interface CartSidebarProps {
   open: boolean;
@@ -30,14 +49,13 @@ interface CartSidebarProps {
 
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
-// Form schemas
 const addressSchema = z.object({
   name: z.string().min(1, "Name is required"),
   phone: z.string().min(10, "Valid phone number is required"),
   address: z.string().min(5, "Address is required"),
   city: z.string().min(2, "City is required"),
   state: z.string().min(2, "State is required"),
-  pincode: z.string().min(6, "Valid pincode is required")
+  pincode: z.string().min(6, "Valid pincode is required"),
 });
 
 const paymentSchema = z.object({
@@ -45,10 +63,9 @@ const paymentSchema = z.object({
   cardNumber: z.string().optional(),
   cardExpiry: z.string().optional(),
   cardCvv: z.string().optional(),
-  upiId: z.string().optional()
+  upiId: z.string().optional(),
 });
 
-// Mock addresses for the user
 const userAddresses = [
   {
     id: 1,
@@ -57,7 +74,7 @@ const userAddresses = [
     address: "123 Millet Street, Apt 456",
     city: "Hyderabad",
     state: "Telangana",
-    pincode: "500032"
+    pincode: "500032",
   },
   {
     id: 2,
@@ -66,8 +83,8 @@ const userAddresses = [
     address: "789 Work Avenue, Floor 3",
     city: "Hyderabad",
     state: "Telangana",
-    pincode: "500081"
-  }
+    pincode: "500081",
+  },
 ];
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
@@ -81,7 +98,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Address form setup
   const addressForm = useForm<z.infer<typeof addressSchema>>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
@@ -90,31 +106,27 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       address: "",
       city: "Hyderabad",
       state: "Telangana",
-      pincode: ""
-    }
+      pincode: "",
+    },
   });
 
-  // Payment form setup
   const paymentForm = useForm<z.infer<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      method: "cod"
-    }
+      method: "cod",
+    },
   });
 
-  // Watch payment method
   const paymentMethod = paymentForm.watch("method");
 
-  // Calculate totals
   const subtotal = cartItems.reduce(
     (sum, item) => sum + (item.meal?.price || 0) * item.quantity,
-    0
+    0,
   );
-  const deliveryFee = 4000; // ₹40
-  const tax = 2000; // ₹20
+  const deliveryFee = 4000;
+  const tax = 2000;
   const total = subtotal + deliveryFee + tax;
 
-  // Format price in Indian Rupees
   const formatPrice = (price: number) => {
     return `₹${(price / 100).toFixed(2)}`;
   };
@@ -128,7 +140,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     removeCartItem(id);
   };
 
-  // Handle proceed to next step
   const handleProceed = () => {
     if (!user) {
       toast({
@@ -150,18 +161,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       return;
     }
 
-    // Move to delivery step
     setCurrentStep("delivery");
   };
 
-  // Handle proceed to payment step
   const handleProceedToPayment = () => {
-    // Check if address is selected or form is valid
     if (!selectedAddress && !addingNewAddress) {
       toast({
         title: "Select address",
         description: "Please select a delivery address or add a new one",
-        variant: "destructive"
+        variant: "destructive",
       });
       return;
     }
@@ -176,54 +184,47 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     setCurrentStep("payment");
   };
 
-  // Handle final checkout
   const handleCheckout = () => {
     paymentForm.handleSubmit(async (paymentData) => {
       setLoading(true);
-      
+
       try {
-        // Show processing message
         toast({
           title: "Processing your order",
           description: "Please wait while we process your order...",
         });
-        
-        // Get delivery address
+
         let deliveryAddress = "";
         if (selectedAddress) {
-          const address = userAddresses.find(a => a.id === selectedAddress);
+          const address = userAddresses.find((a) => a.id === selectedAddress);
           if (address) {
             deliveryAddress = `${address.name}, ${address.address}, ${address.city}, ${address.state} - ${address.pincode}, ${address.phone}`;
           }
         } else {
-          // Use the new address from form
           const newAddress = addressForm.getValues();
           deliveryAddress = `${newAddress.name}, ${newAddress.address}, ${newAddress.city}, ${newAddress.state} - ${newAddress.pincode}, ${newAddress.phone}`;
         }
-        
-        // Create order - sending all required fields based on schema
+
         const orderData = {
           userId: user?.id,
           totalPrice: total,
           deliveryAddress,
-          deliveryTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Setting delivery for tomorrow
-          status: "confirmed" // Adding status even though it's handled by default in schema
+          deliveryTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
+          status: "confirmed",
         };
-        
+
         const response = await apiRequest("POST", "/api/orders", orderData);
         const order = await response.json();
-        
-        // Clear cart after successful order
+
         await clearCart();
-        
-        // Show success state
+
         setOrderComplete(true);
         setCurrentStep("success");
-        
       } catch (error) {
         toast({
           title: "Failed to place order",
-          description: "There was an error processing your order. Please try again.",
+          description:
+            "There was an error processing your order. Please try again.",
           variant: "destructive",
         });
       } finally {
@@ -232,7 +233,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     })();
   };
 
-  // Reset the cart view
   const resetCart = () => {
     setCurrentStep("cart");
     setSelectedAddress(null);
@@ -242,7 +242,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     paymentForm.reset();
   };
 
-  // Go back to previous step
   const goBack = () => {
     if (currentStep === "delivery") {
       setCurrentStep("cart");
@@ -251,16 +250,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
   };
 
-  // Close the cart with reset
   const handleClose = () => {
     onClose();
-    // Reset state after animation completes
     setTimeout(resetCart, 300);
   };
 
   return (
     <>
-      {/* Overlay */}
       {open && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -268,19 +264,22 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         />
       )}
 
-      {/* Sidebar */}
       <div
         className={`fixed inset-y-0 right-0 max-w-md w-full bg-white shadow-xl z-50 transform transition duration-300 ${
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
               <div className="flex items-center">
                 {currentStep !== "cart" && currentStep !== "success" && (
-                  <Button variant="ghost" size="icon" onClick={goBack} className="mr-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={goBack}
+                    className="mr-2"
+                  >
                     <ChevronLeft className="h-5 w-5" />
                   </Button>
                 )}
@@ -297,7 +296,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             </div>
           </div>
 
-          {/* Content based on current step */}
           {currentStep === "cart" && (
             <>
               {/* Cart Items */}
@@ -326,13 +324,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       >
                         <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
                           <img
-                            src={item.meal?.imageUrl || '/placeholder-meal.jpg'}
-                            alt={item.meal?.name || 'Meal item'}
+                            src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
+                            alt={item.meal?.name || "Meal item"}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         <div className="flex-grow">
-                          <h4 className="font-medium text-sm">{item.meal?.name}</h4>
+                          <h4 className="font-medium text-sm">
+                            {item.meal?.name}
+                          </h4>
                           <p className="text-primary text-sm font-semibold">
                             {formatPrice(item.meal?.price || 0)}
                           </p>
@@ -377,15 +377,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               {/* Cart Summary */}
               <div className="p-4 border-t">
                 <h3 className="font-medium text-lg mb-3">Bill Details</h3>
-                
+
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Items Total</span>
-                    <span className="font-semibold">{formatPrice(subtotal)}</span>
+                    <span className="font-semibold">
+                      {formatPrice(subtotal)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Delivery Charge</span>
-                    <span className="font-semibold">{formatPrice(deliveryFee)}</span>
+                    <span className="font-semibold">
+                      {formatPrice(deliveryFee)}
+                    </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Taxes</span>
@@ -399,10 +403,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 </div>
 
                 <div className="bg-neutral-light p-3 rounded-lg mb-6">
-                  <h4 className="font-medium text-sm mb-1">Cancellation Policy</h4>
+                  <h4 className="font-medium text-sm mb-1">
+                    Cancellation Policy
+                  </h4>
                   <p className="text-xs text-gray-600">
-                    Orders can be cancelled before they are confirmed by the restaurant. 
-                    Once confirmed, refunds will be processed as per our policy.
+                    Orders can be cancelled before they are confirmed by the
+                    restaurant. Once confirmed, refunds will be processed as per
+                    our policy.
                   </p>
                 </div>
 
@@ -422,14 +429,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             <div className="flex-grow overflow-y-auto p-4">
               <div className="space-y-4">
                 <h3 className="font-medium">Select Delivery Address</h3>
-                
+
                 {/* Saved addresses */}
-                {userAddresses.map(address => (
-                  <div 
+                {userAddresses.map((address) => (
+                  <div
                     key={address.id}
                     className={`p-4 border rounded-lg cursor-pointer ${
-                      selectedAddress === address.id 
-                        ? "border-primary bg-primary/5" 
+                      selectedAddress === address.id
+                        ? "border-primary bg-primary/5"
                         : "hover:border-gray-400"
                     }`}
                     onClick={() => {
@@ -450,17 +457,23 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         <Check className="h-5 w-5 text-primary" />
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 mt-1">{address.address}</p>
-                    <p className="text-sm text-gray-600">{address.city}, {address.state} - {address.pincode}</p>
-                    <p className="text-sm text-gray-600 mt-1">{address.phone}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {address.address}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {address.city}, {address.state} - {address.pincode}
+                    </p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {address.phone}
+                    </p>
                   </div>
                 ))}
-                
+
                 {/* Add new address option */}
                 {!addingNewAddress ? (
-                  <Button 
-                    variant="outline" 
-                    className="w-full flex items-center justify-center gap-2" 
+                  <Button
+                    variant="outline"
+                    className="w-full flex items-center justify-center gap-2"
                     onClick={() => {
                       setAddingNewAddress(true);
                       setSelectedAddress(null);
@@ -490,7 +503,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               </FormItem>
                             )}
                           />
-                          
+
                           <FormField
                             control={addressForm.control}
                             name="phone"
@@ -498,13 +511,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               <FormItem>
                                 <FormLabel>Phone Number</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="10-digit phone number" {...field} />
+                                  <Input
+                                    placeholder="10-digit phone number"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          
+
                           <FormField
                             control={addressForm.control}
                             name="address"
@@ -512,13 +528,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               <FormItem>
                                 <FormLabel>Address</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="House/Flat No., Street, Landmark" {...field} />
+                                  <Input
+                                    placeholder="House/Flat No., Street, Landmark"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          
+
                           <div className="grid grid-cols-2 gap-4">
                             <FormField
                               control={addressForm.control}
@@ -533,7 +552,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                 </FormItem>
                               )}
                             />
-                            
+
                             <FormField
                               control={addressForm.control}
                               name="state"
@@ -548,7 +567,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               )}
                             />
                           </div>
-                          
+
                           <FormField
                             control={addressForm.control}
                             name="pincode"
@@ -556,7 +575,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               <FormItem>
                                 <FormLabel>Pincode</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="6-digit pincode" {...field} />
+                                  <Input
+                                    placeholder="6-digit pincode"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -566,8 +588,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       </Form>
                     </CardContent>
                     <CardFooter className="flex justify-between">
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         onClick={() => {
                           setAddingNewAddress(false);
                           addressForm.reset();
@@ -582,7 +604,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   </Card>
                 )}
               </div>
-              
+
               <div className="pt-4 mt-6 border-t">
                 <Button
                   className="w-full bg-primary hover:bg-primary/90"
@@ -613,7 +635,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           >
                             <div className="flex items-center space-x-2 rounded-lg border p-3">
                               <RadioGroupItem value="card" id="card" />
-                              <Label htmlFor="card" className="flex items-center">
+                              <Label
+                                htmlFor="card"
+                                className="flex items-center"
+                              >
                                 <CreditCard className="h-4 w-4 mr-2" />
                                 Credit/Debit Card
                               </Label>
@@ -634,7 +659,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   />
 
                   {/* Card payment details */}
-                  {paymentMethod === 'card' && (
+                  {paymentMethod === "card" && (
                     <div className="space-y-4">
                       <FormField
                         control={paymentForm.control}
@@ -643,13 +668,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           <FormItem>
                             <FormLabel>Card Number</FormLabel>
                             <FormControl>
-                              <Input placeholder="1234 5678 9012 3456" {...field} />
+                              <Input
+                                placeholder="1234 5678 9012 3456"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
                         )}
                       />
-                      
+
                       <div className="grid grid-cols-2 gap-4">
                         <FormField
                           control={paymentForm.control}
@@ -664,7 +692,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             </FormItem>
                           )}
                         />
-                        
+
                         <FormField
                           control={paymentForm.control}
                           name="cardCvv"
@@ -672,7 +700,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             <FormItem>
                               <FormLabel>CVV</FormLabel>
                               <FormControl>
-                                <Input placeholder="123" type="password" maxLength={3} {...field} />
+                                <Input
+                                  placeholder="123"
+                                  type="password"
+                                  maxLength={3}
+                                  {...field}
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
@@ -683,7 +716,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   )}
 
                   {/* UPI Payment details */}
-                  {paymentMethod === 'upi' && (
+                  {paymentMethod === "upi" && (
                     <FormField
                       control={paymentForm.control}
                       name="upiId"
@@ -704,7 +737,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     <h3 className="font-medium mb-2">Order Summary</h3>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-gray-600">Items ({cartItems.length})</span>
+                        <span className="text-gray-600">
+                          Items ({cartItems.length})
+                        </span>
                         <span>{formatPrice(subtotal)}</span>
                       </div>
                       <div className="flex justify-between">
@@ -724,7 +759,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   </div>
                 </form>
               </Form>
-              
+
               <div className="pt-4 mt-6">
                 <Button
                   className="w-full bg-primary hover:bg-primary/90"
@@ -743,9 +778,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                 <Check className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="text-xl font-bold mb-2">Order Placed Successfully!</h3>
+              <h3 className="text-xl font-bold mb-2">
+                Order Placed Successfully!
+              </h3>
               <p className="text-gray-600 mb-6">
-                Your millet meals will be delivered according to the schedule. 
+                Your millet meals will be delivered according to the schedule.
                 Thank you for choosing MealMillet!
               </p>
               <div className="space-y-3 w-full">
