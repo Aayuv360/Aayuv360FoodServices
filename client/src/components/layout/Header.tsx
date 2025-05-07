@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { ChevronDown, ShoppingCart, MapPin } from "lucide-react";
+import { ChevronDown, ShoppingCart, MapPin, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,6 +16,7 @@ import CartSidebar from "@/components/cart/CartSidebar";
 import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 // Type definition for location
 interface Location {
@@ -41,6 +42,10 @@ interface Meal {
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<"normal" | "subscribe">("normal");
+  const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
+  const [authRedirectUrl, setAuthRedirectUrl] = useState("");
   const [userLocation, setUserLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
@@ -49,6 +54,14 @@ const Header = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
+  
+  // Function to open auth modal
+  const openAuthModal = (mode: "normal" | "subscribe" = "normal", redirectUrl = "", tab: "login" | "register" = "login") => {
+    setAuthModalMode(mode);
+    setAuthRedirectUrl(redirectUrl);
+    setAuthModalTab(tab);
+    setAuthModalOpen(true);
+  };
 
   // Get all meals for search
   const { data: meals = [] } = useQuery<Meal[]>({
@@ -398,11 +411,20 @@ const Header = () => {
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button variant="ghost" asChild className="hidden md:flex">
-                  <Link href="/login">Login</Link>
+                <Button 
+                  variant="ghost" 
+                  className="hidden md:flex"
+                  onClick={() => openAuthModal("normal", "")}
+                >
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Login
                 </Button>
-                <Button variant="default" asChild className="hidden md:flex">
-                  <Link href="/register">Register</Link>
+                <Button 
+                  variant="default" 
+                  className="hidden md:flex"
+                  onClick={() => openAuthModal("normal", "", "register")}
+                >
+                  Register
                 </Button>
               </div>
             )}
@@ -411,6 +433,14 @@ const Header = () => {
       </header>
 
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
+      
+      <AuthModal 
+        isOpen={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        defaultTab={authModalTab}
+        redirectUrl={authRedirectUrl}
+        mode={authModalMode}
+      />
     </>
   );
 };

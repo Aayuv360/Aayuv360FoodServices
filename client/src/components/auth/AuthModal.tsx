@@ -1,0 +1,76 @@
+import { useState } from "react";
+import { X } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import LoginForm from "./LoginForm";
+import RegisterForm from "./RegisterForm";
+
+interface AuthModalProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  defaultTab?: "login" | "register";
+  redirectUrl?: string;
+  mode?: "normal" | "subscribe"; // normal or subscribe mode
+}
+
+export function AuthModal({
+  isOpen,
+  onOpenChange,
+  defaultTab = "login",
+  redirectUrl,
+  mode = "normal",
+}: AuthModalProps) {
+  const [activeTab, setActiveTab] = useState<string>(defaultTab);
+
+  const onSuccess = () => {
+    onOpenChange(false);
+    if (redirectUrl) {
+      window.location.href = redirectUrl;
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[425px]">
+        <DialogHeader>
+          <DialogTitle className="text-center text-2xl font-bold">
+            {mode === "subscribe" ? "Login to Subscribe" : "Welcome to MealMillet"}
+          </DialogTitle>
+          <DialogDescription className="text-center">
+            {mode === "subscribe" 
+              ? "Login or create an account to continue with your subscription"
+              : "Login or create an account to access all features"}
+          </DialogDescription>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute right-4 top-4"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">Login</TabsTrigger>
+            <TabsTrigger value="register">Register</TabsTrigger>
+          </TabsList>
+          <TabsContent value="login" className="mt-4">
+            <LoginForm onSuccess={onSuccess} />
+          </TabsContent>
+          <TabsContent value="register" className="mt-4">
+            <RegisterForm onSuccess={() => setActiveTab("login")} />
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
