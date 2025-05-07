@@ -489,13 +489,18 @@ const Subscription = () => {
                 <div className="bg-neutral-light p-4 rounded-lg">
                   <h3 className="font-medium">Selected Plan Details</h3>
                   <div className="mt-2">
-                    <p className="text-xl font-semibold text-primary">
-                      {currentPlan.name}
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xl font-semibold text-primary">
+                        {currentPlan.name}
+                      </p>
+                      <Badge variant="outline" className={currentPlan.type === "vegetarian" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}>
+                        {currentPlan.type === "vegetarian" ? "Vegetarian" : "Non-Vegetarian"}
+                      </Badge>
+                    </div>
                     <p className="text-sm text-gray-600 mt-1">
                       {currentPlan.description}
                     </p>
-                    <ul className="mt-4 space-y-2">
+                    <ul className="mt-3 space-y-2">
                       {currentPlan.features.map((feature, idx) => (
                         <li key={idx} className="flex items-start text-sm">
                           {feature.included ? (
@@ -507,6 +512,24 @@ const Subscription = () => {
                         </li>
                       ))}
                     </ul>
+                    
+                    {/* Weekly meal schedule */}
+                    <div className="mt-4 pt-4 border-t">
+                      <h4 className="font-medium text-sm mb-2">Weekly Meal Schedule</h4>
+                      <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
+                        {currentPlan.weeklyMeals && Object.entries(currentPlan.weeklyMeals).map(([day, meals]: [string, any]) => (
+                          <div key={day} className="bg-white p-2 rounded border">
+                            <p className="font-medium capitalize">{day}</p>
+                            <div className="mt-1">
+                              <p className="text-sm font-medium">{meals.main}</p>
+                              <p className="text-xs text-gray-600">
+                                With: {meals.sides.join(", ")}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1067,7 +1090,7 @@ const Subscription = () => {
                     ? "border-2 border-primary ring-2 ring-primary ring-opacity-50"
                     : ""
                 }`}
-                onClick={() => form.setValue("plan", plan.id as "basic" | "premium" | "family")}
+                onClick={() => form.setValue("plan", plan.id as any)}
               >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-center">
