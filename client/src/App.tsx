@@ -9,7 +9,6 @@ import { CartProvider } from "@/hooks/use-cart";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import TopNav from "@/components/layout/TopNav";
-import { AuthProtection } from "@/components/auth/AuthProtection";
 import Home from "@/pages/home";
 import Menu from "@/pages/menu";
 import Profile from "@/pages/profile";
@@ -23,35 +22,30 @@ function Router() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      <TopNav />
+      {/* <TopNav />
+       */}
       <main className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/menu" component={Menu} />
-          
+
           {/* Protected routes */}
           <Route path="/profile">
-            <AuthProtection>
-              <Profile />
-            </AuthProtection>
+            <Profile />
           </Route>
-          
+
           <Route path="/subscription">
-            <AuthProtection subscriptionMode={true}>
-              <Subscription />
-            </AuthProtection>
+            <Subscription />
           </Route>
-          
+
           <Route path="/checkout/:type">
-            <AuthProtection>
-              <Checkout />
-            </AuthProtection>
+            <Checkout />
           </Route>
-          
+
           <Route path="/payment-success" component={PaymentSuccess} />
-          
-          <Route path="/meal-planner" component={MealPlanner} />
-          
+
+          {/* <Route path="/meal-planner" component={MealPlanner} />
+           */}
           {/* Fallback to 404 */}
           <Route component={NotFound} />
         </Switch>

@@ -117,7 +117,7 @@ const TodaysMenu = () => {
             className="border-primary text-primary hover:bg-primary hover:text-white"
           >
             <Link href="/menu">
-              <a>View Full Menu</a>
+              View Full Menu
             </Link>
           </Button>
         </div>

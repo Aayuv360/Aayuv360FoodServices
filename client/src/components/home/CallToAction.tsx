@@ -20,7 +20,7 @@ const CallToAction = () => {
             className="bg-white text-primary hover:bg-neutral-light font-medium"
           >
             <Link href="/subscription">
-              <a>Get Started Today</a>
+              Get Started Today
             </Link>
           </Button>
           <Button
@@ -30,7 +30,7 @@ const CallToAction = () => {
             className="border-white text-white hover:bg-white/10 font-medium"
           >
             <Link href="/menu">
-              <a>Learn More</a>
+              Learn More
             </Link>
           </Button>
         </div>
