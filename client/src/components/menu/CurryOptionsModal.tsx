@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Check } from "lucide-react";
 import { Meal } from "@shared/schema";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
@@ -15,7 +16,9 @@ interface CurryOptionType {
 }
 
 interface CurryOptionsModalProps {
-  meal: Meal;
+  meal: Meal & {
+    imageUrl?: string;
+  };
   open: boolean;
   onClose: () => void;
 }
@@ -44,12 +47,20 @@ const CurryOptionsModal = ({ meal, open, onClose }: CurryOptionsModalProps) => {
     const option = curryOptions.find(opt => opt.id === selectedOption);
     if (!option) return;
     
+    // Calculate adjusted price
+    const adjustedPrice = meal.price + option.priceAdjustment;
+    
     // Create modified meal with curry option
     const modifiedMeal = {
       ...meal,
-      price: meal.price + option.priceAdjustment,
+      price: adjustedPrice,
+      originalName: meal.name,
       name: `${meal.name} with ${option.name}`,
-      curryOption: option.id
+      curryOption: {
+        id: option.id,
+        name: option.name,
+        priceAdjustment: option.priceAdjustment
+      }
     };
     
     // Add to cart
@@ -57,7 +68,7 @@ const CurryOptionsModal = ({ meal, open, onClose }: CurryOptionsModalProps) => {
     
     toast({
       title: "Added to cart",
-      description: `${modifiedMeal.name} has been added to your cart`,
+      description: `${meal.name} with ${option.id === 'veg' ? 'vegetarian' : 'non-vegetarian'} curry added`,
       variant: "default",
     });
     
@@ -74,15 +85,42 @@ const CurryOptionsModal = ({ meal, open, onClose }: CurryOptionsModalProps) => {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Select Curry Options for {meal.name}</DialogTitle>
+          <DialogTitle>Select Curry Options</DialogTitle>
+          <DialogDescription>
+            Choose the perfect curry to pair with {meal.name}
+          </DialogDescription>
         </DialogHeader>
+        
         <div className="py-4">
+          <div className="mb-4 border-b pb-3 flex">
+            <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0 mr-3">
+              <img 
+                src={meal.imageUrl || "https://via.placeholder.com/80?text=Meal"} 
+                alt={meal.name}
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <h3 className="font-medium text-lg">{meal.name}</h3>
+              <p className="text-sm text-gray-600 line-clamp-2">{meal.description}</p>
+              <p className="text-primary font-medium mt-1">₹{(meal.price / 100).toFixed(2)}</p>
+            </div>
+          </div>
+          
+          <h4 className="font-medium mb-3">Select your curry:</h4>
           <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
             {curryOptions.map((option) => (
-              <div key={option.id} className="flex items-start space-x-2 mb-4 border p-3 rounded-lg hover:border-primary cursor-pointer" onClick={() => setSelectedOption(option.id)}>
+              <div 
+                key={option.id} 
+                className={`flex items-start space-x-2 mb-4 border p-3 rounded-lg hover:border-primary cursor-pointer transition-colors ${selectedOption === option.id ? 'border-primary bg-primary/5' : ''}`} 
+                onClick={() => setSelectedOption(option.id)}
+              >
                 <RadioGroupItem value={option.id} id={option.id} className="mt-1" />
                 <div className="flex-1">
-                  <Label htmlFor={option.id} className="font-medium cursor-pointer">{option.name}</Label>
+                  <div className="flex justify-between">
+                    <Label htmlFor={option.id} className="font-medium cursor-pointer">{option.name}</Label>
+                    {selectedOption === option.id && <Check className="h-4 w-4 text-primary" />}
+                  </div>
                   <p className="text-sm text-gray-500">{option.description}</p>
                   {option.priceAdjustment > 0 && (
                     <p className="text-sm text-primary mt-1">+₹{(option.priceAdjustment / 100).toFixed(2)}</p>
@@ -92,9 +130,13 @@ const CurryOptionsModal = ({ meal, open, onClose }: CurryOptionsModalProps) => {
             ))}
           </RadioGroup>
         </div>
-        <DialogFooter className="flex justify-between items-center">
-          <div className="font-semibold">{getAdjustedPrice()}</div>
-          <Button type="button" onClick={handleAddToCart}>
+        
+        <DialogFooter className="flex justify-between items-center border-t pt-3">
+          <div>
+            <p className="text-sm text-gray-500">Total Price</p>
+            <p className="font-semibold text-lg">{getAdjustedPrice()}</p>
+          </div>
+          <Button type="button" onClick={handleAddToCart} className="bg-primary hover:bg-primary/90">
             Add to Cart
           </Button>
         </DialogFooter>

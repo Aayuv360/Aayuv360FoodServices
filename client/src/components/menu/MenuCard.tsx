@@ -9,7 +9,9 @@ import CurryOptionsModal from "./CurryOptionsModal";
 import { Meal } from "@shared/schema";
 
 interface MenuCardProps {
-  meal: Meal;
+  meal: Meal & {
+    imageUrl?: string;
+  };
 }
 
 const MenuCard = ({ meal }: MenuCardProps) => {
