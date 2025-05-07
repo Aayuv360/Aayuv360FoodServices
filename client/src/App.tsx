@@ -23,6 +23,7 @@ function Router() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
+      <TopNav />
       <main className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
