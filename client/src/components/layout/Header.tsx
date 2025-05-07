@@ -1,8 +1,8 @@
-import { useState } from "react";
-import { Link } from "wouter";
+import { useState, useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { ChevronDown, ShoppingCart } from "lucide-react";
+import { ChevronDown, ShoppingCart, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
+import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);

@@ -148,7 +148,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Meal routes
   app.get("/api/meals", async (req, res) => {
     try {
-      const meals = await storage.getAllMeals();
+      const { query, type, preference } = req.query;
+      
+      let meals = await storage.getAllMeals();
+      
+      // Filter by search query if provided
+      if (query && typeof query === 'string') {
+        const searchQuery = query.toLowerCase();
+        meals = meals.filter(meal => 
+          meal.name.toLowerCase().includes(searchQuery) || 
+          meal.description.toLowerCase().includes(searchQuery)
+        );
+      }
+      
+      // Filter by meal type if provided
+      if (type && typeof type === 'string') {
+        meals = meals.filter(meal => meal.mealType === type);
+      }
+      
+      // Filter by dietary preference if provided
+      if (preference && typeof preference === 'string') {
+        meals = meals.filter(meal => 
+          meal.dietaryPreferences && 
+          meal.dietaryPreferences.includes(preference as any)
+        );
+      }
+      
       res.json(meals);
     } catch (err) {
       res.status(500).json({ message: "Error fetching meals" });
@@ -664,6 +689,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(userWithoutPassword);
     } catch (err) {
       res.status(500).json({ message: "Error updating profile" });
+    }
+  });
+
+  // Location API
+  app.get("/api/locations", async (req, res) => {
+    try {
+      const { query } = req.query;
+      const defaultLocations = [
+        { id: 1, name: "Hyderabad, Gachibowli" },
+        { id: 2, name: "Hyderabad, Madhapur" },
+        { id: 3, name: "Hyderabad, Hitech City" },
+        { id: 4, name: "Hyderabad, Jubilee Hills" },
+        { id: 5, name: "Hyderabad, Banjara Hills" },
+        { id: 6, name: "Hyderabad, Secunderabad" },
+        { id: 7, name: "Hyderabad, Kukatpally" },
+        { id: 8, name: "Hyderabad, Ameerpet" }
+      ];
+      
+      if (query && typeof query === 'string') {
+        const searchQuery = query.toLowerCase();
+        const filteredLocations = defaultLocations.filter(location => 
+          location.name.toLowerCase().includes(searchQuery)
+        );
+        return res.json(filteredLocations);
+      }
+      
+      res.json(defaultLocations);
+    } catch (err) {
+      res.status(500).json({ message: "Error fetching locations" });
     }
   });
 
