@@ -846,8 +846,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Create a new order
-      const orderData = {
+      // Create a new order with the data we have
+      const orderData: {
+        userId: number;
+        totalPrice: number;
+        deliveryAddress: string;
+        deliveryTime?: Date;
+      } = {
         userId: (req.user as any).id,
         totalPrice: totalAmount,
         deliveryAddress: req.body.address || ''
@@ -855,9 +860,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add delivery time (optional in schema)
       if (req.body.deliveryTime) {
-        (orderData as any).deliveryTime = new Date(req.body.deliveryTime);
+        orderData.deliveryTime = new Date(req.body.deliveryTime);
       } else {
-        (orderData as any).deliveryTime = new Date(Date.now() + 24 * 60 * 60 * 1000); // Delivery tomorrow
+        orderData.deliveryTime = new Date(Date.now() + 24 * 60 * 60 * 1000); // Delivery tomorrow
       }
       
       const order = await storage.createOrder(orderData);
