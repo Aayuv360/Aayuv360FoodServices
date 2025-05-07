@@ -34,6 +34,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
+// Address schema
+const addressSchema = z.object({
+  name: z.string().min(2, "Name is required"),
+  phone: z.string().min(10, "Valid phone number is required"),
+  addressLine1: z.string().min(5, "Address line 1 is required"),
+  addressLine2: z.string().optional(),
+  city: z.string().min(2, "City is required"),
+  state: z.string().min(2, "State is required"),
+  pincode: z.string().min(6, "Valid pincode is required"),
+  isDefault: z.boolean().default(false),
+});
+
 // Subscription form schema
 const subscriptionSchema = z.object({
   plan: z.enum(["basic", "premium", "family"]),
@@ -41,6 +53,11 @@ const subscriptionSchema = z.object({
   startDate: z.date({
     required_error: "Please select a start date",
   }),
+  // Address information
+  selectedAddressId: z.number().optional(),
+  useNewAddress: z.boolean().default(false),
+  newAddress: addressSchema.optional(),
+  // Payment information
   paymentMethod: z.enum(["card", "upi", "bank"]),
   cardNumber: z.string().optional(),
   cardExpiry: z.string().optional(),
@@ -53,6 +70,9 @@ const subscriptionSchema = z.object({
 });
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
+
+// Type definition for subscription steps
+type FormStep = "plan" | "address" | "payment";
 
 const Subscription = () => {
   const [location, navigate] = useLocation();
@@ -67,11 +87,40 @@ const Subscription = () => {
     return null;
   }
 
+  // State for multi-step form
+  const [formStep, setFormStep] = useState<FormStep>("plan");
+  
   // State for selected meal plan date and selected meals
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedMealsByDay, setSelectedMealsByDay] = useState<{[key: number]: number}>({});
   // State to store meal options for each day of the week
   const [mealOptionsByDay, setMealOptionsByDay] = useState<{[key: number]: any[]}>({});
+  
+  // Mock user addresses (in a real app, these would come from the API)
+  const [addresses, setAddresses] = useState([
+    {
+      id: 1,
+      name: "Home",
+      addressLine1: "123 Millet Street",
+      addressLine2: "Apt 456",
+      city: "Hyderabad",
+      state: "Telangana",
+      pincode: "500032",
+      phone: "9876543210",
+      isDefault: true
+    },
+    {
+      id: 2,
+      name: "Office",
+      addressLine1: "789 Work Avenue",
+      addressLine2: "Floor 3",
+      city: "Hyderabad",
+      state: "Telangana",
+      pincode: "500081",
+      phone: "9876543210",
+      isDefault: false
+    }
+  ]);
   
   // Fetch available meals
   const { data: meals, isLoading: mealsLoading } = useQuery({
