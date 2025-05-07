@@ -417,11 +417,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             throw new Error(`Meal with id ${item.mealId} not found`);
           }
           
+          // Check if the meal in cart has curry options
+          const mealPrice = item.meal?.price || meal.price;
+          const hasCurryOption = item.meal?.curryOption !== undefined;
+          
           const orderItemData = {
             orderId: order.id,
             mealId: item.mealId,
             quantity: item.quantity,
-            price: meal.price,
+            price: mealPrice,
+            // Store curry option details in the notes field
+            notes: hasCurryOption ? 
+              JSON.stringify({
+                curryOption: item.meal.curryOption,
+                originalName: item.meal.originalName || meal.name
+              }) : 
+              undefined
           };
           
           return storage.createOrderItem(orderItemData);

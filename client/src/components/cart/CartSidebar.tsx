@@ -333,6 +333,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           <h4 className="font-medium text-sm">
                             {item.meal?.name}
                           </h4>
+                          {item.meal?.curryOption && (
+                            <p className="text-xs text-gray-500">
+                              {item.meal.curryOption.id === 'veg' ? 'With Vegetarian Curry' : 'With Non-Vegetarian Curry'}
+                              {item.meal.curryOption.priceAdjustment > 0 && (
+                                <span className="text-primary ml-1">
+                                  (+₹{(item.meal.curryOption.priceAdjustment / 100).toFixed(2)})
+                                </span>
+                              )}
+                            </p>
+                          )}
                           <p className="text-primary text-sm font-semibold">
                             {formatPrice(item.meal?.price || 0)}
                           </p>
