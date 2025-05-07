@@ -41,21 +41,15 @@ export function AuthModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">
-            {mode === "subscribe" ? "Login to Subscribe" : "Welcome to MealMillet"}
+            {mode === "subscribe"
+              ? "Login to Subscribe"
+              : "Welcome to MealMillet"}
           </DialogTitle>
           <DialogDescription className="text-center">
-            {mode === "subscribe" 
+            {mode === "subscribe"
               ? "Login or create an account to continue with your subscription"
               : "Login or create an account to access all features"}
           </DialogDescription>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute right-4 top-4"
-            onClick={() => onOpenChange(false)}
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

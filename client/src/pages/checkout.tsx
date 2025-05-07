@@ -94,7 +94,8 @@ const Checkout = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const amount = searchParams.get("amount");
   const planId = searchParams.get("planId");
-  const paymentType = params?.type || "one-time";
+  // Make sure to decode the URL parameter
+  const paymentType = params?.type ? decodeURIComponent(params.type) : "one-time";
   
   // No need to redirect - AuthProtection component handles authentication
 
@@ -106,6 +107,16 @@ const Checkout = () => {
         description: "Missing amount or plan information",
         variant: "destructive",
       });
+      
+      // Log the issue for debugging
+      console.error("Checkout params missing:", { amount, planId, paymentType, params });
+      
+      // If we're coming from subscription page, try to redirect back
+      if (paymentType === "subscription") {
+        setTimeout(() => {
+          window.location.href = "/subscription";
+        }, 2000);
+      }
       return;
     }
 
