@@ -805,7 +805,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // If it's a subscription, add the plan details
           const plans = await storage.getSubscription(parseInt(planId));
           if (plans) {
-            orderDetails.planName = plans.name;
+            (orderDetails as any).planName = plans.plan; // Use the plan enum value as the name
           }
         }
         
@@ -831,7 +831,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Check if user already has this subscription plan
         const userSubscriptions = await storage.getSubscriptionsByUserId(userId);
-        const existingSubscription = userSubscriptions.find(sub => sub.planId === planId && sub.isActive);
+        const existingSubscription = userSubscriptions.find(sub => sub.plan === planId && sub.isActive);
         
         if (existingSubscription) {
           return res.status(400).json({ message: "You already have an active subscription for this plan" });
@@ -867,7 +867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           amount: amountInCents,
           tax: taxAmount,
           total: totalAmount,
-          planName: subscriptionPlan.name,
+          planName: subscriptionPlan.plan,
         };
         
         res.json({
@@ -906,7 +906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // Update existing subscription
               await storage.updateSubscription(parseInt(subscriptionId), {
                 isActive: true,
-                paymentStatus: "paid",
+                // Remove paymentStatus as it's not in our schema
               });
             } else if (planId) {
               // Create new subscription

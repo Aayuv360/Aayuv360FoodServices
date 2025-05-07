@@ -16,6 +16,7 @@ import Register from "@/pages/authentication/register";
 import Profile from "@/pages/profile";
 import Subscription from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
+import PaymentSuccess from "@/pages/payment-success";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -31,6 +32,8 @@ function Router() {
           <Route path="/profile" component={Profile} />
           <Route path="/subscription" component={Subscription} />
           <Route path="/checkout" component={Checkout} />
+          <Route path="/checkout/subscription" component={Checkout} />
+          <Route path="/payment-success" component={PaymentSuccess} />
           {/* Fallback to 404 */}
           <Route component={NotFound} />
         </Switch>

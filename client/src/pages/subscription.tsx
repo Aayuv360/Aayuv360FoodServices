@@ -168,48 +168,39 @@ const Subscription = () => {
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
       const plan = SUBSCRIPTION_PLANS.find(p => p.id === data.plan);
+      
+      if (!plan) {
+        throw new Error("Invalid plan selected");
+      }
+      
       const payload = {
         plan: data.plan,
         subscriptionType: data.subscriptionType,
         startDate: data.startDate.toISOString(), // Convert to ISO string for consistency
-        mealsPerMonth: plan?.mealsPerMonth || 0,
-        price: plan?.price || 0,
-        isActive: true,
+        mealsPerMonth: plan.mealsPerMonth || 0,
+        price: plan.price || 0,
         customMealSelections: data.customMealSelections || []
       };
       
-      // First create the subscription
-      const res = await apiRequest("POST", "/api/subscriptions", payload);
-      const subscription = await res.json();
+      // Instead of creating a subscription immediately, we'll direct to the payment page
+      // Store the subscription data temporarily (could use localStorage)
+      sessionStorage.setItem('pendingSubscription', JSON.stringify(payload));
       
-      // If customized plan and has meal selections, save the custom meal plans
+      // If customized plan and has meal selections, store these too
       if (data.subscriptionType === "customized" && data.customMealSelections && data.customMealSelections.length > 0) {
-        // Save each meal selection
-        const customMealPromises = data.customMealSelections.map(selection => 
-          apiRequest("POST", "/api/custom-meal-plans", {
-            subscriptionId: subscription.id,
-            dayOfWeek: selection.dayOfWeek,
-            mealId: selection.mealId
-          })
-        );
-        
-        await Promise.all(customMealPromises);
+        sessionStorage.setItem('pendingMealSelections', JSON.stringify(data.customMealSelections));
       }
       
-      return subscription;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      toast({
-        title: "Subscription created",
-        description: "Your subscription has been created successfully",
-      });
-      navigate("/profile?tab=subscriptions");
+      // Redirect to checkout with plan price and ID
+      window.location.href = `/checkout/subscription?amount=${plan.price / 100}&planId=${plan.id}`;
+      
+      // Return a placeholder as we're redirecting away
+      return { success: true };
     },
     onError: (error: any) => {
       toast({
-        title: "Error creating subscription",
-        description: error.message || "There was an error creating your subscription",
+        title: "Error processing subscription",
+        description: error.message || "There was an error with your subscription",
         variant: "destructive",
       });
     },
