@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
@@ -9,10 +8,9 @@ import { CartProvider } from "@/hooks/use-cart";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { AuthProtection } from "@/components/auth/AuthProtection";
 import Home from "@/pages/home";
 import Menu from "@/pages/menu";
-import Login from "@/pages/authentication/login";
-import Register from "@/pages/authentication/register";
 import Profile from "@/pages/profile";
 import Subscription from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
@@ -27,12 +25,28 @@ function Router() {
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/menu" component={Menu} />
-          <Route path="/login" component={Login} />
-          <Route path="/register" component={Register} />
-          <Route path="/profile" component={Profile} />
-          <Route path="/subscription" component={Subscription} />
-          <Route path="/checkout/:type" component={Checkout} />
+          
+          {/* Protected routes */}
+          <Route path="/profile">
+            <AuthProtection>
+              <Profile />
+            </AuthProtection>
+          </Route>
+          
+          <Route path="/subscription">
+            <AuthProtection subscriptionMode={true}>
+              <Subscription />
+            </AuthProtection>
+          </Route>
+          
+          <Route path="/checkout/:type">
+            <AuthProtection>
+              <Checkout />
+            </AuthProtection>
+          </Route>
+          
           <Route path="/payment-success" component={PaymentSuccess} />
+          
           {/* Fallback to 404 */}
           <Route component={NotFound} />
         </Switch>

@@ -96,17 +96,7 @@ const Checkout = () => {
   const planId = searchParams.get("planId");
   const paymentType = params?.type || "one-time";
   
-  // Navigate to login if not authenticated
-  useEffect(() => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please login to continue with checkout",
-        variant: "destructive",
-      });
-      window.location.href = "/auth";
-    }
-  }, [user, toast]);
+  // No need to redirect - AuthProtection component handles authentication
 
   // Create PaymentIntent on component mount
   useEffect(() => {
