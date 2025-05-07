@@ -17,12 +17,74 @@ import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 
+// Type definition for location
+interface Location {
+  id: number;
+  name: string;
+}
+
+// Type definition for meal
+interface Meal {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  mealType: string;
+  dietaryPreferences: string[];
+  available: boolean;
+}
+
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [userLocation, setUserLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [location] = useLocation();
+  const { toast } = useToast();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
+
+  // Get all meals for search
+  const { data: meals = [] } = useQuery<Meal[]>({
+    queryKey: ['/api/meals', searchQuery],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (searchQuery) {
+        params.append('query', searchQuery);
+      }
+      const response = await fetch(`/api/meals?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch meals');
+      }
+      
+      return response.json();
+    },
+    enabled: searchQuery.length > 1, // Only fetch when search query is more than 1 character
+  });
+
+  // Get locations for dropdown
+  const { data: locations = [] } = useQuery<Location[]>({
+    queryKey: ['/api/locations', locationQuery],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (locationQuery) {
+        params.append('query', locationQuery);
+      }
+      const response = await fetch(`/api/locations?${params.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch locations');
+      }
+      
+      return response.json();
+    },
+  });
+
+  // Filter shown meals based on search query
+  const filteredMeals = meals.slice(0, 5); // Limit to 5 results
 
   const toggleCart = () => {
     setCartOpen(!cartOpen);
@@ -30,20 +92,76 @@ const Header = () => {
 
   const fetchCurrentLocation = () => {
     if (!navigator.geolocation) {
-      alert("Geolocation is not supported");
+      toast({
+        title: "Geolocation Error",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive",
+      });
       return;
     }
 
+    toast({
+      title: "Locating...",
+      description: "Finding your current location",
+    });
+
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        console.log(position);
-        setUserLocation("Hyderabad, IN");
+        // In a real app we'd use these coordinates to find the nearest location
+        // For now we'll just default to first Hyderabad location
+        if (locations.length > 0) {
+          setUserLocation(locations[0].name);
+        } else {
+          setUserLocation("Hyderabad, Gachibowli");
+        }
+        toast({
+          title: "Location Set",
+          description: "Your location has been updated",
+        });
       },
       (error) => {
-        alert("Failed to fetch location");
+        toast({
+          title: "Location Error",
+          description: "Failed to get your location. " + error.message,
+          variant: "destructive",
+        });
       },
     );
   };
+
+  const selectLocation = (location: Location) => {
+    setUserLocation(location.name);
+    setLocationQuery("");
+  };
+  
+  // Handle search submission (e.g., redirect to search results page)
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim().length > 0) {
+      // In a real app, we might redirect to a search results page
+      setShowSearchResults(true);
+    }
+  };
+  
+  // Hide search results when clicking outside or navigating
+  useEffect(() => {
+    setShowSearchResults(false);
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('form')) {
+        setShowSearchResults(false);
+      }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    
+    // Close search results when user navigates
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      setShowSearchResults(false);
+    };
+  }, [location]);
 
   return (
     <>
@@ -60,48 +178,131 @@ const Header = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition pl-12 pt-[5px]">
-                  {userLocation || "Select Location"}
+                <div className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  <span>{userLocation || "Select Location"}</span>
                 </div>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent className="w-64">
-                <div className="p-2">
+              <DropdownMenuContent className="w-64 p-2">
+                <div className="mb-2">
                   <input
                     type="text"
                     placeholder="Search location..."
-                    className="w-full px-2 py-1 border rounded text-sm"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-md text-sm"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
                   />
                 </div>
-                <DropdownMenuItem onClick={fetchCurrentLocation}>
-                  Use My Current Location
+                
+                <div className="max-h-48 overflow-auto">
+                  {locations.length > 0 ? (
+                    locations.map((loc) => (
+                      <DropdownMenuItem 
+                        key={loc.id} 
+                        onClick={() => selectLocation(loc)}
+                        className="cursor-pointer"
+                      >
+                        <MapPin className="h-4 w-4 mr-2 text-primary" />
+                        {loc.name}
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground p-2 text-center">
+                      No locations found
+                    </div>
+                  )}
+                </div>
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={fetchCurrentLocation} className="cursor-pointer mt-1">
+                  <span className="flex items-center text-primary">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Use My Current Location
+                  </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          <div className="flex-grow max-w-xl relative">
+          <form onSubmit={handleSearchSubmit} className="flex-grow max-w-xl relative">
             <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
 
             <input
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search..."
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                if (e.target.value.length > 1) {
+                  setShowSearchResults(true);
+                } else {
+                  setShowSearchResults(false);
+                }
+              }}
+              placeholder="Search for millet meals..."
               className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
             />
 
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery("")}
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowSearchResults(false);
+                }}
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <XMarkIcon className="w-5 h-5" />
               </button>
             )}
-          </div>
+            
+            {/* Search Results */}
+            {showSearchResults && searchQuery.length > 1 && (
+              <div className="absolute top-full left-0 right-0 bg-white shadow-lg rounded-lg mt-1 max-h-80 overflow-auto z-50">
+                {filteredMeals.length > 0 ? (
+                  <>
+                    <div className="p-3 border-b">
+                      <p className="text-sm font-medium">Search Results</p>
+                    </div>
+                    <ul>
+                      {filteredMeals.map((meal) => (
+                        <li key={meal.id} className="border-b last:border-0">
+                          <Link href={`/menu?id=${meal.id}`} className="flex items-start p-3 hover:bg-gray-50">
+                            <div className="h-12 w-12 rounded-md flex-shrink-0 bg-gray-100 mr-3 overflow-hidden">
+                              {meal.image && (
+                                <img 
+                                  src={meal.image} 
+                                  alt={meal.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              )}
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-sm font-medium">{meal.name}</h4>
+                              <p className="text-xs text-gray-500 line-clamp-1">{meal.description}</p>
+                              <p className="text-xs font-medium text-primary mt-1">₹{meal.price.toFixed(2)}</p>
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                    {meals.length > 5 && (
+                      <div className="p-3 border-t text-center">
+                        <Link href={`/menu?search=${encodeURIComponent(searchQuery)}`} className="text-sm text-primary font-medium">
+                          View all {meals.length} results
+                        </Link>
+                      </div>
+                    )}
+                  </>
+                ) : searchQuery.length > 1 ? (
+                  <div className="p-6 text-center">
+                    <p className="text-sm text-gray-500">No results found for "{searchQuery}"</p>
+                    <p className="text-xs text-gray-400 mt-1">Try a different search term</p>
+                  </div>
+                ) : null}
+              </div>
+            )}
+          </form>
 
           <div className="flex items-center space-x-4">
             <Button
