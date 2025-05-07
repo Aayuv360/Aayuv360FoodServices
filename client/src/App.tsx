@@ -15,6 +15,7 @@ import Profile from "@/pages/profile";
 import Subscription from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
 import PaymentSuccess from "@/pages/payment-success";
+import MealPlanner from "@/pages/meal-planner";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -46,6 +47,8 @@ function Router() {
           </Route>
           
           <Route path="/payment-success" component={PaymentSuccess} />
+          
+          <Route path="/meal-planner" component={MealPlanner} />
           
           {/* Fallback to 404 */}
           <Route component={NotFound} />
