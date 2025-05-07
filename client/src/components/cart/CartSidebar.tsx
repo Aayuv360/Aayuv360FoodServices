@@ -201,12 +201,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           deliveryAddress = `${newAddress.name}, ${newAddress.address}, ${newAddress.city}, ${newAddress.state} - ${newAddress.pincode}, ${newAddress.phone}`;
         }
         
-        // Create order - only sending required fields based on schema
+        // Create order - sending all required fields based on schema
         const orderData = {
           userId: user?.id,
           totalPrice: total,
           deliveryAddress,
-          status: "confirmed" // Adding status even though it's optional in schema
+          deliveryTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Setting delivery for tomorrow
+          status: "confirmed" // Adding status even though it's handled by default in schema
         };
         
         const response = await apiRequest("POST", "/api/orders", orderData);
