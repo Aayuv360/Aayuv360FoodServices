@@ -703,6 +703,68 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Meal planner routes
+  app.get("/api/meal-plan", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const startDateStr = req.query.startDate as string;
+      const endDateStr = req.query.endDate as string;
+      
+      if (!startDateStr) {
+        return res.status(400).json({ message: "Start date is required" });
+      }
+      
+      const startDate = new Date(startDateStr);
+      let endDate: Date;
+      
+      if (endDateStr) {
+        endDate = new Date(endDateStr);
+      } else {
+        // Default to 7 days from start date
+        endDate = new Date(startDate);
+        endDate.setDate(endDate.getDate() + 6);
+      }
+      
+      const mealPlan = await mealPlannerService.getUserMealPlan(userId, startDate, endDate);
+      res.json(mealPlan);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Error fetching meal plan" });
+    }
+  });
+  
+  app.get("/api/meal-recommendations", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const count = req.query.count ? parseInt(req.query.count as string) : 5;
+      
+      const recommendations = await mealPlannerService.getMealRecommendations(userId, count);
+      res.json(recommendations);
+    } catch (err) {
+      res.status(500).json({ message: "Error fetching meal recommendations" });
+    }
+  });
+  
+  app.get("/api/weekly-meal-plans", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const startDateStr = req.query.startDate as string;
+      const weeksStr = req.query.weeks as string;
+      
+      const startDate = startDateStr ? new Date(startDateStr) : new Date();
+      const weeks = weeksStr ? parseInt(weeksStr) : 4;
+      
+      const weeklyPlans = await mealPlannerService.generateWeeklyMealPlans(
+        startDate,
+        weeks,
+        userId
+      );
+      
+      res.json(weeklyPlans);
+    } catch (err) {
+      res.status(500).json({ message: "Error generating weekly meal plans" });
+    }
+  });
+  
   // Location API
   app.get("/api/locations", async (req, res) => {
     try {
