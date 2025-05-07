@@ -97,6 +97,8 @@ const Checkout = () => {
   // Make sure to decode the URL parameter
   const paymentType = params?.type ? decodeURIComponent(params.type) : "one-time";
   
+  console.log("Checkout parameters:", { amount, planId, paymentType, searchParams: searchParams.toString() });
+  
   // No need to redirect - AuthProtection component handles authentication
 
   // Create PaymentIntent on component mount
