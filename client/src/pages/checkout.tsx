@@ -124,9 +124,12 @@ const Checkout = () => {
 
     const createPaymentIntent = async () => {
       try {
-        const endpoint = paymentType === "subscription" 
-          ? "/api/get-or-create-subscription" 
-          : "/api/create-payment-intent";
+        // Use appropriate endpoint based on payment type
+        let endpoint = "/api/create-payment-intent";
+        if (paymentType === "subscription") {
+          endpoint = "/api/get-or-create-subscription";
+        }
+        // Both cart and one-time purchases use create-payment-intent endpoint
             
         const response = await apiRequest("POST", endpoint, {
           amount: parseFloat(amount),
@@ -167,11 +170,19 @@ const Checkout = () => {
           
           <Card>
             <CardHeader>
-              <CardTitle>Checkout</CardTitle>
+              <CardTitle>
+                {paymentType === "subscription" 
+                  ? "Subscription Checkout" 
+                  : paymentType === "cart" 
+                    ? "Cart Checkout"
+                    : "Checkout"}
+              </CardTitle>
               <CardDescription>
                 {paymentType === "subscription" 
                   ? "Subscribe to your millet meal plan" 
-                  : "Complete your purchase"}
+                  : paymentType === "cart"
+                    ? "Complete your cart purchase"
+                    : "Complete your purchase"}
               </CardDescription>
             </CardHeader>
             <CardContent>

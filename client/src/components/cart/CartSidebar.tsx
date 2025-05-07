@@ -63,7 +63,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       return;
     }
 
-    navigate("/checkout");
+    // Navigate to checkout with type 'cart' and pass the amount
+    navigate(`/checkout/${encodeURIComponent("cart")}?amount=${total}&planId=cart`);
     onClose();
   };
 
@@ -120,8 +121,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   >
                     <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
                       <img
-                        src={item.meal?.imageUrl}
-                        alt={item.meal?.name}
+                        src={item.meal?.imageUrl || '/placeholder-meal.jpg'}
+                        alt={item.meal?.name || 'Meal item'}
                         className="w-full h-full object-cover"
                       />
                     </div>
