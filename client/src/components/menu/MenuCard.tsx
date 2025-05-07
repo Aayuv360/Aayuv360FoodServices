@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCart } from "@/hooks/use-cart";
 import { useToast } from "@/hooks/use-toast";
 import NutritionModal from "./NutritionModal";
+import CurryOptionsModal from "./CurryOptionsModal";
 import { Meal } from "@shared/schema";
 
 interface MenuCardProps {
@@ -13,6 +14,7 @@ interface MenuCardProps {
 
 const MenuCard = ({ meal }: MenuCardProps) => {
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
+  const [curryOptionsModalOpen, setCurryOptionsModalOpen] = useState(false);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
@@ -21,13 +23,8 @@ const MenuCard = ({ meal }: MenuCardProps) => {
     return `₹${(price / 100).toFixed(2)}`;
   };
 
-  const handleAddToCart = () => {
-    addToCart(meal);
-    toast({
-      title: "Added to cart",
-      description: `${meal.name} has been added to your cart`,
-      variant: "default",
-    });
+  const handleAddToCartClick = () => {
+    setCurryOptionsModalOpen(true);
   };
 
   // Map dietary preferences to color schemes
@@ -55,7 +52,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
       <div className="bg-white rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300">
         <div className="relative">
           <img
-            src={meal.imageUrl}
+            src={meal.imageUrl || "https://via.placeholder.com/300x200?text=Millet+Meal"}
             alt={meal.name}
             className="w-full h-48 object-cover"
           />
@@ -101,7 +98,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
             <Button
               size="sm"
               className="bg-primary hover:bg-primary/90 text-white"
-              onClick={handleAddToCart}
+              onClick={handleAddToCartClick}
             >
               <Plus className="h-4 w-4 mr-1" />
               Add to Cart
@@ -114,6 +111,12 @@ const MenuCard = ({ meal }: MenuCardProps) => {
         meal={meal}
         open={nutritionModalOpen}
         onClose={() => setNutritionModalOpen(false)}
+      />
+      
+      <CurryOptionsModal
+        meal={meal}
+        open={curryOptionsModalOpen}
+        onClose={() => setCurryOptionsModalOpen(false)}
       />
     </>
   );
