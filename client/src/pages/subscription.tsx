@@ -952,37 +952,6 @@ const Subscription = () => {
                     radius of our service locations.
                   </p>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={goToPreviousStep}
-                  >
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Plan
-                  </Button>
-
-                  <Button
-                    type="button"
-                    className="bg-primary hover:bg-primary/90"
-                    onClick={() => {
-                      if (form.watch("selectedAddressId")) {
-                        goToNextStep();
-                      } else {
-                        toast({
-                          title: "Address required",
-                          description:
-                            "Please select an existing address or add a new one",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                  >
-                    Continue to Payment
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
               </div>
             </div>
           </div>
@@ -1256,29 +1225,9 @@ const Subscription = () => {
             </div>
 
             <div className="border-t pt-6">
-              <div className="flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={goToPreviousStep}
-                >
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Address
-                </Button>
-
-                <Button
-                  type="submit"
-                  className="bg-primary hover:bg-primary/90"
-                  disabled={subscriptionMutation.isPending}
-                >
-                  {subscriptionMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : null}
-                  {subscriptionMutation.isPending
-                    ? "Processing..."
-                    : "Subscribe"}
-                </Button>
-              </div>
+              <p className="text-sm text-gray-500 mb-4">
+                Please verify all details before completing your subscription.
+              </p>
             </div>
           </div>
         );
