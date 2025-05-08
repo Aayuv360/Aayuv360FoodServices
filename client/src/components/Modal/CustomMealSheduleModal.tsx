@@ -32,11 +32,11 @@ export const CustomMealSheduleModal = ({
       <Dialog open={customMealModalOpen} onOpenChange={setCustomMealModalOpen}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Add New Delivery Address</DialogTitle>
-            <DialogDescription>
+            <DialogTitle>Custom Meal Plan</DialogTitle>
+            {/* <DialogDescription>
               Search for your location on the map or enter address details
               manually.
-            </DialogDescription>
+            </DialogDescription> */}
           </DialogHeader>
           <div className="border-t pt-6 mb-2">
             <h3 className="text-lg font-semibold mb-4">

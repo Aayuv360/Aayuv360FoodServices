@@ -20,11 +20,11 @@ export const DefaulMealSheduleModal = ({
       <Dialog open={defaulMealModalOpen} onOpenChange={setDefaulMealModalOpen}>
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
-            <DialogTitle>Add New Delivery Address</DialogTitle>
-            <DialogDescription>
+            <DialogTitle>Default Meal Plan</DialogTitle>
+            {/* <DialogDescription>
               Search for your location on the map or enter address details
               manually.
-            </DialogDescription>
+            </DialogDescription> */}
           </DialogHeader>
           <div className="border-t pt-6 mb-2">
             <h4 className="font-medium text-sm mb-2">

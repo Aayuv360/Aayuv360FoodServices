@@ -55,6 +55,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { CustomMealSheduleModal } from "@/components/Modal/CustomMealSheduleModal";
 import { DefaulMealSheduleModal } from "@/components/Modal/DefaulMealSheduleModal";
+import { NewAddressModal } from "@/components/Modal/NewAddressModal";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -121,8 +122,14 @@ const Subscription = () => {
   const [mealOptionsByDay, setMealOptionsByDay] = useState<{
     [key: number]: any[];
   }>({});
-  const [defaulMealModalOpen, setDefaulMealModalOpen] = useState<boolean>(false);
-  const [customMealModalOpen, setCustomMealModalOpen] = useState<boolean>(false);
+  const [defaulMealModalOpen, setDefaulMealModalOpen] =
+    useState<boolean>(false);
+  const [customMealModalOpen, setCustomMealModalOpen] =
+    useState<boolean>(false);
+  const [addressModalOpen, setAddressModalOpen] = 
+    useState<boolean>(false);
+  const [locationSearch, setLocationSearch] = useState<string>("");
+  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState([
     {
       id: 1,
@@ -313,6 +320,51 @@ const Subscription = () => {
     if (form.watch("useNewAddress")) {
       form.setValue("selectedAddressId", undefined);
     }
+  };
+  
+  const openNewAddressModal = () => {
+    setAddressModalOpen(true);
+  };
+  
+  const selectLocation = (location: any) => {
+    // Pre-fill the pincode field based on selected location
+    const addressForm = document.getElementById('address-form') as HTMLFormElement;
+    if (addressForm) {
+      const pincodeInput = addressForm.querySelector('#address-pincode') as HTMLInputElement;
+      if (pincodeInput) {
+        pincodeInput.value = location.pincode;
+      }
+    }
+    setLocationSearch("");
+  };
+  
+  const handleAddressFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const formData = new FormData(e.target as HTMLFormElement);
+    const newAddress = {
+      id: addresses.length + 1,
+      name: formData.get('addressName') as string,
+      phone: formData.get('phone') as string,
+      addressLine1: formData.get('addressLine1') as string,
+      addressLine2: formData.get('addressLine2') as string || '',
+      city: formData.get('city') as string,
+      state: formData.get('state') as string,
+      pincode: formData.get('pincode') as string,
+      isDefault: Boolean(formData.get('isDefault')),
+    };
+    
+    setAddresses([...addresses, newAddress]);
+    
+    // Select the new address
+    selectAddress(newAddress.id);
+    
+    // Close the modal
+    setAddressModalOpen(false);
+    
+    toast({
+      title: "Address added",
+      description: "Your new delivery address has been added successfully.",
+    });
   };
 
   const onSubmit = (values: SubscriptionFormValues) => {
@@ -840,154 +892,7 @@ const Subscription = () => {
                 </label>
               </div>
 
-              {form.watch("useNewAddress") && (
-                <div className="space-y-4 border p-4 rounded-lg">
-                  <h4 className="font-medium">New Address Details</h4>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="newAddress.name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Home, Office, etc."
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="newAddress.phone"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="10-digit mobile number"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="newAddress.addressLine1"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address Line 1</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="House/Flat No., Street, Locality"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="newAddress.addressLine2"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Address Line 2 (Optional)</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Landmark, Area, etc."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="newAddress.city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>City</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="City"
-                              defaultValue="Hyderabad"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="newAddress.state"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>State</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="State"
-                              defaultValue="Telangana"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="newAddress.pincode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Pincode</FormLabel>
-                          <FormControl>
-                            <Input placeholder="6-digit pincode" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-
-                  <FormField
-                    control={form.control}
-                    name="newAddress.isDefault"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                        <FormControl>
-                          <Checkbox
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel>Set as default address</FormLabel>
-                          <FormDescription>
-                            This address will be used for all future deliveries
-                          </FormDescription>
-                        </div>
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              )}
+              <NewAddressModal />
 
               <div className="border-t pt-4 mt-6">
                 <div className="text-sm text-gray-500 mb-4">
