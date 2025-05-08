@@ -15,6 +15,9 @@ import {
   ArrowRight,
   Minus,
   Plus,
+  MapPin,
+  Search,
+  PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,6 +45,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -124,6 +135,10 @@ const Subscription = () => {
   const [mealOptionsByDay, setMealOptionsByDay] = useState<{
     [key: number]: any[];
   }>({});
+  
+  // State for address modal
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState("");
 
   const [addresses, setAddresses] = useState([
     {
@@ -150,10 +165,20 @@ const Subscription = () => {
     },
   ]);
 
+  // Query meals
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/meals");
+      return res.json();
+    },
+  });
+  
+  // Query locations
+  const { data: locations, isLoading: locationsLoading } = useQuery({
+    queryKey: ["/api/locations"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/locations");
       return res.json();
     },
   });
@@ -316,6 +341,40 @@ const Subscription = () => {
       form.setValue("selectedAddressId", undefined);
     }
   };
+  
+  // Handler for opening address modal
+  const openAddressModal = () => {
+    setAddressModalOpen(true);
+  };
+  
+  // Handler for saving an address from the modal
+  const saveAddressFromModal = (addressData: any) => {
+    // Add address to the addresses list
+    const newAddressId = addresses.length + 1;
+    const newAddress = {
+      id: newAddressId,
+      ...addressData,
+    };
+    
+    setAddresses([...addresses, newAddress]);
+    
+    // Auto-select the new address
+    form.setValue("selectedAddressId", newAddressId);
+    form.setValue("useNewAddress", false);
+    
+    // Close the modal
+    setAddressModalOpen(false);
+    
+    toast({
+      title: "Address Added",
+      description: "Your new delivery address has been added successfully.",
+    });
+  };
+  
+  // Filter locations based on search
+  const filteredLocations = locations?.filter(location => 
+    location.name.toLowerCase().includes(locationSearch.toLowerCase())
+  ) || [];
 
   const onSubmit = (values: SubscriptionFormValues) => {
     if (formStep === "plan") {
