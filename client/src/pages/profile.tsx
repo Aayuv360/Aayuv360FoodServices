@@ -152,10 +152,7 @@ const Profile = () => {
                   <Button
                     variant={currentTab === "profile" ? "default" : "ghost"}
                     className="w-full justify-start"
-                    onClick={() => {
-                      setCurrentTab("profile");
-                      navigate("/profile?tab=profile");
-                    }}
+                    onClick={() => window.location.href = "/profile?tab=profile"}
                   >
                     <UserCircle className="mr-2 h-4 w-4" />
                     Profile
@@ -165,10 +162,7 @@ const Profile = () => {
                       currentTab === "subscriptions" ? "default" : "ghost"
                     }
                     className="w-full justify-start"
-                    onClick={() => {
-                      setCurrentTab("subscriptions");
-                      navigate("/profile?tab=subscriptions");
-                    }}
+                    onClick={() => window.location.href = "/profile?tab=subscriptions"}
                   >
                     <ClockIcon className="mr-2 h-4 w-4" />
                     Subscriptions
@@ -176,10 +170,7 @@ const Profile = () => {
                   <Button
                     variant={currentTab === "orders" ? "default" : "ghost"}
                     className="w-full justify-start"
-                    onClick={() => {
-                      setCurrentTab("orders");
-                      navigate("/profile?tab=orders");
-                    }}
+                    onClick={() => window.location.href = "/profile?tab=orders"}
                   >
                     <History className="mr-2 h-4 w-4" />
                     Order History
