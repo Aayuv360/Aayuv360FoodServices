@@ -1460,23 +1460,26 @@ const Subscription = () => {
                     <div className="text-2xl font-semibold text-primary">
                       ₹
                       {(
-                        (plan.price + getPriceAdjustment(dietaryPreference)) /
+                        ((plan.price + getPriceAdjustment(dietaryPreference)) * personCount) /
                         100
                       ).toFixed(0)}
                       <span className="text-sm text-gray-500">/month</span>
                     </div>
-                    {priceAdjustment > 0 && (
-                      <div className="text-xs text-gray-500">
-                        Base: ₹{(plan.price / 100).toFixed(0)} +{" "}
-                        {dietaryPreference === "veg-with-egg"
-                          ? "Egg"
-                          : "Non-veg"}
-                        : ₹
-                        {(getPriceAdjustment(dietaryPreference) / 100).toFixed(
-                          0,
-                        )}
-                      </div>
-                    )}
+                    <div className="text-xs text-gray-500">
+                      {personCount > 1 ? (
+                        <>
+                          ₹{((plan.price + getPriceAdjustment(dietaryPreference)) / 100).toFixed(0)} per person × {personCount} persons
+                        </>
+                      ) : (
+                        <>
+                          Base: ₹{(plan.price / 100).toFixed(0)}
+                          {priceAdjustment > 0 && (
+                            <> + {dietaryPreference === "veg-with-egg" ? "Egg" : "Non-veg"}: 
+                            ₹{(getPriceAdjustment(dietaryPreference) / 100).toFixed(0)}</>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                   <ul className="space-y-2 text-sm">
                     {plan.features.map((feature, index) => (
