@@ -28,9 +28,7 @@ function Router() {
           <Route path="/menu" component={Menu} />
 
           {/* Protected routes */}
-          <Route path="/profile">
-            <Profile />
-          </Route>
+          <Route path="/profile" component={Profile} />
 
           <Route path="/subscription" component={Subscription} />
 
