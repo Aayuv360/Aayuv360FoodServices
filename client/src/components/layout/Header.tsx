@@ -43,8 +43,12 @@ interface Meal {
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<"normal" | "subscribe">("normal");
-  const [authModalTab, setAuthModalTab] = useState<"login" | "register">("login");
+  const [authModalMode, setAuthModalMode] = useState<"normal" | "subscribe">(
+    "normal",
+  );
+  const [authModalTab, setAuthModalTab] = useState<"login" | "register">(
+    "login",
+  );
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
   const [userLocation, setUserLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -54,9 +58,13 @@ const Header = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
-  
+
   // Function to open auth modal
-  const openAuthModal = (mode: "normal" | "subscribe" = "normal", redirectUrl = "", tab: "login" | "register" = "login") => {
+  const openAuthModal = (
+    mode: "normal" | "subscribe" = "normal",
+    redirectUrl = "",
+    tab: "login" | "register" = "login",
+  ) => {
     setAuthModalMode(mode);
     setAuthRedirectUrl(redirectUrl);
     setAuthModalTab(tab);
@@ -65,18 +73,18 @@ const Header = () => {
 
   // Get all meals for search
   const { data: meals = [] } = useQuery<Meal[]>({
-    queryKey: ['/api/meals', searchQuery],
+    queryKey: ["/api/meals", searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) {
-        params.append('query', searchQuery);
+        params.append("query", searchQuery);
       }
       const response = await fetch(`/api/meals?${params.toString()}`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch meals');
+        throw new Error("Failed to fetch meals");
       }
-      
+
       return response.json();
     },
     enabled: searchQuery.length > 1, // Only fetch when search query is more than 1 character
@@ -84,18 +92,18 @@ const Header = () => {
 
   // Get locations for dropdown
   const { data: locations = [] } = useQuery<Location[]>({
-    queryKey: ['/api/locations', locationQuery],
+    queryKey: ["/api/locations", locationQuery],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (locationQuery) {
-        params.append('query', locationQuery);
+        params.append("query", locationQuery);
       }
       const response = await fetch(`/api/locations?${params.toString()}`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch locations');
+        throw new Error("Failed to fetch locations");
       }
-      
+
       return response.json();
     },
   });
@@ -111,16 +119,16 @@ const Header = () => {
   const fetchLocationsByCoordinates = async (lat: number, lng: number) => {
     try {
       const params = new URLSearchParams();
-      params.append('lat', lat.toString());
-      params.append('lng', lng.toString());
-      params.append('radius', '10'); // 10km radius
-      
+      params.append("lat", lat.toString());
+      params.append("lng", lng.toString());
+      params.append("radius", "10"); // 10km radius
+
       const response = await fetch(`/api/locations?${params.toString()}`);
-      
+
       if (!response.ok) {
-        throw new Error('Failed to fetch nearby locations');
+        throw new Error("Failed to fetch nearby locations");
       }
-      
+
       const nearbyLocations: Location[] = await response.json();
       return nearbyLocations;
     } catch (error) {
@@ -147,14 +155,19 @@ const Header = () => {
     navigator.geolocation.getCurrentPosition(
       async (position) => {
         console.log(position); // For debugging
-        
+
         const { latitude, longitude } = position.coords;
-        const nearbyLocations = await fetchLocationsByCoordinates(latitude, longitude);
-        
+        const nearbyLocations = await fetchLocationsByCoordinates(
+          latitude,
+          longitude,
+        );
+
         if (nearbyLocations.length > 0) {
           // Use the closest location (first in the returned list)
           const closestLocation = nearbyLocations[0];
-          setUserLocation(`${closestLocation.name} - ${closestLocation.pincode}`);
+          setUserLocation(
+            `${closestLocation.name} - ${closestLocation.pincode}`,
+          );
           toast({
             title: "Location Set",
             description: `Your location is set to ${closestLocation.name}`,
@@ -177,8 +190,8 @@ const Header = () => {
       {
         enableHighAccuracy: true,
         timeout: 5000,
-        maximumAge: 0
-      }
+        maximumAge: 0,
+      },
     );
   };
 
@@ -186,7 +199,7 @@ const Header = () => {
     setUserLocation(`${location.name} - ${location.pincode}`);
     setLocationQuery("");
   };
-  
+
   // Handle search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,23 +208,23 @@ const Header = () => {
       window.location.href = `/menu?search=${encodeURIComponent(searchQuery)}`;
     }
   };
-  
+
   // Hide search results when clicking outside or navigating
   useEffect(() => {
     setShowSearchResults(false);
-    
+
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest('form')) {
+      if (!target.closest("form")) {
         setShowSearchResults(false);
       }
     };
-    
-    document.addEventListener('click', handleClickOutside);
-    
+
+    document.addEventListener("click", handleClickOutside);
+
     // Close search results when user navigates
     return () => {
-      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener("click", handleClickOutside);
       setShowSearchResults(false);
     };
   }, [location]);
@@ -231,7 +244,7 @@ const Header = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center">
+                <div className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[20px]">
                   <MapPin className="h-4 w-4 mr-1" />
                   <span>{userLocation || "Select Location"}</span>
                 </div>
@@ -247,12 +260,12 @@ const Header = () => {
                     onChange={(e) => setLocationQuery(e.target.value)}
                   />
                 </div>
-                
+
                 <div className="max-h-48 overflow-auto">
                   {locations.length > 0 ? (
                     locations.map((loc) => (
-                      <DropdownMenuItem 
-                        key={loc.id} 
+                      <DropdownMenuItem
+                        key={loc.id}
                         onClick={() => selectLocation(loc)}
                         className="cursor-pointer"
                       >
@@ -260,7 +273,9 @@ const Header = () => {
                           <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0 mt-0.5" />
                           <div>
                             <div className="font-medium">{loc.name}</div>
-                            <div className="text-xs text-muted-foreground">PIN: {loc.pincode}</div>
+                            <div className="text-xs text-muted-foreground">
+                              PIN: {loc.pincode}
+                            </div>
                           </div>
                         </div>
                       </DropdownMenuItem>
@@ -271,9 +286,12 @@ const Header = () => {
                     </div>
                   )}
                 </div>
-                
+
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={fetchCurrentLocation} className="cursor-pointer mt-1">
+                <DropdownMenuItem
+                  onClick={fetchCurrentLocation}
+                  className="cursor-pointer mt-1"
+                >
                   <span className="flex items-center text-primary">
                     <MapPin className="h-4 w-4 mr-2" />
                     Use My Current Location
@@ -283,7 +301,10 @@ const Header = () => {
             </DropdownMenu>
           </div>
 
-          <form onSubmit={handleSearchSubmit} className="flex-grow max-w-xl relative">
+          <form
+            onSubmit={handleSearchSubmit}
+            className="flex-grow max-w-xl relative"
+          >
             <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
 
             <input
@@ -313,7 +334,7 @@ const Header = () => {
                 <XMarkIcon className="w-5 h-5" />
               </button>
             )}
-            
+
             {/* Search Results */}
             {showSearchResults && searchQuery.length > 1 && (
               <div className="absolute top-full left-0 right-0 bg-white shadow-lg rounded-lg mt-1 max-h-80 overflow-auto z-50">
@@ -325,20 +346,29 @@ const Header = () => {
                     <ul>
                       {filteredMeals.map((meal) => (
                         <li key={meal.id} className="border-b last:border-0">
-                          <Link href={`/menu?id=${meal.id}`} className="flex items-start p-3 hover:bg-gray-50">
+                          <Link
+                            href={`/menu?id=${meal.id}`}
+                            className="flex items-start p-3 hover:bg-gray-50"
+                          >
                             <div className="h-12 w-12 rounded-md flex-shrink-0 bg-gray-100 mr-3 overflow-hidden">
                               {meal.image && (
-                                <img 
-                                  src={meal.image} 
+                                <img
+                                  src={meal.image}
                                   alt={meal.name}
                                   className="h-full w-full object-cover"
                                 />
                               )}
                             </div>
                             <div className="flex-1">
-                              <h4 className="text-sm font-medium">{meal.name}</h4>
-                              <p className="text-xs text-gray-500 line-clamp-1">{meal.description}</p>
-                              <p className="text-xs font-medium text-primary mt-1">₹{meal.price.toFixed(2)}</p>
+                              <h4 className="text-sm font-medium">
+                                {meal.name}
+                              </h4>
+                              <p className="text-xs text-gray-500 line-clamp-1">
+                                {meal.description}
+                              </p>
+                              <p className="text-xs font-medium text-primary mt-1">
+                                ₹{meal.price.toFixed(2)}
+                              </p>
                             </div>
                           </Link>
                         </li>
@@ -346,7 +376,10 @@ const Header = () => {
                     </ul>
                     {meals.length > 5 && (
                       <div className="p-3 border-t text-center">
-                        <Link href={`/menu?search=${encodeURIComponent(searchQuery)}`} className="text-sm text-primary font-medium">
+                        <Link
+                          href={`/menu?search=${encodeURIComponent(searchQuery)}`}
+                          className="text-sm text-primary font-medium"
+                        >
                           View all {meals.length} results
                         </Link>
                       </div>
@@ -354,8 +387,12 @@ const Header = () => {
                   </>
                 ) : searchQuery.length > 1 ? (
                   <div className="p-6 text-center">
-                    <p className="text-sm text-gray-500">No results found for "{searchQuery}"</p>
-                    <p className="text-xs text-gray-400 mt-1">Try a different search term</p>
+                    <p className="text-sm text-gray-500">
+                      No results found for "{searchQuery}"
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Try a different search term
+                    </p>
                   </div>
                 ) : null}
               </div>
@@ -396,11 +433,21 @@ const Header = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
-                    <Link href="/profile" className="w-full">
+                    <Link href="/profile?tab=profile" className="w-full">
                       Your Profile
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
+                    <Link href="/profile?tab=subscriptions" className="w-full">
+                      Subscriptions
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile?tab=orders" className="w-full">
+                      Order History
+                    </Link>
+                  </DropdownMenuItem>
+                  {/* <DropdownMenuItem asChild>
                     <Link href="/subscription" className="w-full">
                       Subscription
                     </Link>
@@ -409,27 +456,20 @@ const Header = () => {
                     <Link href="/meal-planner" className="w-full">
                       Meal Planner
                     </Link>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <div className="flex items-center space-x-2">
-                <Button 
-                  variant="ghost" 
+                <Button
+                  variant="ghost"
                   className="hidden md:flex"
                   onClick={() => openAuthModal("normal", "")}
                 >
                   <LogIn className="h-4 w-4 mr-2" />
                   Login
-                </Button>
-                <Button 
-                  variant="default" 
-                  className="hidden md:flex"
-                  onClick={() => openAuthModal("normal", "", "register")}
-                >
-                  Register
                 </Button>
               </div>
             )}
@@ -438,8 +478,8 @@ const Header = () => {
       </header>
 
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
-      
-      <AuthModal 
+
+      <AuthModal
         isOpen={authModalOpen}
         onOpenChange={setAuthModalOpen}
         defaultTab={authModalTab}

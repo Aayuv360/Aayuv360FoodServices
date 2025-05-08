@@ -20,25 +20,13 @@ function Router() {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
-      {/* <TopNav />
-       */}
+
       <main className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/menu" component={Menu} />
-
-          {/* Protected routes */}
-          <Route path="/profile">
-            <Profile />
-          </Route>
-
-          <Route path="/subscription">
-            <Subscription />
-          </Route>
-
-          {/* <Route path="/meal-planner" component={MealPlanner} />
-           */}
-          {/* Fallback to 404 */}
+          <Route path="/profile" component={Profile} />
+          <Route path="/subscription" component={Subscription} />
           <Route component={NotFound} />
         </Switch>
       </main>

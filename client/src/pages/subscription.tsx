@@ -83,7 +83,6 @@ const subscriptionSchema = z.object({
     required_error: "Please select a start date",
   }),
   selectedAddressId: z.number().optional(),
-  locationId: z.string().optional(),
   useNewAddress: z.boolean().default(false),
   newAddress: addressSchema.optional(),
   paymentMethod: z.enum(["card", "upi", "bank"]),
@@ -158,14 +157,6 @@ const Subscription = () => {
       return res.json();
     },
   });
-  
-  const { data: locations = [], isLoading: locationsLoading } = useQuery<any[]>({
-    queryKey: ["/api/locations"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/locations");
-      return res.json();
-    },
-  });
 
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as any) || "basic",
@@ -179,7 +170,6 @@ const Subscription = () => {
     cardExpiry: "",
     cardCvv: "",
     upiId: "",
-    locationId: locations && locations.length > 0 ? String(locations[0].id) : undefined,
     customMealSelections: [],
   };
 
@@ -208,16 +198,6 @@ const Subscription = () => {
       if (!plan) {
         throw new Error("Invalid plan selected");
       }
-      
-      // Calculate price with adjustments
-      const basePrice = plan.price || 0;
-      const priceAdjustment = getPriceAdjustment(data.dietaryPreference);
-      const totalPrice = (basePrice + priceAdjustment) * data.personCount;
-      
-      // Get selected location name for display in profile
-      const selectedLocation = locations.find(
-        (loc: any) => loc.id === parseInt(data.locationId || '0')
-      );
 
       const payload = {
         userId: user?.id,
@@ -225,16 +205,11 @@ const Subscription = () => {
         subscriptionType: data.subscriptionType,
         startDate: data.startDate.toISOString(),
         mealsPerMonth: plan.mealsPerMonth || 0,
-        price: totalPrice,
-        basePrice: basePrice,
-        dietaryAddOn: priceAdjustment,
+        price: plan.price || 0,
         status: "active",
         paymentMethod: data.paymentMethod,
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
-        locationId: data.locationId,
-        locationName: selectedLocation?.name || '',
-        isActive: true,
       };
 
       const response = await apiRequest("POST", "/api/subscriptions", payload);
@@ -786,14 +761,8 @@ const Subscription = () => {
                             const startDate = new Date(form.watch("startDate"));
                             const mealDate = new Date(startDate);
                             mealDate.setDate(startDate.getDate() + index);
-
-                            // Calculate which day of the week this is (0-6)
                             const dayOfWeek = mealDate.getDay();
-
-                            // Map to the day name
                             const dayName = getDayName(dayOfWeek);
-
-                            // Get a formatted date string
                             const formattedDate = format(mealDate, "d");
 
                             return (
@@ -1212,38 +1181,7 @@ const Subscription = () => {
               )}
 
               <div className="border-t pt-4 mt-6">
-                <FormField
-                  control={form.control}
-                  name="locationId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Delivery Location</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a delivery location" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {locations.map((location: any) => (
-                            <SelectItem key={location.id} value={String(location.id)}>
-                              {location.name} - {location.pincode}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Select the nearest delivery location to your address
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="text-sm text-gray-500 my-4">
+                <div className="text-sm text-gray-500 mb-4">
                   <p>
                     Note: We currently deliver only in Hyderabad, within a 10km
                     radius of our service locations.
