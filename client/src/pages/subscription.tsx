@@ -608,6 +608,22 @@ const Subscription = () => {
                     <p className="text-sm text-gray-600 mt-1">
                       {currentPlan.description}
                     </p>
+                    <div className="mt-3 bg-white p-3 rounded-md border border-gray-100">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium">Price per person:</span>
+                        <span className="text-sm">₹{((basePrice + dietaryAddOn) / 100).toFixed(0)}</span>
+                      </div>
+                      {personCount > 1 && (
+                        <div className="flex justify-between items-center mt-1">
+                          <span className="text-sm font-medium">Number of persons:</span>
+                          <span className="text-sm">{personCount}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between items-center mt-1 border-t pt-2">
+                        <span className="text-sm font-medium">Total monthly price:</span>
+                        <span className="text-sm font-semibold">₹{(totalPrice / 100).toFixed(0)}</span>
+                      </div>
+                    </div>
                     <ul className="mt-3 space-y-2">
                       {currentPlan.features.map((feature, idx) => (
                         <li key={idx} className="flex items-start text-sm">
@@ -1299,6 +1315,10 @@ const Subscription = () => {
                     <span className="font-medium">Start Date:</span>{" "}
                     {format(form.watch("startDate"), "PPP")}
                   </p>
+                  <p className="text-sm text-gray-600 mb-1">
+                    <span className="font-medium">Persons:</span>{" "}
+                    {personCount}
+                  </p>
 
                   <div className="border-t my-3"></div>
 
@@ -1320,10 +1340,32 @@ const Subscription = () => {
                       </span>
                     </div>
                   )}
+                  
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm">Price per person</span>
+                    <span className="text-sm">
+                      ₹{((basePrice + dietaryAddOn) / 100).toFixed(2)}/month
+                    </span>
+                  </div>
+                  
+                  {personCount > 1 && (
+                    <div className="flex justify-between mb-1">
+                      <span className="text-sm">Number of persons</span>
+                      <span className="text-sm">× {personCount}</span>
+                    </div>
+                  )}
+                  
+                  <div className="flex justify-between mb-1">
+                    <span className="text-sm">Subtotal</span>
+                    <span className="text-sm">
+                      ₹{(((basePrice + dietaryAddOn) * personCount) / 100).toFixed(2)}/month
+                    </span>
+                  </div>
+                  
                   <div className="flex justify-between mb-2">
                     <span className="text-sm">Tax (5%)</span>
                     <span className="text-sm">
-                      ₹{((currentPlan.price * 0.05) / 100).toFixed(2)}
+                      ₹{(((basePrice + dietaryAddOn) * personCount * 0.05) / 100).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between font-bold">
@@ -1331,7 +1373,7 @@ const Subscription = () => {
                     <span className="text-primary">
                       ₹
                       {(
-                        (currentPlan.price + currentPlan.price * 0.05) /
+                        ((basePrice + dietaryAddOn) * personCount * 1.05) /
                         100
                       ).toFixed(2)}
                     </span>
