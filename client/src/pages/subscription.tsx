@@ -13,6 +13,8 @@ import {
   ChevronRight,
   ArrowLeft,
   ArrowRight,
+  Minus,
+  Plus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -57,7 +59,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
-// Address schema
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
   phone: z.string().min(10, "Valid phone number is required"),
@@ -69,19 +70,17 @@ const addressSchema = z.object({
   isDefault: z.boolean().default(false),
 });
 
-// Subscription form schema
 const subscriptionSchema = z.object({
   plan: z.enum(["basic", "premium", "family"]),
   dietaryPreference: z.enum(["vegetarian", "veg-with-egg", "non-vegetarian"]),
+  personCount: z.number().min(1, "At least 1 person required").max(10, "Maximum 10 persons allowed").default(1),
   subscriptionType: z.enum(["default", "customized"]).default("default"),
   startDate: z.date({
     required_error: "Please select a start date",
   }),
-  // Address information
   selectedAddressId: z.number().optional(),
   useNewAddress: z.boolean().default(false),
   newAddress: addressSchema.optional(),
-  // Payment information
   paymentMethod: z.enum(["card", "upi", "bank"]),
   cardNumber: z.string().optional(),
   cardExpiry: z.string().optional(),
@@ -99,7 +98,6 @@ const subscriptionSchema = z.object({
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 
-// Type definition for subscription steps
 type FormStep = "plan" | "address" | "payment";
 
 const Subscription = () => {
@@ -109,26 +107,20 @@ const Subscription = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Redirect to login if not authenticated
   if (!user) {
     navigate("/login");
     return null;
   }
 
-  // State for multi-step form
   const [formStep, setFormStep] = useState<FormStep>("plan");
-
-  // State for selected meal plan date and selected meals
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedMealsByDay, setSelectedMealsByDay] = useState<{
     [key: number]: number;
   }>({});
-  // State to store meal options for each day of the week
   const [mealOptionsByDay, setMealOptionsByDay] = useState<{
     [key: number]: any[];
   }>({});
 
-  // Mock user addresses (in a real app, these would come from the API)
   const [addresses, setAddresses] = useState([
     {
       id: 1,
@@ -154,7 +146,6 @@ const Subscription = () => {
     },
   ]);
 
-  // Fetch available meals
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
     queryFn: async () => {
@@ -163,15 +154,13 @@ const Subscription = () => {
     },
   });
 
-  // Default form values
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as any) || "basic",
     dietaryPreference: "vegetarian",
+    personCount: 1,
     subscriptionType: "default",
     startDate: new Date(),
-    // Address details
     useNewAddress: false,
-    // Payment details
     paymentMethod: "card",
     cardNumber: "",
     cardExpiry: "",
@@ -180,18 +169,15 @@ const Subscription = () => {
     customMealSelections: [],
   };
 
-  // Form setup
   const form = useForm<SubscriptionFormValues>({
     resolver: zodResolver(subscriptionSchema),
     defaultValues,
   });
 
-  // Watch payment method to show relevant fields
   const paymentMethod = form.watch("paymentMethod");
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
 
-  // Subscription creation mutation
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
       const plan = SUBSCRIPTION_PLANS.find((p) => p.id === data.plan);
@@ -211,11 +197,9 @@ const Subscription = () => {
         paymentMethod: data.paymentMethod,
       };
 
-      // Create the subscription directly
       const response = await apiRequest("POST", "/api/subscriptions", payload);
       const subscription = await response.json();
 
-      // Save custom meal selections if needed
       if (
         data.subscriptionType === "customized" &&
         data.customMealSelections &&
@@ -230,21 +214,18 @@ const Subscription = () => {
         }
       }
 
-      // Display success message
       toast({
         title: "Subscription Successful!",
         description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
         variant: "default",
       });
 
-      // Clear form after successful subscription
       form.reset();
       setFormStep("plan");
 
       return subscription;
     },
     onSuccess: () => {
-      // Invalidate subscriptions cache to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
     },
     onError: (error: any) => {
@@ -257,14 +238,12 @@ const Subscription = () => {
     },
   });
 
-  // Update custom meal selections when user makes changes
   const updateMealSelection = (dayOfWeek: number, mealId: number) => {
     setSelectedMealsByDay((prev) => ({
       ...prev,
       [dayOfWeek]: mealId,
     }));
 
-    // Convert to array format for the form
     const mealSelections = Object.entries(selectedMealsByDay).map(
       ([day, mealId]) => ({
         dayOfWeek: parseInt(day),
@@ -275,7 +254,6 @@ const Subscription = () => {
     form.setValue("customMealSelections", mealSelections);
   };
 
-  // Get day name from day number (0-6)
   const getDayName = (dayNumber: number): string => {
     const days = [
       "Sunday",
@@ -289,7 +267,6 @@ const Subscription = () => {
     return days[dayNumber];
   };
 
-  // Handle next step in the multi-step form
   const goToNextStep = () => {
     if (formStep === "plan") {
       setFormStep("address");
@@ -298,7 +275,6 @@ const Subscription = () => {
     }
   };
 
-  // Handle going back to previous step
   const goToPreviousStep = () => {
     if (formStep === "payment") {
       setFormStep("address");
@@ -307,13 +283,11 @@ const Subscription = () => {
     }
   };
 
-  // Select an existing address
   const selectAddress = (addressId: number) => {
     form.setValue("selectedAddressId", addressId);
     form.setValue("useNewAddress", false);
   };
 
-  // Toggle new address form
   const toggleNewAddressForm = () => {
     form.setValue("useNewAddress", !form.watch("useNewAddress"));
     if (form.watch("useNewAddress")) {
@@ -321,11 +295,8 @@ const Subscription = () => {
     }
   };
 
-  // Form submission handler
   const onSubmit = (values: SubscriptionFormValues) => {
-    // Handle multi-step form
     if (formStep === "plan") {
-      // Validate plan and meals selection
       if (
         values.subscriptionType === "customized" &&
         Object.keys(selectedMealsByDay).length === 0
@@ -339,13 +310,11 @@ const Subscription = () => {
         return;
       }
 
-      // Go to address step
       goToNextStep();
       return;
     }
 
     if (formStep === "address") {
-      // Validate address selection
       if (!values.selectedAddressId && !values.useNewAddress) {
         toast({
           title: "Address required",
@@ -355,7 +324,6 @@ const Subscription = () => {
         return;
       }
 
-      // Validate new address if selected
       if (values.useNewAddress && !values.newAddress) {
         toast({
           title: "New address details required",
@@ -365,14 +333,10 @@ const Subscription = () => {
         return;
       }
 
-      // Go to payment step
       goToNextStep();
       return;
     }
 
-    // We're on the payment step, submit everything
-
-    // Add the meal selections to the form data if using a customized plan
     if (
       values.subscriptionType === "customized" &&
       Object.keys(selectedMealsByDay).length > 0
@@ -387,44 +351,51 @@ const Subscription = () => {
       values.customMealSelections = mealSelections;
     }
 
-    // Show toast notification on submit
     toast({
       title: "Processing subscription...",
       description: "Your subscription request is being processed.",
     });
 
-    // Submit the form
     subscriptionMutation.mutate(values);
   };
 
-  // Calculate price adjustments based on dietary preference
   const getPriceAdjustment = (preference: string) => {
-    switch(preference) {
+    switch (preference) {
       case "vegetarian":
-        return 0; // Base price, no adjustment
+        return 0;
       case "veg-with-egg":
-        return 200; // Add ₹200 for veg with egg
+        return 200;
       case "non-vegetarian":
-        return 500; // Add ₹500 for non-veg
+        return 500;
       default:
         return 0;
     }
   };
 
-  // Get current selected plan details and apply price adjustment
-  const basePlan = SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlan) || SUBSCRIPTION_PLANS[0];
+  const basePlan =
+    SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlan) ||
+    SUBSCRIPTION_PLANS[0];
   const dietaryPreference = form.watch("dietaryPreference");
+  const personCount = form.watch("personCount") || 1;
   const priceAdjustment = getPriceAdjustment(dietaryPreference);
   
-  // Create modified plan with adjusted price
+  // Calculate price based on plan, dietary preference, and person count
+  const basePrice = basePlan.price;
+  const dietaryAddOn = priceAdjustment;
+  const totalPricePerPerson = basePrice + dietaryAddOn;
+  const totalPrice = totalPricePerPerson * personCount;
+
   const currentPlan = {
     ...basePlan,
-    price: basePlan.price + priceAdjustment,
+    price: totalPrice,
     adjustedPrice: true,
-    basePriceText: `₹${(basePlan.price / 100).toFixed(0)} + ₹${(priceAdjustment / 100).toFixed(0)}`
+    basePrice: basePrice,
+    dietaryAddOn: dietaryAddOn,
+    personCount: personCount,
+    pricePerPerson: totalPricePerPerson,
+    basePriceText: `₹${(basePrice / 100).toFixed(0)}${dietaryAddOn > 0 ? ` + ₹${(dietaryAddOn / 100).toFixed(0)}` : ''}${personCount > 1 ? ` × ${personCount} persons` : ''}`,
   };
 
-  // Set plan from URL params
   useEffect(() => {
     if (selectedPlanFromParams) {
       const validPlan = SUBSCRIPTION_PLANS.find(
@@ -436,19 +407,15 @@ const Subscription = () => {
     }
   }, [selectedPlanFromParams, form]);
 
-  // Distribute meals for each day when meals data is loaded
   useEffect(() => {
     if (meals && meals.length > 0) {
-      // Shuffle meals to get a random distribution
       const shuffledMeals = [...meals].sort(() => Math.random() - 0.5);
       const mealCount = shuffledMeals.length;
-      const mealsPerDay = 7; // Show 7 unique meals per day
+      const mealsPerDay = 7;
 
-      // Create a distribution of meals for each day of the week
       const mealsByDay: { [key: number]: any[] } = {};
 
       for (let day = 0; day < 7; day++) {
-        // Get a unique set of meals for this day, cycling through the array if needed
         const startIndex = (day * mealsPerDay) % mealCount;
         let dayMeals = [];
 
@@ -464,7 +431,6 @@ const Subscription = () => {
     }
   }, [meals]);
 
-  // Render the step-specific content
   const renderStepContent = () => {
     switch (formStep) {
       case "plan":
@@ -555,6 +521,63 @@ const Subscription = () => {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="personCount"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel>Number of Persons</FormLabel>
+                      <div className="flex items-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            const newValue = Math.max(1, field.value - 1);
+                            form.setValue("personCount", newValue);
+                          }}
+                          disabled={field.value <= 1}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            className="h-8 w-16 mx-2 text-center"
+                            {...field}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              if (!isNaN(value) && value >= 1 && value <= 10) {
+                                field.onChange(value);
+                              }
+                            }}
+                            min={1}
+                            max={10}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            const newValue = Math.min(10, field.value + 1);
+                            form.setValue("personCount", newValue);
+                          }}
+                          disabled={field.value >= 10}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                        <span className="ml-3 text-sm text-gray-500">
+                          (1-10 persons)
+                        </span>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div>
@@ -597,85 +620,74 @@ const Subscription = () => {
                         </li>
                       ))}
                     </ul>
-
-                    {/* Meal schedule based on plan duration and start date */}
-                    <div className="mt-4 pt-4 border-t">
-                      <h4 className="font-medium text-sm mb-2">
-                        Meal Schedule ({currentPlan.duration} days)
-                      </h4>
-                      <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
-                        {currentPlan.weeklyMeals &&
-                          Array.from({
-                            length: Math.min(currentPlan.duration, 30),
-                          }).map((_, index) => {
-                            // Get the start date and create a date for this meal day
-                            const startDate = new Date(form.watch("startDate"));
-                            const mealDate = new Date(startDate);
-                            mealDate.setDate(startDate.getDate() + index);
-
-                            // Calculate which day of the week this is (0-6)
-                            const dayOfWeek = mealDate.getDay();
-
-                            // Map to the day name
-                            const dayNames = [
-                              "sunday",
-                              "monday",
-                              "tuesday",
-                              "wednesday",
-                              "thursday",
-                              "friday",
-                              "saturday",
-                            ];
-                            const dayName = dayNames[dayOfWeek];
-
-                            // Get a formatted date string
-                            const formattedDate = format(mealDate, "MMM d");
-
-                            // Get the meals for this day
-                            const meals =
-                              currentPlan.weeklyMeals[
-                                dayName as keyof typeof currentPlan.weeklyMeals
-                              ];
-
-                            // Get curry options based on dietary preference
-                            const curryType =
-                              form.watch("dietaryPreference") === "vegetarian"
-                                ? "Vegetable curry"
-                                : form.watch("dietaryPreference") ===
-                                    "veg-with-egg"
-                                  ? "Egg curry"
-                                  : "Chicken curry";
-
-                            return (
-                              <div
-                                key={index}
-                                className="bg-white p-2 rounded border"
-                              >
-                                <p className="font-medium capitalize flex justify-between">
-                                  <span>
-                                    Day {index + 1}: {dayName}
-                                  </span>
-                                  <span className="text-gray-500 text-sm">
-                                    {formattedDate}
-                                  </span>
-                                </p>
-                                <div className="mt-1">
-                                  <p className="text-sm font-medium">
-                                    {meals.main}
-                                  </p>
-                                  <p className="text-xs text-gray-600">
-                                    With: {curryType}, {meals.sides.join(", ")}
-                                  </p>
-                                </div>
-                              </div>
-                            );
-                          })}
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>
             </div>
+
+            {subscriptionType !== "customized" && (
+              <div className="border-t pt-6 mb-2">
+                <h4 className="font-medium text-sm mb-2">
+                  Meal Schedule ({currentPlan.duration} days)
+                </h4>
+                <div className="flex flex-wrap gap-3 max-h-72 overflow-y-auto pr-2">
+                  {currentPlan.weeklyMeals &&
+                    Array.from({
+                      length: Math.min(currentPlan.duration, 30),
+                    }).map((_, index) => {
+                      const startDate = new Date(form.watch("startDate"));
+                      const mealDate = new Date(startDate);
+                      mealDate.setDate(startDate.getDate() + index);
+                      const dayOfWeek = mealDate.getDay();
+                      const dayNames = [
+                        "sunday",
+                        "monday",
+                        "tuesday",
+                        "wednesday",
+                        "thursday",
+                        "friday",
+                        "saturday",
+                      ];
+                      const dayName = dayNames[dayOfWeek];
+
+                      const formattedDate = format(mealDate, "MMM d");
+                      const meals =
+                        currentPlan.weeklyMeals[
+                          dayName as keyof typeof currentPlan.weeklyMeals
+                        ];
+
+                      const curryType =
+                        form.watch("dietaryPreference") === "vegetarian"
+                          ? "Vegetable curry"
+                          : form.watch("dietaryPreference") === "veg-with-egg"
+                            ? "Egg curry"
+                            : "Chicken curry";
+
+                      return (
+                        <div
+                          key={index}
+                          className="bg-white p-2 rounded border w-64"
+                        >
+                          <p className="font-medium capitalize flex justify-between">
+                            <span>
+                              Day {index + 1}: {dayName}
+                            </span>
+                            <span className="text-gray-500 text-sm">
+                              {formattedDate}
+                            </span>
+                          </p>
+                          <div className="mt-1">
+                            <p className="text-sm font-medium">{meals.main}</p>
+                            <p className="text-xs text-gray-600">
+                              With: {curryType}, {meals.sides.join(", ")}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
 
             {subscriptionType === "customized" && (
               <div className="border-t pt-6 mb-2">
@@ -689,7 +701,6 @@ const Subscription = () => {
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                     <div>
-                      {/* Day selection based on plan duration and start date */}
                       <div>
                         <p className="text-sm text-gray-600 mb-3">
                           Select a day to customize your meal (Plan duration:{" "}
@@ -699,7 +710,6 @@ const Subscription = () => {
                           {Array.from({
                             length: Math.min(currentPlan.duration, 30),
                           }).map((_, index) => {
-                            // Get the start date and create a date for this meal day
                             const startDate = new Date(form.watch("startDate"));
                             const mealDate = new Date(startDate);
                             mealDate.setDate(startDate.getDate() + index);
@@ -873,7 +883,11 @@ const Subscription = () => {
               </div>
               {priceAdjustment > 0 && (
                 <div className="flex justify-between mb-2">
-                  <span>{dietaryPreference === "veg-with-egg" ? "Egg Option" : "Non-Veg Option"}</span>
+                  <span>
+                    {dietaryPreference === "veg-with-egg"
+                      ? "Egg Option"
+                      : "Non-Veg Option"}
+                  </span>
                   <span>+ ₹{(priceAdjustment / 100).toFixed(2)}</span>
                 </div>
               )}
@@ -961,7 +975,6 @@ const Subscription = () => {
                 </div>
               )}
 
-              {/* Add new address toggle */}
               <div className="flex items-center space-x-2 mb-4">
                 <Checkbox
                   id="add-new-address"
@@ -976,7 +989,6 @@ const Subscription = () => {
                 </label>
               </div>
 
-              {/* New address form */}
               {form.watch("useNewAddress") && (
                 <div className="space-y-4 border p-4 rounded-lg">
                   <h4 className="font-medium">New Address Details</h4>
@@ -1259,7 +1271,7 @@ const Subscription = () => {
                   <div className="bg-neutral-light p-4 rounded-lg mt-4">
                     <h3 className="font-medium mb-2">Bank Transfer Details</h3>
                     <p className="text-sm text-gray-600 mb-1">
-                      Account Name: MealMillet Services
+                      Account Name: Aayuv Services
                     </p>
                     <p className="text-sm text-gray-600 mb-1">
                       Account Number: 1234567890
@@ -1298,7 +1310,11 @@ const Subscription = () => {
                   </div>
                   {priceAdjustment > 0 && (
                     <div className="flex justify-between mb-1">
-                      <span className="text-sm">{dietaryPreference === "veg-with-egg" ? "Egg Option" : "Non-Veg Option"}</span>
+                      <span className="text-sm">
+                        {dietaryPreference === "veg-with-egg"
+                          ? "Egg Option"
+                          : "Non-Veg Option"}
+                      </span>
                       <span className="text-sm">
                         + ₹{(priceAdjustment / 100).toFixed(2)}
                       </span>
@@ -1358,66 +1374,65 @@ const Subscription = () => {
     <div className="min-h-screen bg-neutral-light py-12">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between flex-wrap mb-2">
-            <h1 className="text-3xl font-bold mr-4">Subscribe to MealMillet</h1>
-            <FormField
-              control={form.control}
-              name="dietaryPreference"
-              render={({ field }) => (
-                <FormItem className="space-y-0">
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      type="button"
-                      variant={
-                        field.value === "vegetarian" ? "default" : "outline"
-                      }
-                      className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                      onClick={() => field.onChange("vegetarian")}
-                      size="sm"
-                    >
-                      <Check
-                        className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`}
-                      />
-                      Vegetarian
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        field.value === "veg-with-egg" ? "default" : "outline"
-                      }
-                      className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
-                      onClick={() => field.onChange("veg-with-egg")}
-                      size="sm"
-                    >
-                      <Check
-                        className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`}
-                      />
-                      Veg with Egg
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        field.value === "non-vegetarian" ? "default" : "outline"
-                      }
-                      className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
-                      onClick={() => field.onChange("non-vegetarian")}
-                      size="sm"
-                    >
-                      <Check
-                        className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`}
-                      />
-                      Non-Veg
-                    </Button>
-                  </div>
-                </FormItem>
-              )}
-            />
+          <div className="flex items-center justify-between flex-wrap">
+            <h1 className="text-3xl font-bold mr-4">Subscribe to Aayuv</h1>
           </div>
 
-          <p className="text-gray-600 mb-8">
+          <p className="text-gray-600 mb-4">
             Select a plan and customize your subscription
           </p>
-
+          <FormField
+            control={form.control}
+            name="dietaryPreference"
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <div className="flex flex-wrap gap-2 mb-[20px]">
+                  <Button
+                    type="button"
+                    variant={
+                      field.value === "vegetarian" ? "default" : "outline"
+                    }
+                    className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                    onClick={() => field.onChange("vegetarian")}
+                    size="sm"
+                  >
+                    <Check
+                      className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`}
+                    />
+                    Vegetarian
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      field.value === "veg-with-egg" ? "default" : "outline"
+                    }
+                    className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
+                    onClick={() => field.onChange("veg-with-egg")}
+                    size="sm"
+                  >
+                    <Check
+                      className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`}
+                    />
+                    Veg with Egg
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      field.value === "non-vegetarian" ? "default" : "outline"
+                    }
+                    className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
+                    onClick={() => field.onChange("non-vegetarian")}
+                    size="sm"
+                  >
+                    <Check
+                      className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`}
+                    />
+                    Non-Veg
+                  </Button>
+                </div>
+              </FormItem>
+            )}
+          />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {SUBSCRIPTION_PLANS.map((plan) => (
               <Card
@@ -1443,12 +1458,23 @@ const Subscription = () => {
                 <CardContent>
                   <div>
                     <div className="text-2xl font-semibold text-primary">
-                      ₹{((plan.price + getPriceAdjustment(dietaryPreference)) / 100).toFixed(0)}
+                      ₹
+                      {(
+                        (plan.price + getPriceAdjustment(dietaryPreference)) /
+                        100
+                      ).toFixed(0)}
                       <span className="text-sm text-gray-500">/month</span>
                     </div>
                     {priceAdjustment > 0 && (
                       <div className="text-xs text-gray-500">
-                        Base: ₹{(plan.price / 100).toFixed(0)} + {dietaryPreference === "veg-with-egg" ? "Egg" : "Non-veg"}: ₹{(getPriceAdjustment(dietaryPreference) / 100).toFixed(0)}
+                        Base: ₹{(plan.price / 100).toFixed(0)} +{" "}
+                        {dietaryPreference === "veg-with-egg"
+                          ? "Egg"
+                          : "Non-veg"}
+                        : ₹
+                        {(getPriceAdjustment(dietaryPreference) / 100).toFixed(
+                          0,
+                        )}
                       </div>
                     )}
                   </div>
@@ -1488,7 +1514,6 @@ const Subscription = () => {
                   "Complete your subscription purchase"}
               </CardDescription>
 
-              {/* Progress steps indicator */}
               <div className="mt-4">
                 <div className="flex justify-between">
                   <div className="flex flex-col items-center">
@@ -1499,7 +1524,7 @@ const Subscription = () => {
                     </div>
                     <span className="text-xs mt-1">Plan</span>
                   </div>
-                  <div className="flex-1 flex items-center mx-2">
+                  <div className="flex-1 flex items-center mx-2 mb-[18px]">
                     <div
                       className={`h-1 w-full ${formStep !== "plan" ? "bg-primary" : "bg-gray-200"}`}
                     ></div>
@@ -1512,7 +1537,7 @@ const Subscription = () => {
                     </div>
                     <span className="text-xs mt-1">Address</span>
                   </div>
-                  <div className="flex-1 flex items-center mx-2">
+                  <div className="flex-1 flex items-center mx-2 mb-[18px]">
                     <div
                       className={`h-1 w-full ${formStep === "payment" ? "bg-primary" : "bg-gray-200"}`}
                     ></div>
