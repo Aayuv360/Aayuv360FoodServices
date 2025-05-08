@@ -1561,61 +1561,67 @@ const Subscription = () => {
               : "Your subscription details"}
           </p>
           
-          {formStep === "plan" ? (
-            <FormField
-              control={form.control}
-              name="dietaryPreference"
-              render={({ field }) => (
-                <FormItem className="space-y-0">
-                  <div className="flex flex-wrap gap-2 mb-[20px]">
-                    <Button
-                      type="button"
-                      variant={
-                        field.value === "vegetarian" ? "default" : "outline"
-                      }
-                      className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
-                      onClick={() => field.onChange("vegetarian")}
-                      size="sm"
-                    >
-                      <Check
-                        className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`}
-                      />
-                      Vegetarian
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        field.value === "veg-with-egg" ? "default" : "outline"
-                      }
-                      className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
-                      onClick={() => field.onChange("veg-with-egg")}
-                      size="sm"
-                    >
-                      <Check
-                        className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`}
-                      />
-                      Veg with Egg
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={
-                        field.value === "non-vegetarian" ? "default" : "outline"
-                      }
-                      className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
-                      onClick={() => field.onChange("non-vegetarian")}
-                      size="sm"
-                    >
-                      <Check
-                        className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`}
-                      />
-                      Non-Veg
-                    </Button>
-                  </div>
-                </FormItem>
-              )}
-            />
-          ) : (
-            <div className="mb-6">
+          <FormField
+            control={form.control}
+            name="dietaryPreference"
+            render={({ field }) => (
+              <FormItem className="space-y-0">
+                <div className="flex flex-wrap gap-2 mb-[20px]">
+                  <Button
+                    type="button"
+                    variant={
+                      field.value === "vegetarian" ? "default" : "outline"
+                    }
+                    className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""} 
+                      ${formStep !== "plan" && field.value !== "vegetarian" ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onClick={() => formStep === "plan" && field.onChange("vegetarian")}
+                    size="sm"
+                    disabled={formStep !== "plan" && field.value !== "vegetarian"}
+                  >
+                    <Check
+                      className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`}
+                    />
+                    Vegetarian
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      field.value === "veg-with-egg" ? "default" : "outline"
+                    }
+                    className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                      ${formStep !== "plan" && field.value !== "veg-with-egg" ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onClick={() => formStep === "plan" && field.onChange("veg-with-egg")}
+                    size="sm"
+                    disabled={formStep !== "plan" && field.value !== "veg-with-egg"}
+                  >
+                    <Check
+                      className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`}
+                    />
+                    Veg with Egg
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={
+                      field.value === "non-vegetarian" ? "default" : "outline"
+                    }
+                    className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}
+                      ${formStep !== "plan" && field.value !== "non-vegetarian" ? "opacity-50 cursor-not-allowed" : ""}`}
+                    onClick={() => formStep === "plan" && field.onChange("non-vegetarian")}
+                    size="sm"
+                    disabled={formStep !== "plan" && field.value !== "non-vegetarian"}
+                  >
+                    <Check
+                      className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`}
+                    />
+                    Non-Veg
+                  </Button>
+                </div>
+              </FormItem>
+            )}
+          />
+          
+          {formStep !== "plan" && (
+            <div className="mt-2 mb-4">
               <span className="text-sm font-medium mr-2">Selected Diet:</span>
               <Badge
                 variant="outline"
@@ -1640,113 +1646,75 @@ const Subscription = () => {
             </div>
           )}
           
-          {formStep === "plan" ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {SUBSCRIPTION_PLANS.map((plan) => (
-                <Card
-                  key={plan.id}
-                  className={`cursor-pointer transition duration-300 hover:shadow-md ${
-                    selectedPlan === plan.id
-                      ? "border-2 border-primary ring-2 ring-primary ring-opacity-50"
-                      : ""
-                  }`}
-                  onClick={() => form.setValue("plan", plan.id as any)}
-                >
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-center">
-                      <CardTitle className="text-lg">{plan.name}</CardTitle>
-                      {selectedPlan === plan.id && (
-                        <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                          <Check className="h-4 w-4 text-white" />
-                        </div>
-                      )}
-                    </div>
-                    <CardDescription>{plan.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div>
-                      <div className="text-2xl font-semibold text-primary">
-                        ₹
-                        {(
-                          ((plan.price + getPriceAdjustment(dietaryPreference)) * personCount) /
-                          100
-                        ).toFixed(0)}
-                        <span className="text-sm text-gray-500">/month</span>
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {personCount > 1 ? (
-                          <>
-                            ₹{((plan.price + getPriceAdjustment(dietaryPreference)) / 100).toFixed(0)} per person × {personCount} persons
-                          </>
-                        ) : (
-                          <>
-                            Base: ₹{(plan.price / 100).toFixed(0)}
-                            {priceAdjustment > 0 && (
-                              <> + {dietaryPreference === "veg-with-egg" ? "Egg" : "Non-veg"}: 
-                              ₹{(getPriceAdjustment(dietaryPreference) / 100).toFixed(0)}</>
-                            )}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                    <ul className="space-y-2 text-sm">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-start">
-                          {feature.included ? (
-                            <Check className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                          ) : (
-                            <X className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
-                          )}
-                          <span
-                            className={feature.included ? "" : "text-gray-400"}
-                          >
-                            {feature.text}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="mb-8">
-              <Card className="border-2 border-primary mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {SUBSCRIPTION_PLANS.map((plan) => (
+              <Card
+                key={plan.id}
+                className={`transition duration-300 ${
+                  selectedPlan === plan.id
+                    ? "border-2 border-primary ring-2 ring-primary ring-opacity-50"
+                    : ""
+                } ${formStep !== "plan" && selectedPlan !== plan.id ? "opacity-50" : ""} 
+                ${formStep === "plan" ? "cursor-pointer hover:shadow-md" : ""}`}
+                onClick={() => formStep === "plan" && form.setValue("plan", plan.id as any)}
+              >
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">{currentPlan.name}</CardTitle>
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="h-4 w-4 text-white" />
-                    </div>
+                    <CardTitle className="text-lg">{plan.name}</CardTitle>
+                    {selectedPlan === plan.id && (
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                        <Check className="h-4 w-4 text-white" />
+                      </div>
+                    )}
                   </div>
-                  <CardDescription>{currentPlan.description}</CardDescription>
+                  <CardDescription>{plan.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <div className="text-xl font-semibold text-primary">
-                      ₹{(totalPrice / 100).toFixed(0)}
+                    <div className="text-2xl font-semibold text-primary">
+                      ₹
+                      {(
+                        ((plan.price + getPriceAdjustment(dietaryPreference)) * personCount) /
+                        100
+                      ).toFixed(0)}
                       <span className="text-sm text-gray-500">/month</span>
                     </div>
-                    <div className="text-xs text-gray-500 mt-1">
+                    <div className="text-xs text-gray-500">
                       {personCount > 1 ? (
                         <>
-                          ₹{((basePrice + dietaryAddOn) / 100).toFixed(0)} per person × {personCount} persons
+                          ₹{((plan.price + getPriceAdjustment(dietaryPreference)) / 100).toFixed(0)} per person × {personCount} persons
                         </>
                       ) : (
                         <>
-                          Base: ₹{(basePrice / 100).toFixed(0)}
-                          {dietaryAddOn > 0 && (
+                          Base: ₹{(plan.price / 100).toFixed(0)}
+                          {priceAdjustment > 0 && (
                             <> + {dietaryPreference === "veg-with-egg" ? "Egg" : "Non-veg"}: 
-                            ₹{(dietaryAddOn / 100).toFixed(0)}</>
+                            ₹{(getPriceAdjustment(dietaryPreference) / 100).toFixed(0)}</>
                           )}
                         </>
                       )}
                     </div>
                   </div>
+                  <ul className="space-y-2 text-sm">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-start">
+                        {feature.included ? (
+                          <Check className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                        ) : (
+                          <X className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                        )}
+                        <span
+                          className={feature.included ? "" : "text-gray-400"}
+                        >
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
                 </CardContent>
               </Card>
-            </div>
-          )}
+            ))}
+          </div>
           
 
           <Card>
