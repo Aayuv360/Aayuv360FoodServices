@@ -52,13 +52,13 @@ const Profile = () => {
   }
 
   // Fetch user orders
-  const { data: orders, isLoading: isLoadingOrders } = useQuery({
+  const { data: orders = [], isLoading: isLoadingOrders } = useQuery<any[]>({
     queryKey: ["/api/orders"],
     enabled: currentTab === "orders",
   });
 
   // Fetch user subscriptions
-  const { data: subscriptions, isLoading: isLoadingSubscriptions } = useQuery({
+  const { data: subscriptions = [], isLoading: isLoadingSubscriptions } = useQuery<any[]>({
     queryKey: ["/api/subscriptions"],
     enabled: currentTab === "subscriptions",
   });
@@ -353,6 +353,42 @@ const Profile = () => {
                             <p className="text-gray-600 mb-2">
                               {subscription.mealsPerMonth} meals per month
                             </p>
+                            
+                            {/* Dietary preference */}
+                            {subscription.dietaryPreference && (
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-sm text-gray-600">Diet:</span>
+                                <Badge 
+                                  variant="outline"
+                                  className={
+                                    subscription.dietaryPreference === "vegetarian"
+                                      ? "bg-green-100 text-green-800"
+                                      : subscription.dietaryPreference === "veg-with-egg"
+                                        ? "bg-amber-100 text-amber-800"
+                                        : "bg-red-100 text-red-800"
+                                  }
+                                >
+                                  {subscription.dietaryPreference === "vegetarian"
+                                    ? "Vegetarian"
+                                    : subscription.dietaryPreference === "veg-with-egg"
+                                      ? "Veg with Egg"
+                                      : "Non-Vegetarian"}
+                                </Badge>
+                                {subscription.personCount > 1 && (
+                                  <Badge variant="outline" className="bg-gray-100">
+                                    {subscription.personCount} persons
+                                  </Badge>
+                                )}
+                              </div>
+                            )}
+                            
+                            {/* Location */}
+                            {subscription.locationName && (
+                              <p className="text-sm text-gray-600 mb-2">
+                                Delivery to: <span className="font-medium">{subscription.locationName}</span>
+                              </p>
+                            )}
+                            
                             <div className="text-sm text-gray-500">
                               <p>
                                 Started:{" "}

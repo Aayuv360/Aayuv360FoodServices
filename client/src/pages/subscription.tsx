@@ -157,6 +157,14 @@ const Subscription = () => {
       return res.json();
     },
   });
+  
+  const { data: locations = [], isLoading: locationsLoading } = useQuery<any[]>({
+    queryKey: ["/api/locations"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/locations");
+      return res.json();
+    },
+  });
 
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as any) || "basic",
