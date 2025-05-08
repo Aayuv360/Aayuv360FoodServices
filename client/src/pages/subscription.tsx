@@ -12,6 +12,7 @@ import {
   ArrowRight,
   Minus,
   Plus,
+  PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -557,35 +558,54 @@ const Subscription = () => {
                   ))}
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="subscriptionType"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Subscription Type</FormLabel>
-                      <RadioGroup
-                        onValueChange={() => {
-                          field.onChange;
-                          setDefaulMealModalOpen(true);
-                        }}
-                        defaultValue={field.value}
-                        className="flex flex-col space-y-1"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="default" id="default" />
-                          <Label htmlFor="default">Default Plan</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="customized" id="customized" />
-                          <Label htmlFor="customized">
-                            Customized (Select meals for each day)
-                          </Label>
-                        </div>
-                      </RadioGroup>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="mt-4">
+                  <FormLabel>Subscription Type</FormLabel>
+                  <div className="grid grid-cols-2 gap-4 mt-2">
+                    <div 
+                      className={`border p-4 rounded-lg cursor-pointer hover:border-primary transition-all ${
+                        form.watch("subscriptionType") === "default" 
+                          ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                          : ""
+                      }`}
+                      onClick={() => {
+                        form.setValue("subscriptionType", "default");
+                        setDefaulMealModalOpen(true);
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium">Default Plan</h3>
+                        {form.watch("subscriptionType") === "default" && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        We'll select a variety of meals for you based on your dietary preferences.
+                      </p>
+                    </div>
+                    
+                    <div 
+                      className={`border p-4 rounded-lg cursor-pointer hover:border-primary transition-all ${
+                        form.watch("subscriptionType") === "customized" 
+                          ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                          : ""
+                      }`}
+                      onClick={() => {
+                        form.setValue("subscriptionType", "customized");
+                        setCustomMealModalOpen(true);
+                      }}
+                    >
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-medium">Customized Plan</h3>
+                        {form.watch("subscriptionType") === "customized" && (
+                          <Check className="h-4 w-4 text-primary" />
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        Select specific meals for each day of the week based on your preferences.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
                 <FormField
                   control={form.control}
