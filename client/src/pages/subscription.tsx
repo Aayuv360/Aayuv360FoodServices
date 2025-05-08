@@ -481,6 +481,28 @@ const Subscription = () => {
     }
   }, [selectedPlanFromParams, form]);
 
+  const { data: locations } = useQuery({
+    queryKey: ["/api/locations", locationSearch],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (locationSearch) {
+        params.append("query", locationSearch);
+      }
+      const response = await fetch(`/api/locations?${params.toString()}`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch locations");
+      }
+      return response.json();
+    },
+    enabled: locationSearch.length > 1, // Only fetch when search query is more than 1 character
+  });
+  
+  useEffect(() => {
+    if (locations) {
+      setFilteredLocations(locations);
+    }
+  }, [locations]);
+  
   useEffect(() => {
     if (meals && meals.length > 0) {
       const shuffledMeals = [...meals].sort(() => Math.random() - 0.5);
@@ -878,21 +900,27 @@ const Subscription = () => {
                 </div>
               )}
 
-              <div className="flex items-center space-x-2 mb-4">
-                <Checkbox
-                  id="add-new-address"
-                  checked={form.watch("useNewAddress")}
-                  onCheckedChange={() => toggleNewAddressForm()}
-                />
-                <label
-                  htmlFor="add-new-address"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              <div className="mt-4 mb-4">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full flex items-center justify-center"
+                  onClick={() => setAddressModalOpen(true)}
                 >
-                  Add a new address
-                </label>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add New Address
+                </Button>
               </div>
 
-              <NewAddressModal />
+              <NewAddressModal 
+                addressModalOpen={addressModalOpen}
+                setAddressModalOpen={setAddressModalOpen}
+                locationSearch={locationSearch}
+                filteredLocations={filteredLocations}
+                handleAddressFormSubmit={handleAddressFormSubmit}
+                setLocationSearch={setLocationSearch}
+                selectLocation={selectLocation}
+              />
 
               <div className="border-t pt-4 mt-6">
                 <div className="text-sm text-gray-500 mb-4">
