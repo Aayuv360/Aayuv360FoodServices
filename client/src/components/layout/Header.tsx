@@ -432,14 +432,20 @@ const Header = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => window.location.href = "/profile?tab=profile"}>
-                    Your Profile
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="w-full">
+                      Your Profile
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => window.location.href = "/profile?tab=subscriptions"}>
-                    Subscriptions
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile?tab=subscriptions" className="w-full">
+                      Subscriptions
+                    </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => window.location.href = "/profile?tab=orders"}>
-                    Order History
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile?tab=orders" className="w-full">
+                      Order History
+                    </Link>
                   </DropdownMenuItem>
                   {/* <DropdownMenuItem asChild>
                     <Link href="/subscription" className="w-full">
