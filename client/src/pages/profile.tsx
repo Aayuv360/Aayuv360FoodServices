@@ -60,6 +60,10 @@ const Profile = () => {
   // Fetch user subscriptions
   const { data: subscriptions = [], isLoading: isLoadingSubscriptions } = useQuery<any[]>({
     queryKey: ["/api/subscriptions"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/subscriptions");
+      return res.json();
+    },
     enabled: currentTab === "subscriptions",
   });
 
