@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, UserCircle, ClockIcon, History, LogOut } from "lucide-react";
+import { Loader2, UserCircle, ClockIcon, History, LogOut, ChevronDown, MenuIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,6 +17,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -128,9 +135,38 @@ const Profile = () => {
   return (
     <div className="min-h-screen bg-neutral-light py-12">
       <div className="container mx-auto px-4">
+        <div className="mb-6 md:hidden flex items-center justify-between">
+          <h1 className="text-2xl font-bold">Profile</h1>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MenuIcon className="h-5 w-5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setCurrentTab("profile")}>
+                <UserCircle className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCurrentTab("subscriptions")}>
+                <ClockIcon className="mr-2 h-4 w-4" />
+                Subscriptions
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setCurrentTab("orders")}>
+                <History className="mr-2 h-4 w-4" />
+                Order History
+              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive" onClick={logout}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        
         <div className="flex flex-col md:flex-row gap-6">
           {/* Sidebar */}
-          <div className="w-full md:w-64 space-y-4">
+          <div className="w-full md:w-64 space-y-4 hidden md:block">
             <Card>
               <CardContent className="p-4">
                 <div className="flex flex-col items-center space-y-4 py-6">

@@ -73,7 +73,11 @@ const addressSchema = z.object({
 const subscriptionSchema = z.object({
   plan: z.enum(["basic", "premium", "family"]),
   dietaryPreference: z.enum(["vegetarian", "veg-with-egg", "non-vegetarian"]),
-  personCount: z.number().min(1, "At least 1 person required").max(10, "Maximum 10 persons allowed").default(1),
+  personCount: z
+    .number()
+    .min(1, "At least 1 person required")
+    .max(10, "Maximum 10 persons allowed")
+    .default(1),
   subscriptionType: z.enum(["default", "customized"]).default("default"),
   startDate: z.date({
     required_error: "Please select a start date",
@@ -194,6 +198,16 @@ const Subscription = () => {
       if (!plan) {
         throw new Error("Invalid plan selected");
       }
+      
+      // Calculate price with adjustments
+      const basePrice = plan.price || 0;
+      const priceAdjustment = getPriceAdjustment(data.dietaryPreference);
+      const totalPrice = (basePrice + priceAdjustment) * data.personCount;
+      
+      // Get selected location name for display in profile
+      const selectedLocation = locations.find(
+        loc => loc.id === parseInt(data.locationId)
+      );
 
       const payload = {
         userId: user?.id,
@@ -201,11 +215,16 @@ const Subscription = () => {
         subscriptionType: data.subscriptionType,
         startDate: data.startDate.toISOString(),
         mealsPerMonth: plan.mealsPerMonth || 0,
-        price: plan.price || 0,
+        price: totalPrice,
+        basePrice: basePrice,
+        dietaryAddOn: priceAdjustment,
         status: "active",
         paymentMethod: data.paymentMethod,
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
+        locationId: data.locationId,
+        locationName: selectedLocation?.name || '',
+        isActive: true,
       };
 
       const response = await apiRequest("POST", "/api/subscriptions", payload);
@@ -396,7 +415,7 @@ const Subscription = () => {
   const dietaryPreference = form.watch("dietaryPreference");
   const personCount = form.watch("personCount") || 1;
   const priceAdjustment = getPriceAdjustment(dietaryPreference);
-  
+
   // Calculate price based on plan, dietary preference, and person count
   const basePrice = basePlan.price;
   const dietaryAddOn = priceAdjustment;
@@ -411,7 +430,7 @@ const Subscription = () => {
     dietaryAddOn: dietaryAddOn,
     personCount: personCount,
     pricePerPerson: totalPricePerPerson,
-    basePriceText: `₹${(basePrice / 100).toFixed(0)}${dietaryAddOn > 0 ? ` + ₹${(dietaryAddOn / 100).toFixed(0)}` : ''}${personCount > 1 ? ` × ${personCount} persons` : ''}`,
+    basePriceText: `₹${(basePrice / 100).toFixed(0)}${dietaryAddOn > 0 ? ` + ₹${(dietaryAddOn / 100).toFixed(0)}` : ""}${personCount > 1 ? ` × ${personCount} persons` : ""}`,
   };
 
   useEffect(() => {
@@ -628,18 +647,28 @@ const Subscription = () => {
                     </p>
                     <div className="mt-3 bg-white p-3 rounded-md border border-gray-100">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium">Price per person:</span>
-                        <span className="text-sm">₹{((basePrice + dietaryAddOn) / 100).toFixed(0)}</span>
+                        <span className="text-sm font-medium">
+                          Price per person:
+                        </span>
+                        <span className="text-sm">
+                          ₹{((basePrice + dietaryAddOn) / 100).toFixed(0)}
+                        </span>
                       </div>
                       {personCount > 1 && (
                         <div className="flex justify-between items-center mt-1">
-                          <span className="text-sm font-medium">Number of persons:</span>
+                          <span className="text-sm font-medium">
+                            Number of persons:
+                          </span>
                           <span className="text-sm">{personCount}</span>
                         </div>
                       )}
                       <div className="flex justify-between items-center mt-1 border-t pt-2">
-                        <span className="text-sm font-medium">Total monthly price:</span>
-                        <span className="text-sm font-semibold">₹{(totalPrice / 100).toFixed(0)}</span>
+                        <span className="text-sm font-medium">
+                          Total monthly price:
+                        </span>
+                        <span className="text-sm font-semibold">
+                          ₹{(totalPrice / 100).toFixed(0)}
+                        </span>
                       </div>
                     </div>
                     <ul className="mt-3 space-y-2">
@@ -1210,43 +1239,66 @@ const Subscription = () => {
               <div>
                 <div className="mb-6">
                   <h3 className="font-medium mb-2">Delivery Address</h3>
-                  <div className="bg-neutral-light p-4 rounded-lg">
+                  <div className="bg-neutral-light rounded-lg">
                     {form.watch("useNewAddress") && form.watch("newAddress") ? (
                       <>
-                        <p className="text-sm font-medium">{form.watch("newAddress.name")}</p>
-                        <p className="text-sm mt-1">{form.watch("newAddress.addressLine1")}</p>
+                        <p className="text-sm font-medium">
+                          {form.watch("newAddress.name")}
+                        </p>
+                        <p className="text-sm mt-1">
+                          {form.watch("newAddress.addressLine1")}
+                        </p>
                         {form.watch("newAddress.addressLine2") && (
-                          <p className="text-sm">{form.watch("newAddress.addressLine2")}</p>
+                          <p className="text-sm">
+                            {form.watch("newAddress.addressLine2")}
+                          </p>
                         )}
                         <p className="text-sm">
-                          {form.watch("newAddress.city")}, {form.watch("newAddress.state")} - {form.watch("newAddress.pincode")}
+                          {form.watch("newAddress.city")},{" "}
+                          {form.watch("newAddress.state")} -{" "}
+                          {form.watch("newAddress.pincode")}
                         </p>
-                        <p className="text-sm mt-1">Phone: {form.watch("newAddress.phone")}</p>
+                        <p className="text-sm mt-1">
+                          Phone: {form.watch("newAddress.phone")}
+                        </p>
                       </>
                     ) : (
                       <>
                         {form.watch("selectedAddressId") !== undefined && (
                           <>
-                            {addresses.filter(a => a.id === form.watch("selectedAddressId")).map(address => (
-                              <div key={address.id}>
-                                <p className="text-sm font-medium">{address.name}</p>
-                                <p className="text-sm mt-1">{address.addressLine1}</p>
-                                {address.addressLine2 && (
-                                  <p className="text-sm">{address.addressLine2}</p>
-                                )}
-                                <p className="text-sm">
-                                  {address.city}, {address.state} - {address.pincode}
-                                </p>
-                                <p className="text-sm mt-1">Phone: {address.phone}</p>
-                              </div>
-                            ))}
+                            {addresses
+                              .filter(
+                                (a) => a.id === form.watch("selectedAddressId"),
+                              )
+                              .map((address) => (
+                                <div key={address.id}>
+                                  <p className="text-sm font-medium">
+                                    {address.name}
+                                  </p>
+                                  <p className="text-sm mt-1">
+                                    {address.addressLine1}
+                                  </p>
+                                  {address.addressLine2 && (
+                                    <p className="text-sm">
+                                      {address.addressLine2}
+                                    </p>
+                                  )}
+                                  <p className="text-sm">
+                                    {address.city}, {address.state} -{" "}
+                                    {address.pincode}
+                                  </p>
+                                  <p className="text-sm mt-1">
+                                    Phone: {address.phone}
+                                  </p>
+                                </div>
+                              ))}
                           </>
                         )}
                       </>
                     )}
                   </div>
                 </div>
-                
+
                 <FormField
                   control={form.control}
                   name="paymentMethod"
@@ -1358,7 +1410,7 @@ const Subscription = () => {
               </div>
 
               <div>
-                <div className="bg-neutral-light p-4 rounded-lg">
+                <div className="bg-neutral-light rounded-lg">
                   <h3 className="font-medium mb-2">Order Summary</h3>
                   <p className="text-sm text-gray-600 mb-1">
                     <span className="font-medium">Plan:</span>{" "}
@@ -1373,8 +1425,7 @@ const Subscription = () => {
                     {format(form.watch("startDate"), "PPP")}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Persons:</span>{" "}
-                    {personCount}
+                    <span className="font-medium">Persons:</span> {personCount}
                   </p>
 
                   <div className="border-t my-3"></div>
@@ -1397,32 +1448,41 @@ const Subscription = () => {
                       </span>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Price per person</span>
                     <span className="text-sm">
                       ₹{((basePrice + dietaryAddOn) / 100).toFixed(2)}/month
                     </span>
                   </div>
-                  
+
                   {personCount > 1 && (
                     <div className="flex justify-between mb-1">
                       <span className="text-sm">Number of persons</span>
                       <span className="text-sm">× {personCount}</span>
                     </div>
                   )}
-                  
+
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Subtotal</span>
                     <span className="text-sm">
-                      ₹{(((basePrice + dietaryAddOn) * personCount) / 100).toFixed(2)}/month
+                      ₹
+                      {(
+                        ((basePrice + dietaryAddOn) * personCount) /
+                        100
+                      ).toFixed(2)}
+                      /month
                     </span>
                   </div>
-                  
+
                   <div className="flex justify-between mb-2">
                     <span className="text-sm">Tax (5%)</span>
                     <span className="text-sm">
-                      ₹{(((basePrice + dietaryAddOn) * personCount * 0.05) / 100).toFixed(2)}
+                      ₹
+                      {(
+                        ((basePrice + dietaryAddOn) * personCount * 0.05) /
+                        100
+                      ).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex justify-between font-bold">
@@ -1482,53 +1542,67 @@ const Subscription = () => {
                     <Check className="h-6 w-6 text-white" />
                   </div>
                 </div>
-                <CardTitle className="text-center text-2xl">Subscription Successful!</CardTitle>
+                <CardTitle className="text-center text-2xl">
+                  Subscription Successful!
+                </CardTitle>
                 <CardDescription className="text-center">
-                  Your subscription has been processed successfully. You'll start receiving your millet meals soon.
+                  Your subscription has been processed successfully. You'll
+                  start receiving your millet meals soon.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="bg-neutral-light p-6 rounded-lg mb-6">
-                  <h3 className="font-semibold text-lg mb-4">Subscription Summary</h3>
-                  
+                  <h3 className="font-semibold text-lg mb-4">
+                    Subscription Summary
+                  </h3>
+
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span className="text-gray-600">Plan:</span>
-                      <span className="font-medium">{subscribedDetails.planName}</span>
+                      <span className="font-medium">
+                        {subscribedDetails.planName}
+                      </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-gray-600">Start Date:</span>
-                      <span className="font-medium">{format(subscribedDetails.startDate, "PPP")}</span>
+                      <span className="font-medium">
+                        {format(subscribedDetails.startDate, "PPP")}
+                      </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-gray-600">Dietary Preference:</span>
                       <span className="font-medium capitalize">
-                        {subscribedDetails.dietaryPreference === "vegetarian" 
-                          ? "Vegetarian" 
-                          : subscribedDetails.dietaryPreference === "veg-with-egg" 
-                            ? "Vegetarian with Egg" 
+                        {subscribedDetails.dietaryPreference === "vegetarian"
+                          ? "Vegetarian"
+                          : subscribedDetails.dietaryPreference ===
+                              "veg-with-egg"
+                            ? "Vegetarian with Egg"
                             : "Non-Vegetarian"}
                       </span>
                     </div>
-                    
+
                     <div className="flex justify-between">
                       <span className="text-gray-600">Number of Persons:</span>
-                      <span className="font-medium">{subscribedDetails.personCount}</span>
+                      <span className="font-medium">
+                        {subscribedDetails.personCount}
+                      </span>
                     </div>
-                    
+
                     <div className="border-t my-2 pt-2">
                       <div className="flex justify-between font-semibold">
                         <span className="text-gray-600">Total:</span>
-                        <span className="text-primary">₹{(subscribedDetails.totalPrice / 100).toFixed(2)}</span>
+                        <span className="text-primary">
+                          ₹{(subscribedDetails.totalPrice / 100).toFixed(2)}
+                        </span>
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-center">
-                  <Button 
+                  <Button
                     className="bg-primary hover:bg-primary/90"
                     onClick={() => {
                       setIsSuccess(false);
@@ -1553,169 +1627,233 @@ const Subscription = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center justify-between flex-wrap">
             <h1 className="text-3xl font-bold mr-4">Subscribe to Aayuv</h1>
+            {formStep === "plan" && (
+              <FormField
+                control={form.control}
+                name="dietaryPreference"
+                render={({ field }) => (
+                  <FormItem className="space-y-0">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant={
+                          field.value === "vegetarian" ? "default" : "outline"
+                        }
+                        className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""}`}
+                        onClick={() => field.onChange("vegetarian")}
+                        size="sm"
+                      >
+                        <Check
+                          className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`}
+                        />
+                        Vegetarian
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          field.value === "veg-with-egg" ? "default" : "outline"
+                        }
+                        className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}`}
+                        onClick={() => field.onChange("veg-with-egg")}
+                        size="sm"
+                      >
+                        <Check
+                          className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`}
+                        />
+                        Veg with Egg
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          field.value === "non-vegetarian"
+                            ? "default"
+                            : "outline"
+                        }
+                        className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}`}
+                        onClick={() => field.onChange("non-vegetarian")}
+                        size="sm"
+                      >
+                        <Check
+                          className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`}
+                        />
+                        Non-Veg
+                      </Button>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
           </div>
 
           <p className="text-gray-600 mb-4">
-            {formStep === "plan" 
-              ? "Select a plan and customize your subscription" 
+            {formStep === "plan"
+              ? "Select a plan and customize your subscription"
               : "Your subscription details"}
           </p>
-          
-          <FormField
-            control={form.control}
-            name="dietaryPreference"
-            render={({ field }) => (
-              <FormItem className="space-y-0">
-                <div className="flex flex-wrap gap-2 mb-[20px]">
-                  <Button
-                    type="button"
-                    variant={
-                      field.value === "vegetarian" ? "default" : "outline"
-                    }
-                    className={`flex items-center gap-2 ${field.value === "vegetarian" ? "bg-green-600 hover:bg-green-700" : ""} 
-                      ${formStep !== "plan" && field.value !== "vegetarian" ? "opacity-50 cursor-not-allowed" : ""}`}
-                    onClick={() => formStep === "plan" && field.onChange("vegetarian")}
-                    size="sm"
-                    disabled={formStep !== "plan" && field.value !== "vegetarian"}
-                  >
-                    <Check
-                      className={`h-4 w-4 ${field.value === "vegetarian" ? "opacity-100" : "opacity-0"}`}
-                    />
-                    Vegetarian
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={
-                      field.value === "veg-with-egg" ? "default" : "outline"
-                    }
-                    className={`flex items-center gap-2 ${field.value === "veg-with-egg" ? "bg-amber-600 hover:bg-amber-700" : ""}
-                      ${formStep !== "plan" && field.value !== "veg-with-egg" ? "opacity-50 cursor-not-allowed" : ""}`}
-                    onClick={() => formStep === "plan" && field.onChange("veg-with-egg")}
-                    size="sm"
-                    disabled={formStep !== "plan" && field.value !== "veg-with-egg"}
-                  >
-                    <Check
-                      className={`h-4 w-4 ${field.value === "veg-with-egg" ? "opacity-100" : "opacity-0"}`}
-                    />
-                    Veg with Egg
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={
-                      field.value === "non-vegetarian" ? "default" : "outline"
-                    }
-                    className={`flex items-center gap-2 ${field.value === "non-vegetarian" ? "bg-red-600 hover:bg-red-700" : ""}
-                      ${formStep !== "plan" && field.value !== "non-vegetarian" ? "opacity-50 cursor-not-allowed" : ""}`}
-                    onClick={() => formStep === "plan" && field.onChange("non-vegetarian")}
-                    size="sm"
-                    disabled={formStep !== "plan" && field.value !== "non-vegetarian"}
-                  >
-                    <Check
-                      className={`h-4 w-4 ${field.value === "non-vegetarian" ? "opacity-100" : "opacity-0"}`}
-                    />
-                    Non-Veg
-                  </Button>
-                </div>
-              </FormItem>
-            )}
-          />
-          
-          {formStep !== "plan" && (
-            <div className="mt-2 mb-4">
-              <span className="text-sm font-medium mr-2">Selected Diet:</span>
-              <Badge
-                variant="outline"
-                className={
-                  dietaryPreference === "vegetarian"
-                    ? "bg-green-100 text-green-800"
-                    : dietaryPreference === "veg-with-egg"
-                      ? "bg-amber-100 text-amber-800"
-                      : "bg-red-100 text-red-800"
-                }
-              >
-                {dietaryPreference === "vegetarian"
-                  ? "Vegetarian"
-                  : dietaryPreference === "veg-with-egg"
-                    ? "Veg with Egg"
-                    : "Non-Vegetarian"}
-              </Badge>
-              <span className="ml-4 text-sm font-medium mr-2">Persons:</span>
-              <Badge variant="outline" className="bg-gray-100">
-                {personCount}
-              </Badge>
+
+          {formStep === "plan" ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {SUBSCRIPTION_PLANS.map((plan) => (
+                <Card
+                  key={plan.id}
+                  className={`cursor-pointer transition duration-300 hover:shadow-md ${
+                    selectedPlan === plan.id
+                      ? "border-2 border-primary ring-2 ring-primary ring-opacity-50"
+                      : ""
+                  }`}
+                  onClick={() => form.setValue("plan", plan.id as any)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">{plan.name}</CardTitle>
+                      {selectedPlan === plan.id && (
+                        <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div>
+                      <div className="text-2xl font-semibold text-primary">
+                        ₹
+                        {(
+                          ((plan.price +
+                            getPriceAdjustment(dietaryPreference)) *
+                            personCount) /
+                          100
+                        ).toFixed(0)}
+                        <span className="text-sm text-gray-500">/month</span>
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {personCount > 1 ? (
+                          <>
+                            ₹
+                            {(
+                              (plan.price +
+                                getPriceAdjustment(dietaryPreference)) /
+                              100
+                            ).toFixed(0)}{" "}
+                            per person × {personCount} persons
+                          </>
+                        ) : (
+                          <>
+                            Base: ₹{(plan.price / 100).toFixed(0)}
+                            {priceAdjustment > 0 && (
+                              <>
+                                {" "}
+                                +{" "}
+                                {dietaryPreference === "veg-with-egg"
+                                  ? "Egg"
+                                  : "Non-veg"}
+                                : ₹
+                                {(
+                                  getPriceAdjustment(dietaryPreference) / 100
+                                ).toFixed(0)}
+                              </>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <ul className="space-y-2 text-sm">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start">
+                          {feature.included ? (
+                            <Check className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
+                          ) : (
+                            <X className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
+                          )}
+                          <span
+                            className={feature.included ? "" : "text-gray-400"}
+                          >
+                            {feature.text}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          )}
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {SUBSCRIPTION_PLANS.map((plan) => (
-              <Card
-                key={plan.id}
-                className={`transition duration-300 ${
-                  selectedPlan === plan.id
-                    ? "border-2 border-primary ring-2 ring-primary ring-opacity-50"
-                    : ""
-                } ${formStep !== "plan" && selectedPlan !== plan.id ? "opacity-50" : ""} 
-                ${formStep === "plan" ? "cursor-pointer hover:shadow-md" : ""}`}
-                onClick={() => formStep === "plan" && form.setValue("plan", plan.id as any)}
-              >
+          ) : (
+            <div className="mb-8">
+              <Card className="border-2 border-primary mb-4">
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">{plan.name}</CardTitle>
-                    {selectedPlan === plan.id && (
-                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                        <Check className="h-4 w-4 text-white" />
-                      </div>
-                    )}
+                    <CardTitle className="text-lg">
+                      {currentPlan.name}
+                    </CardTitle>
+                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                      <Check className="h-4 w-4 text-white" />
+                    </div>
                   </div>
-                  <CardDescription>{plan.description}</CardDescription>
+                  <CardDescription>{currentPlan.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div>
-                    <div className="text-2xl font-semibold text-primary">
-                      ₹
-                      {(
-                        ((plan.price + getPriceAdjustment(dietaryPreference)) * personCount) /
-                        100
-                      ).toFixed(0)}
+                    <div className="text-xl font-semibold text-primary">
+                      ₹{(totalPrice / 100).toFixed(0)}
                       <span className="text-sm text-gray-500">/month</span>
                     </div>
                     <div className="text-xs text-gray-500">
                       {personCount > 1 ? (
                         <>
-                          ₹{((plan.price + getPriceAdjustment(dietaryPreference)) / 100).toFixed(0)} per person × {personCount} persons
+                          ₹{((basePrice + dietaryAddOn) / 100).toFixed(0)} per
+                          person × {personCount} persons
                         </>
                       ) : (
                         <>
-                          Base: ₹{(plan.price / 100).toFixed(0)}
-                          {priceAdjustment > 0 && (
-                            <> + {dietaryPreference === "veg-with-egg" ? "Egg" : "Non-veg"}: 
-                            ₹{(getPriceAdjustment(dietaryPreference) / 100).toFixed(0)}</>
+                          Base: ₹{(basePrice / 100).toFixed(0)}
+                          {dietaryAddOn > 0 && (
+                            <>
+                              {" "}
+                              +{" "}
+                              {dietaryPreference === "veg-with-egg"
+                                ? "Egg"
+                                : "Non-veg"}
+                              : ₹{(dietaryAddOn / 100).toFixed(0)}
+                            </>
                           )}
                         </>
                       )}
                     </div>
+
+                    <div className="text-sm text-gray-600 mt-1">
+                      <span className="font-medium">Start Date:</span>{" "}
+                      {format(form.watch("startDate"), "PPP")}
+                    </div>
+                    {/* <div className="text-sm text-gray-600">
+                      <span className="font-medium">Persons:</span>{" "}
+                      {personCount}
+                    </div> */}
+                    <div className="text-sm text-gray-600 mt-1">
+                      <span className="text-sm font-medium mr-2">
+                        Selected Diet:
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className={
+                          dietaryPreference === "vegetarian"
+                            ? "bg-green-100 text-green-800"
+                            : dietaryPreference === "veg-with-egg"
+                              ? "bg-amber-100 text-amber-800"
+                              : "bg-red-100 text-red-800"
+                        }
+                      >
+                        {dietaryPreference === "vegetarian"
+                          ? "Vegetarian"
+                          : dietaryPreference === "veg-with-egg"
+                            ? "Veg with Egg"
+                            : "Non-Vegetarian"}
+                      </Badge>
+                    </div>
                   </div>
-                  <ul className="space-y-2 text-sm">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start">
-                        {feature.included ? (
-                          <Check className="h-4 w-4 text-green-500 mt-0.5 mr-2 flex-shrink-0" />
-                        ) : (
-                          <X className="h-4 w-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" />
-                        )}
-                        <span
-                          className={feature.included ? "" : "text-gray-400"}
-                        >
-                          {feature.text}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-          
+            </div>
+          )}
 
           <Card>
             <CardHeader>
@@ -1736,7 +1874,7 @@ const Subscription = () => {
                 <div className="flex justify-between">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${formStep === "plan" ? "bg-primary text-white" : "bg-gray-200"}`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center bg-primary text-white`}
                     >
                       1
                     </div>
