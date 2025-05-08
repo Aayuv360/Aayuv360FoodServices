@@ -354,17 +354,20 @@ const Subscription = () => {
       isDefault: Boolean(formData.get('isDefault')),
     };
     
+    // Add new address to the list
     setAddresses([...addresses, newAddress]);
     
     // Select the new address
     selectAddress(newAddress.id);
     
-    // Close the modal
+    // Close the modal, but stay on the Address page
     setAddressModalOpen(false);
+    setFormStep("address"); // Ensure we stay on the address step
     
     toast({
       title: "Address added",
       description: "Your new delivery address has been added successfully.",
+      variant: "default"
     });
   };
 
@@ -961,8 +964,20 @@ const Subscription = () => {
                   </Button>
 
                   <Button
-                    type="submit"
+                    type="button"
                     className="bg-primary hover:bg-primary/90"
+                    onClick={() => {
+                      if (form.watch("selectedAddressId")) {
+                        // Validate address selection before continuing
+                        goToNextStep();
+                      } else {
+                        toast({
+                          title: "Address required",
+                          description: "Please select an existing address or add a new one",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
                   >
                     Continue to Payment
                     <ArrowRight className="ml-2 h-4 w-4" />
