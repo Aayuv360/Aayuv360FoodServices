@@ -52,11 +52,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { SUBSCRIPTION_PLANS } from "@/lib/constants";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { CustomMealSheduleModal } from "@/components/Modal/CustomMealSheduleModal";
-import { DefaulMealSheduleModal } from "@/components/Modal/DefaulMealSheduleModal";
-import { NewAddressModal } from "@/components/Modal/NewAddressModal";
+import { CustomMealSheduleModal } from "@/components/Modals/CustomMealSheduleModal";
+import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
+import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -705,7 +703,7 @@ const Subscription = () => {
               </div>
 
               <div>
-                <div className="bg-neutral-light p-4 rounded-lg">
+                <div className="bg-neutral-light rounded-lg">
                   <h3 className="font-medium">Selected Plan Details</h3>
                   <div className="mt-2">
                     <div className="flex items-center justify-between">
@@ -856,12 +854,6 @@ const Subscription = () => {
                     : "Meals that include meat options. +₹500/month"}
               </p>
             </div>
-            <div className="flex justify-end mt-6">
-              <Button type="submit" className="w-full md:w-auto">
-                Continue to Delivery
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
           </div>
         );
 
@@ -870,8 +862,6 @@ const Subscription = () => {
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold mb-4">Delivery Address</h3>
-
-              {/* Existing addresses */}
               {addresses.length > 0 && (
                 <div className="mb-6">
                   <h4 className="font-medium text-sm mb-3">
@@ -1492,7 +1482,7 @@ const Subscription = () => {
               <Form {...form}>
                 <div className="space-y-6">
                   {renderStepContent()}
-                  
+
                   {/* Navigation buttons outside the step content */}
                   <div className="flex justify-between items-center mt-6">
                     {formStep !== "plan" && (
@@ -1502,10 +1492,12 @@ const Subscription = () => {
                         onClick={goToPreviousStep}
                       >
                         <ArrowLeft className="mr-2 h-4 w-4" />
-                        {formStep === "address" ? "Back to Plan" : "Back to Address"}
+                        {formStep === "address"
+                          ? "Back to Plan"
+                          : "Back to Address"}
                       </Button>
                     )}
-                    
+
                     {formStep === "plan" && (
                       <Button
                         type="button"
@@ -1517,7 +1509,8 @@ const Subscription = () => {
                           ) {
                             toast({
                               title: "Meal selection required",
-                              description: "Please select at least one meal for your customized plan",
+                              description:
+                                "Please select at least one meal for your customized plan",
                               variant: "destructive",
                             });
                             return;
@@ -1529,7 +1522,7 @@ const Subscription = () => {
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     )}
-                    
+
                     {formStep === "address" && (
                       <Button
                         type="button"
@@ -1538,7 +1531,8 @@ const Subscription = () => {
                           if (!form.watch("selectedAddressId")) {
                             toast({
                               title: "Address required",
-                              description: "Please select an existing address or add a new one",
+                              description:
+                                "Please select an existing address or add a new one",
                               variant: "destructive",
                             });
                             return;
@@ -1550,7 +1544,7 @@ const Subscription = () => {
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     )}
-                    
+
                     {formStep === "payment" && (
                       <Button
                         type="button"
@@ -1563,9 +1557,7 @@ const Subscription = () => {
                             Processing...
                           </>
                         ) : (
-                          <>
-                            Complete Subscription
-                          </>
+                          <>Complete Subscription</>
                         )}
                       </Button>
                     )}
