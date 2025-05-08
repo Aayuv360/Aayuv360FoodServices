@@ -178,6 +178,15 @@ const Subscription = () => {
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
 
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [subscribedDetails, setSubscribedDetails] = useState<{
+    planName: string;
+    startDate: Date;
+    dietaryPreference: string;
+    personCount: number;
+    totalPrice: number;
+  } | null>(null);
+
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
       const plan = SUBSCRIPTION_PLANS.find((p) => p.id === data.plan);
@@ -195,6 +204,8 @@ const Subscription = () => {
         price: plan.price || 0,
         status: "active",
         paymentMethod: data.paymentMethod,
+        dietaryPreference: data.dietaryPreference,
+        personCount: data.personCount,
       };
 
       const response = await apiRequest("POST", "/api/subscriptions", payload);
@@ -214,19 +225,26 @@ const Subscription = () => {
         }
       }
 
+      // Save subscription details for success page
+      setSubscribedDetails({
+        planName: plan.name,
+        startDate: data.startDate,
+        dietaryPreference: data.dietaryPreference,
+        personCount: data.personCount,
+        totalPrice: totalPrice,
+      });
+
       toast({
         title: "Subscription Successful!",
         description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
         variant: "default",
       });
 
-      form.reset();
-      setFormStep("plan");
-
       return subscription;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      setIsSuccess(true);
     },
     onError: (error: any) => {
       toast({
@@ -1450,6 +1468,84 @@ const Subscription = () => {
         );
     }
   };
+
+  // Render a success page when subscription is successful
+  if (isSuccess && subscribedDetails) {
+    return (
+      <div className="min-h-screen bg-neutral-light py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-4xl mx-auto">
+            <Card className="border-green-500 border-2">
+              <CardHeader className="bg-green-50">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                    <Check className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+                <CardTitle className="text-center text-2xl">Subscription Successful!</CardTitle>
+                <CardDescription className="text-center">
+                  Your subscription has been processed successfully. You'll start receiving your millet meals soon.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="bg-neutral-light p-6 rounded-lg mb-6">
+                  <h3 className="font-semibold text-lg mb-4">Subscription Summary</h3>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Plan:</span>
+                      <span className="font-medium">{subscribedDetails.planName}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Start Date:</span>
+                      <span className="font-medium">{format(subscribedDetails.startDate, "PPP")}</span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Dietary Preference:</span>
+                      <span className="font-medium capitalize">
+                        {subscribedDetails.dietaryPreference === "vegetarian" 
+                          ? "Vegetarian" 
+                          : subscribedDetails.dietaryPreference === "veg-with-egg" 
+                            ? "Vegetarian with Egg" 
+                            : "Non-Vegetarian"}
+                      </span>
+                    </div>
+                    
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Number of Persons:</span>
+                      <span className="font-medium">{subscribedDetails.personCount}</span>
+                    </div>
+                    
+                    <div className="border-t my-2 pt-2">
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-gray-600">Total:</span>
+                        <span className="text-primary">₹{(subscribedDetails.totalPrice / 100).toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-center">
+                  <Button 
+                    className="bg-primary hover:bg-primary/90"
+                    onClick={() => {
+                      setIsSuccess(false);
+                      form.reset(defaultValues);
+                      setFormStep("plan");
+                    }}
+                  >
+                    Back to Subscription Plans
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-light py-12">
