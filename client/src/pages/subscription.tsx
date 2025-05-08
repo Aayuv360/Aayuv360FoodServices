@@ -161,8 +161,14 @@ const Subscription = () => {
     },
   });
 
+  // Find the plan from URL parameter or use "basic" as default
+  const initialPlan = selectedPlanFromParams && 
+    SUBSCRIPTION_PLANS.find(p => p.id === selectedPlanFromParams) ? 
+    selectedPlanFromParams as "basic" | "premium" | "family" : 
+    "basic";
+    
   const defaultValues: SubscriptionFormValues = {
-    plan: (selectedPlanFromParams as any) || "basic",
+    plan: initialPlan,
     dietaryPreference: "vegetarian",
     personCount: 1,
     subscriptionType: "default",
@@ -474,7 +480,11 @@ const Subscription = () => {
         (p) => p.id === selectedPlanFromParams,
       );
       if (validPlan) {
+        console.log("Setting plan from URL parameter:", validPlan.id);
         form.setValue("plan", validPlan.id as any);
+        
+        // Trigger form validation after setting the value
+        form.trigger("plan");
       }
     }
   }, [selectedPlanFromParams, form]);
@@ -535,6 +545,7 @@ const Subscription = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex space-x-2 mb-4">
+                  {/* Current plan from form: {form.watch("plan")} */}
                   {SUBSCRIPTION_PLANS.map((plan) => (
                     <Button
                       key={plan.id}
