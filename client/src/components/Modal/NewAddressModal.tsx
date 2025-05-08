@@ -103,7 +103,10 @@ export const NewAddressModal = ({
           <div className="space-y-4">
             <form
               id="address-form"
-              onSubmit={handleAddressFormSubmit}
+              onSubmit={(e) => {
+                e.preventDefault(); // Prevent form submission
+                handleAddressFormSubmit(e); // Handle address form submission
+              }}
               className="space-y-4"
             >
               <div className="space-y-4">

@@ -127,8 +127,7 @@ const Subscription = () => {
     useState<boolean>(false);
   const [customMealModalOpen, setCustomMealModalOpen] =
     useState<boolean>(false);
-  const [addressModalOpen, setAddressModalOpen] = 
-    useState<boolean>(false);
+  const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState([
@@ -322,52 +321,49 @@ const Subscription = () => {
       form.setValue("selectedAddressId", undefined);
     }
   };
-  
+
   const openNewAddressModal = () => {
     setAddressModalOpen(true);
   };
-  
+
   const selectLocation = (location: any) => {
     // Pre-fill the pincode field based on selected location
-    const addressForm = document.getElementById('address-form') as HTMLFormElement;
+    const addressForm = document.getElementById(
+      "address-form",
+    ) as HTMLFormElement;
     if (addressForm) {
-      const pincodeInput = addressForm.querySelector('#address-pincode') as HTMLInputElement;
+      const pincodeInput = addressForm.querySelector(
+        "#address-pincode",
+      ) as HTMLInputElement;
       if (pincodeInput) {
         pincodeInput.value = location.pincode;
       }
     }
     setLocationSearch("");
   };
-  
+
   const handleAddressFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     const newAddress = {
       id: addresses.length + 1,
-      name: formData.get('addressName') as string,
-      phone: formData.get('phone') as string,
-      addressLine1: formData.get('addressLine1') as string,
-      addressLine2: formData.get('addressLine2') as string || '',
-      city: formData.get('city') as string,
-      state: formData.get('state') as string,
-      pincode: formData.get('pincode') as string,
-      isDefault: Boolean(formData.get('isDefault')),
+      name: formData.get("addressName") as string,
+      phone: formData.get("phone") as string,
+      addressLine1: formData.get("addressLine1") as string,
+      addressLine2: (formData.get("addressLine2") as string) || "",
+      city: formData.get("city") as string,
+      state: formData.get("state") as string,
+      pincode: formData.get("pincode") as string,
+      isDefault: Boolean(formData.get("isDefault")),
     };
-    
-    // Add new address to the list
+
     setAddresses([...addresses, newAddress]);
-    
-    // Select the new address
     selectAddress(newAddress.id);
-    
-    // Close the modal, but stay on the Address page
     setAddressModalOpen(false);
-    setFormStep("address"); // Ensure we stay on the address step
-    
     toast({
       title: "Address added",
       description: "Your new delivery address has been added successfully.",
-      variant: "default"
+      variant: "default",
     });
   };
 
@@ -500,13 +496,13 @@ const Subscription = () => {
     },
     enabled: locationSearch.length > 1, // Only fetch when search query is more than 1 character
   });
-  
+
   useEffect(() => {
     if (locations) {
       setFilteredLocations(locations);
     }
   }, [locations]);
-  
+
   useEffect(() => {
     if (meals && meals.length > 0) {
       const shuffledMeals = [...meals].sort(() => Math.random() - 0.5);
@@ -531,6 +527,8 @@ const Subscription = () => {
     }
   }, [meals]);
 
+  // This function just returns the content without form buttons
+  // to prevent automatic form submission
   const renderStepContent = () => {
     switch (formStep) {
       case "plan":
@@ -564,10 +562,10 @@ const Subscription = () => {
                 <div className="mt-4">
                   <FormLabel>Subscription Type</FormLabel>
                   <div className="grid grid-cols-2 gap-4 mt-2">
-                    <div 
+                    <div
                       className={`border p-4 rounded-lg cursor-pointer hover:border-primary transition-all ${
-                        form.watch("subscriptionType") === "default" 
-                          ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                        form.watch("subscriptionType") === "default"
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : ""
                       }`}
                       onClick={() => {
@@ -582,14 +580,15 @@ const Subscription = () => {
                         )}
                       </div>
                       <p className="text-sm text-gray-600">
-                        We'll select a variety of meals for you based on your dietary preferences.
+                        We'll select a variety of meals for you based on your
+                        dietary preferences.
                       </p>
                     </div>
-                    
-                    <div 
+
+                    <div
                       className={`border p-4 rounded-lg cursor-pointer hover:border-primary transition-all ${
-                        form.watch("subscriptionType") === "customized" 
-                          ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                        form.watch("subscriptionType") === "customized"
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : ""
                       }`}
                       onClick={() => {
@@ -604,7 +603,8 @@ const Subscription = () => {
                         )}
                       </div>
                       <p className="text-sm text-gray-600">
-                        Select specific meals for each day of the week based on your preferences.
+                        Select specific meals for each day of the week based on
+                        your preferences.
                       </p>
                     </div>
                   </div>
@@ -924,7 +924,7 @@ const Subscription = () => {
               )}
 
               <div className="mt-4 mb-4">
-                <Button 
+                <Button
                   type="button"
                   variant="outline"
                   className="w-full flex items-center justify-center"
@@ -935,7 +935,7 @@ const Subscription = () => {
                 </Button>
               </div>
 
-              <NewAddressModal 
+              <NewAddressModal
                 addressModalOpen={addressModalOpen}
                 setAddressModalOpen={setAddressModalOpen}
                 locationSearch={locationSearch}
@@ -968,12 +968,12 @@ const Subscription = () => {
                     className="bg-primary hover:bg-primary/90"
                     onClick={() => {
                       if (form.watch("selectedAddressId")) {
-                        // Validate address selection before continuing
                         goToNextStep();
                       } else {
                         toast({
                           title: "Address required",
-                          description: "Please select an existing address or add a new one",
+                          description:
+                            "Please select an existing address or add a new one",
                           variant: "destructive",
                         });
                       }
@@ -1541,12 +1541,87 @@ const Subscription = () => {
             </CardHeader>
             <CardContent>
               <Form {...form}>
-                <form
-                  onSubmit={form.handleSubmit(onSubmit)}
-                  className="space-y-6"
-                >
+                <div className="space-y-6">
                   {renderStepContent()}
-                </form>
+                  
+                  {/* Navigation buttons outside the step content */}
+                  <div className="flex justify-between items-center mt-6">
+                    {formStep !== "plan" && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={goToPreviousStep}
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        {formStep === "address" ? "Back to Plan" : "Back to Address"}
+                      </Button>
+                    )}
+                    
+                    {formStep === "plan" && (
+                      <Button
+                        type="button"
+                        className="ml-auto bg-primary hover:bg-primary/90"
+                        onClick={() => {
+                          if (
+                            form.watch("subscriptionType") === "customized" &&
+                            Object.keys(selectedMealsByDay).length === 0
+                          ) {
+                            toast({
+                              title: "Meal selection required",
+                              description: "Please select at least one meal for your customized plan",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          goToNextStep();
+                        }}
+                      >
+                        Continue to Address
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    {formStep === "address" && (
+                      <Button
+                        type="button"
+                        className="ml-auto bg-primary hover:bg-primary/90"
+                        onClick={() => {
+                          if (!form.watch("selectedAddressId")) {
+                            toast({
+                              title: "Address required",
+                              description: "Please select an existing address or add a new one",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          goToNextStep();
+                        }}
+                      >
+                        Continue to Payment
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    )}
+                    
+                    {formStep === "payment" && (
+                      <Button
+                        type="button"
+                        className="ml-auto bg-primary hover:bg-primary/90"
+                        onClick={form.handleSubmit(onSubmit)}
+                      >
+                        {subscriptionMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            Complete Subscription
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
               </Form>
             </CardContent>
           </Card>
