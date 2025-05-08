@@ -32,9 +32,7 @@ function Router() {
             <Profile />
           </Route>
 
-          <Route path="/subscription">
-            <Subscription />
-          </Route>
+          <Route path="/subscription" component={Subscription} />
 
           {/* <Route path="/meal-planner" component={MealPlanner} />
            */}

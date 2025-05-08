@@ -59,38 +59,28 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Home
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  Home
                 </Link>
               </li>
               <li>
-                <Link href="/menu">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Menu
-                  </a>
+                <Link href="/menu" className="text-gray-400 hover:text-white transition duration-200">
+                  Menu
                 </Link>
               </li>
               <li>
-                <Link href="/subscription">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Plans & Pricing
-                  </a>
+                <Link href="/subscription" className="text-gray-400 hover:text-white transition duration-200">
+                  Plans & Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    About Us
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  About Us
                 </Link>
               </li>
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Contact
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  Contact
                 </Link>
               </li>
             </ul>
@@ -103,38 +93,28 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    FAQs
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  FAQs
                 </Link>
               </li>
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Delivery Information
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  Delivery Information
                 </Link>
               </li>
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Terms & Conditions
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Privacy Policy
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/">
-                  <a className="text-gray-400 hover:text-white transition duration-200">
-                    Refund Policy
-                  </a>
+                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                  Refund Policy
                 </Link>
               </li>
             </ul>
