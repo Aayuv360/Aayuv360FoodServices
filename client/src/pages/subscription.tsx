@@ -371,8 +371,18 @@ const Subscription = () => {
     });
   };
   
+  // Location interface based on API
+  interface Location {
+    id: number;
+    name: string;
+    pincode: string;
+    lat: number;
+    lng: number;
+    available: boolean;
+  }
+  
   // Filter locations based on search
-  const filteredLocations = locations?.filter(location => 
+  const filteredLocations = locations?.filter((location: Location) => 
     location.name.toLowerCase().includes(locationSearch.toLowerCase())
   ) || [];
 
@@ -1076,19 +1086,15 @@ const Subscription = () => {
                 </div>
               )}
 
-              <div className="flex items-center space-x-2 mb-4">
-                <Checkbox
-                  id="add-new-address"
-                  checked={form.watch("useNewAddress")}
-                  onCheckedChange={() => toggleNewAddressForm()}
-                />
-                <label
-                  htmlFor="add-new-address"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  Add a new address
-                </label>
-              </div>
+              <Button 
+                type="button"
+                variant="outline" 
+                className="flex items-center space-x-2 mb-4" 
+                onClick={openAddressModal}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add New Address With Map
+              </Button>
 
               {form.watch("useNewAddress") && (
                 <div className="space-y-4 border p-4 rounded-lg">
