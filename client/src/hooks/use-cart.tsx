@@ -21,6 +21,8 @@ interface CartItem {
   userId: number;
   mealId: number;
   quantity: number;
+  notes?: string | null;
+  category?: string | null;
   meal?: Meal & {
     curryOption?: CurryOption;
   };
@@ -35,11 +37,14 @@ interface CartContextType {
   getLastCurryOption: (mealId: number) => CurryOption | undefined;
   isItemInCart: (mealId: number) => boolean;
   getCartItemsForMeal: (mealId: number) => CartItem[];
+  getCartCategories: () => string[];
   addToCart: (meal: Meal, quantity?: number) => Promise<CartItem | undefined>;
   updateCartItem: (id: number, quantity: number) => Promise<void>;
   updateCartItemWithOptions: (id: number, curryOption: CurryOption) => Promise<void>;
+  updateCartItemNotes: (id: number, notes: string | null) => Promise<void>;
   removeCartItem: (id: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  clearCartByCategory: (category: string) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -81,6 +86,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const getCartItemsForMeal = (mealId: number): CartItem[] => {
     return cartItems.filter(item => item.mealId === mealId);
+  };
+  
+  const getCartCategories = (): string[] => {
+    // Extract unique categories from cart items
+    const categories = cartItems
+      .map(item => item.category)
+      .filter((category): category is string => 
+        category !== undefined && category !== null);
+      
+    // Return unique categories (compatible with older TS targets)
+    return Array.from(new Set(categories));
   };
 
   // Add item to cart
@@ -258,8 +274,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateCartItemNotes = async (id: number, notes: string | null) => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      // Call the PATCH endpoint with notes update
+      const res = await apiRequest("PATCH", `/api/cart/${id}`, { notes });
+      const updatedItem = await res.json();
+      
+      // Update the cart items with the updated item
+      setCartItems(
+        cartItems.map((item) => (item.id === id ? updatedItem : item))
+      );
+      
+      toast({
+        title: "Notes updated",
+        description: notes ? "Item notes have been updated" : "Notes have been removed",
+      });
+    } catch (error) {
+      console.error("Error updating cart item notes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update item notes",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const clearCart = async () => {
-    // if (!user) return;
+    if (!user) return;
 
     try {
       setLoading(true);
@@ -277,6 +324,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   };
+  
+  const clearCartByCategory = async (category: string) => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      // Call the new endpoint for clearing by category
+      const res = await apiRequest("DELETE", `/api/cart/category/${category}`);
+      const result = await res.json();
+      
+      if (result.removedCount > 0) {
+        // Remove all items with the matching category
+        setCartItems(cartItems.filter(item => item.category !== category));
+        
+        toast({
+          title: "Category removed",
+          description: `Removed ${result.removedCount} items from the ${category} category`,
+        });
+      }
+    } catch (error) {
+      console.error("Error clearing cart category:", error);
+      toast({
+        title: "Error",
+        description: "Failed to clear items by category",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <CartContext.Provider
@@ -286,11 +364,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         getLastCurryOption,
         isItemInCart,
         getCartItemsForMeal,
+        getCartCategories,
         addToCart,
         updateCartItem,
         updateCartItemWithOptions,
+        updateCartItemNotes,
         removeCartItem,
         clearCart,
+        clearCartByCategory,
       }}
     >
       {children}
