@@ -125,14 +125,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const subtotal = cartItems.reduce(
     (sum, item) => {
       // Get the base meal price
-      let itemPrice = item.meal?.price || 0;
+      const basePrice = item.meal?.price || 0;
       
-      // Add curry option price adjustment if present
-      if ((item.meal as any)?.curryOption?.priceAdjustment) {
-        itemPrice += (item.meal as any).curryOption.priceAdjustment;
-      }
+      // Get curry option price adjustment if present
+      const adjustmentPrice = (item.meal as any)?.curryOption?.priceAdjustment || 0;
       
-      return sum + itemPrice * item.quantity;
+      // Calculate total price for this item (base + adjustment) × quantity
+      const totalItemPrice = (basePrice + adjustmentPrice) * item.quantity;
+      
+      return sum + totalItemPrice;
     },
     0,
   );

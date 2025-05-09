@@ -10,17 +10,31 @@ import { useAuth } from "./use-auth";
 import { useToast } from "./use-toast";
 import { Meal } from "@shared/schema";
 
+interface CurryOption {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+}
+
 interface CartItem {
   id: number;
   userId: number;
   mealId: number;
   quantity: number;
-  meal?: Meal;
+  meal?: Meal & {
+    curryOption?: CurryOption;
+  };
 }
+
+// Store the last selected curry option for each meal
+type LastCurryOptionMap = Record<number, CurryOption>;
 
 interface CartContextType {
   cartItems: CartItem[];
   loading: boolean;
+  getLastCurryOption: (mealId: number) => CurryOption | undefined;
+  isItemInCart: (mealId: number) => boolean;
+  getCartItemsForMeal: (mealId: number) => CartItem[];
   addToCart: (meal: Meal, quantity?: number) => Promise<void>;
   updateCartItem: (id: number, quantity: number) => Promise<void>;
   removeCartItem: (id: number) => Promise<void>;
@@ -32,6 +46,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  // Track the last curry option selected for each meal
+  const [lastCurryOptions, setLastCurryOptions] = useState<LastCurryOptionMap>({});
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -52,6 +68,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     fetchCartItems();
   }, [user]);
+
+  // Helper methods for cart functionality
+  const getLastCurryOption = (mealId: number): CurryOption | undefined => {
+    return lastCurryOptions[mealId];
+  };
+
+  const isItemInCart = (mealId: number): boolean => {
+    return cartItems.some(item => item.mealId === mealId);
+  };
+
+  const getCartItemsForMeal = (mealId: number): CartItem[] => {
+    return cartItems.filter(item => item.mealId === mealId);
+  };
 
   // Add item to cart
   const addToCart = async (meal: Meal, quantity: number = 1) => {
@@ -81,6 +110,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       
       const res = await apiRequest("POST", "/api/cart", payload);
       const newCartItem = await res.json();
+
+      // Store the last curry option used for this meal
+      if (hasCurryOption && (meal as any).curryOption) {
+        setLastCurryOptions(prev => ({
+          ...prev,
+          [meal.id]: (meal as any).curryOption
+        }));
+      }
 
       // For meals with the same ID but different curry options, we need to check
       // if the same exact meal (ID + curry option) already exists
@@ -186,6 +223,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       value={{
         cartItems,
         loading,
+        getLastCurryOption,
+        isItemInCart,
+        getCartItemsForMeal,
         addToCart,
         updateCartItem,
         removeCartItem,
