@@ -15,6 +15,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: Partial<User>): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   
   // Meal operations
   getMeal(id: number): Promise<Meal | undefined>;
@@ -29,6 +30,7 @@ export interface IStorage {
   getSubscriptionsByUserId(userId: number): Promise<Subscription[]>;
   createSubscription(subscription: InsertSubscription): Promise<Subscription>;
   updateSubscription(id: number, subscription: Partial<Subscription>): Promise<Subscription | undefined>;
+  getAllSubscriptions(): Promise<Subscription[]>;
   
   // Custom Meal Plan operations
   getCustomMealPlans(subscriptionId: number): Promise<CustomMealPlan[]>;
@@ -40,10 +42,12 @@ export interface IStorage {
   getOrdersByUserId(userId: number): Promise<Order[]>;
   createOrder(order: InsertOrder): Promise<Order>;
   updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
+  getAllOrders(): Promise<Order[]>;
   
   // Order Item operations
   getOrderItems(orderId: number): Promise<OrderItem[]>;
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
+  getAllOrderItems(): Promise<OrderItem[]>;
   
   // User Preferences operations
   getUserPreferences(userId: number): Promise<UserPreferences | undefined>;
@@ -62,6 +66,7 @@ export interface IStorage {
   getReviewsByMealId(mealId: number): Promise<Review[]>;
   getReviewsByUserId(userId: number): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
+  getAllReviews(): Promise<Review[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -354,6 +359,27 @@ export class MemStorage implements IStorage {
     const newReview: Review = { ...review, id, createdAt: new Date() };
     this.reviews.set(id, newReview);
     return newReview;
+  }
+  
+  // Analytics methods
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+  
+  async getAllOrders(): Promise<Order[]> {
+    return Array.from(this.orders.values());
+  }
+  
+  async getAllOrderItems(): Promise<OrderItem[]> {
+    return Array.from(this.orderItems.values());
+  }
+  
+  async getAllSubscriptions(): Promise<Subscription[]> {
+    return Array.from(this.subscriptions.values());
+  }
+  
+  async getAllReviews(): Promise<Review[]> {
+    return Array.from(this.reviews.values());
   }
 }
 

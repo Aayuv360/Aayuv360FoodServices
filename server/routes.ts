@@ -7,6 +7,7 @@ import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { z } from "zod";
 import { mealPlannerService } from "./mealPlanner";
+import { analyticsService, AnalyticsDateRange } from "./analytics";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
