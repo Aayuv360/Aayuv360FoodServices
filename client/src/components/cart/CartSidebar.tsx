@@ -104,6 +104,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [customizeModalOpen, setCustomizeModalOpen] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [noteText, setNoteText] = useState("");
 
   const addressForm = useForm<z.infer<typeof addressSchema>>({
     resolver: zodResolver(addressSchema),
@@ -448,12 +450,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           
                           {/* Items in this category */}
                           {categoryItems.map((item) => {
-                            const [isEditingNotes, setIsEditingNotes] = useState(false);
-                            const [noteText, setNoteText] = useState(item.notes || "");
+                            const isEditingNotes = editingItemId === item.id;
+                            
+                            const handleEditNotes = () => {
+                              setEditingItemId(isEditingNotes ? null : item.id);
+                              setNoteText(item.notes || "");
+                            };
                             
                             const handleSaveNotes = () => {
                               updateCartItemNotes(item.id, noteText || null);
-                              setIsEditingNotes(false);
+                              setEditingItemId(null);
                               toast({
                                 title: "Notes saved",
                                 description: noteText 
@@ -534,7 +540,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                         variant="ghost"
                                         size="icon"
                                         className="h-7 w-7"
-                                        onClick={() => setIsEditingNotes(!isEditingNotes)}
+                                        onClick={handleEditNotes}
                                         title="Add notes"
                                       >
                                         <MessageSquare className="h-4 w-4" />
@@ -570,7 +576,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                             className="text-xs h-7"
                                             onClick={() => {
                                               setNoteText(item.notes || "");
-                                              setIsEditingNotes(false);
+                                              setEditingItemId(null);
                                             }}
                                           >
                                             Cancel
