@@ -329,6 +329,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           <h4 className="font-medium text-sm">
                             {item.meal?.name}
                           </h4>
+                          {/* Display curry option if available */}
+                          {(item.meal as any)?.curryOption && (
+                            <p className="text-xs text-gray-600">
+                              with {(item.meal as any).curryOption.name}
+                              {(item.meal as any).curryOption.priceAdjustment > 0 && (
+                                <span className="text-primary ml-1">
+                                  (+{formatPrice((item.meal as any).curryOption.priceAdjustment)})
+                                </span>
+                              )}
+                            </p>
+                          )}
                           <p className="text-primary text-sm font-semibold">
                             {formatPrice(item.meal?.price || 0)}
                           </p>
