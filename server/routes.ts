@@ -762,6 +762,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Razorpay payment routes
+  app.post("/api/payments/create-order", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { amount, orderId, notes = {} } = req.body;
+      
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ message: "Invalid amount" });
+      }
+      
+      if (!orderId) {
+        return res.status(400).json({ message: "Order ID is required" });
+      }
+      
+      // Get the order to verify it exists and belongs to the user
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      if (order.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to pay for this order" });
+      }
+      
+      // Create a Razorpay order
+      const razorpayOrder = await createOrder({
+        amount,
+        receipt: `order_${orderId}`,
+        notes: {
+          orderId: orderId.toString(),
+          userId: userId.toString(),
+          ...notes
+        }
+      });
+      
+      // Store the Razorpay order ID in our map
+      orderPaymentMap.set(orderId, {
+        razorpayOrderId: razorpayOrder.id,
+        status: 'created'
+      });
+      
+      res.json({
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+        receipt: razorpayOrder.receipt,
+        key: process.env.RAZORPAY_KEY_ID
+      });
+    } catch (err) {
+      console.error("Error creating Razorpay order:", err);
+      res.status(500).json({ message: "Error creating payment order" });
+    }
+  });
+  
+  // Handle successful payment
+  app.post("/api/payments/verify", isAuthenticated, async (req, res) => {
+    try {
+      const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+      
+      if (!orderId || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
+        return res.status(400).json({ message: "Missing required payment verification details" });
+      }
+      
+      // Verify payment
+      const result = await handlePaymentSuccess(
+        parseInt(orderId),
+        razorpayPaymentId,
+        razorpayOrderId,
+        razorpaySignature
+      );
+      
+      res.json(result);
+    } catch (err: any) {
+      console.error("Error verifying payment:", err);
+      res.status(400).json({ message: err.message || "Payment verification failed" });
+    }
+  });
+  
+  // Handle failed payment
+  app.post("/api/payments/failed", isAuthenticated, async (req, res) => {
+    try {
+      const { orderId, error } = req.body;
+      
+      if (!orderId) {
+        return res.status(400).json({ message: "Order ID is required" });
+      }
+      
+      const result = await handlePaymentFailure(parseInt(orderId), error);
+      res.json(result);
+    } catch (err) {
+      console.error("Error handling failed payment:", err);
+      res.status(500).json({ message: "Error handling failed payment" });
+    }
+  });
+  
+  // Razorpay webhook
+  app.post("/api/webhook/razorpay", async (req, res) => {
+    try {
+      // Get the signature from headers
+      const signature = req.headers['x-razorpay-signature'] as string;
+      
+      if (!signature) {
+        return res.status(400).json({ message: "Missing Razorpay signature" });
+      }
+      
+      // Process the webhook
+      const result = await handleWebhookEvent(req.body, signature);
+      res.json(result);
+    } catch (err: any) {
+      console.error("Error processing Razorpay webhook:", err);
+      res.status(400).json({ message: err.message || "Webhook processing failed" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;

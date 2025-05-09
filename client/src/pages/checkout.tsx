@@ -1,425 +1,245 @@
-import { useEffect, useState } from "react";
-import { useRoute, useLocation } from "wouter";
-import { Loader2, CreditCard, MapPin, TruckIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useAuth } from "@/hooks/use-auth";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState, useEffect } from 'react';
+import { useLocation, useRoute } from 'wouter';
+import { useAuth } from '@/hooks/use-auth';
+import { useRazorpay } from '@/hooks/use-razorpay';
+import { apiRequest } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2 } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
 
-// Form schema for address and payment details
-const checkoutSchema = z.object({
-  paymentMethod: z.enum(["cash", "upi", "netbanking"]),
-  address: z.string().min(10, "Address must be at least 10 characters"),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State is required"),
-  pincode: z.string().min(6, "Pincode must be 6 digits"),
-  phone: z.string().min(10, "Phone number must be 10 digits"),
-  notes: z.string().optional(),
-});
+interface OrderItem {
+  id: number;
+  mealId: number;
+  quantity: number;
+  price: number;
+  meal?: {
+    name: string;
+    description: string;
+    price: number;
+    imageUrl?: string;
+  };
+}
 
-type CheckoutFormValues = z.infer<typeof checkoutSchema>;
+interface Order {
+  id: number;
+  userId: number;
+  status: string;
+  totalPrice: number;
+  deliveryTime: string;
+  deliveryAddress: string;
+  createdAt: string;
+  items: OrderItem[];
+}
 
 const Checkout = () => {
-  const [match, params] = useRoute("/checkout/:type");
-  const [, navigate] = useLocation();
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [match, params] = useRoute<{ orderId: string }>('/checkout/:orderId');
+  const [location, setLocation] = useLocation();
+  const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { initiatePayment, isLoading: paymentLoading } = useRazorpay();
   
-  // Parse query parameters from URL
-  const searchParams = new URLSearchParams(window.location.search);
-  const amount = searchParams.get("amount");
-  const planId = searchParams.get("planId");
-  // Make sure to decode the URL parameter
-  const paymentType = params?.type ? decodeURIComponent(params.type) : "one-time";
-  
-  console.log("Checkout parameters:", { amount, planId, paymentType, searchParams: searchParams.toString() });
-  
-  // Set up form with default values
-  const form = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
-    defaultValues: {
-      paymentMethod: "cash",
-      address: user?.address || "",
-      city: "Hyderabad",
-      state: "Telangana",
-      pincode: "",
-      phone: user?.phone || "",
-      notes: "",
+  // Fetch order details if we have an orderId
+  const { data: order, isLoading: orderLoading } = useQuery<Order>({
+    queryKey: ['/api/orders', params?.orderId],
+    queryFn: async () => {
+      if (!params?.orderId) return null;
+      const res = await apiRequest('GET', `/api/orders/${params.orderId}`);
+      return await res.json();
     },
+    enabled: !!params?.orderId && !!user,
   });
-  
-  // Initialize order details on mount
-  useEffect(() => {
-    if (!amount || !planId) {
-      toast({
-        title: "Invalid checkout parameters",
-        description: "Missing amount or plan information",
-        variant: "destructive",
-      });
-      
-      console.error("Checkout params missing:", { amount, planId, paymentType, params });
-      
-      // If we're coming from subscription page, try to redirect back
-      if (paymentType === "subscription") {
-        setTimeout(() => {
-          navigate("/subscription");
-        }, 2000);
-      }
-      return;
-    }
-    
-    // Calculate the order details
-    const amountValue = parseFloat(amount);
-    const taxAmount = Math.round(amountValue * 0.05); // 5% tax
-    const totalAmount = amountValue + taxAmount;
-    
-    setOrderDetails({
-      amount: amountValue,
-      tax: taxAmount,
-      total: totalAmount,
-      planName: planId,
+
+  // Handle payment success
+  const handlePaymentSuccess = (paymentData: any) => {
+    toast({
+      title: 'Payment Successful',
+      description: 'Your order has been confirmed',
     });
-    
-  }, [amount, planId, paymentType, toast, navigate]);
-  
-  // Submit order
-  const onSubmit = async (data: CheckoutFormValues) => {
-    if (!amount || !planId) {
-      toast({
-        title: "Invalid checkout parameters",
-        description: "Missing amount or plan information",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    setIsProcessing(true);
-    
-    try {
-      // Use appropriate endpoint based on payment type
-      let endpoint = "/api/create-payment-intent";
-      if (paymentType === "subscription") {
-        endpoint = "/api/get-or-create-subscription";
-      }
-      
-      const response = await apiRequest("POST", endpoint, {
-        amount: parseFloat(amount),
-        planId: planId,
-        address: `${data.address}, ${data.city}, ${data.state} - ${data.pincode}`,
-        paymentMethod: data.paymentMethod,
-        phone: data.phone,
-        notes: data.notes,
-      });
-      
-      const responseData = await response.json();
-      
-      if (responseData.success) {
-        // Successfully created order/subscription
-        toast({
-          title: "Order placed successfully!",
-          description: "Your order has been confirmed",
-        });
-        
-        // Invalidate relevant queries
-        if (paymentType === "subscription") {
-          queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-        } else {
-          queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
-        }
-        
-        // Redirect to success page
-        navigate("/payment-success");
-      } else {
-        toast({
-          title: "Order failed",
-          description: responseData.message || "There was an error processing your order",
-          variant: "destructive",
-        });
-      }
-    } catch (err: any) {
-      toast({
-        title: "Error",
-        description: err.message || "Something went wrong",
-        variant: "destructive",
-      });
-    } finally {
-      setIsProcessing(false);
-    }
+    // Redirect to success page
+    setLocation(`/payment-success?orderId=${params?.orderId}`);
   };
 
-  if (!orderDetails) {
+  // Handle payment failure
+  const handlePaymentFailure = (error: any) => {
+    toast({
+      title: 'Payment Failed',
+      description: error.message || 'Failed to process payment',
+      variant: 'destructive',
+    });
+  };
+
+  // Handle payment button click
+  const handlePaymentClick = () => {
+    if (!order) return;
+    
+    initiatePayment({
+      amount: order.totalPrice,
+      orderId: order.id,
+      description: `Payment for Order #${order.id}`,
+      name: 'Aayuv Millet Foods',
+      theme: { color: '#9E6D38' }, // Use brand color
+      onSuccess: handlePaymentSuccess,
+      onFailure: handlePaymentFailure,
+    });
+  };
+
+  if (authLoading || orderLoading) {
     return (
-      <div className="min-h-screen bg-neutral-light flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-          <p className="mt-4 text-gray-600">Preparing checkout...</p>
-        </div>
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Redirect to login if not authenticated
+    useEffect(() => {
+      setLocation('/auth');
+    }, [setLocation]);
+    return null;
+  }
+
+  if (!match || !order) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center">
+        <h1 className="text-2xl font-bold mb-4">Invalid Order</h1>
+        <p>The order you are trying to access does not exist or you don't have permission to view it.</p>
+        <Button className="mt-4" onClick={() => setLocation('/')}>
+          Return to Home
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-neutral-light py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-lg mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-center">Complete Your Order</h1>
-          
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        <div className="md:col-span-8">
           <Card>
             <CardHeader>
-              <CardTitle>
-                {paymentType === "subscription" 
-                  ? "Subscription Checkout" 
-                  : paymentType === "cart" 
-                    ? "Cart Checkout"
-                    : "Checkout"}
-              </CardTitle>
+              <CardTitle>Order Summary</CardTitle>
               <CardDescription>
-                {paymentType === "subscription" 
-                  ? "Subscribe to your millet meal plan" 
-                  : paymentType === "cart"
-                    ? "Complete your cart purchase"
-                    : "Complete your purchase"}
+                Order #{order.id} placed on {new Date(order.createdAt).toLocaleDateString()}
               </CardDescription>
             </CardHeader>
-            
             <CardContent>
-              {/* Order Summary */}
-              <div className="mb-6 p-4 bg-neutral-light rounded-lg">
-                <h3 className="font-medium mb-2">Order Summary</h3>
-                <div className="space-y-1 text-sm">
-                  {orderDetails.planName && (
-                    <div className="flex justify-between">
-                      <span>Plan:</span>
-                      <span className="capitalize">{orderDetails.planName}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span>Amount:</span>
-                    <span>₹{orderDetails.amount.toFixed(2)}</span>
+              <Table>
+                <TableCaption>Order items</TableCaption>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Item</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Price</TableHead>
+                    <TableHead className="text-right">Subtotal</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {order.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{item.meal?.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {item.meal?.description?.substring(0, 60)}
+                            {(item.meal?.description?.length || 0) > 60 ? '...' : ''}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{item.quantity}</TableCell>
+                      <TableCell className="text-right">₹{item.price / 100}</TableCell>
+                      <TableCell className="text-right">₹{(item.price * item.quantity) / 100}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Delivery Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Delivery Address:</span> {order.deliveryAddress}
+                </div>
+                {order.deliveryTime && (
+                  <div>
+                    <span className="font-medium">Expected Delivery:</span>{' '}
+                    {new Date(order.deliveryTime).toLocaleString()}
                   </div>
-                  <div className="flex justify-between">
-                    <span>Tax (5%):</span>
-                    <span>₹{orderDetails.tax.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-bold border-t pt-2 mt-2">
-                    <span>Total:</span>
-                    <span className="text-primary">
-                      ₹{orderDetails.total.toFixed(2)}
-                    </span>
-                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="md:col-span-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment Summary</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex justify-between">
+                  <span>Subtotal:</span>
+                  <span>₹{order.totalPrice / 100}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Delivery Fee:</span>
+                  <span>₹0.00</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-bold">
+                  <span>Total:</span>
+                  <span>₹{order.totalPrice / 100}</span>
                 </div>
               </div>
-              
-              {/* Checkout Form */}
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-medium flex items-center">
-                      <MapPin className="h-5 w-5 mr-2 text-muted-foreground" />
-                      Delivery Information
-                    </h3>
-                    
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Enter your full address" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="city"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>City</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="state"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>State</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="pincode"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Pincode</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2 pt-4">
-                    <h3 className="text-lg font-medium flex items-center">
-                      <CreditCard className="h-5 w-5 mr-2 text-muted-foreground" />
-                      Payment Method
-                    </h3>
-                    
-                    <FormField
-                      control={form.control}
-                      name="paymentMethod"
-                      render={({ field }) => (
-                        <FormItem className="space-y-3">
-                          <FormControl>
-                            <RadioGroup
-                              onValueChange={field.onChange}
-                              defaultValue={field.value}
-                              className="flex flex-col space-y-1"
-                            >
-                              <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value="cash" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  Cash on Delivery
-                                </FormLabel>
-                              </FormItem>
-                              <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value="upi" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  UPI Payment
-                                </FormLabel>
-                              </FormItem>
-                              <FormItem className="flex items-center space-x-3 space-y-0">
-                                <FormControl>
-                                  <RadioGroupItem value="netbanking" />
-                                </FormControl>
-                                <FormLabel className="font-normal">
-                                  Net Banking
-                                </FormLabel>
-                              </FormItem>
-                            </RadioGroup>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  <FormField
-                    control={form.control}
-                    name="notes"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Special Instructions (Optional)</FormLabel>
-                        <FormControl>
-                          <Textarea 
-                            placeholder="Any special delivery instructions or notes" 
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <Button 
-                    type="submit" 
-                    className="w-full mt-6" 
-                    disabled={isProcessing}
-                  >
-                    {isProcessing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        <TruckIcon className="mr-2 h-4 w-4" />
-                        Complete Order
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </Form>
             </CardContent>
-            
-            <CardFooter className="flex flex-col">
-              <p className="text-xs text-gray-500 text-center mt-4">
-                Your order will be delivered within 24 hours of confirmation.
-              </p>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                onClick={handlePaymentClick}
+                disabled={paymentLoading || order.status !== 'pending'}
+              >
+                {paymentLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing
+                  </>
+                ) : (
+                  order.status === 'pending' ? 'Pay Now' : 'Order Already Processed'
+                )}
+              </Button>
             </CardFooter>
           </Card>
+          
+          <div className="mt-4 text-sm text-muted-foreground">
+            <p>
+              By clicking "Pay Now", you agree to our terms of service and privacy policy.
+              Your payment will be processed securely by Razorpay.
+            </p>
+          </div>
         </div>
       </div>
     </div>

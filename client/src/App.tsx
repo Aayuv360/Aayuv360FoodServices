@@ -14,6 +14,8 @@ import Home from "@/pages/home";
 import Menu from "@/pages/menu";
 import Profile from "@/pages/profile";
 import Subscription from "@/pages/subscription";
+import Checkout from "@/pages/checkout";
+import PaymentSuccess from "@/pages/payment-success";
 import MealPlanner from "@/pages/meal-planner";
 import Analytics from "@/pages/analytics";
 import OrderManagement from "@/pages/order-management";
@@ -41,7 +43,9 @@ function Router() {
           
           {/* Protected routes */}
           <ProtectedRoute path="/profile" component={Profile} />
-          <ProtectedRoute path="/subscription" component={Subscription} />
+          <ProtectedRoute path="/subscription/:subscriptionId" component={Subscription} />
+          <ProtectedRoute path="/checkout/:orderId" component={Checkout} />
+          <ProtectedRoute path="/payment-success" component={PaymentSuccess} />
           <ProtectedRoute path="/meal-planner" component={MealPlanner} />
           
           {/* Admin routes */}
