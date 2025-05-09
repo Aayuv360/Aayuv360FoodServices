@@ -21,7 +21,6 @@ export const users = pgTable('users', {
   address: text('address'),
   role: userRoleEnum('role').default('user').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
-  stripeCustomerId: text('stripe_customer_id'),
 });
 
 // Meals
@@ -56,10 +55,6 @@ export const subscriptions = pgTable('subscriptions', {
   isActive: boolean('is_active').default(true),
   mealsPerMonth: integer('meals_per_month').notNull(),
   price: integer('price').notNull(), // Monthly price in paise/cents
-  stripeSubscriptionId: text('stripe_subscription_id'),
-  stripePriceId: text('stripe_price_id'),
-  stripePaymentIntentId: text('stripe_payment_intent_id'),
-  stripePaymentStatus: text('stripe_payment_status'),
 });
 
 // Custom Meal Plans for Subscriptions
@@ -79,8 +74,6 @@ export const orders = pgTable('orders', {
   deliveryTime: timestamp('delivery_time'),
   deliveryAddress: text('delivery_address').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
-  stripePaymentIntentId: text('stripe_payment_intent_id'),
-  stripePaymentStatus: text('stripe_payment_status'),
 });
 
 // Order Items

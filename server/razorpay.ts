@@ -14,13 +14,13 @@ const razorpay = new Razorpay({
 });
 
 // Store payment information in memory since we can't modify the database schema
-const orderPaymentMap = new Map<number, { 
+export const orderPaymentMap = new Map<number, { 
   razorpayOrderId: string, 
   razorpayPaymentId?: string,
   status: string 
 }>();
 
-const subscriptionPaymentMap = new Map<number, {
+export const subscriptionPaymentMap = new Map<number, {
   razorpaySubscriptionId: string,
   razorpayPaymentId?: string,
   status: string
