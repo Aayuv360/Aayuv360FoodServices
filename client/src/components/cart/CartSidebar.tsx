@@ -166,9 +166,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     if (selectedMeal && updatedMeal.curryOption) {
       const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
       if (cartItem) {
-        // Remove the old item and add the new one with updated curry option
+        // Store the original quantity
+        const originalQuantity = cartItem.quantity;
+        
+        // Remove the old item and add the new one with updated curry option and preserved quantity
         removeCartItem(cartItem.id);
-        addToCart(updatedMeal);
+        addToCart(updatedMeal, originalQuantity);
         
         toast({
           title: "Customization updated",
@@ -292,12 +295,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     <>
       {/* Auth Modal */}
       <AuthModal
-        open={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onSuccess={() => {
-          setAuthModalOpen(false);
-          setCurrentStep("delivery");
+        isOpen={authModalOpen}
+        onOpenChange={(open: boolean) => {
+          setAuthModalOpen(open);
+          // When the modal is closed and user is logged in, proceed to delivery
+          if (!open && user) {
+            setCurrentStep("delivery");
+          }
         }}
+        mode="normal"
       />
       
       {open && (
