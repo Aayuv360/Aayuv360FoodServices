@@ -27,15 +27,35 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     setShowCurryOptionsModal(true);
   };
   
-  const handleRemoveClick = () => {
-    // If there are multiple items with the same meal ID (different curry options),
-    // we might need a more sophisticated UI, but for now just remove the first one
-    if (cartItems.length > 0) {
-      removeCartItem(cartItems[0].id);
+  const handleRemoveClick = async () => {
+    // Check if there are multiple different curry options for this meal
+    if (cartItems.length > 1) {
+      // Show a message that they need to remove from cart directly
       toast({
-        title: "Removed from cart",
-        description: `${meal.name} removed from your cart`
+        title: "Multiple customizations",
+        description: "This item has multiple customizations added. Please remove the specific item from the cart.",
+        variant: "destructive",
       });
+      return;
+    }
+    
+    // If only one customization exists
+    if (cartItems.length === 1) {
+      const cartItem = cartItems[0];
+      
+      try {
+        await removeCartItem(cartItem.id);
+        toast({
+          title: "Removed from cart",
+          description: `${meal.name} removed from your cart`
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Could not remove item from cart",
+          variant: "destructive",
+        });
+      }
     }
   };
   
