@@ -7,6 +7,10 @@ import {
   type CustomMealPlan, type InsertCustomMealPlan
 } from "@shared/schema";
 import { milletMeals } from "./mealItems";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+import { db, pool } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
