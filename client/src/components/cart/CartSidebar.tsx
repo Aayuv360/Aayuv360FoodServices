@@ -12,6 +12,8 @@ import {
   Building,
   ChevronRight,
   ChevronLeft,
+  MessageSquare,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -96,7 +98,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [addingNewAddress, setAddingNewAddress] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [_, navigate] = useLocation();
-  const { cartItems, updateCartItem, removeCartItem, clearCart, addToCart, getLastCurryOption, updateCartItemWithOptions } = useCart();
+  const { cartItems, updateCartItem, removeCartItem, clearCart, addToCart, getLastCurryOption, updateCartItemWithOptions, updateCartItemNotes, getCartCategories, clearCartByCategory } = useCart();
   const { toast } = useToast();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -414,82 +416,189 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </Button>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {cartItems.map((item) => (
-                      <div
-                        key={item.id}
-                        className="flex items-center space-x-4 bg-neutral-light p-3 rounded-lg"
-                      >
-                        <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                          <img
-                            src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
-                            alt={item.meal?.name || "Meal item"}
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                        <div className="flex-grow">
-                          <h4 className="font-medium text-sm">
-                            {item.meal?.name}
-                          </h4>
-                          {/* Display curry option if available */}
-                          {(item.meal as any)?.curryOption && (
-                            <p className="text-xs text-gray-600">
-                              with {(item.meal as any).curryOption.name}
-                              {(item.meal as any).curryOption.priceAdjustment > 0 && (
-                                <span className="text-primary ml-1">
-                                  (+{formatPrice((item.meal as any).curryOption.priceAdjustment)})
-                                </span>
-                              )}
-                            </p>
-                          )}
+                  <div className="space-y-6">
+                    {/* Group cart items by category */}
+                    {getCartCategories().map((category) => {
+                      // Get all items in this category
+                      const categoryItems = cartItems.filter(item => item.category === category);
+                      
+                      return (
+                        <div key={category} className="space-y-2">
+                          {/* Category header with clear option */}
                           <div className="flex items-center justify-between">
-                            <p className="text-primary text-sm font-semibold">
-                              {formatPrice(
-                                (item.meal?.price || 0) + 
-                                ((item.meal as any)?.curryOption?.priceAdjustment || 0)
-                              )}
-                            </p>
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="p-0 h-6 text-xs text-primary"
-                              onClick={() => handleCustomizeItem(item)}
+                            <div className="flex items-center gap-1">
+                              <Tag className="h-4 w-4 text-primary" />
+                              <h3 className="font-medium text-primary">{category}</h3>
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 text-xs text-muted-foreground"
+                              onClick={() => {
+                                clearCartByCategory(category);
+                                toast({
+                                  title: "Category cleared",
+                                  description: `All ${category} items have been removed from your cart`,
+                                });
+                              }}
                             >
-                              Customize
+                              Clear All
                             </Button>
                           </div>
+                          
+                          {/* Items in this category */}
+                          {categoryItems.map((item) => {
+                            const [isEditingNotes, setIsEditingNotes] = useState(false);
+                            const [noteText, setNoteText] = useState(item.notes || "");
+                            
+                            const handleSaveNotes = () => {
+                              updateCartItemNotes(item.id, noteText || null);
+                              setIsEditingNotes(false);
+                              toast({
+                                title: "Notes saved",
+                                description: noteText 
+                                  ? "Your special instructions were saved" 
+                                  : "Notes removed",
+                              });
+                            };
+                          
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex flex-col bg-neutral-light p-3 rounded-lg"
+                              >
+                                <div className="flex items-center space-x-4">
+                                  <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                                    <img
+                                      src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
+                                      alt={item.meal?.name || "Meal item"}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="flex-grow">
+                                    <h4 className="font-medium text-sm">
+                                      {item.meal?.name}
+                                    </h4>
+                                    {/* Display curry option if available */}
+                                    {(item.meal as any)?.curryOption && (
+                                      <p className="text-xs text-gray-600">
+                                        with {(item.meal as any).curryOption.name}
+                                        {(item.meal as any).curryOption.priceAdjustment > 0 && (
+                                          <span className="text-primary ml-1">
+                                            (+{formatPrice((item.meal as any).curryOption.priceAdjustment)})
+                                          </span>
+                                        )}
+                                      </p>
+                                    )}
+                                    <div className="flex items-center justify-between">
+                                      <p className="text-primary text-sm font-semibold">
+                                        {formatPrice(
+                                          (item.meal?.price || 0) + 
+                                          ((item.meal as any)?.curryOption?.priceAdjustment || 0)
+                                        )}
+                                      </p>
+                                      <Button
+                                        variant="link"
+                                        size="sm"
+                                        className="p-0 h-6 text-xs text-primary"
+                                        onClick={() => handleCustomizeItem(item)}
+                                      >
+                                        Customize
+                                      </Button>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col space-y-2">
+                                    <div className="flex items-center border rounded">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 p-0"
+                                        onClick={() =>
+                                          handleQuantityChange(item.id, Math.max(1, item.quantity - 1))
+                                        }
+                                      >
+                                        <Minus className="h-3 w-3" />
+                                      </Button>
+                                      <span className="px-2 py-1">{item.quantity}</span>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 p-0"
+                                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                      >
+                                        <Plus className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                    <div className="flex space-x-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7"
+                                        onClick={() => setIsEditingNotes(!isEditingNotes)}
+                                        title="Add notes"
+                                      >
+                                        <MessageSquare className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-gray-400 hover:text-destructive"
+                                        onClick={() => handleRemoveItem(item.id)}
+                                        title="Remove"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Notes section - shows when editing or when notes exist */}
+                                {(isEditingNotes || item.notes) && (
+                                  <div className="mt-2 border-t pt-2">
+                                    {isEditingNotes ? (
+                                      <div className="flex flex-col space-y-2">
+                                        <Input
+                                          placeholder="Special instructions..."
+                                          value={noteText}
+                                          onChange={(e) => setNoteText(e.target.value)}
+                                          className="text-xs"
+                                        />
+                                        <div className="flex justify-end space-x-2">
+                                          <Button 
+                                            variant="outline" 
+                                            size="sm" 
+                                            className="text-xs h-7"
+                                            onClick={() => {
+                                              setNoteText(item.notes || "");
+                                              setIsEditingNotes(false);
+                                            }}
+                                          >
+                                            Cancel
+                                          </Button>
+                                          <Button 
+                                            variant="default" 
+                                            size="sm" 
+                                            className="text-xs h-7"
+                                            onClick={handleSaveNotes}
+                                          >
+                                            Save
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : item.notes ? (
+                                      <div className="flex items-start">
+                                        <MessageSquare className="h-3 w-3 mr-1 mt-0.5 text-muted-foreground" />
+                                        <p className="text-xs text-muted-foreground">{item.notes}</p>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                        <div className="flex items-center border rounded">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              handleQuantityChange(item.id, item.quantity - 1)
-                            }
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="px-2 py-1">{item.quantity}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 p-0"
-                            onClick={() => handleCustomizeItem(item)}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-gray-400 hover:text-destructive"
-                          onClick={() => handleRemoveItem(item.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
