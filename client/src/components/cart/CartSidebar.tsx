@@ -290,6 +290,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   return (
     <>
+      {/* Auth Modal */}
+      <AuthModal
+        open={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => {
+          setAuthModalOpen(false);
+          setCurrentStep("delivery");
+        }}
+      />
+      
       {open && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -302,6 +312,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
+        
+        {/* Curry Options Modal for Customization */}
+        {selectedMeal && (
+          <CurryOptionsModal
+            open={customizeModalOpen}
+            onClose={() => setCustomizeModalOpen(false)}
+            meal={selectedMeal}
+            onAddToCart={handleCustomizationComplete}
+            lastCurryOption={(selectedMeal as any)?.curryOption || getLastCurryOption(selectedMeal.id)}
+            isInCart={true}
+          />
+        )}
         <div className="flex flex-col h-full">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between">
@@ -410,9 +432,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 p-0"
-                            onClick={() =>
-                              handleQuantityChange(item.id, item.quantity + 1)
-                            }
+                            onClick={() => handleCustomizeItem(item)}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
