@@ -166,36 +166,53 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     try {
       if (selectedMeal && updatedMeal.curryOption) {
         const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
-        if (cartItem) {
-          // Store the original quantity
+        
+        // Check if an item with the SAME curry option already exists
+        const sameOptionItem = cartItems.find(item => {
+          return item.meal?.id === updatedMeal.id && 
+                 (item.meal as any)?.curryOption?.id === updatedMeal.curryOption.id;
+        });
+        
+        // If we're updating an existing item, and the curry option is different
+        if (cartItem && !sameOptionItem) {
+          // We found the item in cart but with different curry option
+          // In this case, we should:
+          // 1. Keep the original quantity
           const originalQuantity = cartItem.quantity;
-          const itemId = cartItem.id;
+          const oldItemId = cartItem.id;
           
-          // First, add the new item to ensure it's in the cart
+          // 2. Add as a new item with the selected curry option and preserve quantity
           await addToCart(updatedMeal, originalQuantity);
           
-          // Then remove the old item (use setTimeout to ensure the add completes first)
-          setTimeout(async () => {
-            try {
-              await removeCartItem(itemId);
-            } catch (err) {
-              console.error("Error removing old cart item:", err);
-              // Item may have already been removed or updated by the server
-            }
-          }, 100);
+          // 3. Remove the old item
+          await removeCartItem(oldItemId);
           
           toast({
-            title: "Customization updated",
+            title: "Customization changed",
             description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} updated in your cart`,
           });
-        } else {
-          // If the item wasn't in the cart (somehow), add it
-          await addToCart(updatedMeal, 1);
-          
-          toast({
-            title: "Item added",
-            description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} added to your cart`,
-          });
+        } 
+        // If we're updating to the same curry option or if it's a new curry option for this meal
+        else {
+          // If same curry option exists, this will just update quantity
+          // If new curry option, this will add as a new item
+          if (sameOptionItem) {
+            // Item with same curry option already exists, just update quantity
+            await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
+            
+            toast({
+              title: "Quantity updated",
+              description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} quantity increased`,
+            });
+          } else {
+            // Add as a new item
+            await addToCart(updatedMeal, 1);
+            
+            toast({
+              title: "Item added",
+              description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} added to your cart`,
+            });
+          }
         }
       }
     } catch (error) {

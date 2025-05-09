@@ -12,7 +12,7 @@ interface MealCardActionsProps {
 }
 
 export function MealCardActions({ meal }: MealCardActionsProps) {
-  const { isItemInCart, getCartItemsForMeal, getLastCurryOption, addToCart, removeCartItem } = useCart();
+  const { isItemInCart, getCartItemsForMeal, getLastCurryOption, addToCart, removeCartItem, updateCartItem } = useCart();
   const { toast } = useToast();
   
   const [showCurryOptionsModal, setShowCurryOptionsModal] = useState(false);
@@ -64,46 +64,78 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     setShowCurryOptionsModal(true);
   };
   
-  const handleRepeatLast = () => {
+  const handleRepeatLast = async () => {
     if (lastCurryOption) {
-      // Create a meal object with the curry option
-      const mealWithCurry = {
-        ...meal,
-        curryOption: lastCurryOption
-      };
-      
-      addToCart(mealWithCurry);
-      setShowRepeatModal(false);
-      
-      const isUpdate = inCart;
-      toast({
-        title: isUpdate ? "Updated selection" : "Added to cart",
-        description: isUpdate 
-          ? `${meal.name} with ${lastCurryOption.name} updated in your cart` 
-          : `${meal.name} with ${lastCurryOption.name} added to your cart`,
-      });
+      try {
+        // Create a meal object with the curry option
+        const mealWithCurry = {
+          ...meal,
+          curryOption: lastCurryOption
+        };
+        
+        // Check if an item with this curry option already exists
+        const sameOptionItem = cartItems.find(item => {
+          return item.meal?.id === meal.id && 
+                 (item.meal as any)?.curryOption?.id === lastCurryOption.id;
+        });
+        
+        if (sameOptionItem) {
+          // Item with same curry option exists - increment quantity
+          await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
+          
+          toast({
+            title: "Quantity increased",
+            description: `${meal.name} with ${lastCurryOption.name} quantity increased`,
+          });
+        } else {
+          // Add as new
+          await addToCart(mealWithCurry);
+          
+          toast({
+            title: "Added to cart",
+            description: `${meal.name} with ${lastCurryOption.name} added to your cart`,
+          });
+        }
+        
+        setShowRepeatModal(false);
+      } catch (error) {
+        console.error("Error repeating last selection:", error);
+        toast({
+          title: "Error",
+          description: "There was an error updating your cart. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
   
   const handleAddToCurry = async (selectedMeal: Meal & { curryOption: any }) => {
     try {
-      // If the meal is already in the cart, find the first item to get its quantity
-      let quantity = 1;
-      if (inCart && cartItems.length > 0) {
-        // Use the quantity from the first cart item as a starting point
-        quantity = cartItems[0].quantity;
+      // Check if an item with the SAME curry option already exists
+      const sameOptionItem = cartItems.find(item => {
+        return item.meal?.id === selectedMeal.id && 
+               (item.meal as any)?.curryOption?.id === selectedMeal.curryOption.id;
+      });
+      
+      if (sameOptionItem) {
+        // Item with same curry option exists - increment quantity
+        await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
+        
+        toast({
+          title: "Quantity increased",
+          description: `${selectedMeal.name} with ${selectedMeal.curryOption.name} quantity increased`,
+        });
+      } else {
+        // Item with this curry option doesn't exist - add as new
+        await addToCart(selectedMeal, 1);
+        
+        toast({
+          title: "Added to cart",
+          description: `${selectedMeal.name} with ${selectedMeal.curryOption.name} added to your cart`,
+        });
       }
       
-      await addToCart(selectedMeal, quantity);
       setShowCurryOptionsModal(false);
-      
-      const isUpdate = inCart;
-      toast({
-        title: isUpdate ? "Updated selection" : "Added to cart",
-        description: isUpdate 
-          ? `${meal.name} with ${selectedMeal.curryOption.name} updated in your cart` 
-          : `${meal.name} with ${selectedMeal.curryOption.name} added to your cart`,
-      });
     } catch (error) {
       console.error("Error adding item to cart:", error);
       toast({

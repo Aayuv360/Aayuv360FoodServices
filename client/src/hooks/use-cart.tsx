@@ -35,7 +35,7 @@ interface CartContextType {
   getLastCurryOption: (mealId: number) => CurryOption | undefined;
   isItemInCart: (mealId: number) => boolean;
   getCartItemsForMeal: (mealId: number) => CartItem[];
-  addToCart: (meal: Meal, quantity?: number) => Promise<void>;
+  addToCart: (meal: Meal, quantity?: number) => Promise<CartItem | undefined>;
   updateCartItem: (id: number, quantity: number) => Promise<void>;
   removeCartItem: (id: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -129,8 +129,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       let newCartItem: CartItem;
       
       if (existingItem) {
-        // If the exact same item exists, just update the quantity
-        const updatedQuantity = quantity;
+        // If the exact same item exists, update the quantity - either:
+        // - Use the specified quantity directly (for customization updates)
+        // - Or increment the existing quantity by 1 (for standard add operations)
+        const updatedQuantity = quantity === 1 ? existingItem.quantity + 1 : quantity;
         const res = await apiRequest("PUT", `/api/cart/${existingItem.id}`, { 
           quantity: updatedQuantity 
         });
