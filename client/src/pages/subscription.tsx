@@ -552,52 +552,91 @@ const Subscription = () => {
                 </div>
 
                 <div className="mt-4">
-                  <FormLabel>Subscription Type</FormLabel>
-                  <div className="grid grid-cols-2 gap-4 mt-2">
-                    <div
-                      className={`border p-4 rounded-lg cursor-pointer hover:border-primary transition-all ${
-                        form.watch("subscriptionType") === "default"
-                          ? "border-primary bg-primary/5 ring-1 ring-primary"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        form.setValue("subscriptionType", "default");
-                        setDefaulMealModalOpen(true);
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium">Default Plan</h3>
+                  <FormLabel className="text-base font-medium">Subscription Type</FormLabel>
+                  <div className="mt-3">
+                    <div className="flex items-center bg-neutral-50 border rounded-lg overflow-hidden">
+                      <div 
+                        className={`flex-1 p-4 cursor-pointer transition-all ${
+                          form.watch("subscriptionType") === "default"
+                            ? "bg-primary text-white"
+                            : "hover:bg-neutral-100"
+                        }`}
+                        onClick={() => {
+                          form.setValue("subscriptionType", "default");
+                        }}
+                      >
+                        <div className="flex items-center mb-1">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
+                            form.watch("subscriptionType") === "default"
+                              ? "bg-white"
+                              : "border border-primary"
+                          }`}>
+                            {form.watch("subscriptionType") === "default" && (
+                              <Check className="h-3 w-3 text-primary" />
+                            )}
+                          </div>
+                          <h3 className="font-medium">Default Plan</h3>
+                        </div>
+                        <p className={`text-sm ${form.watch("subscriptionType") === "default" ? "text-white/80" : "text-gray-600"}`}>
+                          Pre-selected meals based on your preferences
+                        </p>
+                        
                         {form.watch("subscriptionType") === "default" && (
-                          <Check className="h-4 w-4 text-primary" />
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="mt-2 bg-white text-primary hover:bg-white/90"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDefaulMealModalOpen(true);
+                            }}
+                          >
+                            View Meal Schedule
+                          </Button>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">
-                        We'll select a variety of meals for you based on your
-                        dietary preferences.
-                      </p>
-                    </div>
-
-                    <div
-                      className={`border p-4 rounded-lg cursor-pointer hover:border-primary transition-all ${
-                        form.watch("subscriptionType") === "customized"
-                          ? "border-primary bg-primary/5 ring-1 ring-primary"
-                          : ""
-                      }`}
-                      onClick={() => {
-                        form.setValue("subscriptionType", "customized");
-                        setCustomMealModalOpen(true);
-                      }}
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium">Customized Plan</h3>
-                        {form.watch("subscriptionType") === "customized" && (
-                          <Check className="h-4 w-4 text-primary" />
+                      
+                      <div 
+                        className={`flex-1 p-4 cursor-pointer transition-all ${
+                          form.watch("subscriptionType") === "customized"
+                            ? "bg-primary text-white"
+                            : "hover:bg-neutral-100"
+                        }`}
+                        onClick={() => {
+                          form.setValue("subscriptionType", "customized");
+                          setCustomMealModalOpen(true);
+                        }}
+                      >
+                        <div className="flex items-center mb-1">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
+                            form.watch("subscriptionType") === "customized"
+                              ? "bg-white"
+                              : "border border-primary"
+                          }`}>
+                            {form.watch("subscriptionType") === "customized" && (
+                              <Check className="h-3 w-3 text-primary" />
+                            )}
+                          </div>
+                          <h3 className="font-medium">Customized Plan</h3>
+                        </div>
+                        <p className={`text-sm ${form.watch("subscriptionType") === "customized" ? "text-white/80" : "text-gray-600"}`}>
+                          Select your own meals for each day
+                        </p>
+                        
+                        {form.watch("subscriptionType") === "customized" && Object.keys(selectedMealsByDay).length === 0 && (
+                          <Button
+                            type="button"
+                            size="sm"
+                            className="mt-2 bg-white text-primary hover:bg-white/90"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCustomMealModalOpen(true);
+                            }}
+                          >
+                            Select Meals
+                          </Button>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600">
-                        Select specific meals for each day of the week based on
-                        your preferences.
-                      </p>
                     </div>
                   </div>
                 </div>
@@ -643,52 +682,87 @@ const Subscription = () => {
                   name="personCount"
                   render={({ field }) => (
                     <FormItem className="mt-4">
-                      <FormLabel>Number of Persons</FormLabel>
-                      <div className="flex items-center">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            const newValue = Math.max(1, field.value - 1);
-                            form.setValue("personCount", newValue);
-                          }}
-                          disabled={field.value <= 1}
-                        >
-                          <Minus className="h-3 w-3" />
-                        </Button>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            className="h-8 w-16 mx-2 text-center"
-                            {...field}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value);
-                              if (!isNaN(value) && value >= 1 && value <= 10) {
-                                field.onChange(value);
-                              }
-                            }}
-                            min={1}
-                            max={10}
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            const newValue = Math.min(10, field.value + 1);
-                            form.setValue("personCount", newValue);
-                          }}
-                          disabled={field.value >= 10}
-                        >
-                          <Plus className="h-3 w-3" />
-                        </Button>
-                        <span className="ml-3 text-sm text-gray-500">
-                          (1-10 persons)
-                        </span>
+                      <FormLabel className="text-base font-medium">Number of Persons</FormLabel>
+                      <div className="mt-2">
+                        <div className="bg-neutral-50 rounded-lg border">
+                          <div className="flex items-center justify-between p-3">
+                            <div>
+                              <span className="text-sm text-gray-600">Select how many people will be eating</span>
+                              <div className="mt-1 text-primary font-semibold">
+                                {field.value} {field.value === 1 ? 'person' : 'people'}
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center bg-white rounded-md border shadow-sm">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 rounded-r-none border-r"
+                                onClick={() => {
+                                  const newValue = Math.max(1, field.value - 1);
+                                  form.setValue("personCount", newValue);
+                                }}
+                                disabled={field.value <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              
+                              <FormControl>
+                                <Input
+                                  type="number"
+                                  className="h-9 w-12 text-center border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                                  {...field}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value);
+                                    if (!isNaN(value) && value >= 1 && value <= 10) {
+                                      field.onChange(value);
+                                    }
+                                  }}
+                                  min={1}
+                                  max={10}
+                                />
+                              </FormControl>
+                              
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 rounded-l-none border-l"
+                                onClick={() => {
+                                  const newValue = Math.min(10, field.value + 1);
+                                  form.setValue("personCount", newValue);
+                                }}
+                                disabled={field.value >= 10}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center p-3 bg-neutral-100 rounded-b-lg border-t">
+                            <div className="flex-1">
+                              <div className="text-xs text-gray-500">
+                                Price multiplier
+                              </div>
+                              <div className="text-sm font-medium">
+                                {field.value}x base price
+                              </div>
+                            </div>
+                            <div className="w-28">
+                              <div className="relative h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div 
+                                  className="absolute top-0 left-0 h-full bg-primary"
+                                  style={{ width: `${(field.value / 10) * 100}%` }}
+                                ></div>
+                              </div>
+                              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                                <span>1</span>
+                                <span>10</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                       <FormMessage />
                     </FormItem>
@@ -831,59 +905,95 @@ const Subscription = () => {
               </div>
             )}
 
-            <div className="mt-6 ml-[450px]">
-              <h3 className="font-medium mb-2">Dietary Preference</h3>
-              <div className="grid grid-cols-3 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`flex-1 ${
-                    form.watch("dietaryPreference") === "vegetarian"
-                      ? "bg-green-100 text-green-800 border-green-300"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    form.setValue("dietaryPreference", "vegetarian")
-                  }
-                >
-                  Vegetarian
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`flex-1 ${
-                    form.watch("dietaryPreference") === "veg-with-egg"
-                      ? "bg-amber-100 text-amber-800 border-amber-300"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    form.setValue("dietaryPreference", "veg-with-egg")
-                  }
-                >
-                  Veg with Egg
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className={`flex-1 ${
-                    form.watch("dietaryPreference") === "non-vegetarian"
-                      ? "bg-red-100 text-red-800 border-red-300"
-                      : ""
-                  }`}
-                  onClick={() =>
-                    form.setValue("dietaryPreference", "non-vegetarian")
-                  }
-                >
-                  Non-Vegetarian
-                </Button>
+            <div className="mt-6 px-0 md:px-4">
+              <FormLabel className="text-base font-medium">Dietary Preference</FormLabel>
+              <div className="mt-3 bg-neutral-50 rounded-lg border overflow-hidden">
+                <div className="p-3 pb-0">
+                  <span className="text-sm text-gray-600">Choose your preferred meal type</span>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 border-b">
+                  <div 
+                    className={`p-4 cursor-pointer border-r transition-all flex items-center ${
+                      form.watch("dietaryPreference") === "vegetarian"
+                        ? "bg-green-50"
+                        : "hover:bg-neutral-100"
+                    }`}
+                    onClick={() => form.setValue("dietaryPreference", "vegetarian")}
+                  >
+                    <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center ${
+                      form.watch("dietaryPreference") === "vegetarian"
+                        ? "bg-green-100 border border-green-400"
+                        : "border border-gray-300"
+                    }`}>
+                      {form.watch("dietaryPreference") === "vegetarian" && (
+                        <Check className="h-3 w-3 text-green-600" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">Vegetarian</div>
+                      <div className="text-xs text-gray-500">No additional cost</div>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`p-4 cursor-pointer border-r transition-all flex items-center ${
+                      form.watch("dietaryPreference") === "veg-with-egg"
+                        ? "bg-amber-50"
+                        : "hover:bg-neutral-100"
+                    }`}
+                    onClick={() => form.setValue("dietaryPreference", "veg-with-egg")}
+                  >
+                    <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center ${
+                      form.watch("dietaryPreference") === "veg-with-egg"
+                        ? "bg-amber-100 border border-amber-400"
+                        : "border border-gray-300"
+                    }`}>
+                      {form.watch("dietaryPreference") === "veg-with-egg" && (
+                        <Check className="h-3 w-3 text-amber-600" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">Veg with Egg</div>
+                      <div className="text-xs text-gray-500">+₹200/month</div>
+                    </div>
+                  </div>
+                  
+                  <div 
+                    className={`p-4 cursor-pointer transition-all flex items-center ${
+                      form.watch("dietaryPreference") === "non-vegetarian"
+                        ? "bg-red-50"
+                        : "hover:bg-neutral-100"
+                    }`}
+                    onClick={() => form.setValue("dietaryPreference", "non-vegetarian")}
+                  >
+                    <div className={`w-5 h-5 rounded-full mr-3 flex items-center justify-center ${
+                      form.watch("dietaryPreference") === "non-vegetarian"
+                        ? "bg-red-100 border border-red-400"
+                        : "border border-gray-300"
+                    }`}>
+                      {form.watch("dietaryPreference") === "non-vegetarian" && (
+                        <Check className="h-3 w-3 text-red-600" />
+                      )}
+                    </div>
+                    <div>
+                      <div className="font-medium">Non-Vegetarian</div>
+                      <div className="text-xs text-gray-500">+₹500/month</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-3 bg-neutral-100">
+                  <p className="text-sm">
+                    <span className="font-medium">Your choice:</span> {' '}
+                    {form.watch("dietaryPreference") === "vegetarian"
+                      ? "Pure vegetarian meals with no eggs or meat."
+                      : form.watch("dietaryPreference") === "veg-with-egg"
+                        ? "Vegetarian meals that may include eggs."
+                        : "Meals that include both vegetarian options and meat dishes."}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-gray-500 mt-2">
-                {form.watch("dietaryPreference") === "vegetarian"
-                  ? "Pure vegetarian meals with no eggs or meat."
-                  : form.watch("dietaryPreference") === "veg-with-egg"
-                    ? "Vegetarian meals that may include eggs. +₹200/month"
-                    : "Meals that include meat options. +₹500/month"}
-              </p>
             </div>
           </div>
         );
