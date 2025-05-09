@@ -14,6 +14,7 @@ import Menu from "@/pages/menu";
 import Profile from "@/pages/profile";
 import Subscription from "@/pages/subscription";
 import MealPlanner from "@/pages/meal-planner";
+import Analytics from "@/pages/analytics";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
           <Route path="/menu" component={Menu} />
           <Route path="/profile" component={Profile} />
           <Route path="/subscription" component={Subscription} />
+          <Route path="/analytics" component={Analytics} />
           <Route component={NotFound} />
         </Switch>
       </main>

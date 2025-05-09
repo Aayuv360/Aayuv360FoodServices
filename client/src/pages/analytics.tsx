@@ -61,6 +61,13 @@ export default function AnalyticsPage() {
   // Fetch analytics data
   const { data: analyticsData, isLoading } = useQuery({
     queryKey: ["/api/analytics", dateRange],
+    queryFn: async () => {
+      const response = await fetch(`/api/analytics?range=${dateRange}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch analytics data');
+      }
+      return response.json();
+    },
     enabled: !!user && user.role === "admin",
   });
 
@@ -83,81 +90,50 @@ export default function AnalyticsPage() {
     );
   }
 
-  // Mock data until we implement the backend
-  const mockSalesData = [
-    { name: "Monday", sales: 4000 },
-    { name: "Tuesday", sales: 3000 },
-    { name: "Wednesday", sales: 2000 },
-    { name: "Thursday", sales: 2780 },
-    { name: "Friday", sales: 5890 },
-    { name: "Saturday", sales: 7390 },
-    { name: "Sunday", sales: 5490 },
-  ];
-
-  const mockCategoryData = [
-    { name: "Ragi (Finger Millet)", value: 35 },
-    { name: "Jowar (Sorghum)", value: 25 },
-    { name: "Bajra (Pearl Millet)", value: 20 },
-    { name: "Foxtail Millet", value: 15 },
-    { name: "Little Millet", value: 5 },
-  ];
-
-  const mockUserData = [
-    { month: "Jan", newUsers: 40, activeUsers: 24 },
-    { month: "Feb", newUsers: 30, activeUsers: 28 },
-    { month: "Mar", newUsers: 20, activeUsers: 30 },
-    { month: "Apr", newUsers: 27, activeUsers: 32 },
-    { month: "May", newUsers: 18, activeUsers: 34 },
-    { month: "Jun", newUsers: 23, activeUsers: 36 },
-    { month: "Jul", newUsers: 34, activeUsers: 38 },
-  ];
-
-  const mockSubscriptions = [
-    { name: "Basic", value: 45 },
-    { name: "Premium", value: 35 },
-    { name: "Family", value: 20 },
-  ];
-
-  const mockTopMeals = [
-    { name: "Ragi Dosa", orders: 245 },
-    { name: "Jowar Roti", orders: 186 },
-    { name: "Bajra Khichdi", orders: 165 },
-    { name: "Foxtail Upma", orders: 140 },
-    { name: "Ragi Mudde", orders: 123 },
-  ];
-
-  const mockOrderTimesData = [
-    { time: "12-2 PM", orders: 120 },
-    { time: "2-4 PM", orders: 80 },
-    { time: "4-6 PM", orders: 140 },
-    { time: "6-8 PM", orders: 210 },
-    { time: "8-10 PM", orders: 190 },
-    { time: "10-12 PM", orders: 60 },
-  ];
-
+  // Format and prepare data from the API
+  const revenueData = analyticsData?.revenue || [];
+  const categoryData = analyticsData?.categoryDistribution.map(cat => ({
+    name: cat.category,
+    value: cat.orders,
+    revenue: cat.revenue,
+  })) || [];
+  
+  const userData = analyticsData?.userActivity || [];
+  
+  const subscriptionData = analyticsData?.subscriptionStats.map(sub => ({
+    name: sub.type,
+    value: sub.count,
+    revenue: sub.revenue,
+  })) || [];
+  
+  const topMealsData = analyticsData?.topMeals || [];
+  
+  const orderTimeData = analyticsData?.orderTimeDistribution || [];
+  
+  // Stats cards
   const stats = [
     {
       title: "Total Revenue",
-      value: "₹1,42,384",
-      change: "+12.3%",
-      trend: "up",
+      value: `₹${analyticsData?.totalRevenue.toLocaleString() || 0}`,
+      change: `${analyticsData?.revenueGrowth > 0 ? '+' : ''}${analyticsData?.revenueGrowth?.toFixed(1) || 0}%`,
+      trend: analyticsData?.revenueGrowth > 0 ? "up" : "down",
     },
     {
       title: "Active Subscriptions",
-      value: "284",
-      change: "+8.6%",
+      value: analyticsData?.activeSubscriptions?.toString() || "0",
+      change: "+0%", // We could calculate this if we had historical data
       trend: "up",
     },
     {
       title: "Total Orders",
-      value: "1,248",
-      change: "+22.4%",
+      value: analyticsData?.totalOrders?.toString() || "0",
+      change: "+0%", // We could calculate this if we had historical data
       trend: "up",
     },
     {
       title: "New Customers",
-      value: "86",
-      change: "+5.2%",
+      value: analyticsData?.newCustomers?.toString() || "0", 
+      change: "+0%", // We could calculate this if we had historical data
       trend: "up",
     },
   ];

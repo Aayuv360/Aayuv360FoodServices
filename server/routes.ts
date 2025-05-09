@@ -1086,6 +1086,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Analytics routes
+  app.get("/api/analytics", isAuthenticated, async (req, res) => {
+    try {
+      // Check if user is an admin
+      const user = req.user as any;
+      if (user.role !== 'admin') {
+        return res.status(403).json({ message: "Access denied. Admin role required." });
+      }
+      
+      // Get date range from query parameter, default to 30 days
+      const dateRange = (req.query.range as AnalyticsDateRange) || '30days';
+      
+      // Validate the date range
+      if (!['7days', '30days', '90days', 'year'].includes(dateRange)) {
+        return res.status(400).json({ message: "Invalid date range. Must be one of: 7days, 30days, 90days, year" });
+      }
+      
+      // Get analytics data
+      const analyticsData = await analyticsService.getAnalytics(dateRange);
+      
+      res.json(analyticsData);
+    } catch (err) {
+      console.error("Error fetching analytics:", err);
+      res.status(500).json({ message: "Error fetching analytics data" });
+    }
+  });
+  
   // Create subscription directly without payment processing
   app.post("/api/get-or-create-subscription", isAuthenticated, async (req, res) => {
     try {
