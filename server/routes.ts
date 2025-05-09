@@ -188,6 +188,515 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
   
+  // Public meal routes
+  app.get("/api/meals", async (req, res) => {
+    try {
+      const meals = await storage.getAllMeals();
+      res.json(meals);
+    } catch (err) {
+      console.error("Error fetching meals:", err);
+      res.status(500).json({ message: "Error fetching meals" });
+    }
+  });
+  
+  app.get("/api/meals/:id", async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      const meal = await storage.getMeal(mealId);
+      
+      if (!meal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      res.json(meal);
+    } catch (err) {
+      console.error("Error fetching meal:", err);
+      res.status(500).json({ message: "Error fetching meal" });
+    }
+  });
+  
+  app.get("/api/meals/type/:type", async (req, res) => {
+    try {
+      const mealType = req.params.type;
+      const meals = await storage.getMealsByType(mealType);
+      res.json(meals);
+    } catch (err) {
+      console.error("Error fetching meals by type:", err);
+      res.status(500).json({ message: "Error fetching meals by type" });
+    }
+  });
+  
+  // Location data for delivery areas
+  app.get("/api/locations", (req, res) => {
+    // Sample data for Hyderabad delivery areas
+    const deliveryAreas = [
+      { id: 1, area: "Hitech City", pincode: "500081", deliveryFee: 30 },
+      { id: 2, area: "Gachibowli", pincode: "500032", deliveryFee: 30 },
+      { id: 3, area: "Madhapur", pincode: "500081", deliveryFee: 30 },
+      { id: 4, area: "Kondapur", pincode: "500084", deliveryFee: 40 },
+      { id: 5, area: "Jubilee Hills", pincode: "500033", deliveryFee: 50 },
+      { id: 6, area: "Banjara Hills", pincode: "500034", deliveryFee: 50 },
+      { id: 7, area: "Ameerpet", pincode: "500016", deliveryFee: 60 },
+      { id: 8, area: "Begumpet", pincode: "500016", deliveryFee: 60 },
+      { id: 9, area: "Somajiguda", pincode: "500082", deliveryFee: 70 },
+      { id: 10, area: "Kukatpally", pincode: "500072", deliveryFee: 80 }
+    ];
+    
+    res.json(deliveryAreas);
+  });
+  
+  // Cart routes
+  app.get("/api/cart", async (req, res) => {
+    try {
+      const userId = req.isAuthenticated() ? (req.user as any).id : 0;
+      const cartItems = await storage.getCartItems(userId);
+      
+      // Enrich cart items with meal details
+      const enrichedCartItems = await Promise.all(
+        cartItems.map(async (item) => {
+          const meal = await storage.getMeal(item.mealId);
+          return {
+            ...item,
+            meal
+          };
+        })
+      );
+      
+      res.json(enrichedCartItems);
+    } catch (err) {
+      console.error("Error fetching cart:", err);
+      res.status(500).json({ message: "Error fetching cart items" });
+    }
+  });
+  
+  app.post("/api/cart", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const cartItemData = insertCartItemSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      const cartItem = await storage.addToCart(cartItemData);
+      const meal = await storage.getMeal(cartItem.mealId);
+      
+      res.status(201).json({ ...cartItem, meal });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        console.error("Error adding to cart:", err);
+        res.status(500).json({ message: "Error adding item to cart" });
+      }
+    }
+  });
+  
+  app.patch("/api/cart/:id", isAuthenticated, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.id);
+      const userId = (req.user as any).id;
+      
+      // Verify item belongs to user
+      const existingItem = await storage.getCartItems(userId)
+        .then(items => items.find(item => item.id === itemId));
+      
+      if (!existingItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+      
+      // Update item
+      const updates = req.body;
+      const updatedItem = await storage.updateCartItem(itemId, updates);
+      const meal = await storage.getMeal(updatedItem!.mealId);
+      
+      res.json({ ...updatedItem, meal });
+    } catch (err) {
+      console.error("Error updating cart item:", err);
+      res.status(500).json({ message: "Error updating cart item" });
+    }
+  });
+  
+  app.delete("/api/cart/:id", isAuthenticated, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.id);
+      const userId = (req.user as any).id;
+      
+      // Verify item belongs to user
+      const existingItem = await storage.getCartItems(userId)
+        .then(items => items.find(item => item.id === itemId));
+      
+      if (!existingItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+      
+      // Remove item
+      await storage.removeFromCart(itemId);
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error removing cart item:", err);
+      res.status(500).json({ message: "Error removing item from cart" });
+    }
+  });
+  
+  app.delete("/api/cart", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      await storage.clearCart(userId);
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error clearing cart:", err);
+      res.status(500).json({ message: "Error clearing cart" });
+    }
+  });
+  
+  // User preferences routes
+  app.get("/api/preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const preferences = await storage.getUserPreferences(userId);
+      
+      if (!preferences) {
+        return res.status(404).json({ message: "User preferences not found" });
+      }
+      
+      res.json(preferences);
+    } catch (err) {
+      console.error("Error fetching user preferences:", err);
+      res.status(500).json({ message: "Error fetching user preferences" });
+    }
+  });
+  
+  app.post("/api/preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      
+      // Check if preferences already exist
+      const existingPreferences = await storage.getUserPreferences(userId);
+      
+      if (existingPreferences) {
+        return res.status(400).json({ message: "User preferences already exist. Use PATCH to update." });
+      }
+      
+      const preferencesData = insertUserPreferencesSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      const preferences = await storage.createUserPreferences(preferencesData);
+      res.status(201).json(preferences);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        console.error("Error creating user preferences:", err);
+        res.status(500).json({ message: "Error creating user preferences" });
+      }
+    }
+  });
+  
+  app.patch("/api/preferences", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      
+      // Ensure preferences exist
+      const existingPreferences = await storage.getUserPreferences(userId);
+      
+      if (!existingPreferences) {
+        return res.status(404).json({ message: "User preferences not found. Create them first." });
+      }
+      
+      const updatedPreferences = await storage.updateUserPreferences(userId, req.body);
+      res.json(updatedPreferences);
+    } catch (err) {
+      console.error("Error updating user preferences:", err);
+      res.status(500).json({ message: "Error updating user preferences" });
+    }
+  });
+  
+  // Subscription management
+  app.get("/api/subscriptions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const subscriptions = await storage.getSubscriptionsByUserId(userId);
+      res.json(subscriptions);
+    } catch (err) {
+      console.error("Error fetching user subscriptions:", err);
+      res.status(500).json({ message: "Error fetching subscriptions" });
+    }
+  });
+  
+  app.post("/api/subscriptions", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      
+      const subscriptionData = insertSubscriptionSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      const subscription = await storage.createSubscription(subscriptionData);
+      res.status(201).json(subscription);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        console.error("Error creating subscription:", err);
+        res.status(500).json({ message: "Error creating subscription" });
+      }
+    }
+  });
+  
+  app.patch("/api/subscriptions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const subscriptionId = parseInt(req.params.id);
+      
+      // Ensure subscription exists and belongs to the user
+      const existingSubscription = await storage.getSubscription(subscriptionId);
+      
+      if (!existingSubscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      if (existingSubscription.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to modify this subscription" });
+      }
+      
+      const updatedSubscription = await storage.updateSubscription(subscriptionId, req.body);
+      res.json(updatedSubscription);
+    } catch (err) {
+      console.error("Error updating subscription:", err);
+      res.status(500).json({ message: "Error updating subscription" });
+    }
+  });
+  
+  // Custom meal plan routes
+  app.get("/api/subscriptions/:id/mealplans", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const subscriptionId = parseInt(req.params.id);
+      
+      // Ensure subscription exists and belongs to the user
+      const existingSubscription = await storage.getSubscription(subscriptionId);
+      
+      if (!existingSubscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      if (existingSubscription.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to access this subscription" });
+      }
+      
+      const mealPlans = await storage.getCustomMealPlans(subscriptionId);
+      
+      // Enrich meal plans with meal details
+      const enrichedMealPlans = await Promise.all(
+        mealPlans.map(async (plan) => {
+          const meal = await storage.getMeal(plan.mealId);
+          return {
+            ...plan,
+            meal
+          };
+        })
+      );
+      
+      res.json(enrichedMealPlans);
+    } catch (err) {
+      console.error("Error fetching custom meal plans:", err);
+      res.status(500).json({ message: "Error fetching custom meal plans" });
+    }
+  });
+  
+  app.post("/api/subscriptions/:id/mealplans", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const subscriptionId = parseInt(req.params.id);
+      
+      // Ensure subscription exists and belongs to the user
+      const existingSubscription = await storage.getSubscription(subscriptionId);
+      
+      if (!existingSubscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      if (existingSubscription.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to modify this subscription" });
+      }
+      
+      // Validate custom meal plan data
+      const mealPlanData = insertCustomMealPlanSchema.parse({
+        ...req.body,
+        subscriptionId
+      });
+      
+      // Ensure meal exists
+      const meal = await storage.getMeal(mealPlanData.mealId);
+      if (!meal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      const mealPlan = await storage.createCustomMealPlan(mealPlanData);
+      res.status(201).json({
+        ...mealPlan,
+        meal
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        console.error("Error creating custom meal plan:", err);
+        res.status(500).json({ message: "Error creating custom meal plan" });
+      }
+    }
+  });
+  
+  app.delete("/api/subscriptions/:subscriptionId/mealplans/:planId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const subscriptionId = parseInt(req.params.subscriptionId);
+      const planId = parseInt(req.params.planId);
+      
+      // Ensure subscription exists and belongs to the user
+      const existingSubscription = await storage.getSubscription(subscriptionId);
+      
+      if (!existingSubscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      if (existingSubscription.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to modify this subscription" });
+      }
+      
+      // Delete the custom meal plan
+      const success = await storage.deleteCustomMealPlan(planId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Custom meal plan not found" });
+      }
+      
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting custom meal plan:", err);
+      res.status(500).json({ message: "Error deleting custom meal plan" });
+    }
+  });
+  
+  // Order routes
+  app.post("/api/orders", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      
+      // Validate order data
+      const orderData = insertOrderSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      // Create the order
+      const order = await storage.createOrder(orderData);
+      
+      // Create order items from cart if provided
+      if (req.body.fromCart) {
+        // Get all cart items for the user
+        const cartItems = await storage.getCartItems(userId);
+        
+        // Create order items from cart items
+        for (const cartItem of cartItems) {
+          const orderItem = {
+            orderId: order.id,
+            mealId: cartItem.mealId,
+            quantity: cartItem.quantity,
+            price: cartItem.quantity * (await storage.getMeal(cartItem.mealId)).price,
+            curryOptionId: cartItem.curryOptionId,
+            curryOptionName: cartItem.curryOptionName,
+            curryOptionPrice: cartItem.curryOptionPrice
+          };
+          
+          await storage.createOrderItem(orderItem);
+        }
+        
+        // Clear the cart
+        await storage.clearCart(userId);
+      } else if (req.body.items && Array.isArray(req.body.items)) {
+        // Create order items from the provided items array
+        for (const item of req.body.items) {
+          const orderItem = {
+            orderId: order.id,
+            mealId: item.mealId,
+            quantity: item.quantity,
+            price: item.price || item.quantity * (await storage.getMeal(item.mealId)).price,
+            curryOptionId: item.curryOptionId,
+            curryOptionName: item.curryOptionName,
+            curryOptionPrice: item.curryOptionPrice
+          };
+          
+          await storage.createOrderItem(orderItem);
+        }
+      }
+      
+      res.status(201).json(order);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        console.error("Error creating order:", err);
+        res.status(500).json({ message: "Error creating order" });
+      }
+    }
+  });
+  
+  app.get("/api/orders", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const orders = await storage.getOrdersByUserId(userId);
+      res.json(orders);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      res.status(500).json({ message: "Error fetching orders" });
+    }
+  });
+  
+  app.get("/api/orders/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const orderId = parseInt(req.params.id);
+      
+      // Get the order
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Ensure order belongs to the user
+      if (order.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to access this order" });
+      }
+      
+      // Get order items
+      const orderItems = await storage.getOrderItems(orderId);
+      
+      // Enrich order items with meal details
+      const enrichedOrderItems = await Promise.all(
+        orderItems.map(async (item) => {
+          const meal = await storage.getMeal(item.mealId);
+          return {
+            ...item,
+            meal
+          };
+        })
+      );
+      
+      res.json({
+        ...order,
+        items: enrichedOrderItems
+      });
+    } catch (err) {
+      console.error("Error fetching order:", err);
+      res.status(500).json({ message: "Error fetching order" });
+    }
+  });
+  
   // Analytics routes - restricted to admin only
   app.get('/api/analytics', isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -200,6 +709,161 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error fetching analytics:", err);
       res.status(500).json({ message: "Error fetching analytics data" });
+    }
+  });
+
+  // Order Management endpoints (for managers and admins)
+  app.get("/api/admin/orders", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const orders = await storage.getAllOrders();
+      
+      // Enrich orders with user information
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const user = await storage.getUser(order.userId);
+        return {
+          ...order,
+          userName: user?.name || "Unknown User"
+        };
+      }));
+
+      res.json(enrichedOrders);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      res.status(500).json({ message: "Error fetching orders" });
+    }
+  });
+
+  app.get("/api/admin/subscriptions", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const subscriptions = await storage.getAllSubscriptions();
+      
+      // Enrich subscriptions with user information
+      const enrichedSubscriptions = await Promise.all(subscriptions.map(async (subscription) => {
+        const user = await storage.getUser(subscription.userId);
+        return {
+          ...subscription,
+          userName: user?.name || "Unknown User"
+        };
+      }));
+
+      res.json(enrichedSubscriptions);
+    } catch (err) {
+      console.error("Error fetching subscriptions:", err);
+      res.status(500).json({ message: "Error fetching subscriptions" });
+    }
+  });
+
+  app.patch("/api/admin/orders/:id/status", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      // Validate status
+      if (!['pending', 'confirmed', 'delivered', 'cancelled'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const updatedOrder = await storage.updateOrderStatus(orderId, status);
+      
+      if (!updatedOrder) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      res.json(updatedOrder);
+    } catch (err) {
+      console.error("Error updating order status:", err);
+      res.status(500).json({ message: "Error updating order status" });
+    }
+  });
+
+  // Admin Portal endpoints (admin only)
+  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      res.status(500).json({ message: "Error fetching users" });
+    }
+  });
+
+  app.post("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userData = req.body;
+      
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(userData.username) || 
+                          await storage.getUserByEmail(userData.email);
+      
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: `User with the same ${existingUser.username === userData.username ? 'username' : 'email'} already exists` 
+        });
+      }
+      
+      const newUser = await storage.createUser(userData);
+      res.status(201).json(newUser);
+    } catch (err) {
+      console.error("Error creating user:", err);
+      res.status(500).json({ message: "Error creating user" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const userData = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      res.status(500).json({ message: "Error updating user" });
+    }
+  });
+
+  // Admin Meal Management
+  app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const meals = await storage.getAllMeals();
+      res.json(meals);
+    } catch (err) {
+      console.error("Error fetching meals:", err);
+      res.status(500).json({ message: "Error fetching meals" });
+    }
+  });
+
+  app.post("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mealData = req.body;
+      const newMeal = await storage.createMeal(mealData);
+      res.status(201).json(newMeal);
+    } catch (err) {
+      console.error("Error creating meal:", err);
+      res.status(500).json({ message: "Error creating meal" });
+    }
+  });
+
+  app.patch("/api/admin/meals/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      const mealData = req.body;
+      
+      const updatedMeal = await storage.updateMeal(mealId, mealData);
+      
+      if (!updatedMeal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      res.json(updatedMeal);
+    } catch (err) {
+      console.error("Error updating meal:", err);
+      res.status(500).json({ message: "Error updating meal" });
     }
   });
 

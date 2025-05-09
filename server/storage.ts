@@ -7,12 +7,13 @@ import {
   type CustomMealPlan, type InsertCustomMealPlan
 } from "@shared/schema";
 import { milletMeals } from "./mealItems";
+
 import session from "express-session";
-import connectPg from "connect-pg-simple";
-import { db, pool } from "./db";
-import { eq } from "drizzle-orm";
 
 export interface IStorage {
+  // Session store
+  sessionStore: session.Store;
+  
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -73,6 +74,10 @@ export interface IStorage {
   getAllReviews(): Promise<Review[]>;
 }
 
+import createMemoryStore from "memorystore";
+
+const MemoryStore = createMemoryStore(session);
+
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private meals: Map<number, Meal>;
@@ -83,6 +88,8 @@ export class MemStorage implements IStorage {
   private userPreferences: Map<number, UserPreferences>;
   private cartItems: Map<number, CartItem>;
   private reviews: Map<number, Review>;
+  
+  sessionStore: session.Store;
   
   private userId: number;
   private mealId: number;
@@ -104,6 +111,10 @@ export class MemStorage implements IStorage {
     this.userPreferences = new Map();
     this.cartItems = new Map();
     this.reviews = new Map();
+    
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    });
     
     this.userId = 1;
     this.mealId = 1;
