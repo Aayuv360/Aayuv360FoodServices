@@ -121,8 +121,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   const paymentMethod = paymentForm.watch("method");
 
+  // Calculate cart total including any curry option prices
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + (item.meal?.price || 0) * item.quantity,
+    (sum, item) => {
+      // Get the meal price (which should already include curry option adjustment)
+      let itemPrice = item.meal?.price || 0;
+      return sum + itemPrice * item.quantity;
+    },
     0,
   );
   const deliveryFee = 4000;
