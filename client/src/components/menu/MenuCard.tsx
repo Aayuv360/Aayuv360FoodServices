@@ -1,11 +1,9 @@
 import { useState } from "react";
-import { Info, Plus } from "lucide-react";
+import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useCart } from "@/hooks/use-cart";
-import { useToast } from "@/hooks/use-toast";
 import NutritionModal from "./NutritionModal";
-import CurryOptionsModal from "./CurryOptionsModal";
+import { MealCardActions } from "./MealCardActions";
 import { Meal } from "@shared/schema";
 
 interface MenuCardProps {
@@ -16,17 +14,10 @@ interface MenuCardProps {
 
 const MenuCard = ({ meal }: MenuCardProps) => {
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
-  const [curryOptionsModalOpen, setCurryOptionsModalOpen] = useState(false);
-  const { addToCart } = useCart();
-  const { toast } = useToast();
 
   // Format price in Indian Rupees
   const formatPrice = (price: number) => {
     return `₹${(price / 100).toFixed(2)}`;
-  };
-
-  const handleAddToCartClick = () => {
-    setCurryOptionsModalOpen(true);
   };
 
   // Map dietary preferences to color schemes
@@ -97,14 +88,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
               <Info className="h-4 w-4" />
               Nutrition
             </Button>
-            <Button
-              size="sm"
-              className="bg-primary hover:bg-primary/90 text-white"
-              onClick={handleAddToCartClick}
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Add to Cart
-            </Button>
+            <MealCardActions meal={meal} />
           </div>
         </div>
       </div>
@@ -113,12 +97,6 @@ const MenuCard = ({ meal }: MenuCardProps) => {
         meal={meal}
         open={nutritionModalOpen}
         onClose={() => setNutritionModalOpen(false)}
-      />
-      
-      <CurryOptionsModal
-        meal={meal}
-        open={curryOptionsModalOpen}
-        onClose={() => setCurryOptionsModalOpen(false)}
       />
     </>
   );

@@ -5,6 +5,7 @@ import { useCart } from "@/hooks/use-cart";
 import { CurryOptionsModal } from "./CurryOptionsModal";
 import { RepeatCustomizationModal } from "./RepeatCustomizationModal";
 import { Meal } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 interface MealCardActionsProps {
   meal: Meal;
@@ -12,6 +13,7 @@ interface MealCardActionsProps {
 
 export function MealCardActions({ meal }: MealCardActionsProps) {
   const { isItemInCart, getCartItemsForMeal, getLastCurryOption, addToCart, removeCartItem } = useCart();
+  const { toast } = useToast();
   
   const [showCurryOptionsModal, setShowCurryOptionsModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
@@ -35,6 +37,10 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     // we might need a more sophisticated UI, but for now just remove the first one
     if (cartItems.length > 0) {
       removeCartItem(cartItems[0].id);
+      toast({
+        title: "Removed from cart",
+        description: `${meal.name} removed from your cart`
+      });
     }
   };
   
@@ -53,12 +59,22 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
       
       addToCart(mealWithCurry);
       setShowRepeatModal(false);
+      
+      toast({
+        title: "Added to cart",
+        description: `${meal.name} with ${lastCurryOption.name} added to your cart`,
+      });
     }
   };
   
-  const handleAddToCurry = (selectedMeal: Meal) => {
+  const handleAddToCurry = (selectedMeal: Meal & { curryOption: any }) => {
     addToCart(selectedMeal);
     setShowCurryOptionsModal(false);
+    
+    toast({
+      title: "Added to cart",
+      description: `${meal.name} with ${selectedMeal.curryOption.name} added to your cart`,
+    });
   };
   
   return (
