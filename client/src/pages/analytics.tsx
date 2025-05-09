@@ -92,7 +92,7 @@ export default function AnalyticsPage() {
 
   // Format and prepare data from the API
   const revenueData = analyticsData?.revenue || [];
-  const categoryData = analyticsData?.categoryDistribution.map(cat => ({
+  const categoryData = analyticsData?.categoryDistribution?.map((cat: any) => ({
     name: cat.category,
     value: cat.orders,
     revenue: cat.revenue,
@@ -100,7 +100,7 @@ export default function AnalyticsPage() {
   
   const userData = analyticsData?.userActivity || [];
   
-  const subscriptionData = analyticsData?.subscriptionStats.map(sub => ({
+  const subscriptionData = analyticsData?.subscriptionStats?.map((sub: any) => ({
     name: sub.type,
     value: sub.count,
     revenue: sub.revenue,
@@ -114,7 +114,7 @@ export default function AnalyticsPage() {
   const stats = [
     {
       title: "Total Revenue",
-      value: `₹${analyticsData?.totalRevenue.toLocaleString() || 0}`,
+      value: `₹${analyticsData?.totalRevenue?.toLocaleString() || 0}`,
       change: `${analyticsData?.revenueGrowth > 0 ? '+' : ''}${analyticsData?.revenueGrowth?.toFixed(1) || 0}%`,
       trend: analyticsData?.revenueGrowth > 0 ? "up" : "down",
     },
@@ -215,7 +215,7 @@ export default function AnalyticsPage() {
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart
-                    data={mockSalesData}
+                    data={revenueData}
                     margin={{
                       top: 5,
                       right: 30,
@@ -224,14 +224,15 @@ export default function AnalyticsPage() {
                     }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
+                    <XAxis dataKey="date" />
                     <YAxis />
-                    <Tooltip />
+                    <Tooltip formatter={(value) => [`₹${value}`, "Revenue"]} />
                     <Legend />
                     <Line
                       type="monotone"
-                      dataKey="sales"
+                      dataKey="total"
                       stroke="#8884d8"
+                      name="Daily Revenue"
                       activeDot={{ r: 8 }}
                     />
                   </LineChart>
