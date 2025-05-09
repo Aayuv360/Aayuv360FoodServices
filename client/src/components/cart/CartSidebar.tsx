@@ -96,7 +96,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [addingNewAddress, setAddingNewAddress] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [_, navigate] = useLocation();
-  const { cartItems, updateCartItem, removeCartItem, clearCart, addToCart, getLastCurryOption } = useCart();
+  const { cartItems, updateCartItem, removeCartItem, clearCart, addToCart, getLastCurryOption, updateCartItemWithOptions } = useCart();
   const { toast } = useToast();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -173,19 +173,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                  (item.meal as any)?.curryOption?.id === updatedMeal.curryOption.id;
         });
         
-        // If we're updating an existing item, and the curry option is different
+        // If we're updating an existing item with a different curry option
         if (cartItem && !sameOptionItem) {
-          // We found the item in cart but with different curry option
-          // In this case, we should:
-          // 1. Keep the original quantity
-          const originalQuantity = cartItem.quantity;
-          const oldItemId = cartItem.id;
-          
-          // 2. Add as a new item with the selected curry option and preserve quantity
-          await addToCart(updatedMeal, originalQuantity);
-          
-          // 3. Remove the old item
-          await removeCartItem(oldItemId);
+          // Use our new updateCartItemWithOptions method to directly update the item
+          // This preserves the item's ID and quantity
+          await updateCartItemWithOptions(cartItem.id, updatedMeal.curryOption);
           
           toast({
             title: "Customization changed",

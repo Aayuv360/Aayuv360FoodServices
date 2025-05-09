@@ -288,6 +288,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         getCartItemsForMeal,
         addToCart,
         updateCartItem,
+        updateCartItemWithOptions,
         removeCartItem,
         clearCart,
       }}
