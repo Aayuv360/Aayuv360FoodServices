@@ -10,7 +10,7 @@ import { useAuth } from "./use-auth";
 import { useToast } from "./use-toast";
 import { Meal } from "@shared/schema";
 
-export interface CartItem {
+interface CartItem {
   id: number;
   userId: number;
   mealId: number;
@@ -37,20 +37,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const fetchCartItems = async () => {
-      if (user) {
-        try {
-          setLoading(true);
-          const res = await apiRequest("GET", "/api/cart");
-          const data = await res.json();
-          setCartItems(data);
-        } catch (error) {
-          console.error("Error fetching cart:", error);
-          setCartItems([]);
-        } finally {
-          setLoading(false);
-        }
-      } else {
+      try {
+        setLoading(true);
+        const res = await apiRequest("GET", "/api/cart");
+        const data = await res.json();
+        setCartItems(data);
+      } catch (error) {
+        console.error("Error fetching cart:", error);
         setCartItems([]);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -143,7 +139,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const clearCart = async () => {
-    if (!user) return;
+    // if (!user) return;
 
     try {
       setLoading(true);

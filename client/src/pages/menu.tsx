@@ -14,58 +14,61 @@ const Menu = () => {
   const [location] = useLocation();
   const today = format(new Date(), "MMMM d, yyyy");
 
-  // Parse query parameters from URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const searchParam = params.get("search");
     if (searchParam) {
       setSearchQuery(searchParam);
     }
-    
+
     const mealId = params.get("id");
     if (mealId) {
-      // If a specific meal ID is provided, we could scroll to it or highlight it
-      // For now we'll just log it
       console.log("Viewing meal ID:", mealId);
     }
-    
+
     const filterParam = params.get("filter");
     if (filterParam) {
       setFilter(filterParam);
     }
   }, [location]);
 
-  // Fetch meals with search query if provided
-  const { data: meals, isLoading, error } = useQuery<Meal[]>({
+  const {
+    data: meals,
+    isLoading,
+    error,
+  } = useQuery<Meal[]>({
     queryKey: ["/api/meals", searchQuery],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) {
         params.append("query", searchQuery);
       }
-      const response = await fetch(`/api/meals${params.toString() ? `?${params.toString()}` : ''}`);
-      
+      const response = await fetch(
+        `/api/meals${params.toString() ? `?${params.toString()}` : ""}`,
+      );
+
       if (!response.ok) {
         throw new Error("Failed to fetch meals");
       }
-      
+
       return response.json();
     },
   });
 
-  // Filter meals based on selected filter and search query
   const filteredMeals = meals
     ? meals
         .filter((meal) => {
-          // Filter by meal type or dietary preference
           if (filter === "all") return true;
-          if (filter === "breakfast" || filter === "lunch" || filter === "dinner") {
+          if (
+            filter === "breakfast" ||
+            filter === "lunch" ||
+            filter === "dinner"
+          ) {
             return meal.mealType === filter;
           }
           return meal.dietaryPreferences?.includes(filter as any);
         })
         .filter((meal) => {
-          // Filter by search query
           if (!searchQuery) return true;
           return (
             meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,7 +87,7 @@ const Menu = () => {
               Explore our delicious millet-based dishes for {today}
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+          {/* <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
@@ -97,15 +100,18 @@ const Menu = () => {
             <Button variant="outline" size="icon" className="rounded-full bg-white">
               <Calendar className="h-5 w-5 text-primary" />
             </Button>
-          </div>
+          </div> */}
         </div>
 
         {/* Menu Filters */}
         <div className="mb-8 flex flex-wrap gap-2">
-          <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
+          <FilterButton
+            active={filter === "all"}
+            onClick={() => setFilter("all")}
+          >
             All Meals
           </FilterButton>
-          <FilterButton
+          {/* <FilterButton
             active={filter === "breakfast"}
             onClick={() => setFilter("breakfast")}
           >
@@ -116,7 +122,7 @@ const Menu = () => {
           </FilterButton>
           <FilterButton active={filter === "dinner"} onClick={() => setFilter("dinner")}>
             Dinner
-          </FilterButton>
+          </FilterButton> */}
           <FilterButton
             active={filter === "vegetarian"}
             onClick={() => setFilter("vegetarian")}
@@ -135,9 +141,9 @@ const Menu = () => {
           >
             High Protein
           </FilterButton>
-          <FilterButton active={filter === "spicy"} onClick={() => setFilter("spicy")}>
+          {/* <FilterButton active={filter === "spicy"} onClick={() => setFilter("spicy")}>
             Spicy
-          </FilterButton>
+          </FilterButton> */}
         </div>
 
         {/* Menu Items Grid */}
@@ -155,12 +161,13 @@ const Menu = () => {
           <div className="text-center py-12 bg-white rounded-lg shadow p-8">
             <h3 className="text-lg font-medium mb-2">No meals found</h3>
             <p className="text-gray-600">
-              No meals match your current filters. Try adjusting your search or filters.
+              No meals match your current filters. Try adjusting your search or
+              filters.
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredMeals.map((meal) => (
+            {filteredMeals.map((meal: any) => (
               <MenuCard key={meal.id} meal={meal} />
             ))}
           </div>

@@ -1,16 +1,22 @@
-import { Loader2, Check, X } from "lucide-react";
+import { Loader2, Check, X, Calendar, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { format } from "date-fns";
+import { format, addDays } from "date-fns";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useState, useEffect } from "react";
 
 export const CustomMealSheduleModal = ({
   mealsLoading,
@@ -27,43 +33,84 @@ export const CustomMealSheduleModal = ({
   customMealModalOpen,
   setCustomMealModalOpen,
 }: any) => {
+  const [localSelectedMeals, setLocalSelectedMeals] = useState(selectedMealsByDay);
+  
+  // Initialize the local state from the parent component's state
+  useEffect(() => {
+    setLocalSelectedMeals(selectedMealsByDay);
+  }, [selectedMealsByDay]);
+  
+  // Function to update local meal selection
+  const localUpdateMealSelection = (dayOfWeek: number, mealId: number) => {
+    setLocalSelectedMeals((prev: any) => ({
+      ...prev,
+      [dayOfWeek]: mealId,
+    }));
+  };
+  
+  // Function to save all selections to parent component state
+  const saveSelections = () => {
+    // Update the parent component's state
+    Object.entries(localSelectedMeals).forEach(([day, mealId]) => {
+      updateMealSelection(parseInt(day), mealId as number);
+    });
+    
+    // Close the modal
+    setCustomMealModalOpen(false);
+  };
+  
   return (
     <>
       <Dialog open={customMealModalOpen} onOpenChange={setCustomMealModalOpen}>
-        <DialogContent className="sm:max-w-[900px]">
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Custom Meal Plan</DialogTitle>
-            {/* <DialogDescription>
-              Search for your location on the map or enter address details
-              manually.
-            </DialogDescription> */}
+            <DialogTitle className="flex items-center">
+              <Calendar className="h-5 w-5 mr-2" /> Custom Meal Plan
+            </DialogTitle>
           </DialogHeader>
-          <div className="border-t pt-6 mb-2">
-            <h3 className="text-lg font-semibold mb-4">
-              Customize Your Weekly Meal Plan
-            </h3>
+          
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">Customize Your Weekly Meal Plan</h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <Info className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm">
+                    <p>Select meals for specific days to create your custom plan. 
+                    Your choices will be saved when you click "Save Selections".</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
             {mealsLoading ? (
               <div className="flex items-center justify-center h-40">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
             ) : (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Select a day to customize your meal (Plan duration:{" "}
-                      {currentPlan.duration} days):
-                    </p>
-                    <div className="flex flex-wrap gap-2 mb-4">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="bg-neutral-50 p-4 rounded-lg border">
+                    <h4 className="font-medium text-sm mb-3 flex items-center">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary mr-2">1</span>
+                      Select a day ({currentPlan.duration || 30} day plan)
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
                       {Array.from({
-                        length: Math.min(currentPlan.duration, 30),
+                        length: Math.min(currentPlan.duration || 30, 30),
                       }).map((_, index) => {
                         const startDate = new Date(form.watch("startDate"));
-                        const mealDate = new Date(startDate);
-                        mealDate.setDate(startDate.getDate() + index);
+                        const mealDate = addDays(startDate, index);
                         const dayOfWeek = mealDate.getDay();
                         const dayName = getDayName(dayOfWeek);
                         const formattedDate = format(mealDate, "d");
+                        
+                        // Check if this day already has a meal selected
+                        const hasMeal = localSelectedMeals[dayOfWeek] !== undefined;
 
                         return (
                           <Button
@@ -74,17 +121,24 @@ export const CustomMealSheduleModal = ({
                               selectedDate.getDate() === mealDate.getDate() &&
                               selectedDate.getMonth() === mealDate.getMonth()
                                 ? "default"
-                                : "outline"
+                                : hasMeal 
+                                  ? "secondary" 
+                                  : "outline"
                             }
                             onClick={() => {
                               setSelectedDate(mealDate);
                             }}
-                            className="flex-1"
+                            className={`w-[calc(25%-6px)] h-auto py-2 ${
+                              hasMeal ? "ring-1 ring-primary/30" : ""
+                            }`}
                           >
-                            <span className="text-xs">Day {index + 1}</span>
-                            <span className="block text-xs">
-                              {dayName} {formattedDate}
-                            </span>
+                            <div className="flex flex-col items-center">
+                              <span className="text-xs font-semibold">Day {index + 1}</span>
+                              <span className="text-xs">
+                                {dayName.substring(0, 3)} {formattedDate}
+                              </span>
+                              {hasMeal && <Check className="h-3 w-3 mt-1" />}
+                            </div>
                           </Button>
                         );
                       })}
@@ -93,34 +147,34 @@ export const CustomMealSheduleModal = ({
 
                   {/* Meal selection */}
                   {selectedDate && (
-                    <div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Select a meal for {getDayName(selectedDate.getDay())}:
-                      </p>
-                      <div className="space-y-3 max-h-72 overflow-y-auto pr-2">
+                    <div className="bg-neutral-50 p-4 rounded-lg border">
+                      <h4 className="font-medium text-sm mb-3 flex items-center">
+                        <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary mr-2">2</span>
+                        Select a meal for {getDayName(selectedDate.getDay())}
+                      </h4>
+                      <div className="space-y-2 max-h-[350px] overflow-y-auto pr-2">
                         {mealOptionsByDay[selectedDate.getDay()]?.map(
                           (meal: any) => (
                             <Card
                               key={meal.id}
-                              className={`cursor-pointer transition-all ${
-                                selectedMealsByDay[selectedDate.getDay()] ===
-                                meal.id
-                                  ? "border-primary"
-                                  : ""
+                              className={`cursor-pointer transition-all hover:bg-neutral-50 ${
+                                localSelectedMeals[selectedDate.getDay()] === meal.id
+                                  ? "border-primary shadow-sm bg-primary/5"
+                                  : "border-gray-200"
                               }`}
                               onClick={() =>
-                                updateMealSelection(
+                                localUpdateMealSelection(
                                   selectedDate.getDay(),
                                   meal.id,
                                 )
                               }
                             >
-                              <div className="flex items-center p-2">
-                                <div className="w-16 h-16 rounded-md overflow-hidden mr-3 flex-shrink-0">
+                              <div className="flex items-center p-3">
+                                <div className="w-16 h-16 rounded-md overflow-hidden mr-3 flex-shrink-0 bg-neutral-100">
                                   <img
                                     src={
                                       meal.image ||
-                                      "https://via.placeholder.com/150?text=Millet+Meal"
+                                      "https://placehold.co/400x400/e2e8f0/64748b?text=Millet+Meal"
                                     }
                                     alt={meal.name}
                                     className="w-full h-full object-cover"
@@ -133,7 +187,7 @@ export const CustomMealSheduleModal = ({
                                   <p className="text-xs text-gray-500 line-clamp-2">
                                     {meal.description}
                                   </p>
-                                  <div className="flex gap-1 mt-1">
+                                  <div className="flex flex-wrap gap-1 mt-1">
                                     {meal.dietaryPreferences?.map(
                                       (pref: string) => (
                                         <Badge
@@ -147,9 +201,10 @@ export const CustomMealSheduleModal = ({
                                     )}
                                   </div>
                                 </div>
-                                {selectedMealsByDay[selectedDate.getDay()] ===
-                                  meal.id && (
-                                  <Check className="h-5 w-5 text-primary ml-2" />
+                                {localSelectedMeals[selectedDate.getDay()] === meal.id && (
+                                  <div className="ml-2 h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <Check className="h-4 w-4 text-primary" />
+                                  </div>
                                 )}
                               </div>
                             </Card>
@@ -160,55 +215,122 @@ export const CustomMealSheduleModal = ({
                   )}
                 </div>
 
-                <div>
-                  <h4 className="font-medium mb-3">Your Selected Meals</h4>
-                  {Object.keys(selectedMealsByDay).length > 0 ? (
-                    <ul className="space-y-2">
-                      {Object.entries(selectedMealsByDay).map(
+                <div className="bg-neutral-50 p-4 rounded-lg border">
+                  <h4 className="font-medium text-sm mb-3 flex items-center">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary mr-2">3</span>
+                    Your Selected Meals
+                  </h4>
+                  
+                  {Object.keys(localSelectedMeals).length > 0 ? (
+                    <div className="space-y-2 max-h-[450px] overflow-y-auto pr-2">
+                      {Object.entries(localSelectedMeals).map(
                         ([day, mealId]) => {
+                          const dayNumber = parseInt(day);
                           const selectedMeal = meals?.find(
                             (m: any) => m.id === mealId,
                           );
+                          
+                          // Get date for this day
+                          const startDate = new Date(form.watch("startDate"));
+                          const dayIndex = Array.from({ length: 7 }).findIndex((_, i) => 
+                            (startDate.getDay() + i) % 7 === dayNumber
+                          );
+                          const mealDate = addDays(startDate, dayIndex);
+                          const formattedDate = format(mealDate, "MMM d");
+                          
                           return (
-                            <li
+                            <Card
                               key={day}
-                              className="flex justify-between items-center p-2 bg-neutral-light rounded-lg"
+                              className="border border-gray-200"
                             >
-                              <div>
-                                <span className="font-medium">
-                                  {getDayName(parseInt(day))}
-                                </span>
-                                <p className="text-sm">{selectedMeal?.name}</p>
+                              <div className="p-3">
+                                <div className="flex justify-between items-center mb-2">
+                                  <div className="flex items-center">
+                                    <span className="font-medium capitalize">
+                                      {getDayName(dayNumber)}
+                                    </span>
+                                    <span className="text-xs text-gray-500 ml-2">
+                                      {formattedDate}
+                                    </span>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 w-7 p-0"
+                                    onClick={() => {
+                                      setLocalSelectedMeals((prev: any) => {
+                                        const newState = { ...prev };
+                                        delete newState[dayNumber];
+                                        return newState;
+                                      });
+                                    }}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                
+                                <div className="flex items-center">
+                                  <div className="w-10 h-10 rounded overflow-hidden mr-2 bg-neutral-100">
+                                    <img
+                                      src={
+                                        selectedMeal?.image ||
+                                        "https://placehold.co/400x400/e2e8f0/64748b?text=Meal"
+                                      }
+                                      alt={selectedMeal?.name}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-sm">{selectedMeal?.name}</p>
+                                    <div className="flex gap-1 mt-0.5">
+                                      {selectedMeal?.dietaryPreferences?.slice(0, 2).map(
+                                        (pref: string) => (
+                                          <Badge
+                                            key={pref}
+                                            variant="outline"
+                                            className="text-xs px-1 py-0"
+                                          >
+                                            {pref}
+                                          </Badge>
+                                        )
+                                      )}
+                                      {selectedMeal?.dietaryPreferences?.length > 2 && (
+                                        <span className="text-xs text-gray-500">
+                                          +{selectedMeal.dietaryPreferences.length - 2} more
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedMealsByDay((prev: any) => {
-                                    const newState = { ...prev };
-                                    delete newState[parseInt(day)];
-                                    return newState;
-                                  });
-                                }}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </li>
+                            </Card>
                           );
                         },
                       )}
-                    </ul>
+                    </div>
                   ) : (
-                    <p className="text-sm text-gray-500">
-                      No meals selected yet. Select a day and choose your meal.
-                    </p>
+                    <div className="flex flex-col items-center justify-center h-40 text-center">
+                      <Calendar className="h-10 w-10 text-gray-300 mb-2" />
+                      <p className="text-sm text-gray-500">
+                        No meals selected yet. Select days and choose your meals.
+                      </p>
+                    </div>
+                  )}
+                  
+                  {Object.keys(localSelectedMeals).length > 0 && (
+                    <div className="mt-4 pt-3 border-t text-center">
+                      <p className="text-xs text-gray-500 mb-2">
+                        {Object.keys(localSelectedMeals).length} meal{Object.keys(localSelectedMeals).length !== 1 ? 's' : ''} selected
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
             )}
-          </div>{" "}
-          <DialogFooter className="mt-6">
+          </div>
+          
+          <DialogFooter className="mt-6 space-x-2">
             <Button
               type="button"
               variant="outline"
@@ -216,7 +338,14 @@ export const CustomMealSheduleModal = ({
             >
               Cancel
             </Button>
-            <Button type="submit">Update</Button>
+            <Button 
+              type="button"
+              onClick={saveSelections}
+              disabled={Object.keys(localSelectedMeals).length === 0}
+              className="bg-primary hover:bg-primary/90"
+            >
+              Save Selections
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

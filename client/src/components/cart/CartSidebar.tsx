@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-// import { Meal } from "@shared/schema";
 import {
   X,
   Minus,
@@ -13,10 +12,9 @@ import {
   Building,
   ChevronRight,
   ChevronLeft,
-  ShoppingCart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useCart, CartItem } from "@/hooks/use-cart";
+import { useCart } from "@/hooks/use-cart";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -43,6 +41,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 interface CartSidebarProps {
   open: boolean;
@@ -89,13 +88,6 @@ const userAddresses = [
   },
 ];
 
-// Type definitions for curry option
-type CurryOption = {
-  id: string;
-  name: string;
-  priceAdjustment: number;
-};
-
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
@@ -106,6 +98,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { cartItems, updateCartItem, removeCartItem, clearCart } = useCart();
   const { toast } = useToast();
   const { user } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
 
   const addressForm = useForm<z.infer<typeof addressSchema>>({
     resolver: zodResolver(addressSchema),
@@ -151,13 +144,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   const handleProceed = () => {
     if (!user) {
-      toast({
-        title: "Please login",
-        description: "You need to be logged in to checkout",
-        variant: "destructive",
-      });
-      onClose();
-      navigate("/login");
+      setAuthModalOpen(true);
       return;
     }
 
@@ -326,73 +313,59 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {cartItems.map((item) => {
-                      // Cast meal to any to access curry option properties
-                      const meal = item.meal as any;
-                      return (
-                        <div
-                          key={item.id}
-                          className="flex items-center space-x-4 bg-neutral-light p-3 rounded-lg"
-                        >
-                          <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                            <img
-                              src={meal?.imageUrl || "/placeholder-meal.jpg"}
-                              alt={meal?.name || "Meal item"}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
-                          <div className="flex-grow">
-                            <h4 className="font-medium text-sm">
-                              {meal?.name}
-                            </h4>
-                            {meal?.curryOption && (
-                              <p className="text-xs text-gray-500">
-                                {meal.curryOption.id === 'veg' ? 'With Vegetarian Curry' : 'With Non-Vegetarian Curry'}
-                                {meal.curryOption.priceAdjustment > 0 && (
-                                  <span className="text-primary ml-1">
-                                    (+₹{(meal.curryOption.priceAdjustment / 100).toFixed(2)})
-                                  </span>
-                                )}
-                              </p>
-                            )}
-                            <p className="text-primary text-sm font-semibold">
-                              {formatPrice(meal?.price || 0)}
-                            </p>
-                          </div>
-                          <div className="flex items-center border rounded">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 p-0"
-                              onClick={() =>
-                                handleQuantityChange(item.id, item.quantity - 1)
-                              }
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <span className="px-2 py-1">{item.quantity}</span>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 p-0"
-                              onClick={() =>
-                                handleQuantityChange(item.id, item.quantity + 1)
-                              }
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
+                    {cartItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center space-x-4 bg-neutral-light p-3 rounded-lg"
+                      >
+                        <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                          <img
+                            src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
+                            alt={item.meal?.name || "Meal item"}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-grow">
+                          <h4 className="font-medium text-sm">
+                            {item.meal?.name}
+                          </h4>
+                          <p className="text-primary text-sm font-semibold">
+                            {formatPrice(item.meal?.price || 0)}
+                          </p>
+                        </div>
+                        <div className="flex items-center border rounded">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-gray-400 hover:text-destructive"
-                            onClick={() => handleRemoveItem(item.id)}
+                            className="h-8 w-8 p-0"
+                            onClick={() =>
+                              handleQuantityChange(item.id, item.quantity - 1)
+                            }
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="px-2 py-1">{item.quantity}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 p-0"
+                            onClick={() =>
+                              handleQuantityChange(item.id, item.quantity + 1)
+                            }
+                          >
+                            <Plus className="h-3 w-3" />
                           </Button>
                         </div>
-                      );
-                    })}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-gray-400 hover:text-destructive"
+                          onClick={() => handleRemoveItem(item.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>
@@ -806,7 +779,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </h3>
               <p className="text-gray-600 mb-6">
                 Your millet meals will be delivered according to the schedule.
-                Thank you for choosing MealMillet!
+                Thank you for choosing Aayuv!
               </p>
               <div className="space-y-3 w-full">
                 <Button
@@ -833,10 +806,27 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           )}
         </div>
       </div>
+      <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
     </>
   );
 };
 
-// Using ShoppingCart from lucide-react now
+// Fallback component for cart icon
+const ShoppingCart = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    className="w-full h-full"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+    />
+  </svg>
+);
 
 export default CartSidebar;

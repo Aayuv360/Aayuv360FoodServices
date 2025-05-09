@@ -55,6 +55,7 @@ import { SUBSCRIPTION_PLANS } from "@/lib/constants";
 import { CustomMealSheduleModal } from "@/components/Modals/CustomMealSheduleModal";
 import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
+import { AuthModal } from "@/components/auth/AuthModal";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -107,14 +108,9 @@ const Subscription = () => {
   const selectedPlanFromParams = searchParams.get("plan");
   const { toast } = useToast();
   const { user } = useAuth();
-
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedMealsByDay, setSelectedMealsByDay] = useState<{
     [key: number]: number;
   }>({});
@@ -161,14 +157,8 @@ const Subscription = () => {
     },
   });
 
-  // Find the plan from URL parameter or use "basic" as default
-  const initialPlan = selectedPlanFromParams && 
-    SUBSCRIPTION_PLANS.find(p => p.id === selectedPlanFromParams) ? 
-    selectedPlanFromParams as "basic" | "premium" | "family" : 
-    "basic";
-    
   const defaultValues: SubscriptionFormValues = {
-    plan: initialPlan,
+    plan: (selectedPlanFromParams as any) || "basic",
     dietaryPreference: "vegetarian",
     personCount: 1,
     subscriptionType: "default",
@@ -480,11 +470,7 @@ const Subscription = () => {
         (p) => p.id === selectedPlanFromParams,
       );
       if (validPlan) {
-        console.log("Setting plan from URL parameter:", validPlan.id);
         form.setValue("plan", validPlan.id as any);
-        
-        // Trigger form validation after setting the value
-        form.trigger("plan");
       }
     }
   }, [selectedPlanFromParams, form]);
@@ -535,8 +521,6 @@ const Subscription = () => {
     }
   }, [meals]);
 
-  // This function just returns the content without form buttons
-  // to prevent automatic form submission
   const renderStepContent = () => {
     switch (formStep) {
       case "plan":
@@ -545,7 +529,6 @@ const Subscription = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex space-x-2 mb-4">
-                  {/* Current plan from form: {form.watch("plan")} */}
                   {SUBSCRIPTION_PLANS.map((plan) => (
                     <Button
                       key={plan.id}
@@ -715,7 +698,7 @@ const Subscription = () => {
 
               <div>
                 <div className="bg-neutral-light rounded-lg">
-                  <h3 className="font-medium">Selected Plan Details</h3>
+                  {/* <h3 className="font-medium">Selected Plan Details</h3> */}
                   <div className="mt-2">
                     <div className="flex items-center justify-between">
                       <p className="text-xl font-semibold text-primary">
@@ -809,6 +792,43 @@ const Subscription = () => {
                 customMealModalOpen={customMealModalOpen}
                 setCustomMealModalOpen={setCustomMealModalOpen}
               />
+            )}
+            
+            {/* Summary of custom meal selections if any */}
+            {subscriptionType === "customized" && Object.keys(selectedMealsByDay).length > 0 && (
+              <div className="mt-4 bg-neutral-50 p-4 rounded-lg border">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">Your Customized Meal Selections</h4>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setCustomMealModalOpen(true)}
+                    className="text-xs h-8"
+                  >
+                    Edit Selections
+                  </Button>
+                </div>
+                <p className="text-sm text-gray-600">
+                  You've selected {Object.keys(selectedMealsByDay).length} meals for your custom plan.
+                </p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {Object.entries(selectedMealsByDay).slice(0, 5).map(([day, mealId]) => {
+                    const dayName = getDayName(parseInt(day));
+                    const selectedMeal = meals?.find((m: any) => m.id === mealId);
+                    return (
+                      <Badge key={day} variant="secondary" className="text-xs">
+                        {dayName.substring(0, 3)}: {selectedMeal?.name.substring(0, 15)}{selectedMeal?.name.length > 15 ? '...' : ''}
+                      </Badge>
+                    );
+                  })}
+                  {Object.keys(selectedMealsByDay).length > 5 && (
+                    <Badge variant="outline" className="text-xs">
+                      +{Object.keys(selectedMealsByDay).length - 5} more
+                    </Badge>
+                  )}
+                </div>
+              </div>
             )}
 
             <div className="mt-6 ml-[450px]">
@@ -1235,7 +1255,6 @@ const Subscription = () => {
     }
   };
 
-  // Render a success page when subscription is successful
   if (isSuccess && subscribedDetails) {
     return (
       <div className="min-h-screen bg-neutral-light py-12">
@@ -1514,22 +1533,27 @@ const Subscription = () => {
                         type="button"
                         className="ml-auto bg-primary hover:bg-primary/90"
                         onClick={() => {
-                          if (
-                            form.watch("subscriptionType") === "customized" &&
-                            Object.keys(selectedMealsByDay).length === 0
-                          ) {
-                            toast({
-                              title: "Meal selection required",
-                              description:
-                                "Please select at least one meal for your customized plan",
-                              variant: "destructive",
-                            });
-                            return;
+                          if (!user) {
+                            setAuthModalOpen(true);
+                          } else {
+                            if (
+                              form.watch("subscriptionType") === "customized" &&
+                              Object.keys(selectedMealsByDay).length === 0
+                            ) {
+                              toast({
+                                title: "Meal selection required",
+                                description:
+                                  "Please select at least one meal for your customized plan",
+                                variant: "destructive",
+                              });
+                              return;
+                            }
+                            goToNextStep();
                           }
-                          goToNextStep();
                         }}
                       >
-                        Continue to Address
+                        {!user ? "Login and continue" : "Continue"}
+
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     )}
@@ -1579,6 +1603,12 @@ const Subscription = () => {
           </Card>
         </div>
       </div>
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        redirectUrl={`/subscription?plan=${form.watch("plan")}`}
+      />
     </div>
   );
 };

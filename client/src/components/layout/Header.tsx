@@ -401,15 +401,16 @@ const Header = () => {
 
           <div className="flex items-center space-x-4">
             <Button
-              variant="ghost"
-              size="icon"
-              className="relative"
+              variant="outline"
+              className="relative flex items-center gap-2 px-4 py-2"
               onClick={toggleCart}
               disabled={!cartItems.length}
             >
-              <ShoppingCart className="h-6 w-6" />
+              <ShoppingCart className="h-5 w-5" />
+              <span>Cart</span>
+
               {cartItems.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+                <span className="ml-auto bg-primary text-white text-xs rounded-full px-2 py-0.5">
                   {cartItems.length}
                 </span>
               )}
