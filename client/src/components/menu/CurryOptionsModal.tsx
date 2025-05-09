@@ -23,6 +23,8 @@ interface CurryOptionsModalProps {
   onClose: () => void;
   meal: Meal;
   onAddToCart: (meal: Meal & { curryOption: CurryOption }) => void;
+  lastCurryOption?: CurryOption;
+  isInCart?: boolean;
 }
 
 export function CurryOptionsModal({
@@ -30,6 +32,8 @@ export function CurryOptionsModal({
   onClose,
   meal,
   onAddToCart,
+  lastCurryOption,
+  isInCart = false
 }: CurryOptionsModalProps) {
   // Define curry options for this meal
   const curryOptions: CurryOption[] = [
@@ -40,7 +44,9 @@ export function CurryOptionsModal({
     { id: "garlic", name: "Garlic Curry", priceAdjustment: 4000 },
   ];
 
-  const [selectedOption, setSelectedOption] = useState<string>(curryOptions[0].id);
+  // If the user has a last selected curry option, use that as default; otherwise use the first option
+  const defaultSelectedOption = lastCurryOption ? lastCurryOption.id : curryOptions[0].id;
+  const [selectedOption, setSelectedOption] = useState<string>(defaultSelectedOption);
 
   // Format price in Indian Rupees
   const formatPrice = (price: number) => {
@@ -65,7 +71,7 @@ export function CurryOptionsModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Customize Your Meal</DialogTitle>
+            <DialogTitle>{isInCart ? 'Update Your Customization' : 'Customize Your Meal'}</DialogTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -89,7 +95,9 @@ export function CurryOptionsModal({
             {curryOptions.map((option) => (
               <div
                 key={option.id}
-                className="flex items-center justify-between space-x-2 rounded-md border p-3"
+                className={`flex items-center justify-between space-x-2 rounded-md border p-3 ${
+                  lastCurryOption && option.id === lastCurryOption.id ? "border-primary bg-primary/5" : ""
+                }`}
               >
                 <div className="flex items-center space-x-3">
                   <RadioGroupItem value={option.id} id={option.id} />
@@ -114,7 +122,7 @@ export function CurryOptionsModal({
             onClick={handleAddToCart} 
             className="w-full"
           >
-            Add to Cart
+            {isInCart ? 'Update Selection' : 'Add to Cart'}
           </Button>
         </div>
       </DialogContent>

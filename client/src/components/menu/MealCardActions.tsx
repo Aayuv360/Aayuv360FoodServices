@@ -23,13 +23,8 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
   const lastCurryOption = getLastCurryOption(meal.id);
   
   const handleAddClick = () => {
-    // If we have a last curry option for this meal, show the repeat modal
-    if (lastCurryOption) {
-      setShowRepeatModal(true);
-    } else {
-      // Otherwise, show curry option selection directly
-      setShowCurryOptionsModal(true);
-    }
+    // Always show curry option selection directly (Swiggy-like experience)
+    setShowCurryOptionsModal(true);
   };
   
   const handleRemoveClick = () => {
@@ -116,6 +111,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         onClose={() => setShowCurryOptionsModal(false)}
         meal={meal}
         onAddToCart={handleAddToCurry}
+        lastCurryOption={lastCurryOption}
       />
       
       <RepeatCustomizationModal
