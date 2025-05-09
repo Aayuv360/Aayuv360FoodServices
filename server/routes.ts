@@ -1,9 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import session from "express-session";
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
 import { z } from "zod";
 import { mealPlannerService } from "./mealPlanner";
 import { analyticsService, AnalyticsDateRange } from "./analytics";
@@ -20,6 +17,7 @@ import {
   CartItem
 } from "@shared/schema";
 import { seedDatabase } from "./seed";
+import { setupAuth } from "./auth";
 
 // Augmented CartItem interface for server use that includes meal data
 interface CartItemWithMeal extends CartItem {
@@ -33,8 +31,6 @@ interface CartItemWithMeal extends CartItem {
   };
 }
 
-const SESSION_SECRET = process.env.SESSION_SECRET || "millet-meal-service-secret";
-
 export async function registerRoutes(app: Express): Promise<Server> {
   // Seed the database with initial data (admin users, etc.)
   try {
@@ -44,79 +40,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.error("Error seeding database:", error);
   }
 
-  // Configure session
-  app.use(
-    session({
-      secret: SESSION_SECRET,
-      resave: false,
-      saveUninitialized: false,
-      store: storage.sessionStore,
-      cookie: {
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        secure: process.env.NODE_ENV === "production",
-      },
-    })
-  );
-
-  // Initialize passport
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  // Password verification function
-  async function verifyPassword(inputPassword: string, storedPassword: string): Promise<boolean> {
-    try {
-      const [hashedPart, salt] = storedPassword.split('.');
-      if (!hashedPart || !salt) return false;
-
-      const inputHashBuffer = await new Promise<Buffer>((resolve, reject) => {
-        const crypto = require('crypto');
-        crypto.scrypt(inputPassword, salt, 64, (err: Error | null, derivedKey: Buffer) => {
-          if (err) reject(err);
-          else resolve(derivedKey);
-        });
-      });
-
-      const inputHash = inputHashBuffer.toString('hex');
-      return inputHash === hashedPart;
-    } catch (error) {
-      console.error('Password verification error:', error);
-      return false;
-    }
-  }
-
-  // Configure passport
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        const user = await storage.getUserByUsername(username);
-        if (!user) {
-          return done(null, false, { message: "Incorrect username." });
-        }
-        
-        const isPasswordValid = await verifyPassword(password, user.password);
-        if (!isPasswordValid) {
-          return done(null, false, { message: "Incorrect password." });
-        }
-        
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    })
-  );
-
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const user = await storage.getUser(id);
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
+  // Setup authentication module
+  setupAuth(app);
 
   // Middleware that ensures authentication
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -147,71 +72,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     next();
   };
-
-  // Authentication routes
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const userData = insertUserSchema.parse(req.body);
-      
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(userData.username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-      
-      const existingEmail = await storage.getUserByEmail(userData.email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-      
-      const user = await storage.createUser(userData);
-      
-      // Remove password from response
-      const { password, ...userWithoutPassword } = user;
-      
-      res.status(201).json(userWithoutPassword);
-    } catch (err) {
-      if (err instanceof z.ZodError) {
-        res.status(400).json({ message: "Validation error", errors: err.errors });
-      } else {
-        res.status(500).json({ message: "Internal server error" });
-      }
-    }
-  });
-  
-  app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        return next(err);
-      }
-      if (!user) {
-        return res.status(401).json({ message: info.message || "Authentication failed" });
-      }
-      req.logIn(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-        // Remove password from response
-        const { password, ...userWithoutPassword } = user;
-        return res.json(userWithoutPassword);
-      });
-    })(req, res, next);
-  });
-  
-  app.post("/api/auth/logout", (req, res) => {
-    req.logout((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error logging out" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-  
-  app.get("/api/auth/me", isAuthenticated, (req, res) => {
-    // Remove password from response
-    const { password, ...userWithoutPassword } = req.user as any;
-    res.json(userWithoutPassword);
-  });
   
   // Public meal routes
   app.get("/api/meals", async (req, res) => {
