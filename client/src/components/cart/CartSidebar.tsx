@@ -124,8 +124,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   // Calculate cart total including any curry option prices
   const subtotal = cartItems.reduce(
     (sum, item) => {
-      // Get the meal price (which should already include curry option adjustment)
+      // Get the base meal price
       let itemPrice = item.meal?.price || 0;
+      
+      // Add curry option price adjustment if present
+      if ((item.meal as any)?.curryOption?.priceAdjustment) {
+        itemPrice += (item.meal as any).curryOption.priceAdjustment;
+      }
+      
       return sum + itemPrice * item.quantity;
     },
     0,
@@ -346,7 +352,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             </p>
                           )}
                           <p className="text-primary text-sm font-semibold">
-                            {formatPrice(item.meal?.price || 0)}
+                            {formatPrice(
+                              (item.meal?.price || 0) + 
+                              ((item.meal as any)?.curryOption?.priceAdjustment || 0)
+                            )}
                           </p>
                         </div>
                         <div className="flex items-center border rounded">
