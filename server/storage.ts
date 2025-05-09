@@ -54,6 +54,7 @@ export interface IStorage {
   getCartItems(userId: number): Promise<CartItem[]>;
   addToCart(cartItem: InsertCartItem): Promise<CartItem>;
   updateCartItemQuantity(id: number, quantity: number): Promise<CartItem | undefined>;
+  updateCartItem(id: number, updates: Partial<CartItem>): Promise<CartItem | undefined>;
   removeFromCart(id: number): Promise<boolean>;
   clearCart(userId: number): Promise<boolean>;
   
@@ -316,6 +317,15 @@ export class MemStorage implements IStorage {
     if (!existingItem) return undefined;
     
     const updatedItem: CartItem = { ...existingItem, quantity };
+    this.cartItems.set(id, updatedItem);
+    return updatedItem;
+  }
+  
+  async updateCartItem(id: number, updates: Partial<CartItem>): Promise<CartItem | undefined> {
+    const existingItem = this.cartItems.get(id);
+    if (!existingItem) return undefined;
+    
+    const updatedItem: CartItem = { ...existingItem, ...updates };
     this.cartItems.set(id, updatedItem);
     return updatedItem;
   }

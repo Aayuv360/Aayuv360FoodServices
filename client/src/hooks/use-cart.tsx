@@ -37,6 +37,7 @@ interface CartContextType {
   getCartItemsForMeal: (mealId: number) => CartItem[];
   addToCart: (meal: Meal, quantity?: number) => Promise<CartItem | undefined>;
   updateCartItem: (id: number, quantity: number) => Promise<void>;
+  updateCartItemWithOptions: (id: number, curryOption: CurryOption) => Promise<void>;
   removeCartItem: (id: number) => Promise<void>;
   clearCart: () => Promise<void>;
 }
@@ -189,6 +190,47 @@ export function CartProvider({ children }: { children: ReactNode }) {
       toast({
         title: "Error",
         description: "Failed to update cart item",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateCartItemWithOptions = async (id: number, curryOption: CurryOption) => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      
+      // Prepare the payload with the curry option details
+      const payload = {
+        curryOptionId: curryOption.id,
+        curryOptionName: curryOption.name,
+        curryOptionPrice: curryOption.priceAdjustment
+      };
+      
+      // Call the new PATCH endpoint
+      const res = await apiRequest("PATCH", `/api/cart/${id}`, payload);
+      const updatedItem = await res.json();
+      
+      // Update the cart items with the updated item
+      setCartItems(
+        cartItems.map((item) => (item.id === id ? updatedItem : item))
+      );
+      
+      // Update the last curry option used for this meal
+      if (updatedItem.mealId) {
+        setLastCurryOptions(prev => ({
+          ...prev,
+          [updatedItem.mealId]: curryOption
+        }));
+      }
+    } catch (error) {
+      console.error("Error updating cart item options:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update meal customization",
         variant: "destructive",
       });
     } finally {

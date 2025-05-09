@@ -373,6 +373,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // New endpoint to update cart item with curry options
+  app.patch("/api/cart/:id", isAuthenticated, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = req.body;
+      
+      // Validate the update payload
+      const updateSchema = z.object({
+        quantity: z.number().min(1).optional(),
+        curryOptionId: z.string().nullable().optional(),
+        curryOptionName: z.string().nullable().optional(),
+        curryOptionPrice: z.number().nullable().optional(),
+      });
+      
+      const validUpdates = updateSchema.parse(updates);
+      
+      const cartItem = await storage.updateCartItem(id, validUpdates);
+      
+      if (!cartItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+      
+      const meal = await storage.getMeal(cartItem.mealId);
+      
+      // If the cart item has curry option details, add them to the meal
+      let mealWithOptions = { ...meal };
+      
+      if (cartItem.curryOptionId) {
+        mealWithOptions = {
+          ...meal,
+          // Add the curry option to the meal
+          curryOption: {
+            id: cartItem.curryOptionId,
+            name: cartItem.curryOptionName,
+            priceAdjustment: cartItem.curryOptionPrice
+          },
+          // If the curry option has a price adjustment, add it to the meal price
+          ...(cartItem.curryOptionPrice && { 
+            price: meal.price + cartItem.curryOptionPrice 
+          })
+        };
+      }
+      
+      res.json({
+        ...cartItem,
+        meal: mealWithOptions,
+      });
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        console.error("Error updating cart item:", err);
+        res.status(500).json({ message: "Error updating cart item" });
+      }
+    }
+  });
+
   app.delete("/api/cart/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
