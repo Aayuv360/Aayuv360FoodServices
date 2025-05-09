@@ -285,9 +285,14 @@ export class MemStorage implements IStorage {
   }
   
   async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
-    // Check if item already exists for this user
+    // Check if item already exists for this user - consider curry option as part of uniqueness
     const existingItem = Array.from(this.cartItems.values()).find(
-      item => item.userId === cartItem.userId && item.mealId === cartItem.mealId
+      item => 
+        item.userId === cartItem.userId && 
+        item.mealId === cartItem.mealId &&
+        // Either both have no curry option or they have the same curry option ID
+        ((item.curryOptionId === undefined && cartItem.curryOptionId === undefined) ||
+         (item.curryOptionId === cartItem.curryOptionId))
     );
     
     if (existingItem) {
