@@ -285,20 +285,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       
-      // Extract curry option data if present
-      const { curryOption, ...restBody } = req.body;
+      // Extract curry option data and notes if present
+      const { curryOption, notes, ...restBody } = req.body;
       
-      // Prepare cart item data with any curry option info
+      // Get the meal to extract its category
+      const meal = await storage.getMeal(restBody.mealId);
+      if (!meal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      // Determine the category (use milletType if available, or mealType as fallback)
+      const category = meal.milletType || meal.mealType || null;
+      
+      // Prepare cart item data with curry option info, notes, and category
       const cartItemData = insertCartItemSchema.parse({
         ...restBody,
         userId,
         curryOptionId: curryOption?.id,
         curryOptionName: curryOption?.name,
-        curryOptionPrice: curryOption?.priceAdjustment
+        curryOptionPrice: curryOption?.priceAdjustment,
+        notes: notes || null,
+        category
       });
       
       const cartItem = await storage.addToCart(cartItemData);
-      const meal = await storage.getMeal(cartItem.mealId);
       
       // When returning the cart item, reconstruct the curryOption object
       const responseItem = {
@@ -373,7 +383,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // New endpoint to update cart item with curry options
+  // Endpoint to update cart item with curry options, notes, and other details
   app.patch("/api/cart/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
@@ -385,6 +395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         curryOptionId: z.string().nullable().optional(),
         curryOptionName: z.string().nullable().optional(),
         curryOptionPrice: z.number().nullable().optional(),
+        notes: z.string().nullable().optional(),
       });
       
       const validUpdates = updateSchema.parse(updates);
@@ -452,6 +463,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ message: "Cart cleared successfully" });
     } catch (err) {
       res.status(500).json({ message: "Error clearing cart" });
+    }
+  });
+  
+  // Endpoint to clear cart items by category (millet type or meal type)
+  app.delete("/api/cart/category/:category", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const category = req.params.category;
+      
+      // Get all cart items
+      const cartItems = await storage.getCartItems(userId);
+      
+      // Filter items by the requested category
+      const itemsToRemove = cartItems.filter(item => item.category === category);
+      
+      if (itemsToRemove.length === 0) {
+        return res.status(404).json({ message: "No items found in this category" });
+      }
+      
+      // Remove each item in the category
+      await Promise.all(itemsToRemove.map(item => storage.removeFromCart(item.id)));
+      
+      res.json({ 
+        message: `${itemsToRemove.length} items in category '${category}' removed successfully`,
+        removedCount: itemsToRemove.length
+      });
+    } catch (err) {
+      console.error("Error clearing cart category:", err);
+      res.status(500).json({ message: "Error clearing items by category" });
     }
   });
   

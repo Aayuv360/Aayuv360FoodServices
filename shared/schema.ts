@@ -102,6 +102,8 @@ export const cartItems = pgTable('cart_items', {
   curryOptionId: text('curry_option_id'),
   curryOptionName: text('curry_option_name'),
   curryOptionPrice: integer('curry_option_price'),
+  notes: text('notes'),
+  category: text('category'), // To store the meal's category for filtering
 });
 
 // Reviews
