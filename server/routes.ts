@@ -170,6 +170,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(userWithoutPassword);
   });
   
+  // Update user role - for testing admin/manager functionality
+  app.patch("/api/users/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { role } = req.body;
+      
+      // Only allow updates to the user's own account
+      if (userId !== (req.user as any).id) {
+        return res.status(403).json({ message: "You can only update your own profile" });
+      }
+      
+      // Validate role
+      if (role && !['user', 'admin', 'manager'].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+      
+      // Update the user
+      const updatedUser = await storage.updateUser(userId, { role });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Update the session with the new user data
+      req.login(updatedUser, (err) => {
+        if (err) {
+          return res.status(500).json({ message: "Error updating session" });
+        }
+        // Remove password from response
+        const { password, ...userWithoutPassword } = updatedUser;
+        res.json(userWithoutPassword);
+      });
+    } catch (err: any) {
+      console.error("Error updating user:", err);
+      res.status(500).json({ message: err.message || "Error updating user" });
+    }
+  });
+  
   // Meal routes
   app.get("/api/meals", async (req, res) => {
     try {
