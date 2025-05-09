@@ -99,6 +99,9 @@ export const cartItems = pgTable('cart_items', {
   userId: integer('user_id').references(() => users.id).notNull(),
   mealId: integer('meal_id').references(() => meals.id).notNull(),
   quantity: integer('quantity').notNull(),
+  curryOptionId: text('curry_option_id'),
+  curryOptionName: text('curry_option_name'),
+  curryOptionPrice: integer('curry_option_price'),
 });
 
 // Reviews

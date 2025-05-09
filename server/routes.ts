@@ -263,22 +263,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
+      
+      // Extract curry option data if present
+      const { curryOption, ...restBody } = req.body;
+      
+      // Prepare cart item data with any curry option info
       const cartItemData = insertCartItemSchema.parse({
-        ...req.body,
+        ...restBody,
         userId,
+        curryOptionId: curryOption?.id,
+        curryOptionName: curryOption?.name,
+        curryOptionPrice: curryOption?.priceAdjustment
       });
       
       const cartItem = await storage.addToCart(cartItemData);
       const meal = await storage.getMeal(cartItem.mealId);
       
-      res.status(201).json({
+      // When returning the cart item, reconstruct the curryOption object
+      const responseItem = {
         ...cartItem,
-        meal,
-      });
+        meal: {
+          ...meal,
+          // Add curry option to meal if curry option data exists
+          ...(cartItem.curryOptionId && {
+            curryOption: {
+              id: cartItem.curryOptionId,
+              name: cartItem.curryOptionName,
+              priceAdjustment: cartItem.curryOptionPrice
+            }
+          })
+        }
+      };
+      
+      res.status(201).json(responseItem);
     } catch (err) {
       if (err instanceof z.ZodError) {
         res.status(400).json({ message: "Validation error", errors: err.errors });
       } else {
+        console.error("Cart error:", err);
         res.status(500).json({ message: "Error adding item to cart" });
       }
     }
