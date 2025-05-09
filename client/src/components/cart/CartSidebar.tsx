@@ -42,6 +42,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 
 interface CartSidebarProps {
   open: boolean;
@@ -95,10 +96,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [addingNewAddress, setAddingNewAddress] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [_, navigate] = useLocation();
-  const { cartItems, updateCartItem, removeCartItem, clearCart } = useCart();
+  const { cartItems, updateCartItem, removeCartItem, clearCart, addToCart, getLastCurryOption } = useCart();
   const { toast } = useToast();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [customizeModalOpen, setCustomizeModalOpen] = useState(false);
+  const [selectedMeal, setSelectedMeal] = useState<any>(null);
 
   const addressForm = useForm<z.infer<typeof addressSchema>>({
     resolver: zodResolver(addressSchema),
@@ -152,6 +155,28 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   const handleRemoveItem = (id: number) => {
     removeCartItem(id);
+  };
+  
+  const handleCustomizeItem = (item: any) => {
+    setSelectedMeal(item.meal);
+    setCustomizeModalOpen(true);
+  };
+  
+  const handleCustomizationComplete = (updatedMeal: any) => {
+    if (selectedMeal && updatedMeal.curryOption) {
+      const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
+      if (cartItem) {
+        // Remove the old item and add the new one with updated curry option
+        removeCartItem(cartItem.id);
+        addToCart(updatedMeal);
+        
+        toast({
+          title: "Customization updated",
+          description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} updated in your cart`,
+        });
+      }
+    }
+    setCustomizeModalOpen(false);
   };
 
   const handleProceed = () => {
@@ -352,12 +377,22 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               )}
                             </p>
                           )}
-                          <p className="text-primary text-sm font-semibold">
-                            {formatPrice(
-                              (item.meal?.price || 0) + 
-                              ((item.meal as any)?.curryOption?.priceAdjustment || 0)
-                            )}
-                          </p>
+                          <div className="flex items-center justify-between">
+                            <p className="text-primary text-sm font-semibold">
+                              {formatPrice(
+                                (item.meal?.price || 0) + 
+                                ((item.meal as any)?.curryOption?.priceAdjustment || 0)
+                              )}
+                            </p>
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 h-6 text-xs text-primary"
+                              onClick={() => handleCustomizeItem(item)}
+                            >
+                              Customize
+                            </Button>
+                          </div>
                         </div>
                         <div className="flex items-center border rounded">
                           <Button
