@@ -3,7 +3,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums
-export const userRoleEnum = pgEnum('user_role', ['user', 'admin']);
+export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'manager']);
 export const orderStatusEnum = pgEnum('order_status', ['pending', 'confirmed', 'delivered', 'cancelled']);
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['basic', 'premium', 'family']);
 export const subscriptionTypeEnum = pgEnum('subscription_type', ['default', 'customized']);

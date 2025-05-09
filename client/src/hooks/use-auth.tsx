@@ -23,7 +23,7 @@ interface AuthContextType {
   loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  updateUser: (newUserData: Partial<User>) => void;
+  updateUser: (newUserData: Partial<User>) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,9 +84,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateUser = (newUserData: Partial<User>) => {
-    if (user) {
-      setUser({ ...user, ...newUserData });
+  const updateUser = async (newUserData: Partial<User>) => {
+    if (!user) return;
+    
+    try {
+      // Make API request to update user
+      const res = await apiRequest("PATCH", `/api/users/${user.id}`, newUserData);
+      const updatedUserData = await res.json();
+      
+      // Update local state
+      setUser({ ...user, ...updatedUserData });
+      
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated successfully",
+      });
+      
+      return updatedUserData;
+    } catch (error: any) {
+      console.error("Update user error:", error);
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update profile",
+        variant: "destructive",
+      });
+      throw error;
     }
   };
 

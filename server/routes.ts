@@ -1112,6 +1112,271 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching analytics data" });
     }
   });
+
+  // Admin and Manager routes
+  const isAdminOrManager = (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const user = req.user as any;
+    if (user.role !== 'admin' && user.role !== 'manager') {
+      return res.status(403).json({ message: "Access denied. Admin or Manager role required." });
+    }
+    
+    next();
+  };
+
+  // Admin-only routes
+  const isAdmin = (req: Request, res: Response, next: Function) => {
+    if (!req.isAuthenticated()) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+    
+    const user = req.user as any;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ message: "Access denied. Admin role required." });
+    }
+    
+    next();
+  };
+
+  // Order Management endpoints (for managers and admins)
+  app.get("/api/admin/orders", isAdminOrManager, async (req, res) => {
+    try {
+      const orders = await storage.getAllOrders();
+      
+      // Enrich orders with user information
+      const enrichedOrders = await Promise.all(orders.map(async (order) => {
+        const user = await storage.getUser(order.userId);
+        return {
+          ...order,
+          userName: user?.name || "Unknown User"
+        };
+      }));
+
+      res.json(enrichedOrders);
+    } catch (err) {
+      console.error("Error fetching orders:", err);
+      res.status(500).json({ message: "Error fetching orders" });
+    }
+  });
+
+  app.get("/api/admin/subscriptions", isAdminOrManager, async (req, res) => {
+    try {
+      const subscriptions = await storage.getAllSubscriptions();
+      
+      // Enrich subscriptions with user information
+      const enrichedSubscriptions = await Promise.all(subscriptions.map(async (subscription) => {
+        const user = await storage.getUser(subscription.userId);
+        return {
+          ...subscription,
+          userName: user?.name || "Unknown User"
+        };
+      }));
+
+      res.json(enrichedSubscriptions);
+    } catch (err) {
+      console.error("Error fetching subscriptions:", err);
+      res.status(500).json({ message: "Error fetching subscriptions" });
+    }
+  });
+
+  app.patch("/api/admin/orders/:id/status", isAdminOrManager, async (req, res) => {
+    try {
+      const orderId = parseInt(req.params.id);
+      const { status } = req.body;
+      
+      // Validate status
+      if (!['pending', 'confirmed', 'delivered', 'cancelled'].includes(status)) {
+        return res.status(400).json({ message: "Invalid status" });
+      }
+      
+      const updatedOrder = await storage.updateOrderStatus(orderId, status);
+      
+      if (!updatedOrder) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      res.json(updatedOrder);
+    } catch (err) {
+      console.error("Error updating order status:", err);
+      res.status(500).json({ message: "Error updating order status" });
+    }
+  });
+
+  // Admin Portal endpoints (admin only)
+  app.get("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (err) {
+      console.error("Error fetching users:", err);
+      res.status(500).json({ message: "Error fetching users" });
+    }
+  });
+
+  app.post("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const userData = req.body;
+      
+      // Check if username or email already exists
+      const existingUser = await storage.getUserByUsername(userData.username) || 
+                          await storage.getUserByEmail(userData.email);
+      
+      if (existingUser) {
+        return res.status(400).json({ 
+          message: `User with the same ${existingUser.username === userData.username ? 'username' : 'email'} already exists` 
+        });
+      }
+      
+      const newUser = await storage.createUser(userData);
+      res.status(201).json(newUser);
+    } catch (err) {
+      console.error("Error creating user:", err);
+      res.status(500).json({ message: "Error creating user" });
+    }
+  });
+
+  app.patch("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const userData = req.body;
+      
+      const updatedUser = await storage.updateUser(userId, userData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(updatedUser);
+    } catch (err) {
+      console.error("Error updating user:", err);
+      res.status(500).json({ message: "Error updating user" });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      
+      // In a real application, you would implement proper user deletion
+      // For this demo, we'll just return a success message
+      res.json({ message: "User deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting user:", err);
+      res.status(500).json({ message: "Error deleting user" });
+    }
+  });
+
+  app.get("/api/admin/meals", isAdmin, async (req, res) => {
+    try {
+      const meals = await storage.getAllMeals();
+      res.json(meals);
+    } catch (err) {
+      console.error("Error fetching meals:", err);
+      res.status(500).json({ message: "Error fetching meals" });
+    }
+  });
+
+  app.post("/api/admin/meals", isAdmin, async (req, res) => {
+    try {
+      const mealData = req.body;
+      const newMeal = await storage.createMeal(mealData);
+      res.status(201).json(newMeal);
+    } catch (err) {
+      console.error("Error creating meal:", err);
+      res.status(500).json({ message: "Error creating meal" });
+    }
+  });
+
+  app.patch("/api/admin/meals/:id", isAdmin, async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      const mealData = req.body;
+      
+      const updatedMeal = await storage.updateMeal(mealId, mealData);
+      
+      if (!updatedMeal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      res.json(updatedMeal);
+    } catch (err) {
+      console.error("Error updating meal:", err);
+      res.status(500).json({ message: "Error updating meal" });
+    }
+  });
+
+  app.delete("/api/admin/meals/:id", isAdmin, async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      
+      // In a real application, you would implement proper meal deletion
+      // For this demo, we'll just return a success message
+      res.json({ message: "Meal deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting meal:", err);
+      res.status(500).json({ message: "Error deleting meal" });
+    }
+  });
+
+  // Curry options endpoints
+  app.get("/api/admin/curry-options", isAdmin, async (req, res) => {
+    try {
+      // For demo purposes, we'll return a static list of curry options
+      // In a real application, you would fetch these from the database
+      const curryOptions = [
+        { id: "regular", name: "Regular Curry", priceAdjustment: 0, description: "Traditional medium-spicy curry" },
+        { id: "spicy", name: "Spicy Curry", priceAdjustment: 20, description: "Extra spicy curry with additional chilies" },
+        { id: "mild", name: "Mild Curry", priceAdjustment: 0, description: "Mild curry suitable for those who prefer less spice" },
+        { id: "creamy", name: "Creamy Curry", priceAdjustment: 40, description: "Rich and creamy curry with coconut milk" }
+      ];
+      
+      res.json(curryOptions);
+    } catch (err) {
+      console.error("Error fetching curry options:", err);
+      res.status(500).json({ message: "Error fetching curry options" });
+    }
+  });
+
+  app.post("/api/admin/curry-options", isAdmin, async (req, res) => {
+    try {
+      const curryData = req.body;
+      
+      // In a real application, you would save this to the database
+      // For this demo, we'll just return the data as if it was saved
+      res.status(201).json(curryData);
+    } catch (err) {
+      console.error("Error creating curry option:", err);
+      res.status(500).json({ message: "Error creating curry option" });
+    }
+  });
+
+  app.patch("/api/admin/curry-options/:id", isAdmin, async (req, res) => {
+    try {
+      const curryId = req.params.id;
+      const curryData = req.body;
+      
+      // In a real application, you would update the database
+      // For this demo, we'll just return the updated data
+      res.json({ ...curryData, id: curryId });
+    } catch (err) {
+      console.error("Error updating curry option:", err);
+      res.status(500).json({ message: "Error updating curry option" });
+    }
+  });
+
+  app.delete("/api/admin/curry-options/:id", isAdmin, async (req, res) => {
+    try {
+      // In a real application, you would delete from the database
+      // For this demo, we'll just return a success message
+      res.json({ message: "Curry option deleted successfully" });
+    } catch (err) {
+      console.error("Error deleting curry option:", err);
+      res.status(500).json({ message: "Error deleting curry option" });
+    }
+  });
   
   // Create subscription directly without payment processing
   app.post("/api/get-or-create-subscription", isAuthenticated, async (req, res) => {

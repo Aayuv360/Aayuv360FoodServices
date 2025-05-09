@@ -17,6 +17,7 @@ import MealPlanner from "@/pages/meal-planner";
 import Analytics from "@/pages/analytics";
 import OrderManagement from "@/pages/order-management";
 import AdminPortal from "@/pages/admin-portal";
+import MakeAdmin from "@/pages/make-admin";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -34,6 +35,7 @@ function Router() {
           <Route path="/analytics" component={Analytics} />
           <Route path="/order-management" component={OrderManagement} />
           <Route path="/admin" component={AdminPortal} />
+          <Route path="/make-admin" component={MakeAdmin} />
           <Route component={NotFound} />
         </Switch>
       </main>
