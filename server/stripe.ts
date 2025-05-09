@@ -6,9 +6,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 // Initialize Stripe with the secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2023-10-16',
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export interface CreatePaymentIntentOptions {
   amount: number; // Amount in rupees
@@ -66,13 +64,13 @@ export async function createSubscription(options: CreateSubscriptionOptions) {
   return subscription;
 }
 
+// Store Stripe customer IDs in memory for now since we can't modify the database schema
+const stripeCustomerMap = new Map<number, string>();
+
 export async function getOrCreateCustomer(userId: number, email: string, name: string) {
-  // First, check if the user already has a Stripe customer ID
-  const user = await storage.getUser(userId);
-  
-  if (user && user.stripeCustomerId) {
-    // User already has a Stripe customer ID, return it
-    return user.stripeCustomerId;
+  // First, check if the user already has a Stripe customer ID in our map
+  if (stripeCustomerMap.has(userId)) {
+    return stripeCustomerMap.get(userId)!;
   }
   
   // Create a new customer in Stripe
@@ -84,14 +82,24 @@ export async function getOrCreateCustomer(userId: number, email: string, name: s
     }
   });
   
-  // Save the customer ID to the user's record
-  // Note: This assumes storage.updateUser is implemented
-  await storage.updateUser(userId, { 
-    stripeCustomerId: customer.id
-  });
+  // Store the customer ID in our map
+  stripeCustomerMap.set(userId, customer.id);
   
   return customer.id;
 }
+
+// Temporary in-memory storage for payment intent IDs
+export const orderPaymentMap = new Map<number, { 
+  paymentIntentId: string, 
+  status: string 
+}>();
+
+export const subscriptionPaymentMap = new Map<number, {
+  subscriptionId: string,
+  priceId: string,
+  paymentIntentId: string,
+  status: string
+}>();
 
 // Function to handle webhook events from Stripe
 export async function handleWebhookEvent(event: Stripe.Event) {
@@ -101,12 +109,19 @@ export async function handleWebhookEvent(event: Stripe.Event) {
     case 'payment_intent.succeeded':
       const paymentIntent = data.object as Stripe.PaymentIntent;
       console.log(`PaymentIntent succeeded: ${paymentIntent.id}`);
-      // You can add code here to fulfill the order after successful payment
       
       // If this payment was for an order, update the order status
       if (paymentIntent.metadata.orderId) {
         const orderId = parseInt(paymentIntent.metadata.orderId);
         await storage.updateOrderStatus(orderId, 'confirmed');
+        
+        // Update our in-memory map
+        if (orderPaymentMap.has(orderId)) {
+          orderPaymentMap.set(orderId, { 
+            paymentIntentId: paymentIntent.id, 
+            status: 'succeeded' 
+          });
+        }
       }
       
       break;
@@ -119,6 +134,14 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       if (failedPaymentIntent.metadata.orderId) {
         const orderId = parseInt(failedPaymentIntent.metadata.orderId);
         await storage.updateOrderStatus(orderId, 'payment_failed');
+        
+        // Update our in-memory map
+        if (orderPaymentMap.has(orderId)) {
+          orderPaymentMap.set(orderId, { 
+            paymentIntentId: failedPaymentIntent.id, 
+            status: 'failed' 
+          });
+        }
       }
       
       break;
@@ -129,7 +152,6 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       
       // If this was for a subscription, update the subscription status
       if (invoice.subscription) {
-        // Update the subscription status in your database
         console.log(`Subscription ${invoice.subscription} is active`);
       }
       
@@ -142,7 +164,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       // If subscription has userId in metadata, update the user's subscription
       if (subscription.metadata.userId) {
         const userId = parseInt(subscription.metadata.userId);
-        // You can add code here to update the user's subscription status
+        console.log(`Subscription created for user ${userId}`);
       }
       
       break;
@@ -154,7 +176,7 @@ export async function handleWebhookEvent(event: Stripe.Event) {
       // Handle subscription status changes
       if (updatedSubscription.metadata.userId) {
         const userId = parseInt(updatedSubscription.metadata.userId);
-        // You can add code here to update the user's subscription status
+        console.log(`Subscription updated for user ${userId}`);
       }
       
       break;
