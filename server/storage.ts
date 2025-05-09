@@ -383,4 +383,289 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { db } from './db';
+import { eq, and, or, desc, like, sql } from 'drizzle-orm';
+import session from 'express-session';
+import connectPg from 'connect-pg-simple';
+import { pool } from './db';
+
+const PostgresSessionStore = connectPg(session);
+
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.SessionStore;
+  
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool,
+      createTableIfMissing: true 
+    });
+  }
+  
+  // User operations
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+  
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+  
+  async createUser(user: InsertUser): Promise<User> {
+    const [newUser] = await db.insert(users).values({
+      ...user,
+      role: user.role || 'user', // Default role
+      createdAt: new Date()
+    }).returning();
+    return newUser;
+  }
+  
+  async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    return updatedUser;
+  }
+  
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+  
+  // Meal operations
+  async getMeal(id: number): Promise<Meal | undefined> {
+    const [meal] = await db.select().from(meals).where(eq(meals.id, id));
+    return meal;
+  }
+  
+  async getAllMeals(): Promise<Meal[]> {
+    return await db.select().from(meals);
+  }
+  
+  async getMealsByType(mealType: string): Promise<Meal[]> {
+    return await db.select().from(meals).where(eq(meals.mealType, mealType as any));
+  }
+  
+  async getMealsByDietaryPreference(preference: string): Promise<Meal[]> {
+    // Using SQL contains array operator (@>) to check if dietaryPreferences array contains the preference
+    return await db.select().from(meals)
+      .where(sql`${meals.dietaryPreferences} @> ARRAY[${preference}]::text[]`);
+  }
+  
+  async createMeal(meal: InsertMeal): Promise<Meal> {
+    const [newMeal] = await db.insert(meals).values({
+      ...meal,
+      available: true
+    }).returning();
+    return newMeal;
+  }
+  
+  async updateMeal(id: number, mealData: Partial<Meal>): Promise<Meal | undefined> {
+    const [updatedMeal] = await db
+      .update(meals)
+      .set(mealData)
+      .where(eq(meals.id, id))
+      .returning();
+    return updatedMeal;
+  }
+  
+  // Subscription operations
+  async getSubscription(id: number): Promise<Subscription | undefined> {
+    const [subscription] = await db.select().from(subscriptions).where(eq(subscriptions.id, id));
+    return subscription;
+  }
+  
+  async getSubscriptionsByUserId(userId: number): Promise<Subscription[]> {
+    return await db.select().from(subscriptions).where(eq(subscriptions.userId, userId));
+  }
+  
+  async createSubscription(subscription: InsertSubscription): Promise<Subscription> {
+    const [newSubscription] = await db.insert(subscriptions).values(subscription).returning();
+    return newSubscription;
+  }
+  
+  async updateSubscription(id: number, subscriptionData: Partial<Subscription>): Promise<Subscription | undefined> {
+    const [updatedSubscription] = await db
+      .update(subscriptions)
+      .set(subscriptionData)
+      .where(eq(subscriptions.id, id))
+      .returning();
+    return updatedSubscription;
+  }
+  
+  async getAllSubscriptions(): Promise<Subscription[]> {
+    return await db.select().from(subscriptions);
+  }
+  
+  // Custom Meal Plan operations
+  async getCustomMealPlans(subscriptionId: number): Promise<CustomMealPlan[]> {
+    return await db.select().from(customMealPlans).where(eq(customMealPlans.subscriptionId, subscriptionId));
+  }
+  
+  async createCustomMealPlan(customMealPlan: InsertCustomMealPlan): Promise<CustomMealPlan> {
+    const [newCustomMealPlan] = await db.insert(customMealPlans).values(customMealPlan).returning();
+    return newCustomMealPlan;
+  }
+  
+  async deleteCustomMealPlan(id: number): Promise<boolean> {
+    const result = await db.delete(customMealPlans).where(eq(customMealPlans.id, id));
+    return result.rowCount > 0;
+  }
+  
+  // Order operations
+  async getOrder(id: number): Promise<Order | undefined> {
+    const [order] = await db.select().from(orders).where(eq(orders.id, id));
+    return order;
+  }
+  
+  async getOrdersByUserId(userId: number): Promise<Order[]> {
+    return await db.select().from(orders).where(eq(orders.userId, userId));
+  }
+  
+  async createOrder(order: InsertOrder): Promise<Order> {
+    const [newOrder] = await db.insert(orders).values({
+      ...order,
+      status: 'pending',
+      createdAt: new Date()
+    }).returning();
+    return newOrder;
+  }
+  
+  async updateOrderStatus(id: number, status: string): Promise<Order | undefined> {
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({ status: status as any })
+      .where(eq(orders.id, id))
+      .returning();
+    return updatedOrder;
+  }
+  
+  async getAllOrders(): Promise<Order[]> {
+    return await db.select().from(orders);
+  }
+  
+  // Order Item operations
+  async getOrderItems(orderId: number): Promise<OrderItem[]> {
+    return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+  
+  async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
+    const [newOrderItem] = await db.insert(orderItems).values(orderItem).returning();
+    return newOrderItem;
+  }
+  
+  async getAllOrderItems(): Promise<OrderItem[]> {
+    return await db.select().from(orderItems);
+  }
+  
+  // User Preferences operations
+  async getUserPreferences(userId: number): Promise<UserPreferences | undefined> {
+    const [preferences] = await db.select().from(userPreferences).where(eq(userPreferences.userId, userId));
+    return preferences;
+  }
+  
+  async createUserPreferences(preferences: InsertUserPreferences): Promise<UserPreferences> {
+    const [newPreferences] = await db.insert(userPreferences).values(preferences).returning();
+    return newPreferences;
+  }
+  
+  async updateUserPreferences(userId: number, preferenceData: Partial<UserPreferences>): Promise<UserPreferences | undefined> {
+    const [updatedPreferences] = await db
+      .update(userPreferences)
+      .set(preferenceData)
+      .where(eq(userPreferences.userId, userId))
+      .returning();
+    return updatedPreferences;
+  }
+  
+  // Cart operations
+  async getCartItems(userId: number): Promise<CartItem[]> {
+    return await db.select().from(cartItems).where(eq(cartItems.userId, userId));
+  }
+  
+  async addToCart(cartItem: InsertCartItem): Promise<CartItem> {
+    // Check if item with same meal and curry option already exists
+    if (cartItem.curryOptionId) {
+      const [existingItem] = await db.select().from(cartItems).where(
+        and(
+          eq(cartItems.userId, cartItem.userId),
+          eq(cartItems.mealId, cartItem.mealId),
+          eq(cartItems.curryOptionId, cartItem.curryOptionId)
+        )
+      );
+      
+      if (existingItem) {
+        // Update quantity of existing item
+        const [updatedItem] = await db
+          .update(cartItems)
+          .set({ quantity: existingItem.quantity + cartItem.quantity })
+          .where(eq(cartItems.id, existingItem.id))
+          .returning();
+        return updatedItem;
+      }
+    }
+    
+    // Otherwise, create a new cart item
+    const [newCartItem] = await db.insert(cartItems).values(cartItem).returning();
+    return newCartItem;
+  }
+  
+  async updateCartItemQuantity(id: number, quantity: number): Promise<CartItem | undefined> {
+    const [updatedItem] = await db
+      .update(cartItems)
+      .set({ quantity })
+      .where(eq(cartItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async updateCartItem(id: number, updates: Partial<CartItem>): Promise<CartItem | undefined> {
+    const [updatedItem] = await db
+      .update(cartItems)
+      .set(updates)
+      .where(eq(cartItems.id, id))
+      .returning();
+    return updatedItem;
+  }
+  
+  async removeFromCart(id: number): Promise<boolean> {
+    const result = await db.delete(cartItems).where(eq(cartItems.id, id));
+    return result.rowCount > 0;
+  }
+  
+  async clearCart(userId: number): Promise<boolean> {
+    const result = await db.delete(cartItems).where(eq(cartItems.userId, userId));
+    return true; // Always return true even if no items were deleted
+  }
+  
+  // Review operations
+  async getReviewsByMealId(mealId: number): Promise<Review[]> {
+    return await db.select().from(reviews).where(eq(reviews.mealId, mealId));
+  }
+  
+  async getReviewsByUserId(userId: number): Promise<Review[]> {
+    return await db.select().from(reviews).where(eq(reviews.userId, userId));
+  }
+  
+  async createReview(review: InsertReview): Promise<Review> {
+    const [newReview] = await db.insert(reviews).values({
+      ...review,
+      createdAt: new Date()
+    }).returning();
+    return newReview;
+  }
+  
+  async getAllReviews(): Promise<Review[]> {
+    return await db.select().from(reviews);
+  }
+}
+
+// Use the DatabaseStorage instead of MemStorage for persistence
+export const storage = new DatabaseStorage();
