@@ -55,9 +55,12 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
       addToCart(mealWithCurry);
       setShowRepeatModal(false);
       
+      const isUpdate = inCart;
       toast({
-        title: "Added to cart",
-        description: `${meal.name} with ${lastCurryOption.name} added to your cart`,
+        title: isUpdate ? "Updated selection" : "Added to cart",
+        description: isUpdate 
+          ? `${meal.name} with ${lastCurryOption.name} updated in your cart` 
+          : `${meal.name} with ${lastCurryOption.name} added to your cart`,
       });
     }
   };
@@ -66,9 +69,12 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     addToCart(selectedMeal);
     setShowCurryOptionsModal(false);
     
+    const isUpdate = inCart;
     toast({
-      title: "Added to cart",
-      description: `${meal.name} with ${selectedMeal.curryOption.name} added to your cart`,
+      title: isUpdate ? "Updated selection" : "Added to cart",
+      description: isUpdate 
+        ? `${meal.name} with ${selectedMeal.curryOption.name} updated in your cart` 
+        : `${meal.name} with ${selectedMeal.curryOption.name} added to your cart`,
     });
   };
   
@@ -112,6 +118,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         meal={meal}
         onAddToCart={handleAddToCurry}
         lastCurryOption={lastCurryOption}
+        isInCart={inCart}
       />
       
       <RepeatCustomizationModal
@@ -121,6 +128,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         onChooseNew={handleChooseNew}
         onRepeatLast={handleRepeatLast}
         lastCurryOption={lastCurryOption}
+        isInCart={inCart}
       />
     </>
   );

@@ -21,6 +21,7 @@ interface RepeatCustomizationModalProps {
     name: string;
     priceAdjustment: number;
   };
+  isInCart?: boolean;
 }
 
 export function RepeatCustomizationModal({
@@ -30,6 +31,7 @@ export function RepeatCustomizationModal({
   onChooseNew,
   onRepeatLast,
   lastCurryOption,
+  isInCart = false
 }: RepeatCustomizationModalProps) {
   // Format price in Indian Rupees
   const formatPrice = (price: number) => {
@@ -41,7 +43,7 @@ export function RepeatCustomizationModal({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <div className="flex items-center justify-between">
-            <DialogTitle>Repeat previous customization?</DialogTitle>
+            <DialogTitle>{isInCart ? 'Update your customization?' : 'Repeat previous customization?'}</DialogTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -52,7 +54,9 @@ export function RepeatCustomizationModal({
             </Button>
           </div>
           <DialogDescription>
-            How would you like to add {meal.name} to your cart?
+            {isInCart 
+              ? `How would you like to update ${meal.name} in your cart?` 
+              : `How would you like to add ${meal.name} to your cart?`}
           </DialogDescription>
         </DialogHeader>
 
@@ -86,7 +90,7 @@ export function RepeatCustomizationModal({
               className="w-full"
               disabled={!lastCurryOption}
             >
-              Repeat last
+              {isInCart ? 'Keep previous' : 'Repeat last'}
             </Button>
           </div>
         </div>
