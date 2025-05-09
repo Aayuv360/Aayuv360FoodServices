@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -15,7 +15,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import { Loader2 } from "lucide-react";
 import {
   BarChart,
@@ -209,7 +208,7 @@ export default function AnalyticsPage() {
               <CardHeader>
                 <CardTitle>Weekly Revenue</CardTitle>
                 <CardDescription>
-                  Sales performance over the last 7 days
+                  Sales performance over the selected period
                 </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
@@ -253,7 +252,7 @@ export default function AnalyticsPage() {
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
-                        data={mockCategoryData}
+                        data={categoryData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -264,7 +263,7 @@ export default function AnalyticsPage() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {mockCategoryData.map((entry, index) => (
+                        {categoryData.map((entry: any, index: number) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
@@ -291,7 +290,7 @@ export default function AnalyticsPage() {
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={300}>
                   <BarChart
-                    data={mockOrderTimesData}
+                    data={orderTimeData}
                     margin={{
                       top: 5,
                       right: 30,
@@ -300,12 +299,12 @@ export default function AnalyticsPage() {
                     }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
+                    <XAxis dataKey="timeSlot" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
                     <Bar
-                      dataKey="orders"
+                      dataKey="count"
                       fill="#FF6B6B"
                       name="Number of Orders"
                     />
@@ -322,7 +321,7 @@ export default function AnalyticsPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {mockTopMeals.map((meal, index) => (
+                  {topMealsData.map((meal: any, index: number) => (
                     <div key={index} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-medium">{index + 1}.</span>
@@ -355,7 +354,7 @@ export default function AnalyticsPage() {
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
-                        data={mockSubscriptions}
+                        data={subscriptionData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -366,7 +365,7 @@ export default function AnalyticsPage() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {mockSubscriptions.map((entry, index) => (
+                        {subscriptionData.map((entry: any, index: number) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
@@ -380,87 +379,39 @@ export default function AnalyticsPage() {
               </CardContent>
             </Card>
 
-            {/* Monthly Revenue */}
+            {/* Average Order Value */}
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Revenue</CardTitle>
+                <CardTitle>Average Order Value</CardTitle>
                 <CardDescription>
-                  Revenue trend over the last 6 months
+                  Current average order value: ₹{analyticsData?.averageOrderValue?.toFixed(2) || 0}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    data={[
-                      { month: "Jan", revenue: 35000 },
-                      { month: "Feb", revenue: 42000 },
-                      { month: "Mar", revenue: 38000 },
-                      { month: "Apr", revenue: 45000 },
-                      { month: "May", revenue: 50000 },
-                      { month: "Jun", revenue: 58000 },
-                    ]}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip
-                      formatter={(value) => [`₹${value}`, "Revenue"]}
-                    />
-                    <Bar
-                      dataKey="revenue"
-                      fill="#4ECDC4"
-                      name="Revenue (₹)"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
+                <div className="flex flex-col items-center justify-center h-[300px]">
+                  <div className="text-4xl font-bold">
+                    ₹{analyticsData?.averageOrderValue?.toFixed(2) || 0}
+                  </div>
+                  <p className="text-muted-foreground mt-2">Average Spend Per Order</p>
+                </div>
               </CardContent>
             </Card>
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle>Average Order Value</CardTitle>
+              <CardTitle>Revenue Growth</CardTitle>
               <CardDescription>
-                Average order value trend by month
+                Growth over the selected period: {analyticsData?.revenueGrowth?.toFixed(1) || 0}%
               </CardDescription>
             </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart
-                  data={[
-                    { month: "Jan", aov: 420 },
-                    { month: "Feb", aov: 438 },
-                    { month: "Mar", aov: 445 },
-                    { month: "Apr", aov: 452 },
-                    { month: "May", aov: 468 },
-                    { month: "Jun", aov: 475 },
-                  ]}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => [`₹${value}`, "AOV"]} />
-                  <Line
-                    type="monotone"
-                    dataKey="aov"
-                    stroke="#FF6B6B"
-                    activeDot={{ r: 8 }}
-                    name="Average Order Value (₹)"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center h-[300px]">
+                <div className={`text-4xl font-bold ${analyticsData?.revenueGrowth > 0 ? 'text-green-600' : 'text-destructive'}`}>
+                  {analyticsData?.revenueGrowth > 0 ? '+' : ''}{analyticsData?.revenueGrowth?.toFixed(1) || 0}%
+                </div>
+                <p className="text-muted-foreground mt-2">Revenue Growth Rate</p>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -468,57 +419,12 @@ export default function AnalyticsPage() {
         {/* Products Tab */}
         <TabsContent value="products" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
-            {/* Most Popular Products */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Most Popular Meals</CardTitle>
-                <CardDescription>
-                  Top 10 most ordered meals
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart
-                    layout="vertical"
-                    data={[
-                      { name: "Ragi Dosa", orders: 245 },
-                      { name: "Jowar Roti", orders: 186 },
-                      { name: "Bajra Khichdi", orders: 165 },
-                      { name: "Foxtail Upma", orders: 140 },
-                      { name: "Ragi Mudde", orders: 123 },
-                      { name: "Ragi Idli", orders: 110 },
-                      { name: "Jowar Uttapam", orders: 98 },
-                      { name: "Pearl Millet Porridge", orders: 92 },
-                      { name: "Little Millet Pulao", orders: 85 },
-                      { name: "Foxtail Millet Dosa", orders: 78 },
-                    ].reverse()}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 100,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="name" type="category" width={100} />
-                    <Tooltip />
-                    <Bar
-                      dataKey="orders"
-                      fill="#6B5CA5"
-                      name="Number of Orders"
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
-
-            {/* Product Categories */}
+            {/* Category Distribution */}
             <Card>
               <CardHeader>
                 <CardTitle>Category Distribution</CardTitle>
                 <CardDescription>
-                  Distribution of meals by millet type
+                  Orders by millet category
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -526,7 +432,7 @@ export default function AnalyticsPage() {
                   <ResponsiveContainer width="100%" height={250}>
                     <PieChart>
                       <Pie
-                        data={mockCategoryData}
+                        data={categoryData}
                         cx="50%"
                         cy="50%"
                         labelLine={false}
@@ -537,7 +443,7 @@ export default function AnalyticsPage() {
                         fill="#8884d8"
                         dataKey="value"
                       >
-                        {mockCategoryData.map((entry, index) => (
+                        {categoryData.map((entry: any, index: number) => (
                           <Cell
                             key={`cell-${index}`}
                             fill={COLORS[index % COLORS.length]}
@@ -550,95 +456,47 @@ export default function AnalyticsPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Product Performance</CardTitle>
-              <CardDescription>
-                Orders vs Revenue for top products
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={[
-                    {
-                      name: "Ragi Dosa",
-                      orders: 245,
-                      revenue: 24500,
-                    },
-                    {
-                      name: "Jowar Roti",
-                      orders: 186,
-                      revenue: 18600,
-                    },
-                    {
-                      name: "Bajra Khichdi",
-                      orders: 165,
-                      revenue: 18150,
-                    },
-                    {
-                      name: "Foxtail Upma",
-                      orders: 140,
-                      revenue: 15400,
-                    },
-                    {
-                      name: "Ragi Mudde",
-                      orders: 123,
-                      revenue: 12300,
-                    },
-                  ]}
-                  margin={{
-                    top: 20,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis yAxisId="left" orientation="left" />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    domain={[0, "dataMax"]}
-                  />
-                  <Tooltip />
-                  <Legend />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="orders"
-                    fill="#72B01D"
-                    name="Orders"
-                  />
-                  <Bar
-                    yAxisId="right"
-                    dataKey="revenue"
-                    fill="#3A86FF"
-                    name="Revenue (₹)"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+            {/* Top Meals */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Top Performing Meals</CardTitle>
+                <CardDescription>Most ordered items by revenue</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {topMealsData.map((meal: any, index: number) => (
+                    <div key={index} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium">{index + 1}.</span>
+                        <span className="text-sm">{meal.name}</span>
+                      </div>
+                      <span className="text-sm font-semibold">
+                        ₹{meal.revenue?.toLocaleString() || 0}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Customers Tab */}
         <TabsContent value="customers" className="space-y-6">
           <div className="grid gap-4 md:grid-cols-2">
-            {/* User Growth */}
-            <Card>
+            {/* User Activity */}
+            <Card className="col-span-2">
               <CardHeader>
-                <CardTitle>Customer Growth</CardTitle>
+                <CardTitle>User Activity</CardTitle>
                 <CardDescription>
-                  New and active users by month
+                  New and active users over time
                 </CardDescription>
               </CardHeader>
               <CardContent className="pl-2">
                 <ResponsiveContainer width="100%" height={300}>
                   <LineChart
-                    data={mockUserData}
+                    data={userData}
                     margin={{
                       top: 5,
                       right: 30,
@@ -647,7 +505,7 @@ export default function AnalyticsPage() {
                     }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
+                    <XAxis dataKey="date" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
@@ -655,8 +513,8 @@ export default function AnalyticsPage() {
                       type="monotone"
                       dataKey="newUsers"
                       stroke="#FF6B6B"
-                      activeDot={{ r: 8 }}
                       name="New Users"
+                      activeDot={{ r: 8 }}
                     />
                     <Line
                       type="monotone"
@@ -668,88 +526,34 @@ export default function AnalyticsPage() {
                 </ResponsiveContainer>
               </CardContent>
             </Card>
-
-            {/* Customer Retention */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Retention</CardTitle>
-                <CardDescription>
-                  Monthly retention rates by cohort
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pl-2">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart
-                    data={[
-                      { month: "Month 1", retention: 100 },
-                      { month: "Month 2", retention: 65 },
-                      { month: "Month 3", retention: 48 },
-                      { month: "Month 4", retention: 42 },
-                      { month: "Month 5", retention: 38 },
-                      { month: "Month 6", retention: 35 },
-                    ]}
-                    margin={{
-                      top: 5,
-                      right: 30,
-                      left: 20,
-                      bottom: 5,
-                    }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="month" />
-                    <YAxis />
-                    <Tooltip formatter={(value) => [`${value}%`, "Retention"]} />
-                    <Line
-                      type="monotone"
-                      dataKey="retention"
-                      stroke="#FFD166"
-                      activeDot={{ r: 8 }}
-                      name="Retention Rate (%)"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </CardContent>
-            </Card>
           </div>
 
+          {/* Location Data */}
           <Card>
             <CardHeader>
-              <CardTitle>Customer Geographic Distribution</CardTitle>
+              <CardTitle>Customer Distribution</CardTitle>
               <CardDescription>
-                Distribution of customers by area in Hyderabad
+                Customers by location
               </CardDescription>
             </CardHeader>
-            <CardContent className="pl-2">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart
-                  data={[
-                    { area: "Gachibowli", customers: 145 },
-                    { area: "Hitech City", customers: 112 },
-                    { area: "Madhapur", customers: 98 },
-                    { area: "Kondapur", customers: 86 },
-                    { area: "Jubilee Hills", customers: 72 },
-                    { area: "Banjara Hills", customers: 68 },
-                    { area: "Kukatpally", customers: 54 },
-                    { area: "Ameerpet", customers: 42 },
-                  ]}
-                  margin={{
-                    top: 5,
-                    right: 30,
-                    left: 20,
-                    bottom: 5,
-                  }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="area" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar
-                    dataKey="customers"
-                    fill="#F72585"
-                    name="Number of Customers"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+            <CardContent>
+              <div className="space-y-4">
+                {analyticsData?.locationData?.map((location: any, index: number) => (
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm">{location.location}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-sm font-semibold">
+                        {location.customers} customers
+                      </span>
+                      <span className="text-sm">
+                        {location.orders} orders
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
