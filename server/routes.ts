@@ -62,6 +62,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Password verification function
+  async function verifyPassword(inputPassword: string, storedPassword: string): Promise<boolean> {
+    try {
+      const [hashedPart, salt] = storedPassword.split('.');
+      if (!hashedPart || !salt) return false;
+
+      const inputHashBuffer = await new Promise<Buffer>((resolve, reject) => {
+        const crypto = require('crypto');
+        crypto.scrypt(inputPassword, salt, 64, (err: Error | null, derivedKey: Buffer) => {
+          if (err) reject(err);
+          else resolve(derivedKey);
+        });
+      });
+
+      const inputHash = inputHashBuffer.toString('hex');
+      return inputHash === hashedPart;
+    } catch (error) {
+      console.error('Password verification error:', error);
+      return false;
+    }
+  }
+
   // Configure passport
   passport.use(
     new LocalStrategy(async (username, password, done) => {
@@ -70,9 +92,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!user) {
           return done(null, false, { message: "Incorrect username." });
         }
-        if (user.password !== password) {
+        
+        const isPasswordValid = await verifyPassword(password, user.password);
+        if (!isPasswordValid) {
           return done(null, false, { message: "Incorrect password." });
         }
+        
         return done(null, user);
       } catch (err) {
         return done(err);
