@@ -9,7 +9,7 @@ export function ProtectedRoute({
   managerOnly = false,
 }: {
   path: string;
-  component: () => React.JSX.Element;
+  component: () => React.ReactNode;
   adminOnly?: boolean;
   managerOnly?: boolean;
 }) {

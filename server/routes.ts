@@ -4,6 +4,17 @@ import { storage } from "./storage";
 import { z } from "zod";
 import { mealPlannerService } from "./mealPlanner";
 import { analyticsService, AnalyticsDateRange } from "./analytics";
+import {
+  createOrder,
+  createSubscription,
+  createPlan,
+  handlePaymentSuccess,
+  handlePaymentFailure,
+  handleWebhookEvent,
+  orderPaymentMap,
+  subscriptionPaymentMap,
+  razorpay
+} from "./razorpay";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
@@ -18,16 +29,6 @@ import {
 } from "@shared/schema";
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
-import {
-  createOrder,
-  createSubscription,
-  createPlan,
-  handlePaymentSuccess,
-  handlePaymentFailure,
-  handleWebhookEvent,
-  orderPaymentMap,
-  razorpay
-} from "./razorpay";
 
 // Augmented CartItem interface for server use that includes meal data
 interface CartItemWithMeal extends CartItem {
