@@ -247,15 +247,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemsWithDetails = await Promise.all(
         cartItems.map(async (item) => {
           const meal = await storage.getMeal(item.mealId);
+          
+          // If the cart item has curry option details, add them to the meal
+          let mealWithOptions = { ...meal };
+          
+          if (item.curryOptionId) {
+            mealWithOptions = {
+              ...meal,
+              // Add the curry option to the meal
+              curryOption: {
+                id: item.curryOptionId,
+                name: item.curryOptionName,
+                priceAdjustment: item.curryOptionPrice
+              },
+              // If the curry option has a price adjustment, add it to the meal price
+              ...(item.curryOptionPrice && { 
+                price: meal.price + item.curryOptionPrice 
+              })
+            };
+          }
+          
           return {
             ...item,
-            meal,
+            meal: mealWithOptions,
           };
         })
       );
       
       res.json(itemsWithDetails);
     } catch (err) {
+      console.error("Error fetching cart:", err);
       res.status(500).json({ message: "Error fetching cart items" });
     }
   });
@@ -319,14 +340,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const meal = await storage.getMeal(cartItem.mealId);
       
+      // If the cart item has curry option details, add them to the meal
+      let mealWithOptions = { ...meal };
+      
+      if (cartItem.curryOptionId) {
+        mealWithOptions = {
+          ...meal,
+          // Add the curry option to the meal
+          curryOption: {
+            id: cartItem.curryOptionId,
+            name: cartItem.curryOptionName,
+            priceAdjustment: cartItem.curryOptionPrice
+          },
+          // If the curry option has a price adjustment, add it to the meal price
+          ...(cartItem.curryOptionPrice && { 
+            price: meal.price + cartItem.curryOptionPrice 
+          })
+        };
+      }
+      
       res.json({
         ...cartItem,
-        meal,
+        meal: mealWithOptions,
       });
     } catch (err) {
       if (err instanceof z.ZodError) {
         res.status(400).json({ message: "Validation error", errors: err.errors });
       } else {
+        console.error("Error updating cart item:", err);
         res.status(500).json({ message: "Error updating cart item" });
       }
     }

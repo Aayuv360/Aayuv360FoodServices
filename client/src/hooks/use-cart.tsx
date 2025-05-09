@@ -66,15 +66,38 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true);
-      const res = await apiRequest("POST", "/api/cart", {
+      
+      // Check if meal has curry option (from the CurryOptionsModal)
+      const hasCurryOption = (meal as any).curryOption !== undefined;
+      
+      const payload = {
         mealId: meal.id,
         quantity,
-      });
+        // If meal has curry option, include it in the request
+        ...(hasCurryOption && { 
+          curryOption: (meal as any).curryOption 
+        })
+      };
+      
+      const res = await apiRequest("POST", "/api/cart", payload);
       const newCartItem = await res.json();
 
-      const existingItemIndex = cartItems.findIndex(
-        (item) => item.mealId === meal.id,
-      );
+      // For meals with the same ID but different curry options, we need to check
+      // if the same exact meal (ID + curry option) already exists
+      const existingItemIndex = cartItems.findIndex(item => {
+        // Basic check for meal ID
+        if (item.mealId !== meal.id) return false;
+        
+        // If this meal has a curry option, we need to match that too
+        if (hasCurryOption) {
+          const itemCurryId = item.meal && (item.meal as any).curryOption?.id;
+          const mealCurryId = (meal as any).curryOption?.id;
+          return itemCurryId === mealCurryId;
+        }
+        
+        // If no curry option, just match by meal ID
+        return true;
+      });
 
       if (existingItemIndex >= 0) {
         const updatedItems = [...cartItems];
