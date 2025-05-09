@@ -18,6 +18,13 @@ import {
 } from "@shared/schema";
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
+import { 
+  createPaymentIntent, 
+  createSubscription, 
+  getOrCreateCustomer,
+  handleWebhookEvent,
+  stripe
+} from "./stripe";
 
 // Augmented CartItem interface for server use that includes meal data
 interface CartItemWithMeal extends CartItem {
