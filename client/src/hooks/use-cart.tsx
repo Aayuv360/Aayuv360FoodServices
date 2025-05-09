@@ -99,6 +99,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       // Check if meal has curry option (from the CurryOptionsModal)
       const hasCurryOption = (meal as any).curryOption !== undefined;
       
+      // Prepare the payload
       const payload = {
         mealId: meal.id,
         quantity,
@@ -108,20 +109,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         })
       };
       
-      const res = await apiRequest("POST", "/api/cart", payload);
-      const newCartItem = await res.json();
-
-      // Store the last curry option used for this meal
-      if (hasCurryOption && (meal as any).curryOption) {
-        setLastCurryOptions(prev => ({
-          ...prev,
-          [meal.id]: (meal as any).curryOption
-        }));
-      }
-
       // For meals with the same ID but different curry options, we need to check
       // if the same exact meal (ID + curry option) already exists
-      const existingItemIndex = cartItems.findIndex(item => {
+      const existingItem = cartItems.find(item => {
         // Basic check for meal ID
         if (item.mealId !== meal.id) return false;
         
@@ -135,14 +125,39 @@ export function CartProvider({ children }: { children: ReactNode }) {
         // If no curry option, just match by meal ID
         return true;
       });
-
-      if (existingItemIndex >= 0) {
-        const updatedItems = [...cartItems];
-        updatedItems[existingItemIndex] = newCartItem;
-        setCartItems(updatedItems);
+      
+      let newCartItem: CartItem;
+      
+      if (existingItem) {
+        // If the exact same item exists, just update the quantity
+        const updatedQuantity = quantity;
+        const res = await apiRequest("PUT", `/api/cart/${existingItem.id}`, { 
+          quantity: updatedQuantity 
+        });
+        newCartItem = await res.json();
+        
+        // Update the cart items array with the updated item
+        setCartItems(
+          cartItems.map(item => item.id === existingItem.id ? newCartItem : item)
+        );
       } else {
+        // Otherwise, add a new item
+        const res = await apiRequest("POST", "/api/cart", payload);
+        newCartItem = await res.json();
+        
+        // Add the new item to the cart items array
         setCartItems([...cartItems, newCartItem]);
       }
+
+      // Store the last curry option used for this meal
+      if (hasCurryOption && (meal as any).curryOption) {
+        setLastCurryOptions(prev => ({
+          ...prev,
+          [meal.id]: (meal as any).curryOption
+        }));
+      }
+
+      return newCartItem; // Return the cart item for reference
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast({
@@ -150,6 +165,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         description: "Failed to add item to cart",
         variant: "destructive",
       });
+      throw error; // Re-throw for error handling in the calling function
     } finally {
       setLoading(false);
     }

@@ -162,24 +162,52 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     setCustomizeModalOpen(true);
   };
   
-  const handleCustomizationComplete = (updatedMeal: any) => {
-    if (selectedMeal && updatedMeal.curryOption) {
-      const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
-      if (cartItem) {
-        // Store the original quantity
-        const originalQuantity = cartItem.quantity;
-        
-        // Remove the old item and add the new one with updated curry option and preserved quantity
-        removeCartItem(cartItem.id);
-        addToCart(updatedMeal, originalQuantity);
-        
-        toast({
-          title: "Customization updated",
-          description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} updated in your cart`,
-        });
+  const handleCustomizationComplete = async (updatedMeal: any) => {
+    try {
+      if (selectedMeal && updatedMeal.curryOption) {
+        const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
+        if (cartItem) {
+          // Store the original quantity
+          const originalQuantity = cartItem.quantity;
+          const itemId = cartItem.id;
+          
+          // First, add the new item to ensure it's in the cart
+          await addToCart(updatedMeal, originalQuantity);
+          
+          // Then remove the old item (use setTimeout to ensure the add completes first)
+          setTimeout(async () => {
+            try {
+              await removeCartItem(itemId);
+            } catch (err) {
+              console.error("Error removing old cart item:", err);
+              // Item may have already been removed or updated by the server
+            }
+          }, 100);
+          
+          toast({
+            title: "Customization updated",
+            description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} updated in your cart`,
+          });
+        } else {
+          // If the item wasn't in the cart (somehow), add it
+          await addToCart(updatedMeal, 1);
+          
+          toast({
+            title: "Item added",
+            description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} added to your cart`,
+          });
+        }
       }
+    } catch (error) {
+      console.error("Error during customization:", error);
+      toast({
+        title: "Error updating cart",
+        description: "There was an error updating your cart. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setCustomizeModalOpen(false);
     }
-    setCustomizeModalOpen(false);
   };
 
   const handleProceed = () => {

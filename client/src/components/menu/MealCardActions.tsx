@@ -85,17 +85,33 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     }
   };
   
-  const handleAddToCurry = (selectedMeal: Meal & { curryOption: any }) => {
-    addToCart(selectedMeal);
-    setShowCurryOptionsModal(false);
-    
-    const isUpdate = inCart;
-    toast({
-      title: isUpdate ? "Updated selection" : "Added to cart",
-      description: isUpdate 
-        ? `${meal.name} with ${selectedMeal.curryOption.name} updated in your cart` 
-        : `${meal.name} with ${selectedMeal.curryOption.name} added to your cart`,
-    });
+  const handleAddToCurry = async (selectedMeal: Meal & { curryOption: any }) => {
+    try {
+      // If the meal is already in the cart, find the first item to get its quantity
+      let quantity = 1;
+      if (inCart && cartItems.length > 0) {
+        // Use the quantity from the first cart item as a starting point
+        quantity = cartItems[0].quantity;
+      }
+      
+      await addToCart(selectedMeal, quantity);
+      setShowCurryOptionsModal(false);
+      
+      const isUpdate = inCart;
+      toast({
+        title: isUpdate ? "Updated selection" : "Added to cart",
+        description: isUpdate 
+          ? `${meal.name} with ${selectedMeal.curryOption.name} updated in your cart` 
+          : `${meal.name} with ${selectedMeal.curryOption.name} added to your cart`,
+      });
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating your cart. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
   
   return (
