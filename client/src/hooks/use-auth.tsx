@@ -148,5 +148,14 @@ export function useAuth() {
   if (!context) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  
+  // Add a simple logout function to make it easier to use in components
+  const logout = () => {
+    context.logoutMutation.mutate();
+  };
+  
+  return {
+    ...context,
+    logout,
+  };
 }
