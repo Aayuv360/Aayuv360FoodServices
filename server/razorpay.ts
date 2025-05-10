@@ -138,10 +138,11 @@ export function verifyPaymentSignature(razorpayOrderId: string, razorpayPaymentI
  * @param signature Razorpay signature
  */
 export async function handlePaymentSuccess(
-  orderId: number, 
+  entityId: number, 
   razorpayPaymentId: string, 
   razorpayOrderId: string, 
-  signature: string
+  signature: string,
+  entityType: 'order' | 'subscription' = 'order'
 ) {
   // Verify payment signature
   const isValid = verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, signature);
@@ -150,19 +151,38 @@ export async function handlePaymentSuccess(
     throw new Error('Invalid payment signature');
   }
   
-  // Update order status
-  await storage.updateOrderStatus(orderId, 'confirmed');
-  
-  // Update in-memory map
-  if (orderPaymentMap.has(orderId)) {
-    orderPaymentMap.set(orderId, {
-      razorpayOrderId,
-      razorpayPaymentId,
-      status: 'paid'
+  if (entityType === 'subscription') {
+    // Update subscription status to active
+    await storage.updateSubscription(entityId, {
+      status: 'active',
+      paymentId: razorpayPaymentId,
+      orderId: razorpayOrderId,
+      paymentSignature: signature
     });
+    
+    // Update in-memory map
+    if (subscriptionPaymentMap.has(entityId)) {
+      subscriptionPaymentMap.set(entityId, {
+        razorpaySubscriptionId: razorpayOrderId,
+        razorpayPaymentId,
+        status: 'paid'
+      });
+    }
+  } else {
+    // Update order status
+    await storage.updateOrderStatus(entityId, 'confirmed');
+    
+    // Update in-memory map
+    if (orderPaymentMap.has(entityId)) {
+      orderPaymentMap.set(entityId, {
+        razorpayOrderId,
+        razorpayPaymentId,
+        status: 'paid'
+      });
+    }
   }
   
-  return { success: true };
+  return { success: true, entityType, entityId };
 }
 
 /**

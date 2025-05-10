@@ -125,6 +125,7 @@ export const useRazorpay = () => {
       orderId: number;
       description: string;
       name: string;
+      type?: 'order' | 'subscription';
       theme?: { color: string };
       onSuccess?: (data: any) => void;
       onFailure?: (error: any) => void;

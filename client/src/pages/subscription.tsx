@@ -252,6 +252,7 @@ const Subscription = () => {
       initiatePayment({
         amount: plan.price || 0,
         orderId: subscription.id,
+        type: 'subscription',
         description: `${plan.name} Millet Meal Subscription`,
         name: 'Aayuv Millet Foods',
         theme: { color: '#9E6D38' },

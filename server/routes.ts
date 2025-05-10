@@ -906,7 +906,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Handle successful payment
   app.post("/api/payments/verify", isAuthenticated, async (req, res) => {
     try {
-      const { orderId, razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
+      const { 
+        orderId, 
+        razorpayOrderId, 
+        razorpayPaymentId, 
+        razorpaySignature,
+        type = "order"
+      } = req.body;
       
       if (!orderId || !razorpayOrderId || !razorpayPaymentId || !razorpaySignature) {
         return res.status(400).json({ message: "Missing required payment verification details" });
@@ -917,7 +923,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         parseInt(orderId),
         razorpayPaymentId,
         razorpayOrderId,
-        razorpaySignature
+        razorpaySignature,
+        type as 'order' | 'subscription'
       );
       
       res.json(result);
