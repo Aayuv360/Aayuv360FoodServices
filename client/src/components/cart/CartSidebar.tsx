@@ -816,7 +816,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>
                         {formatPrice(
                           calculateCartTotal() +
-                            (deliveryType === "express" ? 5000 : 4000) + 2000
+                            (deliveryType === "express" ? 50 : 40) + 20
                         )}
                       </span>
                     </div>
@@ -856,7 +856,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>
                         {formatPrice(
                           calculateCartTotal() +
-                            (deliveryType === "express" ? 5000 : 4000) + 2000
+                            (deliveryType === "express" ? 50 : 40) + 20
                         )}
                       </span>
                     </div>
@@ -923,7 +923,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             Pay{" "}
                             {formatPrice(
                               calculateCartTotal() +
-                                (deliveryType === "express" ? 5000 : 4000) + 2000
+                                (deliveryType === "express" ? 50 : 40) + 20
                             )}
                           </>
                         )}

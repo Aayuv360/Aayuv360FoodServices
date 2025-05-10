@@ -531,8 +531,8 @@ const Subscription = () => {
     dietaryAddOn: dietaryAddOn,
     personCount: personCount,
     pricePerPerson: totalPricePerPerson,
-    basePriceText: `₹${(basePrice / 100).toFixed(0)}${
-      dietaryAddOn > 0 ? ` + ₹${(dietaryAddOn / 100).toFixed(0)}` : ""
+    basePriceText: `₹${basePrice}${
+      dietaryAddOn > 0 ? ` + ₹${dietaryAddOn}` : ""
     }${personCount > 1 ? ` × ${personCount} persons` : ""}`,
   };
 
@@ -902,7 +902,7 @@ const Subscription = () => {
                           Price per person:
                         </span>
                         <span className="text-sm">
-                          ₹{((basePrice + dietaryAddOn) / 100).toFixed(0)}
+                          ₹{(basePrice + dietaryAddOn)}
                         </span>
                       </div>
                       {personCount > 1 && (
@@ -918,7 +918,7 @@ const Subscription = () => {
                           Total monthly price:
                         </span>
                         <span className="text-sm font-semibold">
-                          ₹{(totalPrice / 100).toFixed(0)}
+                          ₹{totalPrice}
                         </span>
                       </div>
                     </div>
@@ -1365,7 +1365,7 @@ const Subscription = () => {
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Base Plan Price</span>
                     <span className="text-sm">
-                      ₹{(basePlan.price / 100).toFixed(2)}/month
+                      ₹{basePlan.price}/month
                     </span>
                   </div>
                   {priceAdjustment > 0 && (
@@ -1376,7 +1376,7 @@ const Subscription = () => {
                           : "Non-Veg Option"}
                       </span>
                       <span className="text-sm">
-                        + ₹{(priceAdjustment / 100).toFixed(2)}
+                        + ₹{priceAdjustment}
                       </span>
                     </div>
                   )}
@@ -1384,7 +1384,7 @@ const Subscription = () => {
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Price per person</span>
                     <span className="text-sm">
-                      ₹{((basePrice + dietaryAddOn) / 100).toFixed(2)}/month
+                      ₹{(basePrice + dietaryAddOn)}/month
                     </span>
                   </div>
 
@@ -1511,7 +1511,7 @@ const Subscription = () => {
                       <div className="flex justify-between font-semibold">
                         <span className="text-gray-600">Total:</span>
                         <span className="text-primary">
-                          ₹{(subscribedDetails.totalPrice / 100).toFixed(2)}
+                          ₹{subscribedDetails.totalPrice}
                         </span>
                       </div>
                     </div>
@@ -1571,18 +1571,18 @@ const Subscription = () => {
                 <CardContent>
                   <div>
                     <div className="text-xl font-semibold text-primary">
-                      ₹{(totalPrice / 100).toFixed(0)}
+                      ₹{totalPrice}
                       <span className="text-sm text-gray-500">/month</span>
                     </div>
                     <div className="text-xs text-gray-500">
                       {personCount > 1 ? (
                         <>
-                          ₹{((basePrice + dietaryAddOn) / 100).toFixed(0)} per
+                          ₹{(basePrice + dietaryAddOn)} per
                           person × {personCount} persons
                         </>
                       ) : (
                         <>
-                          Base: ₹{(basePrice / 100).toFixed(0)}
+                          Base: ₹{basePrice}
                           {dietaryAddOn > 0 && (
                             <>
                               {" "}
@@ -1590,7 +1590,7 @@ const Subscription = () => {
                               {dietaryPreference === "veg-with-egg"
                                 ? "Egg"
                                 : "Non-veg"}
-                              : ₹{(dietaryAddOn / 100).toFixed(0)}
+                              : ₹{dietaryAddOn}
                             </>
                           )}
                         </>
