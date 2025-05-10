@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useLocation, useRoute } from "wouter";
+import { useLocation } from "wouter";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -275,7 +275,7 @@ const Subscription = () => {
           localStorage.setItem('lastSubscriptionId', subscription.id.toString());
           
           // Redirect to payment success page
-          setLocation(`/payment-success?subscriptionId=${subscription.id}&type=subscription`);
+          navigate(`/payment-success?subscriptionId=${subscription.id}&type=subscription`);
         },
         onFailure: (error: Error) => {
           toast({

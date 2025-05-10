@@ -14,6 +14,7 @@ declare global {
 interface CreateOrderOptions {
   amount: number;
   orderId: number;
+  type?: 'order' | 'subscription';
   notes?: Record<string, string>;
 }
 
@@ -153,6 +154,7 @@ export const useRazorpay = () => {
         const orderData = await createOrderMutation.mutateAsync({
           amount: options.amount,
           orderId: options.orderId,
+          type: options.type || 'order',
         });
 
         // Configure Razorpay
