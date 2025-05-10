@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   MessageSquare,
   Tag,
+  ShoppingCart as ShoppingCartIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -423,7 +424,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 {cartItems.length === 0 ? (
                   <div className="text-center py-8">
                     <div className="w-16 h-16 mx-auto text-gray-300 mb-4">
-                      <ShoppingCart />
+                      <ShoppingCartIcon className="w-full h-full" />
                     </div>
                     <p className="text-gray-500 mb-4">Your cart is empty</p>
                     <Button
