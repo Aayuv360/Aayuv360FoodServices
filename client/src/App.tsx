@@ -21,25 +21,21 @@ import Analytics from "@/pages/analytics";
 import OrderManagement from "@/pages/order-management";
 import AdminPortal from "@/pages/admin-portal";
 import MakeAdmin from "@/pages/make-admin";
-import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "./hooks/use-auth";
 
 function Router() {
   const { user } = useAuth();
   const [location] = useLocation();
-  const isAuthPage = location === "/auth";
   
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Only show header if not on auth page */}
-      {!isAuthPage && <Header />}
+      <Header />
 
       <main className="flex-grow">
         <Switch>
           <Route path="/" component={Home} />
           <Route path="/menu" component={Menu} />
-          <Route path="/auth" component={AuthPage} />
           
           {/* Protected routes */}
           <ProtectedRoute path="/profile" component={Profile} />
@@ -58,8 +54,7 @@ function Router() {
         </Switch>
       </main>
       
-      {/* Only show footer if not on auth page */}
-      {!isAuthPage && <Footer />}
+      <Footer />
     </div>
   );
 }
