@@ -147,13 +147,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.isAuthenticated() ? (req.user as any).id : 0;
       const cartItems = await storage.getCartItems(userId);
       
-      // Enrich cart items with meal details
+      // Enrich cart items with meal details and curry options
       const enrichedCartItems = await Promise.all(
         cartItems.map(async (item) => {
           const meal = await storage.getMeal(item.mealId);
+          
+          // Only add curry option if the necessary fields exist
+          let mealWithCurryOption = meal;
+          if (meal && item.curryOptionId && item.curryOptionName) {
+            // Use type assertion to add the curryOption property
+            mealWithCurryOption = {
+              ...meal,
+              // curryOption is not in the Meal type, but we need it for the frontend
+            } as any;
+            
+            // Add the curry option to the object
+            (mealWithCurryOption as any).curryOption = {
+              id: item.curryOptionId,
+              name: item.curryOptionName,
+              priceAdjustment: item.curryOptionPrice || 0
+            };
+          }
+          
           return {
             ...item,
-            meal
+            meal: mealWithCurryOption
           };
         })
       );
@@ -168,15 +186,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/cart", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
+      
+      // Handle curry option if present
+      let curryOptionId = null;
+      let curryOptionName = null;
+      let curryOptionPrice = null;
+      
+      if (req.body.curryOption) {
+        curryOptionId = req.body.curryOption.id;
+        curryOptionName = req.body.curryOption.name;
+        curryOptionPrice = req.body.curryOption.priceAdjustment || 0;
+      }
+      
       const cartItemData = insertCartItemSchema.parse({
         ...req.body,
-        userId
+        userId,
+        curryOptionId,
+        curryOptionName,
+        curryOptionPrice
       });
       
       const cartItem = await storage.addToCart(cartItemData);
       const meal = await storage.getMeal(cartItem.mealId);
       
-      res.status(201).json({ ...cartItem, meal });
+      // Add curry option to the meal object if needed
+      let mealWithCurryOption = meal;
+      if (curryOptionId && curryOptionName) {
+        mealWithCurryOption = {
+          ...meal,
+          curryOption: {
+            id: curryOptionId,
+            name: curryOptionName,
+            priceAdjustment: curryOptionPrice || 0
+          }
+        };
+      }
+      
+      res.status(201).json({ ...cartItem, meal: mealWithCurryOption });
     } catch (err) {
       if (err instanceof z.ZodError) {
         res.status(400).json({ message: "Validation error", errors: err.errors });

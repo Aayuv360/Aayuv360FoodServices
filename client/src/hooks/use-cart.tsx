@@ -40,7 +40,10 @@ interface CartContextType {
   getCartCategories: () => string[];
   addToCart: (meal: Meal, quantity?: number) => Promise<CartItem | undefined>;
   updateCartItem: (id: number, quantity: number) => Promise<void>;
-  updateCartItemWithOptions: (id: number, curryOption: CurryOption) => Promise<void>;
+  updateCartItemWithOptions: (
+    id: number,
+    curryOption: CurryOption,
+  ) => Promise<void>;
   updateCartItemNotes: (id: number, notes: string | null) => Promise<void>;
   removeCartItem: (id: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -53,7 +56,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
   // Track the last curry option selected for each meal
-  const [lastCurryOptions, setLastCurryOptions] = useState<LastCurryOptionMap>({});
+  const [lastCurryOptions, setLastCurryOptions] = useState<LastCurryOptionMap>(
+    {},
+  );
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -81,20 +86,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const isItemInCart = (mealId: number): boolean => {
-    return cartItems.some(item => item.mealId === mealId);
+    return cartItems.some((item) => item.mealId === mealId);
   };
 
   const getCartItemsForMeal = (mealId: number): CartItem[] => {
-    return cartItems.filter(item => item.mealId === mealId);
+    return cartItems.filter((item) => item.mealId === mealId);
   };
-  
+
   const getCartCategories = (): string[] => {
     // Extract unique categories from cart items
     const categories = cartItems
-      .map(item => item.category)
-      .filter((category): category is string => 
-        category !== undefined && category !== null);
-      
+      .map((item) => item.category)
+      .filter(
+        (category): category is string =>
+          category !== undefined && category !== null,
+      );
+    console.log(cartItems);
     // Return unique categories (compatible with older TS targets)
     return Array.from(new Set(categories));
   };
@@ -109,67 +116,70 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true);
-      
+
       // Check if meal has curry option (from the CurryOptionsModal)
       const hasCurryOption = (meal as any).curryOption !== undefined;
-      
+
       // Prepare the payload
       const payload = {
         mealId: meal.id,
         quantity,
         // If meal has curry option, include it in the request
-        ...(hasCurryOption && { 
-          curryOption: (meal as any).curryOption 
-        })
+        ...(hasCurryOption && {
+          curryOption: (meal as any).curryOption,
+        }),
       };
-      
+
       // For meals with the same ID but different curry options, we need to check
       // if the same exact meal (ID + curry option) already exists
-      const existingItem = cartItems.find(item => {
+      const existingItem = cartItems.find((item) => {
         // Basic check for meal ID
         if (item.mealId !== meal.id) return false;
-        
+
         // If this meal has a curry option, we need to match that too
         if (hasCurryOption) {
           const itemCurryId = item.meal && (item.meal as any).curryOption?.id;
           const mealCurryId = (meal as any).curryOption?.id;
           return itemCurryId === mealCurryId;
         }
-        
+
         // If no curry option, just match by meal ID
         return true;
       });
-      
+
       let newCartItem: CartItem;
-      
+
       if (existingItem) {
         // If the exact same item exists, update the quantity - either:
         // - Use the specified quantity directly (for customization updates)
         // - Or increment the existing quantity by 1 (for standard add operations)
-        const updatedQuantity = quantity === 1 ? existingItem.quantity + 1 : quantity;
-        const res = await apiRequest("PUT", `/api/cart/${existingItem.id}`, { 
-          quantity: updatedQuantity 
+        const updatedQuantity =
+          quantity === 1 ? existingItem.quantity + 1 : quantity;
+        const res = await apiRequest("PUT", `/api/cart/${existingItem.id}`, {
+          quantity: updatedQuantity,
         });
         newCartItem = await res.json();
-        
+
         // Update the cart items array with the updated item
         setCartItems(
-          cartItems.map(item => item.id === existingItem.id ? newCartItem : item)
+          cartItems.map((item) =>
+            item.id === existingItem.id ? newCartItem : item,
+          ),
         );
       } else {
         // Otherwise, add a new item
         const res = await apiRequest("POST", "/api/cart", payload);
         newCartItem = await res.json();
-        
+
         // Add the new item to the cart items array
         setCartItems([...cartItems, newCartItem]);
       }
 
       // Store the last curry option used for this meal
       if (hasCurryOption && (meal as any).curryOption) {
-        setLastCurryOptions(prev => ({
+        setLastCurryOptions((prev) => ({
           ...prev,
-          [meal.id]: (meal as any).curryOption
+          [meal.id]: (meal as any).curryOption,
         }));
       }
 
@@ -210,33 +220,36 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateCartItemWithOptions = async (id: number, curryOption: CurryOption) => {
+  const updateCartItemWithOptions = async (
+    id: number,
+    curryOption: CurryOption,
+  ) => {
     if (!user) return;
 
     try {
       setLoading(true);
-      
+
       // Prepare the payload with the curry option details
       const payload = {
         curryOptionId: curryOption.id,
         curryOptionName: curryOption.name,
-        curryOptionPrice: curryOption.priceAdjustment
+        curryOptionPrice: curryOption.priceAdjustment,
       };
-      
+
       // Call the new PATCH endpoint
       const res = await apiRequest("PATCH", `/api/cart/${id}`, payload);
       const updatedItem = await res.json();
-      
+
       // Update the cart items with the updated item
       setCartItems(
-        cartItems.map((item) => (item.id === id ? updatedItem : item))
+        cartItems.map((item) => (item.id === id ? updatedItem : item)),
       );
-      
+
       // Update the last curry option used for this meal
       if (updatedItem.mealId) {
-        setLastCurryOptions(prev => ({
+        setLastCurryOptions((prev) => ({
           ...prev,
-          [updatedItem.mealId]: curryOption
+          [updatedItem.mealId]: curryOption,
         }));
       }
     } catch (error) {
@@ -276,19 +289,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true);
-      
+
       // Call the PATCH endpoint with notes update
       const res = await apiRequest("PATCH", `/api/cart/${id}`, { notes });
       const updatedItem = await res.json();
-      
+
       // Update the cart items with the updated item
       setCartItems(
-        cartItems.map((item) => (item.id === id ? updatedItem : item))
+        cartItems.map((item) => (item.id === id ? updatedItem : item)),
       );
-      
+
       toast({
         title: "Notes updated",
-        description: notes ? "Item notes have been updated" : "Notes have been removed",
+        description: notes
+          ? "Item notes have been updated"
+          : "Notes have been removed",
       });
     } catch (error) {
       console.error("Error updating cart item notes:", error);
@@ -321,21 +336,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     }
   };
-  
+
   const clearCartByCategory = async (category: string) => {
     if (!user) return;
 
     try {
       setLoading(true);
-      
+
       // Call the new endpoint for clearing by category
       const res = await apiRequest("DELETE", `/api/cart/category/${category}`);
       const result = await res.json();
-      
+
       if (result.removedCount > 0) {
         // Remove all items with the matching category
-        setCartItems(cartItems.filter(item => item.category !== category));
-        
+        setCartItems(cartItems.filter((item) => item.category !== category));
+
         toast({
           title: "Category removed",
           description: `Removed ${result.removedCount} items from the ${category} category`,
