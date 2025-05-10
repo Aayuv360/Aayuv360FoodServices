@@ -248,7 +248,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   // Format prices in rupees (without decimal)
   const formatPrice = (price: number): string => {
-    return `₹${Math.round(price / 100)}`;
+    return `₹${price}`;
   };
 
   // Handle customizing an item
@@ -300,7 +300,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ', ' + selectedAddress.addressLine2 : ''}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
         
         // Calculate the total price including delivery and taxes
-        const total = calculateCartTotal() + (deliveryType === "express" ? 4000 : 0) + 2000; // Cart total + delivery fee + taxes
+        const total = calculateCartTotal() + (deliveryType === "express" ? 40 : 0) + 20; // Cart total + delivery fee + taxes
         
         const orderPayload = {
           items: cartItems.map((item) => ({
@@ -619,17 +619,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Delivery Charge</span>
-                            <span>{formatPrice(4000)}</span>
+                            <span>{formatPrice(40)}</span>
                           </div>
                           <div className="flex justify-between">
                             <span className="text-gray-600">Taxes</span>
-                            <span>{formatPrice(2000)}</span>
+                            <span>{formatPrice(20)}</span>
                           </div>
                           <Separator className="my-2" />
                           <div className="flex justify-between font-semibold">
                             <span>Grand Total</span>
                             <span className="text-primary">
-                              {formatPrice(calculateCartTotal() + 4000 + 2000)}
+                              {formatPrice(calculateCartTotal() + 40 + 20)}
                             </span>
                           </div>
                         </div>
@@ -805,11 +805,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </div>
                     <div className="flex justify-between">
                       <span>Delivery Fee</span>
-                      <span>{formatPrice(deliveryType === "express" ? 5000 : 4000)}</span>
+                      <span>{formatPrice(deliveryType === "express" ? 50 : 40)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Taxes</span>
-                      <span>{formatPrice(2000)}</span>
+                      <span>{formatPrice(20)}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t font-medium">
                       <span>Total</span>

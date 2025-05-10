@@ -3,7 +3,7 @@ export const SUBSCRIPTION_PLANS = [
   {
     id: "basic",
     name: "Basic Plan (7 Days)",
-    price: 299900, // ₹2,999
+    price: 2999, // ₹2,999 (in rupees, not paise)
     description: "Perfect for individuals looking to try our millet meals for a week.",
     mealsPerMonth: 7,
     duration: 7, // 7 days (1 week)
@@ -26,7 +26,7 @@ export const SUBSCRIPTION_PLANS = [
   {
     id: "premium",
     name: "Premium Plan (14 Days)",
-    price: 499900, // ₹4,999
+    price: 4999, // ₹4,999 (in rupees, not paise)
     description: "Experience more variety with our premium millet meal plan for two weeks.",
     mealsPerMonth: 14,
     duration: 14, // 14 days (2 weeks)
@@ -49,7 +49,7 @@ export const SUBSCRIPTION_PLANS = [
   {
     id: "family",
     name: "Family Plan (30 Days)",
-    price: 899900, // ₹8,999
+    price: 8999, // ₹8,999 (in rupees, not paise)
     description: "Feed the whole family with our millet meals for a full month.",
     mealsPerMonth: 30,
     duration: 30, // 30 days (1 month)
