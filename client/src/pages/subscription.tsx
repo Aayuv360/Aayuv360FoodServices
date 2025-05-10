@@ -136,33 +136,6 @@ const Subscription = () => {
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   
-  // Fetch user's addresses
-  useEffect(() => {
-    if (user) {
-      apiRequest("GET", "/api/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          setAddresses(data);
-          
-          // Set default address in form if available
-          const defaultAddress = data.find((addr: Address) => addr.isDefault);
-          if (defaultAddress) {
-            form.setValue('selectedAddressId', defaultAddress.id);
-          } else if (data.length > 0) {
-            form.setValue('selectedAddressId', data[0].id);
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching addresses:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load addresses",
-            variant: "destructive",
-          });
-        });
-    }
-  }, [user, toast, form]);
-
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
     queryFn: async () => {
@@ -190,6 +163,33 @@ const Subscription = () => {
     resolver: zodResolver(subscriptionSchema),
     defaultValues,
   });
+  
+  // Fetch user's addresses
+  useEffect(() => {
+    if (user) {
+      apiRequest("GET", "/api/addresses")
+        .then((res) => res.json())
+        .then((data) => {
+          setAddresses(data);
+          
+          // Set default address in form if available
+          const defaultAddress = data.find((addr: Address) => addr.isDefault);
+          if (defaultAddress) {
+            form.setValue('selectedAddressId', defaultAddress.id);
+          } else if (data.length > 0) {
+            form.setValue('selectedAddressId', data[0].id);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching addresses:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load addresses",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [user, toast, form]);
 
   const paymentMethod = form.watch("paymentMethod");
   const selectedPlan = form.watch("plan");
