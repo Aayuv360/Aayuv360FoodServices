@@ -22,6 +22,7 @@ import { useCart } from "@/hooks/use-cart";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useRazorpay } from "@/hooks/use-razorpay";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -120,7 +121,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [navigate] = useLocation();
+  const [, navigate] = useLocation();
+  const { initiatePayment } = useRazorpay();
 
   // Use form hook for address data
   const form = useForm<AddressFormValues>({
@@ -319,22 +321,45 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         const orderData = await res.json();
         setOrderId(orderData.id);
 
-        // Based on the selected payment method, navigate to appropriate payment flow
+        // Based on the selected payment method, process payment
         if (selectedPaymentMethod === "razorpay") {
-          // Create payment intent for Razorpay
-          const paymentRes = await apiRequest("POST", `/api/payments/create-order`, {
-            amount: total, // Use the same total calculated for the order
+          // Use the Razorpay hook to initiate payment directly
+          initiatePayment({
+            amount: total,
             orderId: orderData.id,
-            notes: {
-              orderType: "food",
+            description: "Food Order",
+            name: "Aayuv Millet Foods",
+            theme: { color: '#9E6D38' },
+            onSuccess: async (response) => {
+              // Update order status after successful payment
+              await apiRequest('PATCH', `/api/orders/${orderData.id}`, {
+                status: 'confirmed',
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpaySignature: response.razorpay_signature
+              });
+              
+              // Clear cart items after successful payment
+              await clearCart();
+              
+              toast({
+                title: "Order Placed!",
+                description: "Your order has been placed successfully. You can track your order in your profile.",
+                variant: "default",
+              });
+              
+              // Navigate to success page or profile
+              navigate(`/profile?tab=orders`);
+              onClose();
             },
+            onFailure: (error) => {
+              toast({
+                title: "Payment Failed",
+                description: error.message || "Failed to process your payment. Please try again.",
+                variant: "destructive",
+              });
+            }
           });
-          
-          const paymentData = await paymentRes.json();
-          
-          // Navigate to the payment page with the order ID
-          navigate(`/checkout?orderId=${orderData.id}&paymentId=${paymentData.id}`);
-          onClose();
         } else {
           // COD or other payment method
           setCurrentStep("success");
