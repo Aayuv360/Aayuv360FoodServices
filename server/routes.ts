@@ -822,43 +822,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/payments/create-order", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const { amount, orderId, notes = {} } = req.body;
+      const { amount, orderId, type = "order", notes = {} } = req.body;
       
       if (!amount || amount <= 0) {
         return res.status(400).json({ message: "Invalid amount" });
       }
       
       if (!orderId) {
-        return res.status(400).json({ message: "Order ID is required" });
+        return res.status(400).json({ message: "ID is required" });
       }
       
-      // Get the order to verify it exists and belongs to the user
-      const order = await storage.getOrder(orderId);
+      let entityType = "order";
+      let entity;
       
-      if (!order) {
-        return res.status(404).json({ message: "Order not found" });
-      }
-      
-      if (order.userId !== userId) {
-        return res.status(403).json({ message: "You do not have permission to pay for this order" });
+      // Verify based on payment type
+      if (type === "subscription") {
+        // Get the subscription to verify it exists and belongs to the user
+        const subscription = await storage.getSubscription(orderId);
+        
+        if (!subscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
+        
+        if (subscription.userId !== userId) {
+          return res.status(403).json({ message: "You do not have permission to pay for this subscription" });
+        }
+        
+        entity = subscription;
+        entityType = "subscription";
+      } else {
+        // Get the order to verify it exists and belongs to the user
+        const order = await storage.getOrder(orderId);
+        
+        if (!order) {
+          return res.status(404).json({ message: "Order not found" });
+        }
+        
+        if (order.userId !== userId) {
+          return res.status(403).json({ message: "You do not have permission to pay for this order" });
+        }
+        
+        entity = order;
       }
       
       // Create a Razorpay order
       const razorpayOrder = await createOrder({
         amount,
-        receipt: `order_${orderId}`,
+        receipt: `${entityType}_${orderId}`,
         notes: {
-          orderId: orderId.toString(),
+          entityType,
+          entityId: orderId.toString(),
           userId: userId.toString(),
           ...notes
         }
       });
       
-      // Store the Razorpay order ID in our map
-      orderPaymentMap.set(orderId, {
-        razorpayOrderId: razorpayOrder.id,
-        status: 'created'
-      });
+      // Store the Razorpay order ID appropriately
+      if (entityType === "subscription") {
+        subscriptionPaymentMap.set(orderId, {
+          razorpaySubscriptionId: razorpayOrder.id,
+          status: 'created'
+        });
+      } else {
+        orderPaymentMap.set(orderId, {
+          razorpayOrderId: razorpayOrder.id,
+          status: 'created'
+        });
+      }
       
       res.json({
         orderId: razorpayOrder.id,
