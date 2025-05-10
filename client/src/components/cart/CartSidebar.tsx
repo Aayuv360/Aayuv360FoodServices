@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
+import { formatPrice } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -246,11 +247,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }, 0);
   };
 
-  // Format prices in rupees (without decimal)
-  const formatPrice = (price: number): string => {
-    return `₹${price}`;
-  };
-
+  // Using imported formatPrice function from utils for consistent price formatting without decimals
+  
   // Handle customizing an item
   const handleCustomizeItem = (item: any) => {
     navigate(`/menu?customizeItem=${item.mealId}`);

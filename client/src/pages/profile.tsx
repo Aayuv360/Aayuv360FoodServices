@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
 
 const profileSchema = z.object({
@@ -72,9 +73,7 @@ const Profile = () => {
       enabled: currentTab === "subscriptions",
     });
 
-  const formatPrice = (price: number) => {
-    return `₹${(price / 100).toFixed(2)}`;
-  };
+  // Using imported formatPrice function from utils for consistent price formatting without decimals
 
   const defaultValues: ProfileFormValues = {
     name: user?.name || "",
