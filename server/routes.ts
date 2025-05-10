@@ -557,7 +557,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             orderId: order.id,
             mealId: cartItem.mealId,
             quantity: cartItem.quantity,
-            price: cartItem.quantity * (await storage.getMeal(cartItem.mealId)).price,
+            price: cartItem.quantity * ((await storage.getMeal(cartItem.mealId))?.price || 0),
             curryOptionId: cartItem.curryOptionId,
             curryOptionName: cartItem.curryOptionName,
             curryOptionPrice: cartItem.curryOptionPrice
@@ -575,7 +575,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             orderId: order.id,
             mealId: item.mealId,
             quantity: item.quantity,
-            price: item.price || item.quantity * (await storage.getMeal(item.mealId)).price,
+            price: item.price || item.quantity * ((await storage.getMeal(item.mealId))?.price || 0),
             curryOptionId: item.curryOptionId,
             curryOptionName: item.curryOptionName,
             curryOptionPrice: item.curryOptionPrice
