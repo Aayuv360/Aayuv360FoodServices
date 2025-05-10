@@ -11,6 +11,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Meal } from "@shared/schema";
+import { formatPrice } from "@/lib/utils";
 
 interface CurryOption {
   id: string;
@@ -48,10 +49,7 @@ export function CurryOptionsModal({
   const defaultSelectedOption = lastCurryOption ? lastCurryOption.id : curryOptions[0].id;
   const [selectedOption, setSelectedOption] = useState<string>(defaultSelectedOption);
 
-  // Format price in Indian Rupees
-  const formatPrice = (price: number) => {
-    return `₹${(price / 100).toFixed(2)}`;
-  };
+  // Using imported formatPrice function from utils
 
   const handleAddToCart = () => {
     const selectedCurryOption = curryOptions.find(

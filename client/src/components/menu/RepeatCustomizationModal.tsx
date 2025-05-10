@@ -9,6 +9,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Meal } from "@shared/schema";
+import { formatPrice } from "@/lib/utils";
 
 interface RepeatCustomizationModalProps {
   open: boolean;
@@ -33,10 +34,7 @@ export function RepeatCustomizationModal({
   lastCurryOption,
   isInCart = false
 }: RepeatCustomizationModalProps) {
-  // Format price in Indian Rupees
-  const formatPrice = (price: number) => {
-    return `₹${(price / 100).toFixed(2)}`;
-  };
+  // Using imported formatPrice function from utils
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
