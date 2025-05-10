@@ -294,6 +294,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           deliveryType,
         };
         
+        // Format the address for the order
+        const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ', ' + selectedAddress.addressLine2 : ''}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
+        
+        // Calculate the total price including delivery and taxes
+        const total = calculateCartTotal() + (deliveryType === "express" ? 4000 : 0) + 2000; // Cart total + delivery fee + taxes
+        
         const orderPayload = {
           items: cartItems.map((item) => ({
             mealId: item.mealId,
@@ -305,6 +311,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           })),
           deliveryDetails,
           paymentMethod: selectedPaymentMethod,
+          totalPrice: total,
+          deliveryAddress: formattedAddress,
         };
 
         const res = await apiRequest("POST", "/api/orders", orderPayload);
@@ -315,7 +323,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         if (selectedPaymentMethod === "razorpay") {
           // Create payment intent for Razorpay
           const paymentRes = await apiRequest("POST", `/api/payments/create-order`, {
-            amount: calculateCartTotal() + (deliveryType === "express" ? 4000 : 0) + 2000, // Add delivery fee and taxes
+            amount: total, // Use the same total calculated for the order
             orderId: orderData.id,
             notes: {
               orderType: "food",
