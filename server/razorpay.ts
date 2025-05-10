@@ -2,6 +2,16 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { storage } from './storage';
 
+// Define types for Razorpay requests
+interface RazorpaySubscriptionRequest {
+  plan_id: string;
+  customer_notify: number;
+  customer_id?: string;
+  total_count?: number;
+  start_at?: number;
+  notes: Record<string, string>;
+}
+
 // Check for required environment variables
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error('Missing required environment variables: RAZORPAY_KEY_ID and/or RAZORPAY_KEY_SECRET');
@@ -102,14 +112,19 @@ export async function createSubscription(options: {
   const { planId, customerId, totalCount, startAt, notes = {} } = options;
   
   // Create a subscription in Razorpay
-  const subscription = await razorpay.subscriptions.create({
+  const subscriptionData: RazorpaySubscriptionRequest = {
     plan_id: planId,
     customer_notify: 1,
-    ...(customerId && { customer_id: customerId }),
-    ...(totalCount && { total_count: totalCount }),
-    ...(startAt && { start_at: startAt }),
     notes
-  });
+  };
+  
+  // Only add optional fields if they are defined
+  if (customerId) subscriptionData.customer_id = customerId;
+  if (totalCount) subscriptionData.total_count = totalCount;
+  if (startAt) subscriptionData.start_at = startAt;
+  
+  // Cast to any to bypass Razorpay type checking issues
+  const subscription = await razorpay.subscriptions.create(subscriptionData as any);
   
   return subscription;
 }
