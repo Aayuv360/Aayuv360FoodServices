@@ -98,7 +98,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [addingNewAddress, setAddingNewAddress] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
   const [_, navigate] = useLocation();
-  const { cartItems, updateCartItem, removeCartItem, clearCart, addToCart, getLastCurryOption, updateCartItemWithOptions, updateCartItemNotes, getCartCategories, clearCartByCategory } = useCart();
+  const {
+    cartItems,
+    updateCartItem,
+    removeCartItem,
+    clearCart,
+    addToCart,
+    getLastCurryOption,
+    updateCartItemWithOptions,
+    updateCartItemNotes,
+    getCartCategories,
+    clearCartByCategory,
+  } = useCart();
   const { toast } = useToast();
   const { user } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -129,21 +140,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const paymentMethod = paymentForm.watch("method");
 
   // Calculate cart total including any curry option prices
-  const subtotal = cartItems.reduce(
-    (sum, item) => {
-      // Get the base meal price
-      const basePrice = item.meal?.price || 0;
-      
-      // Get curry option price adjustment if present
-      const adjustmentPrice = (item.meal as any)?.curryOption?.priceAdjustment || 0;
-      
-      // Calculate total price for this item (base + adjustment) × quantity
-      const totalItemPrice = (basePrice + adjustmentPrice) * item.quantity;
-      
-      return sum + totalItemPrice;
-    },
-    0,
-  );
+  const subtotal = cartItems.reduce((sum, item) => {
+    // Get the base meal price
+    const basePrice = item.meal?.price || 0;
+
+    // Get curry option price adjustment if present
+    const adjustmentPrice =
+      (item.meal as any)?.curryOption?.priceAdjustment || 0;
+
+    // Calculate total price for this item (base + adjustment) × quantity
+    const totalItemPrice = (basePrice + adjustmentPrice) * item.quantity;
+
+    return sum + totalItemPrice;
+  }, 0);
   const deliveryFee = 4000;
   const tax = 2000;
   const total = subtotal + deliveryFee + tax;
@@ -160,42 +169,49 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const handleRemoveItem = (id: number) => {
     removeCartItem(id);
   };
-  
+
   const handleCustomizeItem = (item: any) => {
     setSelectedMeal(item.meal);
     setCustomizeModalOpen(true);
   };
-  
+
   const handleCustomizationComplete = async (updatedMeal: any) => {
     try {
       if (selectedMeal && updatedMeal.curryOption) {
-        const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
-        
+        const cartItem = cartItems.find(
+          (item) => item.meal?.id === updatedMeal.id,
+        );
+
         // Check if an item with the SAME curry option already exists
-        const sameOptionItem = cartItems.find(item => {
-          return item.meal?.id === updatedMeal.id && 
-                 (item.meal as any)?.curryOption?.id === updatedMeal.curryOption.id;
+        const sameOptionItem = cartItems.find((item) => {
+          return (
+            item.meal?.id === updatedMeal.id &&
+            (item.meal as any)?.curryOption?.id === updatedMeal.curryOption.id
+          );
         });
-        
+
         // If we're updating an existing item with a different curry option
         if (cartItem && !sameOptionItem) {
           // Use our new updateCartItemWithOptions method to directly update the item
           // This preserves the item's ID and quantity
           await updateCartItemWithOptions(cartItem.id, updatedMeal.curryOption);
-          
+
           toast({
             title: "Customization changed",
             description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} updated in your cart`,
           });
-        } 
+        }
         // If we're updating to the same curry option or if it's a new curry option for this meal
         else {
           // If same curry option exists, this will just update quantity
           // If new curry option, this will add as a new item
           if (sameOptionItem) {
             // Item with same curry option already exists, just update quantity
-            await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
-            
+            await updateCartItem(
+              sameOptionItem.id,
+              sameOptionItem.quantity + 1,
+            );
+
             toast({
               title: "Quantity updated",
               description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} quantity increased`,
@@ -203,7 +219,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           } else {
             // Add as a new item
             await addToCart(updatedMeal, 1);
-            
+
             toast({
               title: "Item added",
               description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} added to your cart`,
@@ -346,7 +362,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         }}
         mode="normal"
       />
-      
+
       {open && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -359,7 +375,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           open ? "translate-x-0" : "translate-x-full"
         }`}
       >
-        
         {/* Curry Options Modal for Customization */}
         {selectedMeal && (
           <CurryOptionsModal
@@ -367,7 +382,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             onClose={() => setCustomizeModalOpen(false)}
             meal={selectedMeal}
             onAddToCart={handleCustomizationComplete}
-            lastCurryOption={(selectedMeal as any)?.curryOption || getLastCurryOption(selectedMeal.id)}
+            lastCurryOption={
+              (selectedMeal as any)?.curryOption ||
+              getLastCurryOption(selectedMeal.id)
+            }
             isInCart={true}
           />
         )}
@@ -422,19 +440,23 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     {/* Group cart items by category */}
                     {getCartCategories().map((category) => {
                       // Get all items in this category
-                      const categoryItems = cartItems.filter(item => item.category === category);
-                      
+                      const categoryItems = cartItems.filter(
+                        (item) => item.category === category,
+                      );
+
                       return (
                         <div key={category} className="space-y-2">
                           {/* Category header with clear option */}
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1">
                               <Tag className="h-4 w-4 text-primary" />
-                              <h3 className="font-medium text-primary">{category}</h3>
+                              <h3 className="font-medium text-primary">
+                                {category}
+                              </h3>
                             </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               className="h-7 text-xs text-muted-foreground"
                               onClick={() => {
                                 clearCartByCategory(category);
@@ -447,27 +469,27 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               Clear All
                             </Button>
                           </div>
-                          
+
                           {/* Items in this category */}
                           {categoryItems.map((item) => {
                             const isEditingNotes = editingItemId === item.id;
-                            
+
                             const handleEditNotes = () => {
                               setEditingItemId(isEditingNotes ? null : item.id);
                               setNoteText(item.notes || "");
                             };
-                            
+
                             const handleSaveNotes = () => {
                               updateCartItemNotes(item.id, noteText || null);
                               setEditingItemId(null);
                               toast({
                                 title: "Notes saved",
-                                description: noteText 
-                                  ? "Your special instructions were saved" 
+                                description: noteText
+                                  ? "Your special instructions were saved"
                                   : "Notes removed",
                               });
                             };
-                          
+
                             return (
                               <div
                                 key={item.id}
@@ -476,7 +498,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                 <div className="flex items-center space-x-4">
                                   <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
                                     <img
-                                      src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
+                                      src={
+                                        item.meal?.imageUrl ||
+                                        "/placeholder-meal.jpg"
+                                      }
                                       alt={item.meal?.name || "Meal item"}
                                       className="w-full h-full object-cover"
                                     />
@@ -488,10 +513,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                     {/* Display curry option if available */}
                                     {(item.meal as any)?.curryOption && (
                                       <p className="text-xs text-gray-600">
-                                        with {(item.meal as any).curryOption.name}
-                                        {(item.meal as any).curryOption.priceAdjustment > 0 && (
+                                        with{" "}
+                                        {(item.meal as any).curryOption.name}
+                                        {(item.meal as any).curryOption
+                                          .priceAdjustment > 0 && (
                                           <span className="text-primary ml-1">
-                                            (+{formatPrice((item.meal as any).curryOption.priceAdjustment)})
+                                            (+
+                                            {formatPrice(
+                                              (item.meal as any).curryOption
+                                                .priceAdjustment,
+                                            )}
+                                            )
                                           </span>
                                         )}
                                       </p>
@@ -499,15 +531,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                     <div className="flex items-center justify-between">
                                       <p className="text-primary text-sm font-semibold">
                                         {formatPrice(
-                                          (item.meal?.price || 0) + 
-                                          ((item.meal as any)?.curryOption?.priceAdjustment || 0)
+                                          (item.meal?.price || 0) +
+                                            ((item.meal as any)?.curryOption
+                                              ?.priceAdjustment || 0),
                                         )}
                                       </p>
                                       <Button
                                         variant="link"
                                         size="sm"
                                         className="p-0 h-6 text-xs text-primary"
-                                        onClick={() => handleCustomizeItem(item)}
+                                        onClick={() =>
+                                          handleCustomizeItem(item)
+                                        }
                                       >
                                         Customize
                                       </Button>
@@ -520,17 +555,27 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                         size="icon"
                                         className="h-8 w-8 p-0"
                                         onClick={() =>
-                                          handleQuantityChange(item.id, Math.max(1, item.quantity - 1))
+                                          handleQuantityChange(
+                                            item.id,
+                                            Math.max(1, item.quantity - 1),
+                                          )
                                         }
                                       >
                                         <Minus className="h-3 w-3" />
                                       </Button>
-                                      <span className="px-2 py-1">{item.quantity}</span>
+                                      <span className="px-2 py-1">
+                                        {item.quantity}
+                                      </span>
                                       <Button
                                         variant="ghost"
                                         size="icon"
                                         className="h-8 w-8 p-0"
-                                        onClick={() => handleQuantityChange(item.id, item.quantity + 1)}
+                                        onClick={() =>
+                                          handleQuantityChange(
+                                            item.id,
+                                            item.quantity + 1,
+                                          )
+                                        }
                                       >
                                         <Plus className="h-3 w-3" />
                                       </Button>
@@ -549,7 +594,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                         variant="ghost"
                                         size="icon"
                                         className="h-7 w-7 text-gray-400 hover:text-destructive"
-                                        onClick={() => handleRemoveItem(item.id)}
+                                        onClick={() =>
+                                          handleRemoveItem(item.id)
+                                        }
                                         title="Remove"
                                       >
                                         <Trash2 className="h-4 w-4" />
@@ -557,7 +604,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                     </div>
                                   </div>
                                 </div>
-                                
+
                                 {/* Notes section - shows when editing or when notes exist */}
                                 {(isEditingNotes || item.notes) && (
                                   <div className="mt-2 border-t pt-2">
@@ -566,13 +613,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                         <Input
                                           placeholder="Special instructions..."
                                           value={noteText}
-                                          onChange={(e) => setNoteText(e.target.value)}
+                                          onChange={(e) =>
+                                            setNoteText(e.target.value)
+                                          }
                                           className="text-xs"
                                         />
                                         <div className="flex justify-end space-x-2">
-                                          <Button 
-                                            variant="outline" 
-                                            size="sm" 
+                                          <Button
+                                            variant="outline"
+                                            size="sm"
                                             className="text-xs h-7"
                                             onClick={() => {
                                               setNoteText(item.notes || "");
@@ -581,9 +630,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                           >
                                             Cancel
                                           </Button>
-                                          <Button 
-                                            variant="default" 
-                                            size="sm" 
+                                          <Button
+                                            variant="default"
+                                            size="sm"
                                             className="text-xs h-7"
                                             onClick={handleSaveNotes}
                                           >
@@ -594,7 +643,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                     ) : item.notes ? (
                                       <div className="flex items-start">
                                         <MessageSquare className="h-3 w-3 mr-1 mt-0.5 text-muted-foreground" />
-                                        <p className="text-xs text-muted-foreground">{item.notes}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          {item.notes}
+                                        </p>
                                       </div>
                                     ) : null}
                                   </div>
