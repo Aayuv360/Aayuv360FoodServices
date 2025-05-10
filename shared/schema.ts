@@ -7,6 +7,7 @@ export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'manager']);
 export const orderStatusEnum = pgEnum('order_status', ['pending', 'confirmed', 'delivered', 'cancelled']);
 export const subscriptionPlanEnum = pgEnum('subscription_plan', ['basic', 'premium', 'family']);
 export const subscriptionTypeEnum = pgEnum('subscription_type', ['default', 'customized']);
+export const subscriptionStatusEnum = pgEnum('subscription_status', ['pending', 'active', 'expired', 'cancelled']);
 export const mealTypeEnum = pgEnum('meal_type', ['breakfast', 'lunch', 'dinner']);
 export const dietaryPreferenceEnum = pgEnum('dietary_preference', ['vegetarian', 'non-vegetarian', 'vegan', 'gluten-free', 'low-carb', 'high-protein', 'spicy']);
 
@@ -52,7 +53,13 @@ export const subscriptions = pgTable('subscriptions', {
   subscriptionType: subscriptionTypeEnum('subscription_type').default('default').notNull(),
   startDate: timestamp('start_date').notNull(),
   endDate: timestamp('end_date'),
-  isActive: boolean('is_active').default(true),
+  status: subscriptionStatusEnum('status').default('pending').notNull(),
+  paymentMethod: text('payment_method'),
+  paymentId: text('payment_id'), // Razorpay payment ID
+  orderId: text('order_id'), // Razorpay order ID
+  paymentSignature: text('payment_signature'), // Razorpay signature
+  dietaryPreference: text('dietary_preference'),
+  personCount: integer('person_count').default(1),
   mealsPerMonth: integer('meals_per_month').notNull(),
   price: integer('price').notNull(), // Monthly price in paise/cents
 });
