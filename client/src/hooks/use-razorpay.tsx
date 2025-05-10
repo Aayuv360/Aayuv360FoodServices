@@ -22,6 +22,7 @@ interface PaymentVerifyOptions {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   razorpaySignature: string;
+  type?: 'order' | 'subscription';
 }
 
 interface PaymentFailureOptions {
@@ -171,6 +172,7 @@ export const useRazorpay = () => {
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
+                type: options.type || 'order',
               });
 
               toast({
