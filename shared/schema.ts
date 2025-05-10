@@ -123,6 +123,21 @@ export const reviews = pgTable('reviews', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+// Addresses
+export const addresses = pgTable('addresses', {
+  id: serial('id').primaryKey(),
+  userId: integer('user_id').references(() => users.id).notNull(),
+  name: text('name').notNull(), // e.g. "Home", "Office", etc.
+  phone: text('phone').notNull(),
+  addressLine1: text('address_line1').notNull(),
+  addressLine2: text('address_line2'),
+  city: text('city').notNull(),
+  state: text('state').notNull(),
+  pincode: text('pincode').notNull(),
+  isDefault: boolean('is_default').default(false),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
 // Schema validation
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -165,6 +180,11 @@ export const insertReviewSchema = createInsertSchema(reviews).omit({
   createdAt: true,
 });
 
+export const insertAddressSchema = createInsertSchema(addresses).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -192,3 +212,6 @@ export type InsertReview = z.infer<typeof insertReviewSchema>;
 
 export type CustomMealPlan = typeof customMealPlans.$inferSelect;
 export type InsertCustomMealPlan = z.infer<typeof insertCustomMealPlanSchema>;
+
+export type Address = typeof addresses.$inferSelect;
+export type InsertAddress = z.infer<typeof insertAddressSchema>;

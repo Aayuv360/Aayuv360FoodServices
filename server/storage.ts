@@ -1,10 +1,10 @@
 import {
-  users, meals, subscriptions, orders, orderItems, userPreferences, cartItems, reviews, customMealPlans,
+  users, meals, subscriptions, orders, orderItems, userPreferences, cartItems, reviews, customMealPlans, addresses,
   type User, type InsertUser, type Meal, type InsertMeal,
   type Subscription, type InsertSubscription, type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem, type CartItem, type InsertCartItem,
   type UserPreferences, type InsertUserPreferences, type Review, type InsertReview,
-  type CustomMealPlan, type InsertCustomMealPlan
+  type CustomMealPlan, type InsertCustomMealPlan, type Address, type InsertAddress
 } from "@shared/schema";
 import { milletMeals } from "./mealItems";
 
@@ -72,6 +72,13 @@ export interface IStorage {
   getReviewsByUserId(userId: number): Promise<Review[]>;
   createReview(review: InsertReview): Promise<Review>;
   getAllReviews(): Promise<Review[]>;
+  
+  // Address operations
+  getAddresses(userId: number): Promise<Address[]>;
+  getAddressById(id: number): Promise<Address | undefined>;
+  createAddress(address: InsertAddress): Promise<Address>;
+  updateAddress(id: number, address: Partial<Address>): Promise<Address | undefined>;
+  deleteAddress(id: number): Promise<boolean>;
 }
 
 import createMemoryStore from "memorystore";
@@ -88,6 +95,7 @@ export class MemStorage implements IStorage {
   private userPreferences: Map<number, UserPreferences>;
   private cartItems: Map<number, CartItem>;
   private reviews: Map<number, Review>;
+  private addresses: Map<number, Address>;
   
   sessionStore: session.Store;
   
@@ -100,6 +108,7 @@ export class MemStorage implements IStorage {
   private userPreferencesId: number;
   private cartItemId: number;
   private reviewId: number;
+  private addressId: number;
   
   constructor() {
     this.users = new Map();
