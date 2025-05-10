@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { fixCartItems } from "./fix-cart-items";
 
 const app = express();
 app.use(express.json());
@@ -66,5 +67,10 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    
+    // Fix cart items with default curry options if needed
+    fixCartItems().catch(err => 
+      console.error("Error running cart item fix script:", err)
+    );
   });
 })();
