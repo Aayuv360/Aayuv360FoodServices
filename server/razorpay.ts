@@ -51,12 +51,13 @@ export interface CreateOrderOptions {
 export async function createOrder(options: CreateOrderOptions) {
   const { amount, currency = 'INR', receipt, notes = {} } = options;
   
-  // Our app already stores amounts in paise (smallest currency unit)
-  // We don't need to convert again
+  // Our app uses actual rupee values (like 2999), but Razorpay needs paise (smallest currency unit)
+  // Convert to paise by multiplying by 100
+  const amountInPaise = amount * 100;
   
   // Create a Razorpay order
   const order = await razorpay.orders.create({
-    amount: amount,
+    amount: amountInPaise,
     currency,
     receipt,
     notes
