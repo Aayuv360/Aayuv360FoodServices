@@ -347,14 +347,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get a single subscription by ID
+  app.get("/api/subscriptions/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const isAdmin = (req.user as any).role === 'admin';
+      const subscriptionId = parseInt(req.params.id);
+      
+      const subscription = await storage.getSubscription(subscriptionId);
+      
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      // Allow access only to the owner or an admin
+      if (subscription.userId !== userId && !isAdmin) {
+        return res.status(403).json({ message: "You do not have permission to access this subscription" });
+      }
+      
+      res.json(subscription);
+    } catch (err) {
+      console.error("Error fetching subscription:", err);
+      res.status(500).json({ message: "Error fetching subscription" });
+    }
+  });
+  
   app.post("/api/subscriptions", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       
-      const subscriptionData = insertSubscriptionSchema.parse({
+      // Convert startDate from ISO string to Date object if needed
+      const requestData = {
         ...req.body,
-        userId
-      });
+        userId,
+        startDate: req.body.startDate ? new Date(req.body.startDate) : undefined
+      };
+      
+      const subscriptionData = insertSubscriptionSchema.parse(requestData);
       
       const subscription = await storage.createSubscription(subscriptionData);
       res.status(201).json(subscription);
