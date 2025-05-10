@@ -120,6 +120,7 @@ export class MemStorage implements IStorage {
     this.userPreferences = new Map();
     this.cartItems = new Map();
     this.reviews = new Map();
+    this.addresses = new Map();
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -134,6 +135,7 @@ export class MemStorage implements IStorage {
     this.userPreferencesId = 1;
     this.cartItemId = 1;
     this.reviewId = 1;
+    this.addressId = 1;
     
     // Initialize with sample meals
     this.initializeSampleMeals();
@@ -404,6 +406,59 @@ export class MemStorage implements IStorage {
   
   async getAllReviews(): Promise<Review[]> {
     return Array.from(this.reviews.values());
+  }
+  
+  // Address operations
+  async getAddresses(userId: number): Promise<Address[]> {
+    return Array.from(this.addresses.values()).filter(address => address.userId === userId);
+  }
+  
+  async getAddressById(id: number): Promise<Address | undefined> {
+    return this.addresses.get(id);
+  }
+  
+  async createAddress(address: InsertAddress): Promise<Address> {
+    const id = this.addressId++;
+    const newAddress: Address = { ...address, id, createdAt: new Date() };
+    
+    // If this is set as the default address, we need to unset any other default addresses for this user
+    if (address.isDefault) {
+      const userAddresses = await this.getAddresses(address.userId);
+      userAddresses.forEach(addr => {
+        if (addr.isDefault) {
+          const updated = { ...addr, isDefault: false };
+          this.addresses.set(addr.id, updated);
+        }
+      });
+    }
+    
+    this.addresses.set(id, newAddress);
+    return newAddress;
+  }
+  
+  async updateAddress(id: number, address: Partial<Address>): Promise<Address | undefined> {
+    const existingAddress = this.addresses.get(id);
+    if (!existingAddress) return undefined;
+    
+    const updatedAddress: Address = { ...existingAddress, ...address };
+    
+    // If this address is being set as default, unset any other default addresses for this user
+    if (address.isDefault && updatedAddress.isDefault) {
+      const userAddresses = await this.getAddresses(updatedAddress.userId);
+      userAddresses.forEach(addr => {
+        if (addr.id !== id && addr.isDefault) {
+          const updated = { ...addr, isDefault: false };
+          this.addresses.set(addr.id, updated);
+        }
+      });
+    }
+    
+    this.addresses.set(id, updatedAddress);
+    return updatedAddress;
+  }
+  
+  async deleteAddress(id: number): Promise<boolean> {
+    return this.addresses.delete(id);
   }
 }
 
@@ -688,6 +743,65 @@ export class DatabaseStorage implements IStorage {
   
   async getAllReviews(): Promise<Review[]> {
     return await db.select().from(reviews);
+  }
+
+  // Address operations
+  async getAddresses(userId: number): Promise<Address[]> {
+    return await db.select().from(addresses).where(eq(addresses.userId, userId));
+  }
+  
+  async getAddressById(id: number): Promise<Address | undefined> {
+    const [address] = await db.select().from(addresses).where(eq(addresses.id, id));
+    return address;
+  }
+  
+  async createAddress(address: InsertAddress): Promise<Address> {
+    // If this is set as the default address, unset any other default addresses for this user
+    if (address.isDefault) {
+      await db.update(addresses)
+        .set({ isDefault: false })
+        .where(and(
+          eq(addresses.userId, address.userId), 
+          eq(addresses.isDefault, true)
+        ));
+    }
+    
+    const [newAddress] = await db.insert(addresses)
+      .values({
+        ...address,
+        createdAt: new Date()
+      })
+      .returning();
+      
+    return newAddress;
+  }
+  
+  async updateAddress(id: number, address: Partial<Address>): Promise<Address | undefined> {
+    // If this address is being set as default, unset any other default addresses for this user
+    if (address.isDefault) {
+      const [existingAddress] = await db.select().from(addresses).where(eq(addresses.id, id));
+      if (existingAddress) {
+        await db.update(addresses)
+          .set({ isDefault: false })
+          .where(and(
+            eq(addresses.userId, existingAddress.userId),
+            eq(addresses.isDefault, true),
+            sql`${addresses.id} != ${id}`
+          ));
+      }
+    }
+    
+    const [updatedAddress] = await db.update(addresses)
+      .set(address)
+      .where(eq(addresses.id, id))
+      .returning();
+      
+    return updatedAddress;
+  }
+  
+  async deleteAddress(id: number): Promise<boolean> {
+    const result = await db.delete(addresses).where(eq(addresses.id, id));
+    return result.rowCount ? result.rowCount > 0 : false;
   }
 }
 

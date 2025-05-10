@@ -24,8 +24,10 @@ import {
   insertUserPreferencesSchema, 
   insertReviewSchema,
   insertCustomMealPlanSchema,
+  insertAddressSchema,
   Meal,
-  CartItem
+  CartItem,
+  Address
 } from "@shared/schema";
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
