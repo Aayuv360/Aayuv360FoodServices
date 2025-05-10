@@ -206,15 +206,17 @@ const Subscription = () => {
         startDate: data.startDate.toISOString(),
         mealsPerMonth: plan.mealsPerMonth || 0,
         price: plan.price || 0,
-        status: "active",
+        status: "pending", // Set as pending until payment is complete
         paymentMethod: data.paymentMethod,
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
       };
 
+      // Create subscription in pending state
       const response = await apiRequest("POST", "/api/subscriptions", payload);
       const subscription = await response.json();
 
+      // Add custom meal plans if needed
       if (
         data.subscriptionType === "customized" &&
         data.customMealSelections &&
@@ -237,11 +239,38 @@ const Subscription = () => {
         personCount: data.personCount,
         totalPrice: totalPrice,
       });
-
-      toast({
-        title: "Subscription Successful!",
-        description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
-        variant: "default",
+      
+      // Initiate Razorpay payment
+      initiatePayment({
+        amount: plan.price || 0,
+        orderId: subscription.id,
+        description: `${plan.name} Millet Meal Subscription`,
+        name: 'Aayuv Millet Foods',
+        theme: { color: '#9E6D38' },
+        onSuccess: async (paymentData) => {
+          // Update subscription status to active after successful payment
+          await apiRequest('PATCH', `/api/subscriptions/${subscription.id}`, {
+            status: 'active',
+            razorpayPaymentId: paymentData.razorpay_payment_id,
+            razorpayOrderId: paymentData.razorpay_order_id,
+            razorpaySignature: paymentData.razorpay_signature
+          });
+          
+          toast({
+            title: "Subscription Successful!",
+            description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
+            variant: "default",
+          });
+          
+          setIsSuccess(true);
+        },
+        onFailure: (error) => {
+          toast({
+            title: "Payment Failed",
+            description: error.message || "Failed to process your payment. Please try again.",
+            variant: "destructive",
+          });
+        }
       });
 
       return subscription;
