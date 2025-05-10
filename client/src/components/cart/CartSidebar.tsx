@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   X,
@@ -14,10 +14,12 @@ import {
   ChevronLeft,
   MessageSquare,
   ShoppingCart as ShoppingCartIcon,
+  PlusCircle,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
@@ -42,6 +44,7 @@ import {
 } from "@/components/ui/sheet";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Separator } from "@/components/ui/separator";
+import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 
 // Define delivery address form schema
 const addressSchema = z.object({
@@ -64,6 +67,27 @@ interface CartSidebarProps {
   onClose: () => void;
 }
 
+// Define the Address type
+interface Address {
+  id: number;
+  name: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  isDefault: boolean;
+}
+
+// Define the Location type
+interface Location {
+  id: number;
+  area: string;
+  pincode: string;
+  deliveryFee: number;
+}
+
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
@@ -76,6 +100,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [noteText, setNoteText] = useState<string>("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  
+  // Add states for address management
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [addressModalOpen, setAddressModalOpen] = useState(false);
+  const [locationSearch, setLocationSearch] = useState<string>("");
+  const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
 
   // Get cart data from context
   const {
@@ -102,6 +134,134 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       zipCode: "",
     },
   });
+  
+  // Fetch addresses for the logged-in user
+  useEffect(() => {
+    if (user && open) {
+      // For demo purposes, we're simulating fetching addresses
+      // In a real app, you would make an API request like:
+      // apiRequest("GET", "/api/addresses")
+      //   .then((res) => res.json())
+      //   .then((data) => {
+      //     setAddresses(data);
+      //     // Set default address if available
+      //     const defaultAddress = data.find((addr: Address) => addr.isDefault);
+      //     if (defaultAddress) {
+      //       setSelectedAddressId(defaultAddress.id);
+      //     }
+      //   })
+      //   .catch((error) => {
+      //     console.error("Error fetching addresses:", error);
+      //   });
+      
+      // Using sample data for demonstration
+      setAddresses([
+        {
+          id: 1,
+          name: "Home",
+          phone: "9876543210",
+          addressLine1: "123 Main Street, Apartment 4B",
+          addressLine2: "Near City Park",
+          city: "Hyderabad",
+          state: "Telangana",
+          pincode: "500081",
+          isDefault: true
+        },
+        {
+          id: 2,
+          name: "Office",
+          phone: "9876543210",
+          addressLine1: "456 Work Avenue, Building C",
+          addressLine2: "Floor 3",
+          city: "Hyderabad",
+          state: "Telangana",
+          pincode: "500082",
+          isDefault: false
+        }
+      ]);
+      
+      // Set default address
+      setSelectedAddressId(1);
+    }
+  }, [user, open]);
+  
+  // Fetch delivery locations
+  useEffect(() => {
+    // Fetch locations from API
+    apiRequest("GET", "/api/locations")
+      .then((res) => res.json())
+      .then((data) => {
+        setLocations(data);
+      })
+      .catch((error) => {
+        console.error("Error fetching locations:", error);
+      });
+  }, []);
+  
+  // Filter locations based on search
+  useEffect(() => {
+    if (locationSearch.trim()) {
+      const filtered = locations.filter(
+        (loc) =>
+          loc.area.toLowerCase().includes(locationSearch.toLowerCase()) ||
+          loc.pincode.includes(locationSearch)
+      );
+      setFilteredLocations(filtered);
+    } else {
+      setFilteredLocations([]);
+    }
+  }, [locationSearch, locations]);
+  
+  // Handle new address form submission
+  const handleAddressFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    const formData = new FormData(e.currentTarget);
+    const addressData = {
+      name: formData.get("addressName") as string,
+      phone: formData.get("phone") as string,
+      addressLine1: formData.get("addressLine1") as string,
+      addressLine2: formData.get("addressLine2") as string || undefined,
+      city: formData.get("city") as string,
+      state: formData.get("state") as string,
+      pincode: formData.get("pincode") as string,
+      isDefault: Boolean(formData.get("isDefault"))
+    };
+    
+    // In a real app, you would make an API request here:
+    // apiRequest("POST", "/api/addresses", addressData)
+    //   .then((res) => res.json())
+    //   .then((data) => {
+    //     // Add the new address to the list
+    //     setAddresses((prev) => [...prev, data]);
+    //     setSelectedAddressId(data.id);
+    //     setAddressModalOpen(false);
+    //   })
+    //   .catch((error) => {
+    //     console.error("Error creating address:", error);
+    //   });
+    
+    // For demo purposes, we're simulating the response
+    const newAddress = {
+      ...addressData,
+      id: addresses.length + 1,
+    };
+    
+    setAddresses((prev) => [...prev, newAddress]);
+    setSelectedAddressId(newAddress.id);
+    setAddressModalOpen(false);
+    
+    toast({
+      title: "Address added",
+      description: "Your new delivery address has been added successfully.",
+    });
+  };
+  
+  // Handle selecting a location
+  const selectLocation = (location: Location) => {
+    setLocationSearch(location.area);
+    // Optionally, you could populate a hidden field with the location ID
+  };
 
   // Calculate cart total
   const calculateCartTotal = (): number => {
@@ -133,11 +293,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       }
       setCurrentStep("delivery");
     } else if (currentStep === "delivery") {
-      const isValid = await form.trigger();
-      if (!isValid) {
+      if (!selectedAddressId) {
         toast({
-          title: "Invalid address",
-          description: "Please complete the delivery address form",
+          title: "Address required",
+          description: "Please select an existing address or add a new one",
           variant: "destructive",
         });
         return;
@@ -146,7 +305,24 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     } else if (currentStep === "payment") {
       try {
         setIsCreatingOrder(true);
-        const formValues = form.getValues();
+        // Get the selected address
+        const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
+        if (!selectedAddress) {
+          throw new Error("Selected address not found");
+        }
+        
+        // Construct the delivery details from the selected address
+        const deliveryDetails = {
+          name: selectedAddress.name,
+          phoneNumber: selectedAddress.phone,
+          completeAddress: selectedAddress.addressLine1,
+          nearbyLandmark: selectedAddress.addressLine2 || "",
+          zipCode: selectedAddress.pincode,
+          addressType: selectedAddress.name.toLowerCase().includes("home") ? "home" : 
+                      selectedAddress.name.toLowerCase().includes("work") ? "work" : "other",
+          deliveryType,
+        };
+        
         const orderPayload = {
           items: cartItems.map((item) => ({
             mealId: item.mealId,
@@ -156,10 +332,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             curryOptionName: (item.meal as any)?.curryOption?.name,
             curryOptionPrice: (item.meal as any)?.curryOption?.priceAdjustment,
           })),
-          deliveryDetails: {
-            ...formValues,
-            deliveryType,
-          },
+          deliveryDetails,
           paymentMethod: selectedPaymentMethod,
         };
 
@@ -471,163 +644,117 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
             {currentStep === "delivery" && (
               <div className="p-4">
-                <Form {...form}>
-                  <form className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Full Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Your full name" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="phoneNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Phone Number</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Your phone number"
-                              type="tel"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="addressType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Address Type</FormLabel>
-                          <div className="flex gap-2">
-                            <Button
-                              type="button"
-                              variant={
-                                field.value === "home" ? "default" : "outline"
-                              }
-                              className="flex items-center gap-1 flex-1"
-                              onClick={() => field.onChange("home")}
-                            >
-                              <Home className="h-4 w-4" />
-                              Home
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={
-                                field.value === "work" ? "default" : "outline"
-                              }
-                              className="flex items-center gap-1 flex-1"
-                              onClick={() => field.onChange("work")}
-                            >
-                              <Building className="h-4 w-4" />
-                              Work
-                            </Button>
-                            <Button
-                              type="button"
-                              variant={
-                                field.value === "other" ? "default" : "outline"
-                              }
-                              className="flex items-center gap-1 flex-1"
-                              onClick={() => field.onChange("other")}
-                            >
-                              <MapPin className="h-4 w-4" />
-                              Other
-                            </Button>
+                <div className="space-y-4">
+                  <h3 className="font-medium">Delivery Address</h3>
+                  
+                  {/* Display existing addresses */}
+                  {addresses.length > 0 ? (
+                    <div className="space-y-3">
+                      {addresses.map((address) => (
+                        <div 
+                          key={address.id}
+                          className={`border rounded-md p-3 cursor-pointer ${
+                            selectedAddressId === address.id ? "border-primary bg-primary/5" : ""
+                          }`}
+                          onClick={() => setSelectedAddressId(address.id)}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium text-sm">
+                                {address.name}
+                              </div>
+                              {address.isDefault && (
+                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            {selectedAddressId === address.id && (
+                              <Check className="h-5 w-5 text-primary" />
+                            )}
                           </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="completeAddress"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Complete Address</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="House/Flat No., Street, Locality"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="nearbyLandmark"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nearby Landmark (Optional)</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Any nearby landmark"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="zipCode"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Zip Code</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Zip Code" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div>
-                      <h3 className="font-medium text-sm mb-2">
-                        Delivery Type
-                      </h3>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant={
-                            deliveryType === "default" ? "default" : "outline"
-                          }
-                          className="flex-1"
-                          onClick={() => setDeliveryType("default")}
-                        >
-                          Standard
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={
-                            deliveryType === "express" ? "default" : "outline"
-                          }
-                          className="flex-1"
-                          onClick={() => setDeliveryType("express")}
-                        >
-                          Express (+₹40)
-                        </Button>
-                      </div>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {address.addressLine1}
+                          </p>
+                          {address.addressLine2 && (
+                            <p className="text-sm text-gray-600">
+                              {address.addressLine2}
+                            </p>
+                          )}
+                          <p className="text-sm text-gray-600">
+                            {address.city}, {address.state} - {address.pincode}
+                          </p>
+                          <p className="text-sm text-gray-600 mt-1">
+                            Phone: {address.phone}
+                          </p>
+                        </div>
+                      ))}
                     </div>
-                  </form>
-                </Form>
+                  ) : (
+                    <div className="text-center py-4 text-gray-500">
+                      No saved addresses found
+                    </div>
+                  )}
+                  
+                  {/* Button to add a new address */}
+                  <div className="mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full flex items-center justify-center"
+                      onClick={() => setAddressModalOpen(true)}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add New Address
+                    </Button>
+                  </div>
+                  
+                  {/* Address Modal */}
+                  <NewAddressModal
+                    addressModalOpen={addressModalOpen}
+                    setAddressModalOpen={setAddressModalOpen}
+                    locationSearch={locationSearch}
+                    filteredLocations={filteredLocations}
+                    handleAddressFormSubmit={handleAddressFormSubmit}
+                    setLocationSearch={setLocationSearch}
+                    selectLocation={selectLocation}
+                  />
+                  
+                  <div className="border-t pt-4 mt-4">
+                    <h3 className="font-medium text-sm mb-2">
+                      Delivery Type
+                    </h3>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant={
+                          deliveryType === "default" ? "default" : "outline"
+                        }
+                        className="flex-1"
+                        onClick={() => setDeliveryType("default")}
+                      >
+                        Standard
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          deliveryType === "express" ? "default" : "outline"
+                        }
+                        className="flex-1"
+                        onClick={() => setDeliveryType("express")}
+                      >
+                        Express (+₹40)
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm text-gray-500 mt-4">
+                    <p>
+                      We currently deliver only in Hyderabad, within a 10km
+                      radius of our service locations.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
 
