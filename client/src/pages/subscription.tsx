@@ -57,6 +57,7 @@ import { CustomMealSheduleModal } from "@/components/Modals/CustomMealSheduleMod
 import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { Address } from "@shared/schema";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
