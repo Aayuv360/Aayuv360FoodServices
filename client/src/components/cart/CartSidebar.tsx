@@ -13,7 +13,6 @@ import {
   ChevronRight,
   ChevronLeft,
   MessageSquare,
-  Tag,
   ShoppingCart as ShoppingCartIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,17 +20,8 @@ import { useCart } from "@/hooks/use-cart";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -47,12 +37,11 @@ import {
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { Separator } from "@/components/ui/separator";
 
 // Define delivery address form schema
 const addressSchema = z.object({
@@ -92,12 +81,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const {
     cartItems,
     loading,
-    getCartCategories,
     updateCartItemNotes,
     updateCartItem,
     removeCartItem,
     clearCart,
-    clearCartByCategory,
   } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
@@ -126,9 +113,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }, 0);
   };
 
-  // Format prices in rupees
+  // Format prices in rupees (without decimal)
   const formatPrice = (price: number): string => {
-    return `₹${(price / 100).toFixed(2)}`;
+    return `₹${Math.round(price / 100)}`;
   };
 
   // Handle customizing an item
@@ -164,9 +151,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           items: cartItems.map((item) => ({
             mealId: item.mealId,
             quantity: item.quantity,
-            curryOptionId: item.curryOptionId,
-            curryOptionName: item.curryOptionName,
-            curryOptionPrice: item.curryOptionPrice,
+            notes: item.notes,
+            curryOptionId: (item.meal as any)?.curryOption?.id,
+            curryOptionName: (item.meal as any)?.curryOption?.name,
+            curryOptionPrice: (item.meal as any)?.curryOption?.priceAdjustment,
           })),
           deliveryDetails: {
             ...formValues,
@@ -183,7 +171,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         if (selectedPaymentMethod === "razorpay") {
           // Create payment intent for Razorpay
           const paymentRes = await apiRequest("POST", `/api/payments/create-order`, {
-            amount: calculateCartTotal(),
+            amount: calculateCartTotal() + (deliveryType === "express" ? 4000 : 0) + 2000, // Add delivery fee and taxes
             orderId: orderData.id,
             notes: {
               orderType: "food",
@@ -231,10 +219,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           <SheetHeader className="p-4 border-b">
             <div className="flex justify-between items-center">
               <SheetTitle>
-                {currentStep === "cart" && "Your Cart"}
-                {currentStep === "delivery" && "Delivery Details"}
-                {currentStep === "payment" && "Payment Method"}
-                {currentStep === "success" && "Order Placed"}
+                Your Cart
               </SheetTitle>
               <Button
                 variant="ghost"
@@ -245,12 +230,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            <SheetDescription>
-              {currentStep === "cart" && "Review items in your cart"}
-              {currentStep === "delivery" && "Enter your delivery address"}
-              {currentStep === "payment" && "Choose your payment method"}
-              {currentStep === "success" && "Your order has been placed successfully"}
-            </SheetDescription>
           </SheetHeader>
 
           {/* Content based on current step */}
@@ -258,7 +237,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             {currentStep === "cart" && (
               <>
                 {/* Cart Items */}
-                <div className="flex-grow overflow-y-auto p-4">
+                <div className="flex-grow overflow-y-auto">
                   {cartItems.length === 0 ? (
                     <div className="text-center py-8">
                       <div className="w-16 h-16 mx-auto text-gray-300 mb-4">
@@ -275,31 +254,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-6">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <Tag className="h-4 w-4 text-primary" />
-                            <h3 className="font-medium text-primary">
-                              Your Items
-                            </h3>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 text-xs text-muted-foreground"
-                            onClick={() => {
-                              clearCart();
-                              toast({
-                                title: "Cart cleared",
-                                description: "All items have been removed from your cart",
-                              });
-                            }}
-                          >
-                            Clear All
-                          </Button>
-                        </div>
-
+                    <div>
+                      {/* Cart items */}
+                      <div className="px-4 py-3">
                         {cartItems.map((item) => {
                           const isEditingNotes = editingItemId === item.id;
 
@@ -322,79 +279,45 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           return (
                             <div
                               key={item.id}
-                              className="flex flex-col bg-neutral-light p-3 rounded-lg"
+                              className="flex items-start border-b py-3"
                             >
-                              <div className="flex items-center space-x-4">
-                                <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                                  <img
-                                    src={
-                                      item.meal?.imageUrl ||
-                                      "/placeholder-meal.jpg"
-                                    }
-                                    alt={item.meal?.name || "Meal item"}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                                <div className="flex-grow">
-                                  <h4 className="font-medium text-sm">
-                                    {item.meal?.name}
-                                  </h4>
-                                  {/* Display curry option if available */}
-                                  {(item.meal as any)?.curryOption && (
-                                    <p className="text-xs text-gray-600">
-                                      with{" "}
-                                      {(item.meal as any).curryOption.name}
-                                      {(item.meal as any).curryOption
-                                        .priceAdjustment > 0 && (
-                                        <span className="text-primary ml-1">
-                                          (+
-                                          {formatPrice(
-                                            (item.meal as any).curryOption
-                                              .priceAdjustment,
-                                          )}
-                                          )
-                                        </span>
-                                      )}
-                                    </p>
-                                  )}
-                                  <div className="flex items-center justify-between">
-                                    <p className="text-primary text-sm font-semibold">
-                                      {formatPrice(
-                                        (item.meal?.price || 0) +
-                                          ((item.meal as any)?.curryOption
-                                            ?.priceAdjustment || 0),
-                                      )}
-                                    </p>
-                                    <Button
-                                      variant="link"
-                                      size="sm"
-                                      className="p-0 h-6 text-xs text-primary"
-                                      onClick={() =>
-                                        handleCustomizeItem(item)
-                                      }
-                                    >
-                                      Customize
-                                    </Button>
-                                  </div>
-                                </div>
-                                <div className="flex flex-col items-center gap-2">
+                              <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                                <img
+                                  src={
+                                    item.meal?.imageUrl ||
+                                    "/placeholder-meal.jpg"
+                                  }
+                                  alt={item.meal?.name || "Meal item"}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <div className="flex-grow px-3">
+                                <h4 className="font-medium text-sm">
+                                  {item.meal?.name}
+                                </h4>
+                                {/* Display curry option if available */}
+                                {(item.meal as any)?.curryOption && (
+                                  <p className="text-xs text-gray-600">
+                                    with{" "}
+                                    {(item.meal as any).curryOption.name}
+                                    {(item.meal as any).curryOption
+                                      .priceAdjustment > 0 && (
+                                      <span className="text-primary ml-1">
+                                        (+
+                                        {formatPrice(
+                                          (item.meal as any).curryOption
+                                            .priceAdjustment,
+                                        )}
+                                        )
+                                      </span>
+                                    )}
+                                  </p>
+                                )}
+                                <div className="flex items-center mt-1">
                                   <Button
-                                    variant="ghost"
+                                    variant="outline"
                                     size="icon"
-                                    className="h-6 w-6"
-                                    onClick={() =>
-                                      updateCartItem(item.id, item.quantity + 1)
-                                    }
-                                  >
-                                    <Plus className="h-3 w-3" />
-                                  </Button>
-                                  <span className="text-sm font-medium">
-                                    {item.quantity}
-                                  </span>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
+                                    className="h-6 w-6 rounded-full"
                                     onClick={() => {
                                       if (item.quantity > 1) {
                                         updateCartItem(
@@ -408,70 +331,137 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   >
                                     <Minus className="h-3 w-3" />
                                   </Button>
-                                </div>
-                              </div>
-
-                              {/* Special instructions */}
-                              <div className="mt-2">
-                                {isEditingNotes ? (
-                                  <div className="space-y-2">
-                                    <Input
-                                      value={noteText}
-                                      onChange={(e) =>
-                                        setNoteText(e.target.value)
-                                      }
-                                      placeholder="Add special instructions"
-                                      className="h-8 text-xs"
-                                    />
-                                    <div className="flex justify-end gap-2">
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={() => setEditingItemId(null)}
-                                      >
-                                        Cancel
-                                      </Button>
-                                      <Button
-                                        variant="default"
-                                        size="sm"
-                                        className="h-7 text-xs"
-                                        onClick={handleSaveNotes}
-                                      >
-                                        Save
-                                      </Button>
-                                    </div>
-                                  </div>
-                                ) : (
-                                  <div
-                                    className="text-xs text-gray-500 flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
-                                    onClick={handleEditNotes}
+                                  <span className="mx-2 text-sm font-medium">
+                                    {item.quantity}
+                                  </span>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-6 w-6 rounded-full"
+                                    onClick={() =>
+                                      updateCartItem(item.id, item.quantity + 1)
+                                    }
                                   >
-                                    <MessageSquare className="h-3 w-3" />
-                                    {item.notes ? (
-                                      <span>{item.notes}</span>
-                                    ) : (
-                                      <span>Add special instructions</span>
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                  
+                                  <div className="flex-grow"></div>
+                                  
+                                  <p className="text-primary text-sm font-semibold">
+                                    {formatPrice(
+                                      ((item.meal?.price || 0) +
+                                        ((item.meal as any)?.curryOption
+                                          ?.priceAdjustment || 0)) *
+                                        item.quantity,
                                     )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Remove item button */}
-                              <div className="flex justify-end mt-1">
-                                <Button
-                                  variant="link"
-                                  size="sm"
-                                  className="h-6 text-xs text-destructive p-0"
-                                  onClick={() => removeCartItem(item.id)}
-                                >
-                                  <Trash2 className="h-3 w-3 mr-1" />
-                                  Remove
-                                </Button>
+                                  </p>
+                                </div>
+                                {/* Special instructions */}
+                                <div className="mt-2">
+                                  {isEditingNotes ? (
+                                    <div className="space-y-2">
+                                      <Input
+                                        value={noteText}
+                                        onChange={(e) =>
+                                          setNoteText(e.target.value)
+                                        }
+                                        placeholder="Add special instructions"
+                                        className="h-8 text-xs"
+                                      />
+                                      <div className="flex justify-end gap-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-7 text-xs"
+                                          onClick={() => setEditingItemId(null)}
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          variant="default"
+                                          size="sm"
+                                          className="h-7 text-xs"
+                                          onClick={handleSaveNotes}
+                                        >
+                                          Save
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <div className="flex justify-between">
+                                      <div
+                                        className="text-xs text-gray-500 flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                                        onClick={handleEditNotes}
+                                      >
+                                        <MessageSquare className="h-3 w-3" />
+                                        {item.notes ? (
+                                          <span>{item.notes}</span>
+                                        ) : (
+                                          <span>Add instructions</span>
+                                        )}
+                                      </div>
+                                      <div>
+                                        <Button
+                                          variant="link"
+                                          size="sm"
+                                          className="p-0 h-6 text-xs text-primary mr-2"
+                                          onClick={() =>
+                                            handleCustomizeItem(item)
+                                          }
+                                        >
+                                          Customize
+                                        </Button>
+                                        <Button
+                                          variant="link"
+                                          size="sm"
+                                          className="p-0 h-6 text-xs text-destructive"
+                                          onClick={() => removeCartItem(item.id)}
+                                        >
+                                          Remove
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           );
                         })}
+                      </div>
+
+                      {/* Bill Details Section */}
+                      <div className="px-4 py-4 border-t">
+                        <h3 className="font-medium text-base mb-3">Bill Details</h3>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Items Total</span>
+                            <span>{formatPrice(calculateCartTotal())}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Delivery Charge</span>
+                            <span>{formatPrice(4000)}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Taxes</span>
+                            <span>{formatPrice(2000)}</span>
+                          </div>
+                          <Separator className="my-2" />
+                          <div className="flex justify-between font-semibold">
+                            <span>Grand Total</span>
+                            <span className="text-primary">
+                              {formatPrice(calculateCartTotal() + 4000 + 2000)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Cancellation Policy */}
+                      <div className="px-4 py-3 border-t">
+                        <h3 className="font-medium text-sm mb-1">Cancellation Policy</h3>
+                        <p className="text-xs text-gray-600">
+                          Orders can be cancelled before they are confirmed by the restaurant.
+                          Once confirmed, refunds will be processed as per our policy.
+                        </p>
                       </div>
                     </div>
                   )}
@@ -632,7 +622,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           className="flex-1"
                           onClick={() => setDeliveryType("express")}
                         >
-                          Express (+₹50)
+                          Express (+₹40)
                         </Button>
                       </div>
                     </div>
@@ -681,14 +671,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </div>
                     <div className="flex justify-between">
                       <span>Delivery Fee</span>
-                      <span>{formatPrice(deliveryType === "express" ? 5000 : 0)}</span>
+                      <span>{formatPrice(deliveryType === "express" ? 5000 : 4000)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Taxes</span>
+                      <span>{formatPrice(2000)}</span>
                     </div>
                     <div className="flex justify-between pt-2 border-t font-medium">
                       <span>Total</span>
                       <span>
                         {formatPrice(
                           calculateCartTotal() +
-                            (deliveryType === "express" ? 5000 : 0),
+                            (deliveryType === "express" ? 5000 : 4000) + 2000
                         )}
                       </span>
                     </div>
@@ -728,7 +722,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>
                         {formatPrice(
                           calculateCartTotal() +
-                            (deliveryType === "express" ? 5000 : 0),
+                            (deliveryType === "express" ? 5000 : 4000) + 2000
                         )}
                       </span>
                     </div>
@@ -756,17 +750,21 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             )}
           </div>
 
-          {/* Footer with total and checkout button */}
+          {/* Footer with proceed button */}
           {currentStep !== "success" && cartItems.length > 0 && (
-            <div className="border-t p-4">
-              <div className="flex justify-between mb-2">
-                <span className="font-medium">Total</span>
-                <span className="font-semibold text-primary">
-                  {formatPrice(calculateCartTotal())}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                {currentStep !== "cart" && (
+            <div className="border-t">
+              {currentStep === "cart" ? (
+                <div className="p-4">
+                  <Button
+                    onClick={handleNextStep}
+                    className="w-full bg-primary text-white font-medium"
+                    disabled={loading || cartItems.length === 0}
+                  >
+                    Proceed
+                  </Button>
+                </div>
+              ) : (
+                <div className="p-4 flex gap-2">
                   <Button
                     variant="outline"
                     onClick={handlePreviousStep}
@@ -775,39 +773,34 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     <ChevronLeft className="mr-1 h-4 w-4" />
                     Back
                   </Button>
-                )}
-                <Button
-                  onClick={handleNextStep}
-                  className="flex-1"
-                  disabled={
-                    loading ||
-                    isCreatingOrder ||
-                    (currentStep === "cart" && cartItems.length === 0)
-                  }
-                >
-                  {currentStep === "cart" && "Checkout"}
-                  {currentStep === "delivery" && "Continue to Payment"}
-                  {currentStep === "payment" && (
-                    <>
-                      {isCreatingOrder ? (
-                        <>Processing...</>
-                      ) : (
-                        <>
-                          <CreditCard className="mr-1 h-4 w-4" />
-                          Pay{" "}
-                          {formatPrice(
-                            calculateCartTotal() +
-                              (deliveryType === "express" ? 5000 : 0),
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                  {currentStep !== "payment" && (
-                    <ChevronRight className="ml-1 h-4 w-4" />
-                  )}
-                </Button>
-              </div>
+                  <Button
+                    onClick={handleNextStep}
+                    className="flex-1"
+                    disabled={loading || isCreatingOrder}
+                  >
+                    {currentStep === "delivery" && "Continue to Payment"}
+                    {currentStep === "payment" && (
+                      <>
+                        {isCreatingOrder ? (
+                          <>Processing...</>
+                        ) : (
+                          <>
+                            <CreditCard className="mr-1 h-4 w-4" />
+                            Pay{" "}
+                            {formatPrice(
+                              calculateCartTotal() +
+                                (deliveryType === "express" ? 5000 : 4000) + 2000
+                            )}
+                          </>
+                        )}
+                      </>
+                    )}
+                    {currentStep === "delivery" && (
+                      <ChevronRight className="ml-1 h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
           )}
         </SheetContent>
@@ -816,7 +809,5 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     </>
   );
 };
-
-// We now use ShoppingCartIcon from lucide-react instead
 
 export default CartSidebar;
