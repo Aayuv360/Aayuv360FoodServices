@@ -13,6 +13,7 @@ import {
   Minus,
   Plus,
   PlusCircle,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -1440,24 +1441,30 @@ const Subscription = () => {
     }
   };
 
+  // Important: We're NOT using the isSuccess state for immediate navigation anymore.
+  // We will ONLY show this if the subscription is created but we're waiting for Razorpay payment
+  // completion. This is a temporary state while the Razorpay popup is open.
+  //
+  // The actual success page navigation happens ONLY in the onSuccess callback of the
+  // Razorpay payment flow, after payment verification completes successfully.
   if (isSuccess && subscribedDetails) {
     return (
       <div className="min-h-screen bg-neutral-light py-12">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto">
-            <Card className="border-green-500 border-2">
-              <CardHeader className="bg-green-50">
+            <Card className="border-primary border-2">
+              <CardHeader className="bg-neutral-light">
                 <div className="flex items-center justify-center mb-4">
-                  <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                    <Check className="h-6 w-6 text-white" />
+                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                    <CreditCard className="h-6 w-6 text-white" />
                   </div>
                 </div>
                 <CardTitle className="text-center text-2xl">
-                  Subscription Successful!
+                  Complete Payment
                 </CardTitle>
                 <CardDescription className="text-center">
-                  Your subscription has been processed successfully. You'll
-                  start receiving your millet meals soon.
+                  Your subscription has been created. Please complete the payment to activate it.
+                  If you closed the payment window, you can try again.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -1511,16 +1518,16 @@ const Subscription = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-center">
+                <div className="flex justify-center gap-4">
                   <Button
-                    className="bg-primary hover:bg-primary/90"
+                    variant="outline"
                     onClick={() => {
                       setIsSuccess(false);
                       form.reset(defaultValues);
                       setFormStep("plan");
                     }}
                   >
-                    Back to Subscription Plans
+                    Cancel Subscription
                   </Button>
                 </div>
               </CardContent>
