@@ -279,7 +279,7 @@ const Subscription = () => {
           // Store the subscription ID in local storage for retrieval on success page
           localStorage.setItem('lastSubscriptionId', subscription.id.toString());
           
-          // Redirect to payment success page
+          // Redirect to payment success page only after successful payment
           navigate(`/payment-success?subscriptionId=${subscription.id}&type=subscription`);
         },
         onFailure: (error: Error) => {
@@ -300,11 +300,9 @@ const Subscription = () => {
       // Save the subscription ID for the success screen
       localStorage.setItem('lastSubscriptionId', data.id.toString());
       
-      // Update UI to show success state
+      // Only update UI to show the success state
+      // We'll navigate to success page only after Razorpay payment is completed
       setIsSuccess(true);
-      
-      // Navigate to success page
-      navigate('/payment-success?type=subscription');
     },
     onError: (error: any) => {
       toast({

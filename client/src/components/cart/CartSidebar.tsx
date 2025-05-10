@@ -348,8 +348,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 variant: "default",
               });
               
-              // Navigate to success page or profile
-              navigate(`/profile?tab=orders`);
+              // Navigate to payment success page
+              navigate(`/payment-success?orderId=${orderData.id}`);
               onClose();
             },
             onFailure: (error) => {
