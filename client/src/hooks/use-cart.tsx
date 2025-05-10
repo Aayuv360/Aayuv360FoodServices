@@ -102,12 +102,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Add item to cart
   const addToCart = async (meal: Meal, quantity: number = 1) => {
     if (!user) {
-      toast({
-        title: "Please login",
-        description: "You need to be logged in to add items to your cart",
-        variant: "destructive",
-      });
-      return;
+      // Instead of just showing a toast, throw an error with a specific message
+      // This will allow components to handle authentication needs more specifically
+      throw new Error("authentication_required");
     }
 
     try {

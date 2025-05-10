@@ -6,6 +6,8 @@ import { CurryOptionsModal } from "./CurryOptionsModal";
 import { RepeatCustomizationModal } from "./RepeatCustomizationModal";
 import { Meal } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { AuthModal } from "@/components/auth/AuthModal";
+import { useAuth } from "@/hooks/use-auth";
 
 interface MealCardActionsProps {
   meal: Meal;
@@ -14,20 +16,49 @@ interface MealCardActionsProps {
 export function MealCardActions({ meal }: MealCardActionsProps) {
   const { isItemInCart, getCartItemsForMeal, getLastCurryOption, addToCart, removeCartItem, updateCartItem } = useCart();
   const { toast } = useToast();
+  const { user } = useAuth();
   
   const [showCurryOptionsModal, setShowCurryOptionsModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingCurryAction, setPendingCurryAction] = useState<boolean>(false);
   
   const inCart = isItemInCart(meal.id);
   const cartItems = getCartItemsForMeal(meal.id);
   const lastCurryOption = getLastCurryOption(meal.id);
   
+  // Handle successful authentication
+  const handleAuthSuccess = () => {
+    // Close the auth modal
+    setShowAuthModal(false);
+    
+    // If we have a pending curry selection, show the curry options modal
+    if (pendingCurryAction) {
+      setPendingCurryAction(false);
+      setShowCurryOptionsModal(true);
+    }
+  };
+  
   const handleAddClick = () => {
-    // Always show curry option selection directly (Swiggy-like experience)
+    // If user is not logged in, show auth modal
+    if (!user) {
+      // Set a flag to show curry options after successful login
+      setPendingCurryAction(true);
+      setShowAuthModal(true);
+      return;
+    }
+    
+    // If logged in, show curry options modal
     setShowCurryOptionsModal(true);
   };
   
   const handleRemoveClick = async () => {
+    // If user is not logged in, show auth modal
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    
     // Check if there are multiple different curry options for this meal
     if (cartItems.length > 1) {
       // Show a message that they need to remove from cart directly
@@ -111,6 +142,13 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
   
   const handleAddToCurry = async (selectedMeal: Meal & { curryOption: any }) => {
     try {
+      // If user is not logged in, show auth modal and return
+      if (!user) {
+        setShowCurryOptionsModal(false);
+        setShowAuthModal(true);
+        return;
+      }
+      
       // Check if an item with the SAME curry option already exists
       const sameOptionItem = cartItems.find(item => {
         return item.meal?.id === selectedMeal.id && 
@@ -138,6 +176,14 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
       setShowCurryOptionsModal(false);
     } catch (error) {
       console.error("Error adding item to cart:", error);
+      
+      // Check if it's an authentication error
+      if (error instanceof Error && error.message === "authentication_required") {
+        setShowCurryOptionsModal(false);
+        setShowAuthModal(true);
+        return;
+      }
+      
       toast({
         title: "Error",
         description: "There was an error updating your cart. Please try again.",
@@ -197,6 +243,16 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         onRepeatLast={handleRepeatLast}
         lastCurryOption={lastCurryOption}
         isInCart={inCart}
+      />
+      
+      {/* Auth Modal for login/signup when trying to add to cart while not logged in */}
+      <AuthModal 
+        isOpen={showAuthModal}
+        onOpenChange={setShowAuthModal}
+        defaultTab="login"
+        mode="normal"
+        redirectUrl="" 
+        onSuccess={handleAuthSuccess}
       />
     </>
   );
