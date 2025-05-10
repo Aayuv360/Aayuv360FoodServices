@@ -252,7 +252,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedItem = await storage.updateCartItemQuantity(itemId, quantity);
       const meal = await storage.getMeal(updatedItem!.mealId);
       
-      res.json({ ...updatedItem, meal });
+      // Add curry option to the meal object if needed
+      let mealWithCurryOption = meal;
+      if (updatedItem?.curryOptionId && updatedItem.curryOptionName) {
+        // Use type assertion to add the curryOption property
+        mealWithCurryOption = {
+          ...meal,
+          // curryOption is not in the Meal type, but we need it for the frontend
+        } as any;
+        
+        // Add the curry option to the object
+        (mealWithCurryOption as any).curryOption = {
+          id: updatedItem.curryOptionId,
+          name: updatedItem.curryOptionName,
+          priceAdjustment: updatedItem.curryOptionPrice || 0
+        };
+      }
+      
+      res.json({ ...updatedItem, meal: mealWithCurryOption });
     } catch (err) {
       console.error("Error updating cart item quantity:", err);
       res.status(500).json({ message: "Error updating cart item quantity" });
@@ -277,7 +294,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedItem = await storage.updateCartItem(itemId, updates);
       const meal = await storage.getMeal(updatedItem!.mealId);
       
-      res.json({ ...updatedItem, meal });
+      // Add curry option to the meal object if needed
+      let mealWithCurryOption = meal;
+      if (updatedItem?.curryOptionId && updatedItem.curryOptionName) {
+        // Use type assertion to add the curryOption property
+        mealWithCurryOption = {
+          ...meal,
+          // curryOption is not in the Meal type, but we need it for the frontend
+        } as any;
+        
+        // Add the curry option to the object
+        (mealWithCurryOption as any).curryOption = {
+          id: updatedItem.curryOptionId,
+          name: updatedItem.curryOptionName,
+          priceAdjustment: updatedItem.curryOptionPrice || 0
+        };
+      }
+      
+      res.json({ ...updatedItem, meal: mealWithCurryOption });
     } catch (err) {
       console.error("Error updating cart item:", err);
       res.status(500).json({ message: "Error updating cart item" });
