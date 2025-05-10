@@ -116,8 +116,41 @@ const SubscriptionPage = () => {
     }
   };
   
-  // Function to render subscription plans
-  const renderSubscriptionPlans = () => {
+
+
+  // Handle payment button click
+  const handlePaymentClick = () => {
+    if (!subscription) return;
+    
+    initiatePayment({
+      amount: subscription.amount,
+      orderId: subscription.id, // Using subscription ID as order ID for now
+      description: `Payment for ${subscription.planType} Subscription`,
+      name: 'Aayuv Millet Foods',
+      theme: { color: '#9E6D38' }, // Use brand color
+      onSuccess: handlePaymentSuccess,
+      onFailure: handlePaymentFailure,
+    });
+  };
+
+  if (authLoading || subscriptionLoading) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Redirect to login if not authenticated
+    useEffect(() => {
+      setLocation('/auth');
+    }, [setLocation]);
+    return null;
+  }
+
+  // If there's no match (base subscription path) or no subscription ID, show plans
+  if (!params?.subscriptionId) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -259,42 +292,6 @@ const SubscriptionPage = () => {
         </div>
       </div>
     );
-  };
-
-  // Handle payment button click
-  const handlePaymentClick = () => {
-    if (!subscription) return;
-    
-    initiatePayment({
-      amount: subscription.amount,
-      orderId: subscription.id, // Using subscription ID as order ID for now
-      description: `Payment for ${subscription.planType} Subscription`,
-      name: 'Aayuv Millet Foods',
-      theme: { color: '#9E6D38' }, // Use brand color
-      onSuccess: handlePaymentSuccess,
-      onFailure: handlePaymentFailure,
-    });
-  };
-
-  if (authLoading || subscriptionLoading) {
-    return (
-      <div className="flex min-h-[70vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    // Redirect to login if not authenticated
-    useEffect(() => {
-      setLocation('/auth');
-    }, [setLocation]);
-    return null;
-  }
-
-  // Show plans if we're on the base subscription page (no ID in URL)
-  if (!match && !params?.subscriptionId) {
-    return renderSubscriptionPlans();
   }
   
   // Show error for invalid subscription ID
@@ -309,12 +306,20 @@ const SubscriptionPage = () => {
       </div>
     );
   }
-  
-  // If we're at /subscription without a specific ID, show plans
-  if (!subscription) {
-    return renderSubscriptionPlans();
-  }
 
+  // Make sure subscription exists before proceeding
+  if (!subscription) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex flex-col items-center">
+        <h1 className="text-2xl font-bold mb-4">Subscription Not Found</h1>
+        <p>Could not find the requested subscription details.</p>
+        <Button className="mt-4" onClick={() => setLocation('/subscription')}>
+          View Subscription Plans
+        </Button>
+      </div>
+    );
+  }
+  
   // Format the price for display
   const formattedPrice = new Intl.NumberFormat('en-IN', {
     style: 'currency',
