@@ -14,17 +14,32 @@ async function fixCartItems() {
     const cartItems = await db.select().from(schema.cartItems);
     console.log(`Found ${cartItems.length} cart items to process`);
     
-    // Update each cart item with a default curry option if it doesn't have one
+    // Update each cart item with default curry option and category if needed
     for (const item of cartItems) {
-      if (!item.curryOptionId) {
-        console.log(`Updating cart item ${item.id} with default curry option`);
+      // Get the meal data to determine its type
+      const meal = await db.select().from(schema.meals)
+        .where(eq(schema.meals.id, item.mealId))
+        .then(meals => meals[0]);
+      
+      if (!meal) {
+        console.log(`Meal not found for cart item ${item.id}`);
+        continue;
+      }
+      
+      // Determine which category to assign
+      let category = "Dinner";  // Default category
+      
+      // Check if we need to update this item
+      if (!item.curryOptionId || !item.category) {
+        console.log(`Updating cart item ${item.id} with default curry option and category`);
         
-        // Update with the Regular Curry default option
+        // Update with the Regular Curry default option and category
         await db.update(schema.cartItems)
           .set({
             curryOptionId: 'regular',
             curryOptionName: 'Regular Curry',
-            curryOptionPrice: 0
+            curryOptionPrice: 0,
+            category: category
           })
           .where(eq(schema.cartItems.id, item.id));
       }

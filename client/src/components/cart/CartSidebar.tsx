@@ -44,8 +44,31 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
+
+// Define delivery address form schema
+const addressSchema = z.object({
+  name: z.string().min(3, "Full name is required"),
+  phoneNumber: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number too long"),
+  addressType: z.enum(["home", "work", "other"]),
+  completeAddress: z.string().min(5, "Complete address is required"),
+  nearbyLandmark: z.string().optional(),
+  zipCode: z.string().min(5, "Zip code is required"),
+  locationId: z.number().optional(),
+});
+
+type AddressFormValues = z.infer<typeof addressSchema>;
 
 interface CartSidebarProps {
   open: boolean;
@@ -54,1049 +77,741 @@ interface CartSidebarProps {
 
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
-const addressSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  phone: z.string().min(10, "Valid phone number is required"),
-  address: z.string().min(5, "Address is required"),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State is required"),
-  pincode: z.string().min(6, "Valid pincode is required"),
-});
-
-const paymentSchema = z.object({
-  method: z.enum(["card", "upi", "cod"]),
-  cardNumber: z.string().optional(),
-  cardExpiry: z.string().optional(),
-  cardCvv: z.string().optional(),
-  upiId: z.string().optional(),
-});
-
-const userAddresses = [
-  {
-    id: 1,
-    name: "Home",
-    phone: "9876543210",
-    address: "123 Millet Street, Apt 456",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500032",
-  },
-  {
-    id: 2,
-    name: "Office",
-    phone: "9876543210",
-    address: "789 Work Avenue, Floor 3",
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "500081",
-  },
-];
-
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
-  const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
-  const [selectedAddress, setSelectedAddress] = useState<number | null>(null);
-  const [addingNewAddress, setAddingNewAddress] = useState(false);
-  const [orderComplete, setOrderComplete] = useState(false);
-  const [_, navigate] = useLocation();
+  const [selectedPaymentMethod, setSelectedPaymentMethod] =
+    useState<string>("razorpay");
+  const [orderId, setOrderId] = useState<number | null>(null);
+  const [deliveryType, setDeliveryType] = useState<string>("default");
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [noteText, setNoteText] = useState<string>("");
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+
+  // Get cart data from context
   const {
     cartItems,
+    loading,
+    getCartCategories,
+    updateCartItemNotes,
     updateCartItem,
     removeCartItem,
     clearCart,
-    addToCart,
-    getLastCurryOption,
-    updateCartItemWithOptions,
-    updateCartItemNotes,
-    getCartCategories,
     clearCartByCategory,
   } = useCart();
-  const { toast } = useToast();
   const { user } = useAuth();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [customizeModalOpen, setCustomizeModalOpen] = useState(false);
-  const [selectedMeal, setSelectedMeal] = useState<any>(null);
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [noteText, setNoteText] = useState("");
+  const { toast } = useToast();
+  const [navigate] = useLocation();
 
-  const addressForm = useForm<z.infer<typeof addressSchema>>({
+  // Use form hook for address data
+  const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
       name: "",
-      phone: "",
-      address: "",
-      city: "Hyderabad",
-      state: "Telangana",
-      pincode: "",
+      phoneNumber: "",
+      addressType: "home",
+      completeAddress: "",
+      nearbyLandmark: "",
+      zipCode: "",
     },
   });
 
-  const paymentForm = useForm<z.infer<typeof paymentSchema>>({
-    resolver: zodResolver(paymentSchema),
-    defaultValues: {
-      method: "cod",
-    },
-  });
+  // Calculate cart total
+  const calculateCartTotal = (): number => {
+    return cartItems.reduce((total, item) => {
+      const itemPrice =
+        (item.meal?.price || 0) +
+        ((item.meal as any)?.curryOption?.priceAdjustment || 0);
+      return total + itemPrice * item.quantity;
+    }, 0);
+  };
 
-  const paymentMethod = paymentForm.watch("method");
-
-  // Calculate cart total including any curry option prices
-  const subtotal = cartItems.reduce((sum, item) => {
-    // Get the base meal price
-    const basePrice = item.meal?.price || 0;
-
-    // Get curry option price adjustment if present
-    const adjustmentPrice =
-      (item.meal as any)?.curryOption?.priceAdjustment || 0;
-
-    // Calculate total price for this item (base + adjustment) × quantity
-    const totalItemPrice = (basePrice + adjustmentPrice) * item.quantity;
-
-    return sum + totalItemPrice;
-  }, 0);
-  const deliveryFee = 4000;
-  const tax = 2000;
-  const total = subtotal + deliveryFee + tax;
-
-  const formatPrice = (price: number) => {
+  // Format prices in rupees
+  const formatPrice = (price: number): string => {
     return `₹${(price / 100).toFixed(2)}`;
   };
 
-  const handleQuantityChange = async (id: number, quantity: number) => {
-    if (quantity < 1) return;
-    updateCartItem(id, quantity);
-  };
-
-  const handleRemoveItem = (id: number) => {
-    removeCartItem(id);
-  };
-
+  // Handle customizing an item
   const handleCustomizeItem = (item: any) => {
-    setSelectedMeal(item.meal);
-    setCustomizeModalOpen(true);
+    navigate(`/menu?customizeItem=${item.mealId}`);
+    onClose();
   };
 
-  const handleCustomizationComplete = async (updatedMeal: any) => {
-    try {
-      if (selectedMeal && updatedMeal.curryOption) {
-        const cartItem = cartItems.find(
-          (item) => item.meal?.id === updatedMeal.id,
-        );
-
-        // Check if an item with the SAME curry option already exists
-        const sameOptionItem = cartItems.find((item) => {
-          return (
-            item.meal?.id === updatedMeal.id &&
-            (item.meal as any)?.curryOption?.id === updatedMeal.curryOption.id
-          );
-        });
-
-        // If we're updating an existing item with a different curry option
-        if (cartItem && !sameOptionItem) {
-          // Use our new updateCartItemWithOptions method to directly update the item
-          // This preserves the item's ID and quantity
-          await updateCartItemWithOptions(cartItem.id, updatedMeal.curryOption);
-
-          toast({
-            title: "Customization changed",
-            description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} updated in your cart`,
-          });
-        }
-        // If we're updating to the same curry option or if it's a new curry option for this meal
-        else {
-          // If same curry option exists, this will just update quantity
-          // If new curry option, this will add as a new item
-          if (sameOptionItem) {
-            // Item with same curry option already exists, just update quantity
-            await updateCartItem(
-              sameOptionItem.id,
-              sameOptionItem.quantity + 1,
-            );
-
-            toast({
-              title: "Quantity updated",
-              description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} quantity increased`,
-            });
-          } else {
-            // Add as a new item
-            await addToCart(updatedMeal, 1);
-
-            toast({
-              title: "Item added",
-              description: `${updatedMeal.name} with ${updatedMeal.curryOption.name} added to your cart`,
-            });
-          }
-        }
+  // Navigate through checkout steps
+  const handleNextStep = async () => {
+    if (currentStep === "cart") {
+      if (!user) {
+        setAuthModalOpen(true);
+        return;
       }
-    } catch (error) {
-      console.error("Error during customization:", error);
-      toast({
-        title: "Error updating cart",
-        description: "There was an error updating your cart. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setCustomizeModalOpen(false);
-    }
-  };
-
-  const handleProceed = () => {
-    if (!user) {
-      setAuthModalOpen(true);
-      return;
-    }
-
-    if (cartItems.length === 0) {
-      toast({
-        title: "Empty cart",
-        description: "Your cart is empty. Add some items first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setCurrentStep("delivery");
-  };
-
-  const handleProceedToPayment = () => {
-    if (!selectedAddress && !addingNewAddress) {
-      toast({
-        title: "Select address",
-        description: "Please select a delivery address or add a new one",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (addingNewAddress) {
-      addressForm.handleSubmit(() => {
-        setCurrentStep("payment");
-      })();
-      return;
-    }
-
-    setCurrentStep("payment");
-  };
-
-  const handleCheckout = () => {
-    paymentForm.handleSubmit(async (paymentData) => {
-      setLoading(true);
-
-      try {
+      setCurrentStep("delivery");
+    } else if (currentStep === "delivery") {
+      const isValid = await form.trigger();
+      if (!isValid) {
         toast({
-          title: "Processing your order",
-          description: "Please wait while we process your order...",
+          title: "Invalid address",
+          description: "Please complete the delivery address form",
+          variant: "destructive",
         });
-
-        let deliveryAddress = "";
-        if (selectedAddress) {
-          const address = userAddresses.find((a) => a.id === selectedAddress);
-          if (address) {
-            deliveryAddress = `${address.name}, ${address.address}, ${address.city}, ${address.state} - ${address.pincode}, ${address.phone}`;
-          }
-        } else {
-          const newAddress = addressForm.getValues();
-          deliveryAddress = `${newAddress.name}, ${newAddress.address}, ${newAddress.city}, ${newAddress.state} - ${newAddress.pincode}, ${newAddress.phone}`;
-        }
-
-        const orderData = {
-          userId: user?.id,
-          totalPrice: total,
-          deliveryAddress,
-          deliveryTime: new Date(Date.now() + 24 * 60 * 60 * 1000),
-          status: "confirmed",
+        return;
+      }
+      setCurrentStep("payment");
+    } else if (currentStep === "payment") {
+      try {
+        setIsCreatingOrder(true);
+        const formValues = form.getValues();
+        const orderPayload = {
+          items: cartItems.map((item) => ({
+            mealId: item.mealId,
+            quantity: item.quantity,
+            curryOptionId: item.curryOptionId,
+            curryOptionName: item.curryOptionName,
+            curryOptionPrice: item.curryOptionPrice,
+          })),
+          deliveryDetails: {
+            ...formValues,
+            deliveryType,
+          },
+          paymentMethod: selectedPaymentMethod,
         };
 
-        const response = await apiRequest("POST", "/api/orders", orderData);
-        const order = await response.json();
+        const res = await apiRequest("POST", "/api/orders", orderPayload);
+        const orderData = await res.json();
+        setOrderId(orderData.id);
 
-        await clearCart();
-
-        setOrderComplete(true);
-        setCurrentStep("success");
+        // Based on the selected payment method, navigate to appropriate payment flow
+        if (selectedPaymentMethod === "razorpay") {
+          // Create payment intent for Razorpay
+          const paymentRes = await apiRequest("POST", `/api/payments/create-order`, {
+            amount: calculateCartTotal(),
+            orderId: orderData.id,
+            notes: {
+              orderType: "food",
+            },
+          });
+          
+          const paymentData = await paymentRes.json();
+          
+          // Navigate to the payment page with the order ID
+          navigate(`/checkout?orderId=${orderData.id}&paymentId=${paymentData.id}`);
+          onClose();
+        } else {
+          // COD or other payment method
+          setCurrentStep("success");
+        }
       } catch (error) {
+        console.error("Error creating order:", error);
         toast({
-          title: "Failed to place order",
-          description:
-            "There was an error processing your order. Please try again.",
+          title: "Error",
+          description: "Failed to create order",
           variant: "destructive",
         });
       } finally {
-        setLoading(false);
+        setIsCreatingOrder(false);
       }
-    })();
-  };
-
-  const resetCart = () => {
-    setCurrentStep("cart");
-    setSelectedAddress(null);
-    setAddingNewAddress(false);
-    setOrderComplete(false);
-    addressForm.reset();
-    paymentForm.reset();
-  };
-
-  const goBack = () => {
-    if (currentStep === "delivery") {
+    } else if (currentStep === "success") {
+      onClose();
       setCurrentStep("cart");
-    } else if (currentStep === "payment") {
-      setCurrentStep("delivery");
     }
   };
 
-  const handleClose = () => {
-    onClose();
-    setTimeout(resetCart, 300);
+  const handlePreviousStep = () => {
+    if (currentStep === "payment") {
+      setCurrentStep("delivery");
+    } else if (currentStep === "delivery") {
+      setCurrentStep("cart");
+    }
   };
 
   return (
     <>
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onOpenChange={(open: boolean) => {
-          setAuthModalOpen(open);
-          // When the modal is closed and user is logged in, proceed to delivery
-          if (!open && user) {
-            setCurrentStep("delivery");
-          }
-        }}
-        mode="normal"
-      />
-
-      {open && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40"
-          onClick={handleClose}
-        />
-      )}
-
-      <div
-        className={`fixed inset-y-0 right-0 max-w-md w-full bg-white shadow-xl z-50 transform transition duration-300 ${
-          open ? "translate-x-0" : "translate-x-full"
-        }`}
-      >
-        {/* Curry Options Modal for Customization */}
-        {selectedMeal && (
-          <CurryOptionsModal
-            open={customizeModalOpen}
-            onClose={() => setCustomizeModalOpen(false)}
-            meal={selectedMeal}
-            onAddToCart={handleCustomizationComplete}
-            lastCurryOption={
-              (selectedMeal as any)?.curryOption ||
-              getLastCurryOption(selectedMeal.id)
-            }
-            isInCart={true}
-          />
-        )}
-        <div className="flex flex-col h-full">
-          <div className="p-4 border-b">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                {currentStep !== "cart" && currentStep !== "success" && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={goBack}
-                    className="mr-2"
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </Button>
-                )}
-                <h3 className="text-lg font-medium">
-                  {currentStep === "cart" && "Your Cart"}
-                  {currentStep === "delivery" && "Delivery Information"}
-                  {currentStep === "payment" && "Payment Information"}
-                  {currentStep === "success" && "Order Complete"}
-                </h3>
-              </div>
-              <Button variant="ghost" size="icon" onClick={handleClose}>
-                <X className="h-5 w-5" />
+      <Sheet open={open} onOpenChange={onClose}>
+        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full">
+          {/* Header */}
+          <SheetHeader className="p-4 border-b">
+            <div className="flex justify-between items-center">
+              <SheetTitle>
+                {currentStep === "cart" && "Your Cart"}
+                {currentStep === "delivery" && "Delivery Details"}
+                {currentStep === "payment" && "Payment Method"}
+                {currentStep === "success" && "Order Placed"}
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={onClose}
+              >
+                <X className="h-4 w-4" />
               </Button>
             </div>
-          </div>
+            <SheetDescription>
+              {currentStep === "cart" && "Review items in your cart"}
+              {currentStep === "delivery" && "Enter your delivery address"}
+              {currentStep === "payment" && "Choose your payment method"}
+              {currentStep === "success" && "Your order has been placed successfully"}
+            </SheetDescription>
+          </SheetHeader>
 
-          {currentStep === "cart" && (
-            <>
-              {/* Cart Items */}
-              <div className="flex-grow overflow-y-auto p-4">
-                {cartItems.length === 0 ? (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 mx-auto text-gray-300 mb-4">
-                      <ShoppingCartIcon className="w-full h-full" />
+          {/* Content based on current step */}
+          <div className="flex-grow overflow-auto">
+            {currentStep === "cart" && (
+              <>
+                {/* Cart Items */}
+                <div className="flex-grow overflow-y-auto p-4">
+                  {cartItems.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 mx-auto text-gray-300 mb-4">
+                        <ShoppingCartIcon className="w-full h-full" />
+                      </div>
+                      <p className="text-gray-500 mb-4">Your cart is empty</p>
+                      <Button
+                        onClick={() => {
+                          navigate("/menu");
+                          onClose();
+                        }}
+                      >
+                        Browse Menu
+                      </Button>
                     </div>
-                    <p className="text-gray-500 mb-4">Your cart is empty</p>
-                    <Button
-                      onClick={() => {
-                        navigate("/menu");
-                        onClose();
-                      }}
-                    >
-                      Browse Menu
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {/* Group cart items by category */}
-                    {getCartCategories().map((category) => {
-                      // Get all items in this category
-                      const categoryItems = cartItems.filter(
-                        (item) => item.category === category,
-                      );
-
-                      return (
-                        <div key={category} className="space-y-2">
-                          {/* Category header with clear option */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-1">
-                              <Tag className="h-4 w-4 text-primary" />
-                              <h3 className="font-medium text-primary">
-                                {category}
-                              </h3>
-                            </div>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-7 text-xs text-muted-foreground"
-                              onClick={() => {
-                                clearCartByCategory(category);
-                                toast({
-                                  title: "Category cleared",
-                                  description: `All ${category} items have been removed from your cart`,
-                                });
-                              }}
-                            >
-                              Clear All
-                            </Button>
+                  ) : (
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1">
+                            <Tag className="h-4 w-4 text-primary" />
+                            <h3 className="font-medium text-primary">
+                              Your Items
+                            </h3>
                           </div>
-
-                          {/* Items in this category */}
-                          {categoryItems.map((item) => {
-                            const isEditingNotes = editingItemId === item.id;
-
-                            const handleEditNotes = () => {
-                              setEditingItemId(isEditingNotes ? null : item.id);
-                              setNoteText(item.notes || "");
-                            };
-
-                            const handleSaveNotes = () => {
-                              updateCartItemNotes(item.id, noteText || null);
-                              setEditingItemId(null);
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-muted-foreground"
+                            onClick={() => {
+                              clearCart();
                               toast({
-                                title: "Notes saved",
-                                description: noteText
-                                  ? "Your special instructions were saved"
-                                  : "Notes removed",
+                                title: "Cart cleared",
+                                description: "All items have been removed from your cart",
                               });
-                            };
+                            }}
+                          >
+                            Clear All
+                          </Button>
+                        </div>
 
-                            return (
-                              <div
-                                key={item.id}
-                                className="flex flex-col bg-neutral-light p-3 rounded-lg"
-                              >
-                                <div className="flex items-center space-x-4">
-                                  <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
-                                    <img
-                                      src={
-                                        item.meal?.imageUrl ||
-                                        "/placeholder-meal.jpg"
+                        {cartItems.map((item) => {
+                          const isEditingNotes = editingItemId === item.id;
+
+                          const handleEditNotes = () => {
+                            setEditingItemId(isEditingNotes ? null : item.id);
+                            setNoteText(item.notes || "");
+                          };
+
+                          const handleSaveNotes = () => {
+                            updateCartItemNotes(item.id, noteText || null);
+                            setEditingItemId(null);
+                            toast({
+                              title: "Notes saved",
+                              description: noteText
+                                ? "Your special instructions were saved"
+                                : "Notes removed",
+                            });
+                          };
+
+                          return (
+                            <div
+                              key={item.id}
+                              className="flex flex-col bg-neutral-light p-3 rounded-lg"
+                            >
+                              <div className="flex items-center space-x-4">
+                                <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                                  <img
+                                    src={
+                                      item.meal?.imageUrl ||
+                                      "/placeholder-meal.jpg"
+                                    }
+                                    alt={item.meal?.name || "Meal item"}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <div className="flex-grow">
+                                  <h4 className="font-medium text-sm">
+                                    {item.meal?.name}
+                                  </h4>
+                                  {/* Display curry option if available */}
+                                  {(item.meal as any)?.curryOption && (
+                                    <p className="text-xs text-gray-600">
+                                      with{" "}
+                                      {(item.meal as any).curryOption.name}
+                                      {(item.meal as any).curryOption
+                                        .priceAdjustment > 0 && (
+                                        <span className="text-primary ml-1">
+                                          (+
+                                          {formatPrice(
+                                            (item.meal as any).curryOption
+                                              .priceAdjustment,
+                                          )}
+                                          )
+                                        </span>
+                                      )}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-primary text-sm font-semibold">
+                                      {formatPrice(
+                                        (item.meal?.price || 0) +
+                                          ((item.meal as any)?.curryOption
+                                            ?.priceAdjustment || 0),
+                                      )}
+                                    </p>
+                                    <Button
+                                      variant="link"
+                                      size="sm"
+                                      className="p-0 h-6 text-xs text-primary"
+                                      onClick={() =>
+                                        handleCustomizeItem(item)
                                       }
-                                      alt={item.meal?.name || "Meal item"}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                  <div className="flex-grow">
-                                    <h4 className="font-medium text-sm">
-                                      {item.meal?.name}
-                                    </h4>
-                                    {/* Display curry option if available */}
-                                    {(item.meal as any)?.curryOption && (
-                                      <p className="text-xs text-gray-600">
-                                        with{" "}
-                                        {(item.meal as any).curryOption.name}
-                                        {(item.meal as any).curryOption
-                                          .priceAdjustment > 0 && (
-                                          <span className="text-primary ml-1">
-                                            (+
-                                            {formatPrice(
-                                              (item.meal as any).curryOption
-                                                .priceAdjustment,
-                                            )}
-                                            )
-                                          </span>
-                                        )}
-                                      </p>
-                                    )}
-                                    <div className="flex items-center justify-between">
-                                      <p className="text-primary text-sm font-semibold">
-                                        {formatPrice(
-                                          (item.meal?.price || 0) +
-                                            ((item.meal as any)?.curryOption
-                                              ?.priceAdjustment || 0),
-                                        )}
-                                      </p>
-                                      <Button
-                                        variant="link"
-                                        size="sm"
-                                        className="p-0 h-6 text-xs text-primary"
-                                        onClick={() =>
-                                          handleCustomizeItem(item)
-                                        }
-                                      >
-                                        Customize
-                                      </Button>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col space-y-2">
-                                    <div className="flex items-center border rounded">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 p-0"
-                                        onClick={() =>
-                                          handleQuantityChange(
-                                            item.id,
-                                            Math.max(1, item.quantity - 1),
-                                          )
-                                        }
-                                      >
-                                        <Minus className="h-3 w-3" />
-                                      </Button>
-                                      <span className="px-2 py-1">
-                                        {item.quantity}
-                                      </span>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 p-0"
-                                        onClick={() =>
-                                          handleQuantityChange(
-                                            item.id,
-                                            item.quantity + 1,
-                                          )
-                                        }
-                                      >
-                                        <Plus className="h-3 w-3" />
-                                      </Button>
-                                    </div>
-                                    <div className="flex space-x-1">
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={handleEditNotes}
-                                        title="Add notes"
-                                      >
-                                        <MessageSquare className="h-4 w-4" />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-gray-400 hover:text-destructive"
-                                        onClick={() =>
-                                          handleRemoveItem(item.id)
-                                        }
-                                        title="Remove"
-                                      >
-                                        <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                    </div>
+                                    >
+                                      Customize
+                                    </Button>
                                   </div>
                                 </div>
+                                <div className="flex flex-col items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() =>
+                                      updateCartItem(item.id, item.quantity + 1)
+                                    }
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                  </Button>
+                                  <span className="text-sm font-medium">
+                                    {item.quantity}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => {
+                                      if (item.quantity > 1) {
+                                        updateCartItem(
+                                          item.id,
+                                          item.quantity - 1,
+                                        );
+                                      } else {
+                                        removeCartItem(item.id);
+                                      }
+                                    }}
+                                  >
+                                    <Minus className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
 
-                                {/* Notes section - shows when editing or when notes exist */}
-                                {(isEditingNotes || item.notes) && (
-                                  <div className="mt-2 border-t pt-2">
-                                    {isEditingNotes ? (
-                                      <div className="flex flex-col space-y-2">
-                                        <Input
-                                          placeholder="Special instructions..."
-                                          value={noteText}
-                                          onChange={(e) =>
-                                            setNoteText(e.target.value)
-                                          }
-                                          className="text-xs"
-                                        />
-                                        <div className="flex justify-end space-x-2">
-                                          <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="text-xs h-7"
-                                            onClick={() => {
-                                              setNoteText(item.notes || "");
-                                              setEditingItemId(null);
-                                            }}
-                                          >
-                                            Cancel
-                                          </Button>
-                                          <Button
-                                            variant="default"
-                                            size="sm"
-                                            className="text-xs h-7"
-                                            onClick={handleSaveNotes}
-                                          >
-                                            Save
-                                          </Button>
-                                        </div>
-                                      </div>
-                                    ) : item.notes ? (
-                                      <div className="flex items-start">
-                                        <MessageSquare className="h-3 w-3 mr-1 mt-0.5 text-muted-foreground" />
-                                        <p className="text-xs text-muted-foreground">
-                                          {item.notes}
-                                        </p>
-                                      </div>
-                                    ) : null}
+                              {/* Special instructions */}
+                              <div className="mt-2">
+                                {isEditingNotes ? (
+                                  <div className="space-y-2">
+                                    <Input
+                                      value={noteText}
+                                      onChange={(e) =>
+                                        setNoteText(e.target.value)
+                                      }
+                                      placeholder="Add special instructions"
+                                      className="h-8 text-xs"
+                                    />
+                                    <div className="flex justify-end gap-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={() => setEditingItemId(null)}
+                                      >
+                                        Cancel
+                                      </Button>
+                                      <Button
+                                        variant="default"
+                                        size="sm"
+                                        className="h-7 text-xs"
+                                        onClick={handleSaveNotes}
+                                      >
+                                        Save
+                                      </Button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div
+                                    className="text-xs text-gray-500 flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                                    onClick={handleEditNotes}
+                                  >
+                                    <MessageSquare className="h-3 w-3" />
+                                    {item.notes ? (
+                                      <span>{item.notes}</span>
+                                    ) : (
+                                      <span>Add special instructions</span>
+                                    )}
                                   </div>
                                 )}
                               </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
 
-              {/* Cart Summary */}
-              <div className="p-4 border-t">
-                <h3 className="font-medium text-lg mb-3">Bill Details</h3>
-
-                <div className="space-y-2 mb-4">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Items Total</span>
-                    <span className="font-semibold">
-                      {formatPrice(subtotal)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Delivery Charge</span>
-                    <span className="font-semibold">
-                      {formatPrice(deliveryFee)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Taxes</span>
-                    <span className="font-semibold">{formatPrice(tax)}</span>
-                  </div>
-                  <div className="border-t pt-2 mt-2"></div>
-                  <div className="flex justify-between font-bold">
-                    <span>Grand Total</span>
-                    <span className="text-primary">{formatPrice(total)}</span>
-                  </div>
-                </div>
-
-                <div className="bg-neutral-light p-3 rounded-lg mb-6">
-                  <h4 className="font-medium text-sm mb-1">
-                    Cancellation Policy
-                  </h4>
-                  <p className="text-xs text-gray-600">
-                    Orders can be cancelled before they are confirmed by the
-                    restaurant. Once confirmed, refunds will be processed as per
-                    our policy.
-                  </p>
-                </div>
-
-                <Button
-                  className="w-full bg-primary hover:bg-primary/90"
-                  onClick={handleProceed}
-                  disabled={cartItems.length === 0}
-                >
-                  {user ? "Proceed" : "Login & Proceed"}
-                </Button>
-              </div>
-            </>
-          )}
-
-          {/* Delivery Information Step */}
-          {currentStep === "delivery" && (
-            <div className="flex-grow overflow-y-auto p-4">
-              <div className="space-y-4">
-                <h3 className="font-medium">Select Delivery Address</h3>
-
-                {/* Saved addresses */}
-                {userAddresses.map((address) => (
-                  <div
-                    key={address.id}
-                    className={`p-4 border rounded-lg cursor-pointer ${
-                      selectedAddress === address.id
-                        ? "border-primary bg-primary/5"
-                        : "hover:border-gray-400"
-                    }`}
-                    onClick={() => {
-                      setSelectedAddress(address.id);
-                      setAddingNewAddress(false);
-                    }}
-                  >
-                    <div className="flex justify-between">
-                      <div className="flex items-center gap-2">
-                        {address.name === "Home" ? (
-                          <Home className="h-4 w-4 text-gray-500" />
-                        ) : (
-                          <Building className="h-4 w-4 text-gray-500" />
-                        )}
-                        <span className="font-medium">{address.name}</span>
-                      </div>
-                      {selectedAddress === address.id && (
-                        <Check className="h-5 w-5 text-primary" />
-                      )}
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {address.address}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      {address.city}, {address.state} - {address.pincode}
-                    </p>
-                    <p className="text-sm text-gray-600 mt-1">
-                      {address.phone}
-                    </p>
-                  </div>
-                ))}
-
-                {/* Add new address option */}
-                {!addingNewAddress ? (
-                  <Button
-                    variant="outline"
-                    className="w-full flex items-center justify-center gap-2"
-                    onClick={() => {
-                      setAddingNewAddress(true);
-                      setSelectedAddress(null);
-                    }}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add New Address
-                  </Button>
-                ) : (
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">Add New Address</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Form {...addressForm}>
-                        <form className="space-y-4">
-                          <FormField
-                            control={addressForm.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Full Name</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Full Name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={addressForm.control}
-                            name="phone"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Phone Number</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="10-digit phone number"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={addressForm.control}
-                            name="address"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Address</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="House/Flat No., Street, Landmark"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <div className="grid grid-cols-2 gap-4">
-                            <FormField
-                              control={addressForm.control}
-                              name="city"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>City</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="City" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={addressForm.control}
-                              name="state"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>State</FormLabel>
-                                  <FormControl>
-                                    <Input placeholder="State" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
-
-                          <FormField
-                            control={addressForm.control}
-                            name="pincode"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Pincode</FormLabel>
-                                <FormControl>
-                                  <Input
-                                    placeholder="6-digit pincode"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </form>
-                      </Form>
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          setAddingNewAddress(false);
-                          addressForm.reset();
-                        }}
-                      >
-                        Cancel
-                      </Button>
-                      <Button onClick={() => addressForm.trigger()}>
-                        Save Address
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                )}
-              </div>
-
-              <div className="pt-4 mt-6 border-t">
-                <Button
-                  className="w-full bg-primary hover:bg-primary/90"
-                  onClick={handleProceedToPayment}
-                >
-                  Proceed
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Payment Information Step */}
-          {currentStep === "payment" && (
-            <div className="flex-grow overflow-y-auto p-4">
-              <Form {...paymentForm}>
-                <form className="space-y-6">
-                  <FormField
-                    control={paymentForm.control}
-                    name="method"
-                    render={({ field }) => (
-                      <FormItem className="space-y-3">
-                        <FormLabel>Payment Method</FormLabel>
-                        <FormControl>
-                          <RadioGroup
-                            onValueChange={field.onChange}
-                            defaultValue={field.value}
-                            className="flex flex-col space-y-1"
-                          >
-                            <div className="flex items-center space-x-2 rounded-lg border p-3">
-                              <RadioGroupItem value="card" id="card" />
-                              <Label
-                                htmlFor="card"
-                                className="flex items-center"
-                              >
-                                <CreditCard className="h-4 w-4 mr-2" />
-                                Credit/Debit Card
-                              </Label>
+                              {/* Remove item button */}
+                              <div className="flex justify-end mt-1">
+                                <Button
+                                  variant="link"
+                                  size="sm"
+                                  className="h-6 text-xs text-destructive p-0"
+                                  onClick={() => removeCartItem(item.id)}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-1" />
+                                  Remove
+                                </Button>
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-2 rounded-lg border p-3">
-                              <RadioGroupItem value="upi" id="upi" />
-                              <Label htmlFor="upi">UPI Payment</Label>
-                            </div>
-                            <div className="flex items-center space-x-2 rounded-lg border p-3">
-                              <RadioGroupItem value="cod" id="cod" />
-                              <Label htmlFor="cod">Cash on Delivery</Label>
-                            </div>
-                          </RadioGroup>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Card payment details */}
-                  {paymentMethod === "card" && (
-                    <div className="space-y-4">
-                      <FormField
-                        control={paymentForm.control}
-                        name="cardNumber"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Card Number</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="1234 5678 9012 3456"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={paymentForm.control}
-                          name="cardExpiry"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Expiry (MM/YY)</FormLabel>
-                              <FormControl>
-                                <Input placeholder="MM/YY" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={paymentForm.control}
-                          name="cardCvv"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>CVV</FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="123"
-                                  type="password"
-                                  maxLength={3}
-                                  {...field}
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+                          );
+                        })}
                       </div>
                     </div>
                   )}
+                </div>
+              </>
+            )}
 
-                  {/* UPI Payment details */}
-                  {paymentMethod === "upi" && (
+            {currentStep === "delivery" && (
+              <div className="p-4">
+                <Form {...form}>
+                  <form className="space-y-4">
                     <FormField
-                      control={paymentForm.control}
-                      name="upiId"
+                      control={form.control}
+                      name="name"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>UPI ID</FormLabel>
+                          <FormLabel>Full Name</FormLabel>
                           <FormControl>
-                            <Input placeholder="username@upi" {...field} />
+                            <Input placeholder="Your full name" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                  )}
 
-                  {/* Order summary */}
-                  <div className="bg-neutral-light rounded-lg p-4">
-                    <h3 className="font-medium mb-2">Order Summary</h3>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">
-                          Items ({cartItems.length})
-                        </span>
-                        <span>{formatPrice(subtotal)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Delivery Charge</span>
-                        <span>{formatPrice(deliveryFee)}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Taxes</span>
-                        <span>{formatPrice(tax)}</span>
-                      </div>
-                      <div className="border-t mt-2 pt-2"></div>
-                      <div className="flex justify-between font-semibold">
-                        <span>Total Amount</span>
-                        <span>{formatPrice(total)}</span>
+                    <FormField
+                      control={form.control}
+                      name="phoneNumber"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone Number</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Your phone number"
+                              type="tel"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="addressType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Address Type</FormLabel>
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              variant={
+                                field.value === "home" ? "default" : "outline"
+                              }
+                              className="flex items-center gap-1 flex-1"
+                              onClick={() => field.onChange("home")}
+                            >
+                              <Home className="h-4 w-4" />
+                              Home
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={
+                                field.value === "work" ? "default" : "outline"
+                              }
+                              className="flex items-center gap-1 flex-1"
+                              onClick={() => field.onChange("work")}
+                            >
+                              <Building className="h-4 w-4" />
+                              Work
+                            </Button>
+                            <Button
+                              type="button"
+                              variant={
+                                field.value === "other" ? "default" : "outline"
+                              }
+                              className="flex items-center gap-1 flex-1"
+                              onClick={() => field.onChange("other")}
+                            >
+                              <MapPin className="h-4 w-4" />
+                              Other
+                            </Button>
+                          </div>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="completeAddress"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Complete Address</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="House/Flat No., Street, Locality"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="nearbyLandmark"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nearby Landmark (Optional)</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Any nearby landmark"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="zipCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Zip Code</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Zip Code" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div>
+                      <h3 className="font-medium text-sm mb-2">
+                        Delivery Type
+                      </h3>
+                      <div className="flex gap-2">
+                        <Button
+                          type="button"
+                          variant={
+                            deliveryType === "default" ? "default" : "outline"
+                          }
+                          className="flex-1"
+                          onClick={() => setDeliveryType("default")}
+                        >
+                          Standard
+                        </Button>
+                        <Button
+                          type="button"
+                          variant={
+                            deliveryType === "express" ? "default" : "outline"
+                          }
+                          className="flex-1"
+                          onClick={() => setDeliveryType("express")}
+                        >
+                          Express (+₹50)
+                        </Button>
                       </div>
                     </div>
-                  </div>
-                </form>
-              </Form>
+                  </form>
+                </Form>
+              </div>
+            )}
 
-              <div className="pt-4 mt-6">
-                <Button
-                  className="w-full bg-primary hover:bg-primary/90"
-                  onClick={handleCheckout}
-                  disabled={loading}
+            {currentStep === "payment" && (
+              <div className="p-4">
+                <h3 className="font-medium mb-4">Choose Payment Method</h3>
+                <RadioGroup
+                  defaultValue={selectedPaymentMethod}
+                  onValueChange={setSelectedPaymentMethod}
                 >
-                  {loading ? "Processing..." : "Proceed to Checkout"}
-                </Button>
-              </div>
-            </div>
-          )}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2 border p-3 rounded-md">
+                      <RadioGroupItem
+                        value="razorpay"
+                        id="razorpay"
+                        checked={selectedPaymentMethod === "razorpay"}
+                      />
+                      <Label htmlFor="razorpay" className="flex-grow">
+                        Razorpay (Credit/Debit Card, UPI, etc.)
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2 border p-3 rounded-md">
+                      <RadioGroupItem
+                        value="cod"
+                        id="cod"
+                        checked={selectedPaymentMethod === "cod"}
+                      />
+                      <Label htmlFor="cod" className="flex-grow">
+                        Cash on Delivery
+                      </Label>
+                    </div>
+                  </div>
+                </RadioGroup>
 
-          {/* Success Step */}
-          {currentStep === "success" && (
-            <div className="flex-grow flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                <Check className="h-8 w-8 text-green-600" />
+                <div className="mt-6">
+                  <h3 className="font-medium mb-2">Order Summary</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Item Total</span>
+                      <span>{formatPrice(calculateCartTotal())}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Delivery Fee</span>
+                      <span>{formatPrice(deliveryType === "express" ? 5000 : 0)}</span>
+                    </div>
+                    <div className="flex justify-between pt-2 border-t font-medium">
+                      <span>Total</span>
+                      <span>
+                        {formatPrice(
+                          calculateCartTotal() +
+                            (deliveryType === "express" ? 5000 : 0),
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h3 className="text-xl font-bold mb-2">
-                Order Placed Successfully!
-              </h3>
-              <p className="text-gray-600 mb-6">
-                Your millet meals will be delivered according to the schedule.
-                Thank you for choosing Aayuv!
-              </p>
-              <div className="space-y-3 w-full">
+            )}
+
+            {currentStep === "success" && (
+              <div className="p-4 text-center">
+                <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="h-10 w-10 text-primary" />
+                </div>
+                <h2 className="text-2xl font-semibold mb-2">
+                  Order Placed Successfully!
+                </h2>
+                <p className="text-muted-foreground mb-6">
+                  Your order #{orderId} has been placed successfully.
+                </p>
+                <div className="border p-4 rounded-md mb-6">
+                  <h3 className="font-medium text-left mb-2">Order Details</h3>
+                  <div className="text-sm text-left space-y-2">
+                    <div className="flex justify-between">
+                      <span>Order Number</span>
+                      <span>#{orderId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Payment Method</span>
+                      <span>
+                        {selectedPaymentMethod === "razorpay"
+                          ? "Online Payment"
+                          : "Cash on Delivery"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Amount</span>
+                      <span>
+                        {formatPrice(
+                          calculateCartTotal() +
+                            (deliveryType === "express" ? 5000 : 0),
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Button className="w-full mb-2" onClick={() => {
+                  onClose();
+                  setCurrentStep("cart");
+                  navigate("/menu");
+                }}>
+                  Continue Shopping
+                </Button>
                 <Button
                   variant="outline"
                   className="w-full"
                   onClick={() => {
-                    navigate("/");
-                    handleClose();
+                    onClose();
+                    setCurrentStep("cart");
+                    navigate("/profile?tab=orders");
                   }}
                 >
-                  Back to Home
+                  View Orders
                 </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Footer with total and checkout button */}
+          {currentStep !== "success" && cartItems.length > 0 && (
+            <div className="border-t p-4">
+              <div className="flex justify-between mb-2">
+                <span className="font-medium">Total</span>
+                <span className="font-semibold text-primary">
+                  {formatPrice(calculateCartTotal())}
+                </span>
+              </div>
+              <div className="flex gap-2">
+                {currentStep !== "cart" && (
+                  <Button
+                    variant="outline"
+                    onClick={handlePreviousStep}
+                    className="flex-1"
+                  >
+                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    Back
+                  </Button>
+                )}
                 <Button
-                  className="w-full"
-                  onClick={() => {
-                    navigate("/menu");
-                    handleClose();
-                  }}
+                  onClick={handleNextStep}
+                  className="flex-1"
+                  disabled={
+                    loading ||
+                    isCreatingOrder ||
+                    (currentStep === "cart" && cartItems.length === 0)
+                  }
                 >
-                  Continue Shopping
+                  {currentStep === "cart" && "Checkout"}
+                  {currentStep === "delivery" && "Continue to Payment"}
+                  {currentStep === "payment" && (
+                    <>
+                      {isCreatingOrder ? (
+                        <>Processing...</>
+                      ) : (
+                        <>
+                          <CreditCard className="mr-1 h-4 w-4" />
+                          Pay{" "}
+                          {formatPrice(
+                            calculateCartTotal() +
+                              (deliveryType === "express" ? 5000 : 0),
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+                  {currentStep !== "payment" && (
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </div>
           )}
-        </div>
-      </div>
+        </SheetContent>
+      </Sheet>
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
     </>
   );
