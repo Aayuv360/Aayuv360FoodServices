@@ -353,6 +353,110 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Address management routes
+  app.get("/api/addresses", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const addresses = await storage.getAddresses(userId);
+      res.json(addresses);
+    } catch (err) {
+      console.error("Error fetching addresses:", err);
+      res.status(500).json({ message: "Error fetching addresses" });
+    }
+  });
+  
+  app.get("/api/addresses/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const addressId = parseInt(req.params.id);
+      
+      const address = await storage.getAddressById(addressId);
+      
+      if (!address) {
+        return res.status(404).json({ message: "Address not found" });
+      }
+      
+      // Ensure the user can only access their own addresses
+      if (address.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      res.json(address);
+    } catch (err) {
+      console.error("Error fetching address:", err);
+      res.status(500).json({ message: "Error fetching address" });
+    }
+  });
+  
+  app.post("/api/addresses", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      
+      const addressData = insertAddressSchema.parse({
+        ...req.body,
+        userId
+      });
+      
+      const address = await storage.createAddress(addressData);
+      res.status(201).json(address);
+    } catch (err) {
+      if (err instanceof z.ZodError) {
+        res.status(400).json({ message: "Validation error", errors: err.errors });
+      } else {
+        console.error("Error creating address:", err);
+        res.status(500).json({ message: "Error creating address" });
+      }
+    }
+  });
+  
+  app.patch("/api/addresses/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const addressId = parseInt(req.params.id);
+      
+      const address = await storage.getAddressById(addressId);
+      
+      if (!address) {
+        return res.status(404).json({ message: "Address not found" });
+      }
+      
+      // Ensure the user can only update their own addresses
+      if (address.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      const updatedAddress = await storage.updateAddress(addressId, req.body);
+      res.json(updatedAddress);
+    } catch (err) {
+      console.error("Error updating address:", err);
+      res.status(500).json({ message: "Error updating address" });
+    }
+  });
+  
+  app.delete("/api/addresses/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const addressId = parseInt(req.params.id);
+      
+      const address = await storage.getAddressById(addressId);
+      
+      if (!address) {
+        return res.status(404).json({ message: "Address not found" });
+      }
+      
+      // Ensure the user can only delete their own addresses
+      if (address.userId !== userId) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+      
+      await storage.deleteAddress(addressId);
+      res.status(204).send();
+    } catch (err) {
+      console.error("Error deleting address:", err);
+      res.status(500).json({ message: "Error deleting address" });
+    }
+  });
+  
   // User preferences routes
   app.get("/api/preferences", isAuthenticated, async (req, res) => {
     try {

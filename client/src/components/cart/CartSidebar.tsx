@@ -138,52 +138,29 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   // Fetch addresses for the logged-in user
   useEffect(() => {
     if (user && open) {
-      // For demo purposes, we're simulating fetching addresses
-      // In a real app, you would make an API request like:
-      // apiRequest("GET", "/api/addresses")
-      //   .then((res) => res.json())
-      //   .then((data) => {
-      //     setAddresses(data);
-      //     // Set default address if available
-      //     const defaultAddress = data.find((addr: Address) => addr.isDefault);
-      //     if (defaultAddress) {
-      //       setSelectedAddressId(defaultAddress.id);
-      //     }
-      //   })
-      //   .catch((error) => {
-      //     console.error("Error fetching addresses:", error);
-      //   });
-      
-      // Using sample data for demonstration
-      setAddresses([
-        {
-          id: 1,
-          name: "Home",
-          phone: "9876543210",
-          addressLine1: "123 Main Street, Apartment 4B",
-          addressLine2: "Near City Park",
-          city: "Hyderabad",
-          state: "Telangana",
-          pincode: "500081",
-          isDefault: true
-        },
-        {
-          id: 2,
-          name: "Office",
-          phone: "9876543210",
-          addressLine1: "456 Work Avenue, Building C",
-          addressLine2: "Floor 3",
-          city: "Hyderabad",
-          state: "Telangana",
-          pincode: "500082",
-          isDefault: false
-        }
-      ]);
-      
-      // Set default address
-      setSelectedAddressId(1);
+      apiRequest("GET", "/api/addresses")
+        .then((res) => res.json())
+        .then((data) => {
+          setAddresses(data);
+          // Set default address if available
+          const defaultAddress = data.find((addr: Address) => addr.isDefault);
+          if (defaultAddress) {
+            setSelectedAddressId(defaultAddress.id);
+          } else if (data.length > 0) {
+            // If no default address, use the first one
+            setSelectedAddressId(data[0].id);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching addresses:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load addresses",
+            variant: "destructive",
+          });
+        });
     }
-  }, [user, open]);
+  }, [user, open, toast]);
   
   // Fetch delivery locations
   useEffect(() => {
@@ -228,33 +205,27 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       isDefault: Boolean(formData.get("isDefault"))
     };
     
-    // In a real app, you would make an API request here:
-    // apiRequest("POST", "/api/addresses", addressData)
-    //   .then((res) => res.json())
-    //   .then((data) => {
-    //     // Add the new address to the list
-    //     setAddresses((prev) => [...prev, data]);
-    //     setSelectedAddressId(data.id);
-    //     setAddressModalOpen(false);
-    //   })
-    //   .catch((error) => {
-    //     console.error("Error creating address:", error);
-    //   });
-    
-    // For demo purposes, we're simulating the response
-    const newAddress = {
-      ...addressData,
-      id: addresses.length + 1,
-    };
-    
-    setAddresses((prev) => [...prev, newAddress]);
-    setSelectedAddressId(newAddress.id);
-    setAddressModalOpen(false);
-    
-    toast({
-      title: "Address added",
-      description: "Your new delivery address has been added successfully.",
-    });
+    apiRequest("POST", "/api/addresses", addressData)
+      .then((res) => res.json())
+      .then((data) => {
+        // Add the new address to the list
+        setAddresses((prev) => [...prev, data]);
+        setSelectedAddressId(data.id);
+        setAddressModalOpen(false);
+        
+        toast({
+          title: "Address added",
+          description: "Your new delivery address has been added successfully.",
+        });
+      })
+      .catch((error) => {
+        console.error("Error creating address:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add address. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
   
   // Handle selecting a location
