@@ -133,30 +133,34 @@ const Subscription = () => {
   const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      name: "Home",
-      addressLine1: "123 Millet Street",
-      addressLine2: "Apt 456",
-      city: "Hyderabad",
-      state: "Telangana",
-      pincode: "500032",
-      phone: "9876543210",
-      isDefault: true,
-    },
-    {
-      id: 2,
-      name: "Office",
-      addressLine1: "789 Work Avenue",
-      addressLine2: "Floor 3",
-      city: "Hyderabad",
-      state: "Telangana",
-      pincode: "500081",
-      phone: "9876543210",
-      isDefault: false,
-    },
-  ]);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  
+  // Fetch user's addresses
+  useEffect(() => {
+    if (user) {
+      apiRequest("GET", "/api/addresses")
+        .then((res) => res.json())
+        .then((data) => {
+          setAddresses(data);
+          
+          // Set default address in form if available
+          const defaultAddress = data.find((addr: Address) => addr.isDefault);
+          if (defaultAddress) {
+            form.setValue('selectedAddressId', defaultAddress.id);
+          } else if (data.length > 0) {
+            form.setValue('selectedAddressId', data[0].id);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching addresses:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load addresses",
+            variant: "destructive",
+          });
+        });
+    }
+  }, [user, toast, form]);
 
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
@@ -391,26 +395,39 @@ const Subscription = () => {
   const handleAddressFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
-    const newAddress = {
-      id: addresses.length + 1,
+    const addressData = {
       name: formData.get("addressName") as string,
       phone: formData.get("phone") as string,
       addressLine1: formData.get("addressLine1") as string,
-      addressLine2: (formData.get("addressLine2") as string) || "",
+      addressLine2: (formData.get("addressLine2") as string) || undefined,
       city: formData.get("city") as string,
       state: formData.get("state") as string,
       pincode: formData.get("pincode") as string,
-      isDefault: Boolean(formData.get("isDefault")),
+      isDefault: Boolean(formData.get("isDefault"))
     };
-
-    setAddresses([...addresses, newAddress]);
-    selectAddress(newAddress.id);
-    setAddressModalOpen(false);
-    toast({
-      title: "Address added",
-      description: "Your new delivery address has been added successfully.",
-      variant: "default",
-    });
+    
+    apiRequest("POST", "/api/addresses", addressData)
+      .then((res) => res.json())
+      .then((data) => {
+        // Add the new address to the list
+        setAddresses((prev) => [...prev, data]);
+        selectAddress(data.id);
+        setAddressModalOpen(false);
+        
+        toast({
+          title: "Address added",
+          description: "Your new delivery address has been added successfully.",
+          variant: "default",
+        });
+      })
+      .catch((error) => {
+        console.error("Error creating address:", error);
+        toast({
+          title: "Error",
+          description: "Failed to add address. Please try again.",
+          variant: "destructive",
+        });
+      });
   };
 
   const onSubmit = (values: SubscriptionFormValues) => {
