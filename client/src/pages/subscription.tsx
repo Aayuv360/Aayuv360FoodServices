@@ -283,9 +283,18 @@ const Subscription = () => {
 
       return subscription;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      
+      // Save the subscription ID for the success screen
+      localStorage.setItem('lastSubscriptionId', data.id.toString());
+      
+      // Update UI to show success state
       setIsSuccess(true);
+      
+      // Navigate to success page
+      navigate('/payment-success?type=subscription');
     },
     onError: (error: any) => {
       toast({

@@ -13,9 +13,11 @@ const PaymentSuccess = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   
-  // Parse the orderId from the URL query
+  // Parse query parameters
   const params = new URLSearchParams(location.split('?')[1]);
   const orderId = params.get('orderId');
+  const type = params.get('type') || 'order';
+  const subscriptionId = params.get('subscriptionId') || localStorage.getItem('lastSubscriptionId');
   
   // Fetch order details if we have an orderId
   const { data: order, isLoading: orderLoading } = useQuery({
@@ -25,7 +27,18 @@ const PaymentSuccess = () => {
       const res = await apiRequest('GET', `/api/orders/${orderId}`);
       return await res.json();
     },
-    enabled: !!orderId && !!user,
+    enabled: !!orderId && !!user && type === 'order',
+  });
+  
+  // Fetch subscription details if this is a subscription success
+  const { data: subscription, isLoading: subscriptionLoading } = useQuery({
+    queryKey: ['/api/subscriptions', subscriptionId],
+    queryFn: async () => {
+      if (!subscriptionId) return null;
+      const res = await apiRequest('GET', `/api/subscriptions/${subscriptionId}`);
+      return await res.json();
+    },
+    enabled: !!subscriptionId && !!user && type === 'subscription',
   });
 
   // If not authenticated, redirect to login
@@ -35,7 +48,11 @@ const PaymentSuccess = () => {
     }
   }, [authLoading, user, setLocation]);
 
-  if (authLoading || orderLoading) {
+  const isLoading = authLoading || 
+    (type === 'order' && orderLoading) || 
+    (type === 'subscription' && subscriptionLoading);
+  
+  if (isLoading) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -57,10 +74,12 @@ const PaymentSuccess = () => {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-green-600 dark:text-green-400 mb-6">
-              Your payment has been processed successfully. Thank you for your order!
+              {type === 'subscription' 
+                ? 'Your subscription has been activated successfully! Your millet meals will be delivered according to your schedule.'
+                : 'Your payment has been processed successfully. Thank you for your order!'}
             </p>
             
-            {order && (
+            {order && type === 'order' && (
               <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4 text-left">
                 <h3 className="font-medium mb-2">Order Details</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -75,16 +94,49 @@ const PaymentSuccess = () => {
                 </div>
               </div>
             )}
+            
+            {subscription && type === 'subscription' && (
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-4 mb-4 text-left">
+                <h3 className="font-medium mb-2">Subscription Details</h3>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>Plan:</div>
+                  <div className="font-semibold capitalize">{subscription.plan}</div>
+                  
+                  <div>Type:</div>
+                  <div className="font-semibold capitalize">{subscription.subscriptionType}</div>
+                  
+                  <div>Start Date:</div>
+                  <div className="font-semibold">{new Date(subscription.startDate).toLocaleDateString()}</div>
+                  
+                  <div>Status:</div>
+                  <div className="font-semibold capitalize">{subscription.status}</div>
+                  
+                  <div>Monthly Price:</div>
+                  <div className="font-semibold">₹{subscription.price / 100}</div>
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-2">
-            <Button
-              className="w-full"
-              onClick={() => setLocation('/profile')}
-              variant="outline"
-            >
-              <ShoppingBag className="mr-2 h-4 w-4" />
-              View My Orders
-            </Button>
+            {type === 'subscription' ? (
+              <Button
+                className="w-full"
+                onClick={() => setLocation('/profile?tab=subscriptions')}
+                variant="outline"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                View My Subscriptions
+              </Button>
+            ) : (
+              <Button
+                className="w-full"
+                onClick={() => setLocation('/profile?tab=orders')}
+                variant="outline"
+              >
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                View My Orders
+              </Button>
+            )}
             
             <Button 
               className="w-full" 
@@ -96,11 +148,11 @@ const PaymentSuccess = () => {
 
             <Button
               className="w-full"
-              onClick={() => setLocation('/menu')}
+              onClick={() => setLocation(type === 'subscription' ? '/meal-planner' : '/menu')}
               variant="secondary"
             >
               <Calendar className="mr-2 h-4 w-4" />
-              Explore Menu
+              {type === 'subscription' ? 'View Meal Plan' : 'Explore Menu'}
             </Button>
           </CardFooter>
         </Card>
