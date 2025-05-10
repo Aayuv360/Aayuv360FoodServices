@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import NutritionModal from "./NutritionModal";
 import { MealCardActions } from "./MealCardActions";
 import { Meal } from "@shared/schema";
+import { formatPrice } from "@/lib/utils";
 
 interface MenuCardProps {
   meal: Meal & {
@@ -14,11 +15,6 @@ interface MenuCardProps {
 
 const MenuCard = ({ meal }: MenuCardProps) => {
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
-
-  // Format price in Indian Rupees
-  const formatPrice = (price: number) => {
-    return `₹${(price / 100).toFixed(2)}`;
-  };
 
   // Map dietary preferences to color schemes
   const dietaryBadgeColor = (preference: string) => {
