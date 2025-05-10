@@ -17,12 +17,12 @@ type AuthContextType = {
   registerMutation: UseMutationResult<User, Error, RegisterData>;
 };
 
-type LoginData = {
+export type LoginData = {
   username: string;
   password: string;
 };
 
-type RegisterData = {
+export type RegisterData = {
   username: string;
   password: string;
   email: string;
@@ -149,13 +149,23 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   
-  // Add a simple logout function to make it easier to use in components
+  // Add helper functions to make it easier to use in components
   const logout = () => {
     context.logoutMutation.mutate();
+  };
+  
+  const login = async (username: string, password: string) => {
+    return context.loginMutation.mutateAsync({ username, password });
+  };
+  
+  const register = async (userData: RegisterData) => {
+    return context.registerMutation.mutateAsync(userData);
   };
   
   return {
     ...context,
     logout,
+    login,
+    register,
   };
 }
