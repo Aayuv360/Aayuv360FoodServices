@@ -11,6 +11,7 @@ import {
   handlePaymentSuccess,
   handlePaymentFailure,
   handleWebhookEvent,
+  verifyPaymentSignature,
   orderPaymentMap,
   subscriptionPaymentMap,
   razorpay
@@ -831,6 +832,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (err) {
       console.error("Error fetching order:", err);
       res.status(500).json({ message: "Error fetching order" });
+    }
+  });
+  
+  // Update an order (for payment status updates)
+  app.patch("/api/orders/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const orderId = parseInt(req.params.id);
+      const { status, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
+      
+      // Get the order
+      const order = await storage.getOrder(orderId);
+      
+      if (!order) {
+        return res.status(404).json({ message: "Order not found" });
+      }
+      
+      // Only the order owner can update their own order
+      if (order.userId !== userId && (req.user as any).role !== 'admin') {
+        return res.status(403).json({ message: "You do not have permission to update this order" });
+      }
+      
+      // Define allowed status transitions
+      const allowedTransitions: Record<string, string[]> = {
+        'pending': ['confirmed', 'cancelled'],
+        'confirmed': ['delivered', 'cancelled'],
+        'delivered': [],
+        'cancelled': []
+      };
+      
+      // Check if the status transition is allowed
+      if (status && order.status !== status) {
+        if (!allowedTransitions[order.status].includes(status)) {
+          return res.status(400).json({ 
+            message: `Cannot transition order from ${order.status} to ${status}` 
+          });
+        }
+      }
+      
+      // Update order with payment details if provided
+      if (status === 'confirmed' && razorpayPaymentId && razorpayOrderId && razorpaySignature) {
+        // Verify the payment signature
+        const isValid = verifyPaymentSignature(razorpayOrderId, razorpayPaymentId, razorpaySignature);
+        
+        if (!isValid) {
+          return res.status(400).json({ message: "Invalid payment signature" });
+        }
+        
+        // Store the payment details in our in-memory map
+        orderPaymentMap.set(orderId, {
+          razorpayOrderId,
+          razorpayPaymentId,
+          status: 'paid'
+        });
+      }
+      
+      // Update the order status
+      await storage.updateOrderStatus(orderId, status);
+      
+      // Get the updated order
+      const updatedOrder = await storage.getOrder(orderId);
+      
+      res.json(updatedOrder);
+    } catch (err) {
+      console.error("Error updating order:", err);
+      res.status(500).json({ message: "Error updating order" });
     }
   });
   
