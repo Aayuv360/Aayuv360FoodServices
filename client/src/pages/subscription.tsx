@@ -288,6 +288,9 @@ const Subscription = () => {
             description: error.message || "Failed to process your payment. Please try again.",
             variant: "destructive",
           });
+          
+          // Stay on the current page - don't navigate anywhere on failure
+          // User can retry the payment or change options
         }
       });
 

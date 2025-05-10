@@ -358,6 +358,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 description: error.message || "Failed to process your payment. Please try again.",
                 variant: "destructive",
               });
+              
+              // Stay on the cart page when payment fails or is cancelled
+              // This allows the user to retry or change payment options
             }
           });
         } else {

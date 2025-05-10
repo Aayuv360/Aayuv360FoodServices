@@ -192,6 +192,8 @@ export const useRazorpay = () => {
                 variant: 'destructive',
               });
               
+              // Call onFailure to ensure we stay on the same page if verification fails
+              // This prevents navigation to success page even if payment was made but verification failed
               if (options.onFailure) {
                 options.onFailure(error);
               }
@@ -216,6 +218,8 @@ export const useRazorpay = () => {
                 description: 'You cancelled the payment process',
               });
               
+              // Call the onFailure callback to ensure we stay on the same page
+              // This ensures we don't navigate to success page when user cancels
               if (options.onFailure) {
                 options.onFailure({ message: 'Payment cancelled by user' });
               }
