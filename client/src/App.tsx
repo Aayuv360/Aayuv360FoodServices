@@ -39,6 +39,7 @@ function Router() {
           
           {/* Protected routes */}
           <ProtectedRoute path="/profile" component={Profile} />
+          <ProtectedRoute path="/subscription" component={Subscription} />
           <ProtectedRoute path="/subscription/:subscriptionId" component={Subscription} />
           <ProtectedRoute path="/checkout/:orderId" component={Checkout} />
           <ProtectedRoute path="/payment-success" component={PaymentSuccess} />

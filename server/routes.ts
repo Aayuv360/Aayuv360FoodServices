@@ -186,6 +186,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+
+  // PUT endpoint for updating cart item quantity
+  app.put("/api/cart/:id", isAuthenticated, async (req, res) => {
+    try {
+      const itemId = parseInt(req.params.id);
+      const userId = (req.user as any).id;
+      const { quantity } = req.body;
+      
+      // Verify item belongs to user
+      const existingItem = await storage.getCartItems(userId)
+        .then(items => items.find(item => item.id === itemId));
+      
+      if (!existingItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+      
+      // Update item quantity
+      const updatedItem = await storage.updateCartItemQuantity(itemId, quantity);
+      const meal = await storage.getMeal(updatedItem!.mealId);
+      
+      res.json({ ...updatedItem, meal });
+    } catch (err) {
+      console.error("Error updating cart item quantity:", err);
+      res.status(500).json({ message: "Error updating cart item quantity" });
+    }
+  });
   
   app.patch("/api/cart/:id", isAuthenticated, async (req, res) => {
     try {
