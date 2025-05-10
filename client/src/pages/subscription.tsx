@@ -271,7 +271,11 @@ const Subscription = () => {
             variant: "default",
           });
           
-          setIsSuccess(true);
+          // Store the subscription ID in local storage for retrieval on success page
+          localStorage.setItem('lastSubscriptionId', subscription.id.toString());
+          
+          // Redirect to payment success page
+          setLocation(`/payment-success?subscriptionId=${subscription.id}&type=subscription`);
         },
         onFailure: (error: Error) => {
           toast({
