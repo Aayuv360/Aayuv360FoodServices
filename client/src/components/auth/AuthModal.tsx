@@ -18,6 +18,7 @@ interface AuthModalProps {
   defaultTab?: "login" | "register";
   redirectUrl?: string;
   mode?: "normal" | "subscribe"; // normal or subscribe mode
+  onSuccess?: () => void; // Custom callback for successful authentication
 }
 
 export function AuthModal({
@@ -26,11 +27,20 @@ export function AuthModal({
   defaultTab = "login",
   redirectUrl,
   mode = "normal",
+  onSuccess: customOnSuccess,
 }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
 
   const onSuccess = () => {
     onOpenChange(false);
+    
+    // If there's a custom success callback, call it
+    if (customOnSuccess) {
+      customOnSuccess();
+      return;
+    }
+    
+    // Otherwise, handle redirects
     if (redirectUrl) {
       window.location.href = redirectUrl;
     }
