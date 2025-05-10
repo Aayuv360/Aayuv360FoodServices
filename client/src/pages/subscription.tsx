@@ -103,15 +103,23 @@ type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 
 type FormStep = "plan" | "address" | "payment";
 
+interface RazorpayPaymentData {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
 const Subscription = () => {
   const [location, navigate] = useLocation();
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
   const selectedPlanFromParams = searchParams.get("plan");
   const { toast } = useToast();
   const { user } = useAuth();
+  const { initiatePayment } = useRazorpay();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [selectedMealsByDay, setSelectedMealsByDay] = useState<{
     [key: number]: number;
   }>({});
@@ -247,7 +255,7 @@ const Subscription = () => {
         description: `${plan.name} Millet Meal Subscription`,
         name: 'Aayuv Millet Foods',
         theme: { color: '#9E6D38' },
-        onSuccess: async (paymentData) => {
+        onSuccess: async (paymentData: RazorpayPaymentData) => {
           // Update subscription status to active after successful payment
           await apiRequest('PATCH', `/api/subscriptions/${subscription.id}`, {
             status: 'active',
@@ -264,7 +272,7 @@ const Subscription = () => {
           
           setIsSuccess(true);
         },
-        onFailure: (error) => {
+        onFailure: (error: Error) => {
           toast({
             title: "Payment Failed",
             description: error.message || "Failed to process your payment. Please try again.",
