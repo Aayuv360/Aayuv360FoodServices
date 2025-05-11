@@ -94,6 +94,7 @@ interface Location {
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
+  // Always start with cart step when component is opened
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("razorpay");
@@ -140,6 +141,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       zipCode: "",
     },
   });
+  
+  // Reset to cart view whenever the sidebar is opened
+  useEffect(() => {
+    if (open) {
+      setCurrentStep("cart");
+    }
+  }, [open]);
   
   // Fetch addresses for the logged-in user
   useEffect(() => {
