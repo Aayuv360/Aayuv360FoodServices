@@ -1,8 +1,8 @@
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
 /**
@@ -11,14 +11,14 @@ export function cn(...inputs: ClassValue[]) {
  * @param currency Currency code (default: INR)
  * @returns Formatted price string
  */
-export function formatPrice(price: number | undefined, currency: string = 'INR'): string {
+export function formatPrice(price: number | undefined, currency: string = "INR"): string {
   if (price === undefined) return '₹0';
   
-  // Convert paise to rupees by dividing by 100
+  // Our database stores prices like 16000 for ₹160, so we need to divide by 100
   const priceInRupees = price / 100;
   
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
     currency,
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
