@@ -739,8 +739,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       });
       
-      // Create the order
-      const order = await storage.createOrder(orderData);
+      // Create the order with default status
+      const orderWithStatus = {
+        ...orderData,
+        status: "pending" // Adding required status field
+      };
+      const order = await storage.createOrder(orderWithStatus);
       
       // Create order items from cart if provided
       if (req.body.fromCart) {
