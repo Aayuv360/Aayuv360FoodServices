@@ -4,13 +4,17 @@
  * This script uses tsx to run the TypeScript migration file
  */
 
-const { spawn } = require('child_process');
-const path = require('path');
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 console.log('Starting PostgreSQL to MongoDB data migration...');
 
 // Run the migration script using tsx
-const migrationScript = path.join(__dirname, 'server', 'migrate-pg-to-mongo.ts');
+const migrationScript = join(__dirname, 'server', 'migrate-pg-to-mongo.ts');
 const child = spawn('npx', ['tsx', migrationScript], {
   stdio: 'inherit',
   shell: true

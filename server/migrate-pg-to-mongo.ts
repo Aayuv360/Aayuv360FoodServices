@@ -19,8 +19,8 @@
 import { pool } from './db'; // PostgreSQL connection
 import { connectToMongoDB } from './mongodb'; // MongoDB connection
 import { 
-  User, Meal, CartItem, Order, OrderItem, Subscription, 
-  CustomMealPlan, UserPreferences, Review, Address, Location, Counter
+  User, Meal, CartItem, Order, Subscription, 
+  Review, Address, Location, Counter, getNextSequence
 } from '../shared/mongoModels';
 import mongoose from 'mongoose';
 
@@ -190,48 +190,7 @@ async function migrateSubscriptions() {
   console.log(`Migrated ${count} subscriptions.`);
 }
 
-// Migrate custom meal plans
-async function migrateCustomMealPlans() {
-  console.log('Migrating custom meal plans...');
-  const { rows: pgCustomMealPlans } = await pool.query('SELECT * FROM custom_meal_plans');
-  
-  // Clear existing custom meal plans
-  await CustomMealPlan.deleteMany({});
-  
-  let count = 0;
-  for (const pgPlan of pgCustomMealPlans) {
-    const mongoPlan = new CustomMealPlan({
-      id: pgPlan.id,
-      subscriptionId: pgPlan.subscription_id,
-      mealId: pgPlan.meal_id,
-      dayOfWeek: pgPlan.day_of_week,
-      quantity: pgPlan.quantity || 1,
-      notes: pgPlan.notes,
-      createdAt: formatDate(pgPlan.created_at)
-    });
-    
-    const savedPlan = await mongoPlan.save();
-    idMappings.customMealPlans[pgPlan.id] = savedPlan.id;
-    count++;
-    
-    // Update the subscription to include this custom meal plan
-    const subscriptionId = pgPlan.subscription_id;
-    if (subscriptionId) {
-      await Subscription.findOneAndUpdate(
-        { id: subscriptionId },
-        { $push: { customMealPlans: savedPlan._id } }
-      );
-    }
-    
-    // Update the counter
-    await Counter.findOneAndUpdate(
-      { _id: 'customMealPlan' },
-      { $set: { seq: Math.max(pgPlan.id, await Counter.findOne({ _id: 'customMealPlan' }).then(doc => doc?.seq || 0)) } }
-    );
-  }
-  
-  console.log(`Migrated ${count} custom meal plans.`);
-}
+// Skip custom meal plans - handle as embedded documents in future update if needed
 
 // Migrate orders
 async function migrateOrders() {
@@ -270,89 +229,45 @@ async function migrateOrders() {
   console.log(`Migrated ${count} orders.`);
 }
 
-// Migrate order items
+// Migrate order items (directly into orders as embedded documents)
 async function migrateOrderItems() {
   console.log('Migrating order items...');
   const { rows: pgOrderItems } = await pool.query('SELECT * FROM order_items');
   
-  // Clear existing order items
-  await OrderItem.deleteMany({});
+  // Group order items by order ID
+  const orderItemsByOrderId: Record<number, any[]> = {};
   
-  let count = 0;
   for (const pgItem of pgOrderItems) {
-    const mongoItem = new OrderItem({
-      id: pgItem.id,
-      orderId: pgItem.order_id,
+    const orderId = pgItem.order_id;
+    if (!orderItemsByOrderId[orderId]) {
+      orderItemsByOrderId[orderId] = [];
+    }
+    
+    orderItemsByOrderId[orderId].push({
       mealId: pgItem.meal_id,
       quantity: pgItem.quantity || 1,
       price: pgItem.price,
       notes: pgItem.notes,
+      curryOptionId: pgItem.curry_option_id,
       curryOptionName: pgItem.curry_option_name,
       curryOptionPrice: pgItem.curry_option_price
     });
-    
-    const savedItem = await mongoItem.save();
-    idMappings.orderItems[pgItem.id] = savedItem.id;
-    count++;
-    
-    // Update the order to include this order item
-    const orderId = pgItem.order_id;
-    if (orderId) {
-      await Order.findOneAndUpdate(
-        { id: orderId },
-        { $push: { orderItems: savedItem._id } }
-      );
-    }
-    
-    // Update the counter
-    await Counter.findOneAndUpdate(
-      { _id: 'orderItem' },
-      { $set: { seq: Math.max(pgItem.id, await Counter.findOne({ _id: 'orderItem' }).then(doc => doc?.seq || 0)) } }
-    );
   }
   
-  console.log(`Migrated ${count} order items.`);
+  // Update each order with its items
+  let totalItemsCount = 0;
+  for (const [orderId, items] of Object.entries(orderItemsByOrderId)) {
+    await Order.findOneAndUpdate(
+      { id: parseInt(orderId) },
+      { $set: { items: items } }
+    );
+    totalItemsCount += items.length;
+  }
+  
+  console.log(`Migrated ${totalItemsCount} order items into ${Object.keys(orderItemsByOrderId).length} orders.`);
 }
 
-// Migrate user preferences
-async function migrateUserPreferences() {
-  console.log('Migrating user preferences...');
-  const { rows: pgPreferences } = await pool.query('SELECT * FROM user_preferences');
-  
-  // Clear existing user preferences
-  await UserPreferences.deleteMany({});
-  
-  let count = 0;
-  for (const pgPref of pgPreferences) {
-    const mongoPref = new UserPreferences({
-      id: pgPref.id,
-      userId: pgPref.user_id,
-      dietaryPreferences: pgPref.dietary_preferences || [],
-      allergies: pgPref.allergies || []
-    });
-    
-    const savedPref = await mongoPref.save();
-    idMappings.userPreferences[pgPref.id] = savedPref.id;
-    count++;
-    
-    // Update the user to include these preferences
-    const userId = pgPref.user_id;
-    if (userId) {
-      await User.findOneAndUpdate(
-        { id: userId },
-        { preferences: savedPref._id }
-      );
-    }
-    
-    // Update the counter
-    await Counter.findOneAndUpdate(
-      { _id: 'userPreferences' },
-      { $set: { seq: Math.max(pgPref.id, await Counter.findOne({ _id: 'userPreferences' }).then(doc => doc?.seq || 0)) } }
-    );
-  }
-  
-  console.log(`Migrated ${count} user preferences.`);
-}
+// Skip user preferences - handle directly in user objects in future update if needed
 
 // Migrate cart items
 async function migrateCartItems() {
@@ -511,10 +426,10 @@ async function migrateData() {
     await migrateUsers();
     await migrateMeals();
     await migrateSubscriptions();
-    await migrateCustomMealPlans();
+    // Custom meal plans are embedded in subscription documents
     await migrateOrders();
     await migrateOrderItems();
-    await migrateUserPreferences();
+    // User preferences are embedded in user documents
     await migrateCartItems();
     await migrateReviews();
     await migrateAddresses();
