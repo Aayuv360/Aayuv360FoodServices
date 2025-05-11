@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { formatPrice } from "@/lib/utils";
 import {
   Loader2,
   Check,
@@ -531,8 +532,8 @@ const Subscription = () => {
     dietaryAddOn: dietaryAddOn,
     personCount: personCount,
     pricePerPerson: totalPricePerPerson,
-    basePriceText: `₹${basePrice}${
-      dietaryAddOn > 0 ? ` + ₹${dietaryAddOn}` : ""
+    basePriceText: `${formatPrice(basePrice)}${
+      dietaryAddOn > 0 ? ` + ${formatPrice(dietaryAddOn)}` : ""
     }${personCount > 1 ? ` × ${personCount} persons` : ""}`,
   };
 
