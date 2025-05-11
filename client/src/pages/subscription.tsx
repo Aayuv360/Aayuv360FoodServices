@@ -903,7 +903,7 @@ const Subscription = () => {
                           Price per person:
                         </span>
                         <span className="text-sm">
-                          ₹{(basePrice + dietaryAddOn)}
+                          {formatPrice(basePrice + dietaryAddOn)}
                         </span>
                       </div>
                       {personCount > 1 && (
@@ -919,7 +919,7 @@ const Subscription = () => {
                           Total monthly price:
                         </span>
                         <span className="text-sm font-semibold">
-                          ₹{totalPrice}
+                          {formatPrice(totalPrice)}
                         </span>
                       </div>
                     </div>
@@ -1366,7 +1366,7 @@ const Subscription = () => {
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Base Plan Price</span>
                     <span className="text-sm">
-                      ₹{basePlan.price}/month
+                      {formatPrice(basePlan.price)}/month
                     </span>
                   </div>
                   {priceAdjustment > 0 && (
@@ -1377,7 +1377,7 @@ const Subscription = () => {
                           : "Non-Veg Option"}
                       </span>
                       <span className="text-sm">
-                        + ₹{priceAdjustment}
+                        + {formatPrice(priceAdjustment)}
                       </span>
                     </div>
                   )}
@@ -1385,7 +1385,7 @@ const Subscription = () => {
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Price per person</span>
                     <span className="text-sm">
-                      ₹{(basePrice + dietaryAddOn)}/month
+                      {formatPrice(basePrice + dietaryAddOn)}/month
                     </span>
                   </div>
 

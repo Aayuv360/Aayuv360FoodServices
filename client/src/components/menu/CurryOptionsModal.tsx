@@ -39,10 +39,10 @@ export function CurryOptionsModal({
   // Define curry options for this meal
   const curryOptions: CurryOption[] = [
     { id: "regular", name: "Regular Curry", priceAdjustment: 0 },
-    { id: "spicy", name: "Spicy Curry", priceAdjustment: 2500 },
-    { id: "extra-spicy", name: "Extra Spicy Curry", priceAdjustment: 3500 },
-    { id: "butter", name: "Butter Curry", priceAdjustment: 5000 },
-    { id: "garlic", name: "Garlic Curry", priceAdjustment: 4000 },
+    { id: "spicy", name: "Spicy Curry", priceAdjustment: 25 },
+    { id: "extra-spicy", name: "Extra Spicy Curry", priceAdjustment: 35 },
+    { id: "butter", name: "Butter Curry", priceAdjustment: 50 },
+    { id: "garlic", name: "Garlic Curry", priceAdjustment: 40 },
   ];
 
   // If the user has a last selected curry option, use that as default; otherwise use the first option
