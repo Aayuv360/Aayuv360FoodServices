@@ -1,6 +1,6 @@
 // Script to update meal prices in MongoDB database
 import mongoose from 'mongoose';
-import { MealSchema } from './shared/mongoModels';
+import { Meal } from './shared/mongoModels';
 
 async function updateMongoDBPrices() {
   try {
@@ -12,11 +12,8 @@ async function updateMongoDBPrices() {
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('Connected to MongoDB');
     
-    // Get the meal model directly
-    const MealModel = mongoose.model('Meal', MealSchema);
-    
     console.log('Fetching all meals...');
-    const meals = await MealModel.find({});
+    const meals = await Meal.find({});
     console.log(`Found ${meals.length} meals to update`);
     
     if (meals.length === 0) {
