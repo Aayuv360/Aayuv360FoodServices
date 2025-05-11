@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Loader2, Search } from "lucide-react";
+import { Calendar, Loader2, Search, Filter, SlidersHorizontal, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
@@ -7,12 +7,43 @@ import MenuCard from "@/components/menu/MenuCard";
 import { format } from "date-fns";
 import { Meal } from "@shared/schema";
 import { useLocation } from "wouter";
+import {
+  Sheet,
+  SheetClose,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Menu = () => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
   const [location] = useLocation();
   const today = format(new Date(), "MMMM d, yyyy");
+  
+  // Available millet categories
+  const categories = [
+    { id: "all", name: "All Categories" },
+    { id: "Finger Millet", name: "Finger Millet" },
+    { id: "Kodo Millet", name: "Kodo Millet" },
+    { id: "Mixed Millet", name: "Mixed Millet" }
+  ];
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -30,7 +61,19 @@ const Menu = () => {
     if (filterParam) {
       setFilter(filterParam);
     }
-  }, [location]);
+    
+    const categoryParam = params.get("category");
+    if (categoryParam) {
+      setCategoryFilter(categoryParam);
+    }
+    
+    // Calculate active filters
+    let count = 0;
+    if (searchQuery) count++;
+    if (filter !== "all") count++;
+    if (categoryFilter !== "all") count++;
+    setActiveFiltersCount(count);
+  }, [location, filter, searchQuery, categoryFilter]);
 
   const {
     data: meals,
@@ -55,9 +98,34 @@ const Menu = () => {
     },
   });
 
+  // Group meals by category for tabbed view
+  const getMealsByCategory = () => {
+    const mealsByCategory: Record<string, Meal[]> = {};
+    
+    if (!meals) return mealsByCategory;
+    
+    // Initialize categories
+    categories.forEach(category => {
+      if (category.id !== "all") {
+        mealsByCategory[category.id] = [];
+      }
+    });
+    
+    // Add meals to their respective categories
+    meals.forEach(meal => {
+      if (meal.category && mealsByCategory[meal.category]) {
+        mealsByCategory[meal.category].push(meal);
+      }
+    });
+    
+    return mealsByCategory;
+  };
+  
+  // Apply all filters to meals
   const filteredMeals = meals
     ? meals
         .filter((meal) => {
+          // Apply dietary preference filter
           if (filter === "all") return true;
           if (
             filter === "breakfast" ||
@@ -69,6 +137,12 @@ const Menu = () => {
           return meal.dietaryPreferences?.includes(filter as any);
         })
         .filter((meal) => {
+          // Apply category filter
+          if (categoryFilter === "all") return true;
+          return meal.category === categoryFilter;
+        })
+        .filter((meal) => {
+          // Apply search query filter
           if (!searchQuery) return true;
           return (
             meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
