@@ -1079,6 +1079,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error updating meal" });
     }
   });
+  
+  // Admin route to update meal prices (divide by 100)
+  app.post("/api/admin/update-prices", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      console.log('Starting price update process...');
+      const meals = await MealModel.find({});
+      console.log(`Found ${meals.length} meals to update`);
+      
+      const updates = [];
+      for (const meal of meals) {
+        const oldPrice = meal.price;
+        const newPrice = Math.round(oldPrice / 100);
+        console.log(`Updating meal '${meal.name}': ${oldPrice} -> ${newPrice}`);
+        
+        meal.price = newPrice;
+        updates.push(meal.save());
+      }
+      
+      await Promise.all(updates);
+      console.log('Price update completed successfully!');
+      
+      res.json({ 
+        success: true, 
+        message: `Updated prices for ${meals.length} meals` 
+      });
+    } catch (err) {
+      console.error("Error updating meal prices:", err);
+      res.status(500).json({ message: "Error updating meal prices" });
+    }
+  });
 
   // Razorpay payment routes
   app.post("/api/payments/create-order", isAuthenticated, async (req, res) => {
