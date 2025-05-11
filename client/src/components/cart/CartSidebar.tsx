@@ -119,6 +119,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     loading,
     updateCartItemNotes,
     updateCartItem,
+    updateCartItemWithOptions,
     removeCartItem,
     clearCart,
   } = useCart();
@@ -259,12 +260,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     if (cartItem) {
       try {
         // Update the cart item with the new curry option
-        await updateCartItem(cartItem.id, {
-          quantity: cartItem.quantity,
-          curryOptionId: updatedMeal.curryOption.id,
-          curryOptionName: updatedMeal.curryOption.name,
-          curryOptionPrice: updatedMeal.curryOption.priceAdjustment
-        });
+        await updateCartItemWithOptions(cartItem.id, updatedMeal.curryOption);
         
         toast({
           title: "Item updated",
@@ -973,6 +969,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         </SheetContent>
       </Sheet>
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
+      
+      {/* Curry Options Modal */}
+      {customizingMeal && (
+        <CurryOptionsModal
+          open={!!customizingMeal}
+          onClose={() => setCustomizingMeal(null)}
+          meal={customizingMeal}
+          onAddToCart={handleUpdateCurryOption}
+          lastCurryOption={customizingMeal?.curryOption}
+          isInCart={true}
+        />
+      )}
     </>
   );
 };
