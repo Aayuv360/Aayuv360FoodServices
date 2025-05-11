@@ -1068,8 +1068,8 @@ const Subscription = () => {
                 {form.watch("dietaryPreference") === "vegetarian"
                   ? "Pure vegetarian meals with no eggs or meat."
                   : form.watch("dietaryPreference") === "veg-with-egg"
-                    ? "Vegetarian meals that may include eggs. +₹200/month"
-                    : "Meals that include meat options. +₹500/month"}
+                    ? `Vegetarian meals that may include eggs. +${formatPrice(200)}/month`
+                    : `Meals that include meat options. +${formatPrice(500)}/month`}
               </p>
             </div>
           </div>
@@ -1399,33 +1399,20 @@ const Subscription = () => {
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Subtotal</span>
                     <span className="text-sm">
-                      ₹
-                      {(
-                        ((basePrice + dietaryAddOn) * personCount) /
-                        100
-                      ).toFixed(2)}
-                      /month
+                      {formatPrice((basePrice + dietaryAddOn) * personCount)}/month
                     </span>
                   </div>
 
                   <div className="flex justify-between mb-2">
                     <span className="text-sm">Tax (5%)</span>
                     <span className="text-sm">
-                      ₹
-                      {(
-                        ((basePrice + dietaryAddOn) * personCount * 0.05) /
-                        100
-                      ).toFixed(2)}
+                      {formatPrice((basePrice + dietaryAddOn) * personCount * 0.05)}
                     </span>
                   </div>
                   <div className="flex justify-between font-bold">
                     <span>Total</span>
                     <span className="text-primary">
-                      ₹
-                      {(
-                        ((basePrice + dietaryAddOn) * personCount * 1.05) /
-                        100
-                      ).toFixed(2)}
+                      {formatPrice((basePrice + dietaryAddOn) * personCount * 1.05)}
                     </span>
                   </div>
                 </div>
@@ -1512,7 +1499,7 @@ const Subscription = () => {
                       <div className="flex justify-between font-semibold">
                         <span className="text-gray-600">Total:</span>
                         <span className="text-primary">
-                          ₹{subscribedDetails.totalPrice}
+                          {formatPrice(subscribedDetails.totalPrice)}
                         </span>
                       </div>
                     </div>
@@ -1572,18 +1559,18 @@ const Subscription = () => {
                 <CardContent>
                   <div>
                     <div className="text-xl font-semibold text-primary">
-                      ₹{totalPrice}
+                      {formatPrice(totalPrice)}
                       <span className="text-sm text-gray-500">/month</span>
                     </div>
                     <div className="text-xs text-gray-500">
                       {personCount > 1 ? (
                         <>
-                          ₹{(basePrice + dietaryAddOn)} per
+                          {formatPrice(basePrice + dietaryAddOn)} per
                           person × {personCount} persons
                         </>
                       ) : (
                         <>
-                          Base: ₹{basePrice}
+                          Base: {formatPrice(basePrice)}
                           {dietaryAddOn > 0 && (
                             <>
                               {" "}
@@ -1591,7 +1578,7 @@ const Subscription = () => {
                               {dietaryPreference === "veg-with-egg"
                                 ? "Egg"
                                 : "Non-veg"}
-                              : ₹{dietaryAddOn}
+                              : {formatPrice(dietaryAddOn)}
                             </>
                           )}
                         </>
