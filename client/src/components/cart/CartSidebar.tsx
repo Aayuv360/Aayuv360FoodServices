@@ -47,6 +47,7 @@ import {
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
+import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 
 // Define delivery address form schema
 const addressSchema = z.object({
@@ -102,6 +103,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [noteText, setNoteText] = useState<string>("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
   
   // Add states for address management
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -249,10 +251,43 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   // Using imported formatPrice function from utils for consistent price formatting without decimals
   
+  // Handle updating curry option for a cart item
+  const handleUpdateCurryOption = async (updatedMeal: any) => {
+    // Find the cart item that contains this meal
+    const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
+    
+    if (cartItem) {
+      try {
+        // Update the cart item with the new curry option
+        await updateCartItem(cartItem.id, {
+          quantity: cartItem.quantity,
+          curryOptionId: updatedMeal.curryOption.id,
+          curryOptionName: updatedMeal.curryOption.name,
+          curryOptionPrice: updatedMeal.curryOption.priceAdjustment
+        });
+        
+        toast({
+          title: "Item updated",
+          description: `Your ${updatedMeal.name} has been updated with ${updatedMeal.curryOption.name}`,
+        });
+        
+        // Close the curry options modal
+        setCustomizingMeal(null);
+      } catch (error) {
+        console.error("Error updating cart item:", error);
+        toast({
+          title: "Error",
+          description: "Failed to update your selection",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+  
   // Handle customizing an item
   const handleCustomizeItem = (item: any) => {
-    navigate(`/menu?customizeItem=${item.mealId}`);
-    onClose();
+    // Set the customizing meal which will open the modal
+    setCustomizingMeal(item.meal);
   };
 
   // Navigate through checkout steps
