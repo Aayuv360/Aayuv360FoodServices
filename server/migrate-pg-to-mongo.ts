@@ -29,10 +29,7 @@ const idMappings: Record<string, Record<number, string>> = {
   users: {},
   meals: {},
   subscriptions: {},
-  customMealPlans: {},
   orders: {},
-  orderItems: {},
-  userPreferences: {},
   cartItems: {},
   reviews: {},
   addresses: {},
@@ -42,8 +39,8 @@ const idMappings: Record<string, Record<number, string>> = {
 // Initialize counters for MongoDB documents
 async function initializeCounters() {
   console.log('Initializing counters...');
-  const counters = ['user', 'meal', 'cartItem', 'order', 'orderItem', 'subscription', 
-                     'customMealPlan', 'userPreferences', 'review', 'address', 'location'];
+  const counters = ['user', 'meal', 'cartItem', 'order', 'subscription', 
+                     'review', 'address', 'location'];
   
   for (const counter of counters) {
     await Counter.findOneAndUpdate(
@@ -112,26 +109,34 @@ async function migrateMeals() {
     // Add required category field with default value
     const category = pgMeal.millet_type || 'Mixed Millet';
     
+    // Prepare dietary preferences array
+    const dietaryPreferences = [];
+    if (pgMeal.dietary_info) {
+      if (typeof pgMeal.dietary_info === 'string') {
+        dietaryPreferences.push(pgMeal.dietary_info);
+      } else if (Array.isArray(pgMeal.dietary_info)) {
+        dietaryPreferences.push(...pgMeal.dietary_info);
+      }
+    }
+    
     const mongoMeal = new Meal({
       id: pgMeal.id,
       name: pgMeal.name,
       description: pgMeal.description,
       price: pgMeal.price,
       imageUrl: pgMeal.image_url,
-      calories: pgMeal.calories,
-      protein: pgMeal.protein,
-      carbs: pgMeal.carbs,
-      fat: pgMeal.fat,
-      fiber: pgMeal.fiber,
-      ingredients: pgMeal.ingredients,
-      dietaryInfo: pgMeal.dietary_info,
-      mealType: pgMeal.meal_type,
-      available: pgMeal.available !== false,
-      preparationTime: pgMeal.preparation_time,
-      milletType: pgMeal.millet_type,
-      allergens: pgMeal.allergens,
+      calories: pgMeal.calories || 0,
+      protein: pgMeal.protein || 0,
+      carbs: pgMeal.carbs || 0,
+      fat: pgMeal.fat || 0,
+      fiber: pgMeal.fiber || 0,
+      ingredients: pgMeal.ingredients || [],
+      dietaryPreferences: dietaryPreferences,
+      isPopular: pgMeal.is_popular || false,
+      isNewItem: pgMeal.is_new || false,
+      isAvailable: pgMeal.available !== false,
+      allergens: pgMeal.allergens || [],
       category: category, // Required field, set default if not present
-      // Add other meal fields as needed
     });
     
     const savedMeal = await mongoMeal.save();
