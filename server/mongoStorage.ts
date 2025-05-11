@@ -1,22 +1,78 @@
 import { 
-  User, Meal, CartItem, Order, Subscription, Address, Location,
+  User, Meal, CartItem, Order, Subscription, Address, Location, Review,
   UserDocument, MealDocument, CartItemDocument, OrderDocument, 
-  SubscriptionDocument, AddressDocument, LocationDocument,
+  SubscriptionDocument, AddressDocument, LocationDocument, ReviewDocument,
   getNextSequence
 } from '../shared/mongoModels';
-import session from 'express-session';
-import createMemoryStore from "memorystore";
-
-const MemoryStore = createMemoryStore(session);
+import { createSessionStore, SessionStore } from './session-store';
+import { milletMeals } from './mealItems';
 
 // MongoDB Storage class implementation
-export class MongoDBStorage {
-  sessionStore: session.SessionStore;
+import { IStorage } from './storage';
+
+export class MongoDBStorage implements IStorage {
+  sessionStore: SessionStore;
 
   constructor() {
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
-    });
+    this.sessionStore = createSessionStore();
+    
+    // Initialize sample data with a delay to allow connection to establish
+    setTimeout(() => {
+      console.log('Attempting to initialize sample meals...');
+      this.initializeSampleMeals().catch(err => 
+        console.error("Error initializing sample meals:", err)
+      );
+    }, 2000); // 2-second delay before initialization
+  }
+  
+  // Initialize sample meal data if needed with better error handling
+  private async initializeSampleMeals(): Promise<void> {
+    try {
+      // Use a timeout promise to avoid hanging if MongoDB is slow
+      const countMeals = async () => {
+        try {
+          return await Meal.countDocuments();
+        } catch (err) {
+          console.error("Error counting meals:", err);
+          return -1; // Return -1 to indicate error
+        }
+      };
+      
+      // Add timeout to prevent hanging
+      const timeoutPromise = new Promise<number>((resolve) => {
+        setTimeout(() => resolve(-1), 5000); // 5-second timeout
+      });
+      
+      // Race the count operation against the timeout
+      const mealsCount = await Promise.race([countMeals(), timeoutPromise]);
+      
+      // Only initialize if we got a valid count of 0 (not error or timeout)
+      if (mealsCount === 0) {
+        console.log("Initializing sample meals...");
+        
+        // Process in batches to avoid overwhelming the database
+        const batchSize = 5;
+        for (let i = 0; i < milletMeals.length; i += batchSize) {
+          const batch = milletMeals.slice(i, i + batchSize);
+          await Promise.all(batch.map(meal => {
+            return this.createMeal(meal).catch(err => {
+              console.error(`Failed to create meal ${meal.name}:`, err);
+              return null;
+            });
+          }));
+          console.log(`Initialized meals batch ${i/batchSize + 1}/${Math.ceil(milletMeals.length/batchSize)}`);
+        }
+        
+        console.log(`Initialized sample meals`);
+      } else if (mealsCount === -1) {
+        console.log("Skipping meal initialization due to database connectivity issues");
+      } else {
+        console.log(`Skipping meal initialization, found ${mealsCount} existing meals`);
+      }
+    } catch (error) {
+      // Don't let meal initialization failure break the application
+      console.error("Error initializing sample meals:", error);
+    }
   }
 
   // User operations
@@ -36,6 +92,43 @@ export class MongoDBStorage {
       return user ? user.toObject() : undefined;
     } catch (error) {
       console.error('Error getting user by username:', error);
+      throw error;
+    }
+  }
+  
+  async getUserByEmail(email: string): Promise<any | undefined> {
+    try {
+      const user = await User.findOne({ email });
+      return user ? user.toObject() : undefined;
+    } catch (error) {
+      console.error('Error getting user by email:', error);
+      throw error;
+    }
+  }
+  
+  async updateUser(id: number, userData: any): Promise<any | undefined> {
+    try {
+      const user = await User.findOneAndUpdate(
+        { id },
+        {
+          ...userData,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      return user ? user.toObject() : undefined;
+    } catch (error) {
+      console.error('Error updating user:', error);
+      throw error;
+    }
+  }
+  
+  async getAllUsers(): Promise<any[]> {
+    try {
+      const users = await User.find();
+      return users.map(user => user.toObject());
+    } catch (error) {
+      console.error('Error getting all users:', error);
       throw error;
     }
   }
@@ -93,12 +186,32 @@ export class MongoDBStorage {
   }
 
   // Meal operations
-  async getMeals(): Promise<any[]> {
+  async getAllMeals(): Promise<any[]> {
     try {
       const meals = await Meal.find().sort({ category: 1 });
       return meals.map(meal => meal.toObject());
     } catch (error) {
-      console.error('Error getting meals:', error);
+      console.error('Error getting all meals:', error);
+      throw error;
+    }
+  }
+  
+  async getMealsByType(mealType: string): Promise<any[]> {
+    try {
+      const meals = await Meal.find({ mealType }).sort({ name: 1 });
+      return meals.map(meal => meal.toObject());
+    } catch (error) {
+      console.error('Error getting meals by type:', error);
+      throw error;
+    }
+  }
+  
+  async getMealsByDietaryPreference(preference: string): Promise<any[]> {
+    try {
+      const meals = await Meal.find({ dietaryPreferences: preference }).sort({ name: 1 });
+      return meals.map(meal => meal.toObject());
+    } catch (error) {
+      console.error('Error getting meals by dietary preference:', error);
       throw error;
     }
   }
@@ -126,6 +239,23 @@ export class MongoDBStorage {
       return newMeal.toObject();
     } catch (error) {
       console.error('Error creating meal:', error);
+      throw error;
+    }
+  }
+  
+  async updateMeal(id: number, mealData: any): Promise<any | undefined> {
+    try {
+      const meal = await Meal.findOneAndUpdate(
+        { id },
+        {
+          ...mealData,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      return meal ? meal.toObject() : undefined;
+    } catch (error) {
+      console.error('Error updating meal:', error);
       throw error;
     }
   }
@@ -302,6 +432,101 @@ export class MongoDBStorage {
       throw error;
     }
   }
+  
+  async getOrdersByUserId(userId: number): Promise<any[]> {
+    try {
+      return this.getUserOrders(userId);
+    } catch (error) {
+      console.error('Error getting orders by user ID:', error);
+      throw error;
+    }
+  }
+  
+  async getAllOrders(): Promise<any[]> {
+    try {
+      const orders = await Order.find().sort({ createdAt: -1 });
+      return orders.map(order => order.toObject());
+    } catch (error) {
+      console.error('Error getting all orders:', error);
+      throw error;
+    }
+  }
+  
+  async updateOrderStatus(id: number, status: string): Promise<any | undefined> {
+    try {
+      const order = await Order.findOneAndUpdate(
+        { id },
+        { 
+          status,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      return order ? order.toObject() : undefined;
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      throw error;
+    }
+  }
+  
+  // Order Item operations
+  async getOrderItems(orderId: number): Promise<any[]> {
+    try {
+      const order = await Order.findOne({ id: orderId });
+      if (!order) return [];
+      
+      // Return the items from the order
+      return order.items || [];
+    } catch (error) {
+      console.error('Error getting order items:', error);
+      throw error;
+    }
+  }
+  
+  async createOrderItem(orderItemData: any): Promise<any> {
+    try {
+      // Add the order item to the order
+      const order = await Order.findOneAndUpdate(
+        { id: orderItemData.orderId },
+        { 
+          $push: { items: orderItemData },
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      
+      if (!order) throw new Error('Order not found');
+      
+      // Return the newly added item
+      return orderItemData;
+    } catch (error) {
+      console.error('Error creating order item:', error);
+      throw error;
+    }
+  }
+  
+  async getAllOrderItems(): Promise<any[]> {
+    try {
+      const orders = await Order.find();
+      const allItems: any[] = [];
+      
+      // Extract all items from all orders
+      orders.forEach(order => {
+        if (order.items && order.items.length > 0) {
+          const itemsWithOrderId = order.items.map((item: any) => ({
+            ...item,
+            orderId: order.id
+          }));
+          allItems.push(...itemsWithOrderId);
+        }
+      });
+      
+      return allItems;
+    } catch (error) {
+      console.error('Error getting all order items:', error);
+      throw error;
+    }
+  }
 
   async updateOrder(id: number, updateData: any): Promise<any | undefined> {
     try {
@@ -337,6 +562,133 @@ export class MongoDBStorage {
       throw error;
     }
   }
+  
+  // Custom Meal Plan operations
+  async getCustomMealPlans(subscriptionId: number): Promise<any[]> {
+    try {
+      // In MongoDB, custom meal plans would typically be part of the subscription document
+      const subscription = await Subscription.findOne({ id: subscriptionId });
+      if (!subscription) return [];
+      
+      // Return the customMealPlans array from the subscription, or an empty array if none
+      return subscription.customMealPlans || [];
+    } catch (error) {
+      console.error('Error getting custom meal plans:', error);
+      throw error;
+    }
+  }
+  
+  async createCustomMealPlan(customMealPlanData: any): Promise<any> {
+    try {
+      const id = await getNextSequence('customMealPlan');
+      const mealPlan = {
+        ...customMealPlanData,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      // Add the meal plan to the subscription document
+      await Subscription.findOneAndUpdate(
+        { id: customMealPlanData.subscriptionId },
+        { 
+          $push: { customMealPlans: mealPlan },
+          updatedAt: new Date()
+        }
+      );
+      
+      return mealPlan;
+    } catch (error) {
+      console.error('Error creating custom meal plan:', error);
+      throw error;
+    }
+  }
+  
+  async deleteCustomMealPlan(id: number): Promise<boolean> {
+    try {
+      // Remove the custom meal plan from the subscription document
+      const result = await Subscription.updateOne(
+        { 'customMealPlans.id': id },
+        { 
+          $pull: { customMealPlans: { id } },
+          updatedAt: new Date()
+        }
+      );
+      
+      return result.modifiedCount > 0;
+    } catch (error) {
+      console.error('Error deleting custom meal plan:', error);
+      throw error;
+    }
+  }
+  
+  // User Preferences operations
+  async getUserPreferences(userId: number): Promise<any | undefined> {
+    try {
+      // In MongoDB, user preferences can be embedded in the user document
+      const user = await User.findOne({ id: userId });
+      if (!user || !user.preferences) return undefined;
+      
+      return {
+        id: userId,
+        userId,
+        ...user.preferences
+      };
+    } catch (error) {
+      console.error('Error getting user preferences:', error);
+      throw error;
+    }
+  }
+  
+  async createUserPreferences(preferencesData: any): Promise<any> {
+    try {
+      // Add preferences to the user document
+      const user = await User.findOneAndUpdate(
+        { id: preferencesData.userId },
+        { 
+          preferences: preferencesData,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      
+      if (!user) throw new Error('User not found');
+      
+      return {
+        id: preferencesData.userId,
+        userId: preferencesData.userId,
+        ...user.preferences
+      };
+    } catch (error) {
+      console.error('Error creating user preferences:', error);
+      throw error;
+    }
+  }
+  
+  async updateUserPreferences(userId: number, preferencesData: any): Promise<any | undefined> {
+    try {
+      // Update preferences in the user document
+      const user = await User.findOneAndUpdate(
+        { id: userId },
+        { 
+          'preferences': { ...preferencesData },
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      
+      if (!user || !user.preferences) return undefined;
+      
+      return {
+        id: userId,
+        userId,
+        ...user.preferences
+      };
+    } catch (error) {
+      console.error('Error updating user preferences:', error);
+      throw error;
+    }
+  }
 
   async getSubscription(id: number): Promise<any | undefined> {
     try {
@@ -354,6 +706,26 @@ export class MongoDBStorage {
       return subscriptions.map(sub => sub.toObject());
     } catch (error) {
       console.error('Error getting user subscriptions:', error);
+      throw error;
+    }
+  }
+  
+  async getSubscriptionsByUserId(userId: number): Promise<any[]> {
+    try {
+      const subscriptions = await Subscription.find({ userId }).sort({ createdAt: -1 });
+      return subscriptions.map(sub => sub.toObject());
+    } catch (error) {
+      console.error('Error getting subscriptions by user ID:', error);
+      throw error;
+    }
+  }
+  
+  async getAllSubscriptions(): Promise<any[]> {
+    try {
+      const subscriptions = await Subscription.find().sort({ createdAt: -1 });
+      return subscriptions.map(sub => sub.toObject());
+    } catch (error) {
+      console.error('Error getting all subscriptions:', error);
       throw error;
     }
   }
@@ -412,6 +784,11 @@ export class MongoDBStorage {
     }
   }
   
+  // Alias methods to match IStorage interface
+  async getAddresses(userId: number): Promise<any[]> {
+    return this.getUserAddresses(userId);
+  }
+  
   async getAddress(id: number): Promise<any | undefined> {
     try {
       const address = await Address.findOne({ id });
@@ -420,6 +797,10 @@ export class MongoDBStorage {
       console.error('Error getting address:', error);
       throw error;
     }
+  }
+  
+  async getAddressById(id: number): Promise<any | undefined> {
+    return this.getAddress(id);
   }
 
   async updateAddress(id: number, updateData: any): Promise<any | undefined> {
@@ -456,6 +837,118 @@ export class MongoDBStorage {
       return result.deletedCount > 0;
     } catch (error) {
       console.error('Error deleting address:', error);
+      throw error;
+    }
+  }
+
+  // Review operations
+  async getReviewsByMealId(mealId: number): Promise<any[]> {
+    try {
+      const reviews = await Review.find({ mealId }).sort({ createdAt: -1 });
+      return reviews.map(review => review.toObject());
+    } catch (error) {
+      console.error('Error getting reviews by meal ID:', error);
+      throw error;
+    }
+  }
+  
+  async getReviewsByUserId(userId: number): Promise<any[]> {
+    try {
+      const reviews = await Review.find({ userId }).sort({ createdAt: -1 });
+      return reviews.map(review => review.toObject());
+    } catch (error) {
+      console.error('Error getting reviews by user ID:', error);
+      throw error;
+    }
+  }
+  
+  async createReview(reviewData: any): Promise<any> {
+    try {
+      const id = await getNextSequence('review');
+      const review = new Review({
+        ...reviewData,
+        id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+      
+      await review.save();
+      return review.toObject();
+    } catch (error) {
+      console.error('Error creating review:', error);
+      throw error;
+    }
+  }
+  
+  async getAllReviews(): Promise<any[]> {
+    try {
+      const reviews = await Review.find().sort({ createdAt: -1 });
+      return reviews.map(review => review.toObject());
+    } catch (error) {
+      console.error('Error getting all reviews:', error);
+      throw error;
+    }
+  }
+  
+  // Cart operations
+  async addToCart(cartItemData: any): Promise<any> {
+    try {
+      // Check if already in cart
+      const existingItem = await CartItem.findOne({
+        userId: cartItemData.userId,
+        mealId: cartItemData.mealId,
+        curryOptionId: cartItemData.curryOptionId || null
+      });
+      
+      if (existingItem) {
+        // Update quantity
+        existingItem.quantity += cartItemData.quantity;
+        existingItem.updatedAt = new Date();
+        await existingItem.save();
+        return existingItem.toObject();
+      } else {
+        // Create new cart item
+        const id = await getNextSequence('cartItem');
+        const cartItem = new CartItem({
+          ...cartItemData,
+          id,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        
+        await cartItem.save();
+        return cartItem.toObject();
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw error;
+    }
+  }
+  
+  async updateCartItemQuantity(id: number, quantity: number): Promise<any | undefined> {
+    try {
+      const cartItem = await CartItem.findOneAndUpdate(
+        { id },
+        { 
+          quantity,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      
+      return cartItem ? cartItem.toObject() : undefined;
+    } catch (error) {
+      console.error('Error updating cart item quantity:', error);
+      throw error;
+    }
+  }
+  
+  async removeFromCart(id: number): Promise<boolean> {
+    try {
+      const result = await CartItem.deleteOne({ id });
+      return result.deletedCount === 1;
+    } catch (error) {
+      console.error('Error removing from cart:', error);
       throw error;
     }
   }

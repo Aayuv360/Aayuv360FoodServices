@@ -8,11 +8,11 @@ import {
 } from "@shared/schema";
 import { milletMeals } from "./mealItems";
 
-import session from "express-session";
+import * as expressSession from "express-session";
 
 export interface IStorage {
   // Session store
-  sessionStore: session.Store;
+  sessionStore: expressSession.Store;
   
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -83,7 +83,7 @@ export interface IStorage {
 
 import createMemoryStore from "memorystore";
 
-const MemoryStore = createMemoryStore(session);
+const MemoryStore = createMemoryStore(expressSession);
 
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
@@ -97,7 +97,7 @@ export class MemStorage implements IStorage {
   private reviews: Map<number, Review>;
   private addresses: Map<number, Address>;
   
-  sessionStore: session.Store;
+  sessionStore: expressSession.Store;
   
   private userId: number;
   private mealId: number;
@@ -464,14 +464,14 @@ export class MemStorage implements IStorage {
 
 import { db } from './db';
 import { eq, and, or, desc, like, sql } from 'drizzle-orm';
-import session from 'express-session';
+// Use the same expressSession import
 import connectPg from 'connect-pg-simple';
 import { pool } from './db';
 
-const PostgresSessionStore = connectPg(session);
+const PostgresSessionStore = connectPg(expressSession);
 
 export class DatabaseStorage implements IStorage {
-  sessionStore: session.SessionStore;
+  sessionStore: expressSession.Store;
   
   constructor() {
     this.sessionStore = new PostgresSessionStore({ 
@@ -805,5 +805,33 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-// Use the DatabaseStorage instead of MemStorage for persistence
-export const storage = new DatabaseStorage();
+// Initialize storage with MongoDB, but have MemStorage as fallback
+import { mongoStorage } from './mongoStorage';
+
+// Declare global for type safety
+declare global {
+  var useMemoryFallback: boolean;
+}
+
+// Create a fallback memory storage instance
+const memStorage = new MemStorage();
+
+// Export the appropriate storage based on the global flag
+let defaultStorage: IStorage = mongoStorage;
+
+// Let other modules change the storage implementation
+export function createFallbackStorage(): IStorage {
+  console.log('Activating fallback in-memory storage');
+  defaultStorage = memStorage;
+  return memStorage;
+}
+
+// Export a proxy to the current storage implementation
+export const storage = new Proxy({} as IStorage, {
+  get: (target, prop) => {
+    // Always get the latest storage implementation
+    return global.useMemoryFallback 
+      ? memStorage[prop as keyof IStorage]
+      : mongoStorage[prop as keyof IStorage];
+  }
+});

@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import { fixCartItems } from "./fix-cart-items";
+import { connectToMongoDB } from "./mongodb";
 
 const app = express();
 app.use(express.json());
@@ -38,6 +39,29 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  try {
+    // Connect to MongoDB first with better error handling
+    console.log('Connecting to MongoDB...');
+    const conn = await connectToMongoDB();
+    
+    if (!conn.readyState) {
+      console.warn('MongoDB connection is not ready. Using in-memory fallback storage.');
+      // Import and set fallback storage
+      const { createFallbackStorage } = await import('./storage');
+      // This will indirectly update the 'storage' export
+      (global as any).useMemoryFallback = true;
+    } else {
+      console.log('MongoDB connection successful, using MongoDB storage');
+    }
+  } catch (error) {
+    console.error('Failed to connect to MongoDB:', error);
+    console.warn('Using in-memory fallback storage');
+    // Import and set fallback storage
+    const { createFallbackStorage } = await import('./storage');
+    // This will indirectly update the 'storage' export
+    (global as any).useMemoryFallback = true;
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

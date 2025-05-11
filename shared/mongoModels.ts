@@ -22,7 +22,7 @@ export interface MealDocument extends Document {
   imageUrl?: string;
   dietaryPreferences: string[];
   isPopular: boolean;
-  isNew: boolean;
+  isNewItem: boolean; // Renamed from isNew to avoid Mongoose reserved word
   ingredients?: string[];
   allergens?: string[];
   isAvailable: boolean;
@@ -131,7 +131,7 @@ const mealSchema = new Schema<MealDocument>({
   imageUrl: String,
   dietaryPreferences: [String],
   isPopular: { type: Boolean, default: false },
-  isNew: { type: Boolean, default: false },
+  isNewItem: { type: Boolean, default: false }, // Renamed from isNew to avoid Mongoose reserved word
   ingredients: [String],
   allergens: [String],
   isAvailable: { type: Boolean, default: true },
@@ -227,12 +227,34 @@ export const Subscription = mongoose.model<SubscriptionDocument>('Subscription',
 export const Address = mongoose.model<AddressDocument>('Address', addressSchema);
 export const Location = mongoose.model<LocationDocument>('Location', locationSchema);
 
+// Define Review schema
+export interface ReviewDocument extends Document {
+  id: number;
+  userId: number;
+  mealId: number;
+  rating: number;
+  comment?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const reviewSchema = new Schema<ReviewDocument>({
+  id: { type: Number, required: true, unique: true },
+  userId: { type: Number, required: true },
+  mealId: { type: Number, required: true },
+  rating: { type: Number, required: true },
+  comment: String,
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
 // Counter collection for auto-incrementing IDs
 const counterSchema = new Schema({
   _id: { type: String, required: true },
   seq: { type: Number, default: 0 }
 });
 
+export const Review = mongoose.model<ReviewDocument>('Review', reviewSchema);
 export const Counter = mongoose.model('Counter', counterSchema);
 
 // Function to get the next sequence value for a given model
