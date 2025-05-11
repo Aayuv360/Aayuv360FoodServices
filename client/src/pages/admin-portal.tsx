@@ -465,6 +465,7 @@ export default function AdminPortalPage() {
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="meals">Menu Items</TabsTrigger>
           <TabsTrigger value="curry-options">Curry Options</TabsTrigger>
+          <TabsTrigger value="tools">Tools</TabsTrigger>
         </TabsList>
 
         {/* Users Management Tab */}
@@ -1122,6 +1123,79 @@ export default function AdminPortalPage() {
               </form>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        {/* Tools Tab */}
+        <TabsContent value="tools" className="space-y-6">
+          <h2 className="text-xl font-semibold">Database Tools</h2>
+          
+          {/* Price Update Tool */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Price Adjustment Tool</CardTitle>
+              <CardDescription>
+                Fix price display issues by updating all meal prices in the database.
+                This tool divides all meal prices by 100 to convert from paise to rupees.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                  <h3 className="font-medium text-amber-800 mb-1">Warning</h3>
+                  <p className="text-amber-700 text-sm">
+                    This action will modify all meal prices in the database by dividing them by 100.
+                    Only use this if prices are currently displaying incorrectly (e.g., ₹16,000 instead of ₹160).
+                    This operation cannot be undone.
+                  </p>
+                </div>
+                
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive">
+                      Update All Meal Prices
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will permanently adjust all meal prices in the database by dividing
+                        the current values by 100. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={async () => {
+                          try {
+                            const response = await apiRequest("POST", "/api/admin/update-prices");
+                            const data = await response.json();
+                            
+                            toast({
+                              title: "Success",
+                              description: data.message || "Prices updated successfully",
+                            });
+                            
+                            // Refresh the meals data
+                            queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
+                            queryClient.invalidateQueries({ queryKey: ["/api/meals"] });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error.message || "Failed to update prices",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        Continue
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
