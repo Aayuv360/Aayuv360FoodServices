@@ -18,6 +18,7 @@ export const milletMeals: InsertMeal[] = [
     isPopular: true,
     dietaryPreferences: ["vegetarian", "gluten-free"],
     allergens: [],
+    category: "Finger Millet",
   },
   {
     name: "Ragi Roti",

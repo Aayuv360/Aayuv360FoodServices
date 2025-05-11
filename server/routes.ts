@@ -16,6 +16,7 @@ import {
   subscriptionPaymentMap,
   razorpay
 } from "./razorpay";
+import { Meal as MealModel } from "../shared/mongoModels";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
@@ -90,7 +91,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public meal routes
   app.get("/api/meals", async (req, res) => {
     try {
+      console.log("Fetching all meals...");
       const meals = await storage.getAllMeals();
+      console.log(`Retrieved ${meals.length} meals from MongoDB`);
+      if (meals.length === 0) {
+        // If no meals, check if MongoDB has connection
+        console.log("No meals found, checking MongoDB status...");
+        const count = await MealModel.countDocuments();
+        console.log(`MongoDB meal collection has ${count} documents`);
+      }
       res.json(meals);
     } catch (err) {
       console.error("Error fetching meals:", err);

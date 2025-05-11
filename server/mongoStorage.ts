@@ -50,17 +50,38 @@ export class MongoDBStorage implements IStorage {
       if (mealsCount === 0) {
         console.log("Initializing sample meals...");
         
+        // Prepare meal items with required category field
+        const preparedMeals = milletMeals.map(meal => {
+          // Extract category from milletType or use a default
+          if (!meal.category) {
+            if (meal.mealType?.toLowerCase().includes('ragi') || meal.name?.toLowerCase().includes('ragi')) {
+              meal.category = 'Finger Millet';
+            } else if (meal.mealType?.toLowerCase().includes('jowar') || meal.name?.toLowerCase().includes('jowar')) {
+              meal.category = 'Sorghum';
+            } else if (meal.mealType?.toLowerCase().includes('bajra') || meal.name?.toLowerCase().includes('bajra')) {
+              meal.category = 'Pearl Millet';
+            } else if (meal.mealType?.toLowerCase().includes('foxtail') || meal.name?.toLowerCase().includes('foxtail')) {
+              meal.category = 'Foxtail Millet';
+            } else if (meal.mealType?.toLowerCase().includes('kodo') || meal.name?.toLowerCase().includes('kodo')) {
+              meal.category = 'Kodo Millet';
+            } else {
+              meal.category = 'Mixed Millet';
+            }
+          }
+          return meal;
+        });
+        
         // Process in batches to avoid overwhelming the database
         const batchSize = 5;
-        for (let i = 0; i < milletMeals.length; i += batchSize) {
-          const batch = milletMeals.slice(i, i + batchSize);
+        for (let i = 0; i < preparedMeals.length; i += batchSize) {
+          const batch = preparedMeals.slice(i, i + batchSize);
           await Promise.all(batch.map(meal => {
             return this.createMeal(meal).catch(err => {
               console.error(`Failed to create meal ${meal.name}:`, err);
               return null;
             });
           }));
-          console.log(`Initialized meals batch ${i/batchSize + 1}/${Math.ceil(milletMeals.length/batchSize)}`);
+          console.log(`Initialized meals batch ${i/batchSize + 1}/${Math.ceil(preparedMeals.length/batchSize)}`);
         }
         
         console.log(`Initialized sample meals`);

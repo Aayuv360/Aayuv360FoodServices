@@ -43,6 +43,7 @@ export const meals = pgTable('meals', {
   dietaryPreferences: dietaryPreferenceEnum('dietary_preferences').array(),
   allergens: text('allergens').array(),
   available: boolean('available').default(true),
+  category: text('category'), // Added for MongoDB compatibility
 });
 
 // Subscriptions
