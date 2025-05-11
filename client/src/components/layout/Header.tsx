@@ -422,12 +422,12 @@ const Header = () => {
                   <Button variant="ghost" className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={`https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                        src={`https://ui-avatars.com/api/?name=${user.name || user.username || 'User'}&background=random`}
                       />
-                      <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback>{(user.name || user.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
                     <span className="ml-2 hidden md:inline">
-                      {user.name.split(" ")[0]}
+                      {(user.name || user.username || 'User').split(" ")[0]}
                     </span>
                     <ChevronDown className="h-4 w-4" />
                   </Button>
