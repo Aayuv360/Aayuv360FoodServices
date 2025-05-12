@@ -1049,7 +1049,7 @@ export default function AdminPortalPage() {
       </Tabs>
 
       {selectedMealForCurryOptions && (
-        <MealCurryOptionsModal
+        <AdminCurryOptionsModal
           open={isMealCurryOptionsModalOpen}
           onOpenChange={setIsMealCurryOptionsModalOpen}
           meal={selectedMealForCurryOptions}
