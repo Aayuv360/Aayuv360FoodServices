@@ -1056,7 +1056,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Meal Management
   app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const meals = await storage.getAllMeals();
+      console.log("Admin: Fetching all meals from MongoDB...");
+      // Use MongoDB directly instead of going through storage
+      const meals = await MealModel.find().lean();
+      console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
       res.json(meals);
     } catch (err) {
       console.error("Error fetching meals:", err);
@@ -1067,7 +1070,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const mealData = req.body;
-      const newMeal = await storage.createMeal(mealData);
+      console.log("Admin: Creating new meal in MongoDB...");
+      
+      // Use MongoDB directly instead of going through storage
+      const newMeal = await MealModel.create(mealData);
+      console.log(`Admin: Created new meal with ID ${newMeal.id}`);
+      
       res.status(201).json(newMeal);
     } catch (err) {
       console.error("Error creating meal:", err);
@@ -1080,13 +1088,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const mealId = parseInt(req.params.id);
       const mealData = req.body;
       
-      const updatedMeal = await storage.updateMeal(mealId, mealData);
+      console.log(`Admin: Updating meal with ID ${mealId} in MongoDB...`);
       
-      if (!updatedMeal) {
+      // Use MongoDB directly instead of going through storage
+      const result = await MealModel.findOneAndUpdate(
+        { id: mealId },
+        { $set: mealData },
+        { new: true } // Return the updated document
+      ).lean();
+      
+      if (!result) {
+        console.log(`Admin: Meal with ID ${mealId} not found`);
         return res.status(404).json({ message: "Meal not found" });
       }
       
-      res.json(updatedMeal);
+      console.log(`Admin: Successfully updated meal with ID ${mealId}`);
+      res.json(result);
     } catch (err) {
       console.error("Error updating meal:", err);
       res.status(500).json({ message: "Error updating meal" });
