@@ -64,9 +64,11 @@ export default function AdminPortalPage() {
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isMealDialogOpen, setIsMealDialogOpen] = useState(false);
   const [isCurryDialogOpen, setIsCurryDialogOpen] = useState(false);
+  const [isMealCurryOptionsModalOpen, setIsMealCurryOptionsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
   const [selectedCurry, setSelectedCurry] = useState<any>(null);
+  const [selectedMealForCurryOptions, setSelectedMealForCurryOptions] = useState<any>(null);
 
   // Fetch users
   const { data: users, isLoading: isLoadingUsers } = useQuery({
@@ -417,6 +419,12 @@ export default function AdminPortalPage() {
     setSelectedCurry(null);
     setIsCurryDialogOpen(true);
   };
+  
+  const handleAddCurryOptionForMeal = (mealId: number) => {
+    setSelectedCurry(null);
+    setSelectedMealForCurryOptions(meals?.find((m: any) => m.id === mealId));
+    setIsCurryDialogOpen(true);
+  };
 
   const handleEditCurryOption = (curry: any) => {
     setSelectedCurry(curry);
@@ -426,21 +434,32 @@ export default function AdminPortalPage() {
   const handleDeleteCurryOption = (curryId: string) => {
     deleteCurryOptionMutation.mutate(curryId);
   };
+  
+  // Meal curry options modal handler
+  const handleManageMealCurryOptions = (meal: any) => {
+    setSelectedMealForCurryOptions(meal);
+    setIsMealCurryOptionsModalOpen(true);
+  };
 
   const handleCurryFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     
-    // Get the associated meal ID (or null if "All Meals" is selected)
-    const mealId = formData.get('mealId') as string;
+    // Get the associated meal ID - it could come from the form or from selectedMealForCurryOptions
+    let mealId: string | null = formData.get('mealId') as string;
+    
+    // If we're adding a curry option from a specific meal's modal, override with that meal's ID
+    if (selectedMealForCurryOptions && !mealId) {
+      mealId = selectedMealForCurryOptions.id.toString();
+    }
     
     const curryData = {
       id: formData.get('id') as string,
       name: formData.get('name') as string,
       priceAdjustment: parseFloat(formData.get('priceAdjustment') as string),
       description: formData.get('description') as string,
-      mealId: mealId !== "all" ? parseInt(mealId) : null,
+      mealId: mealId && mealId !== "all" ? parseInt(mealId) : null,
     };
 
     if (selectedCurry) {
@@ -766,7 +785,31 @@ export default function AdminPortalPage() {
                       )}
                     </div>
                   </CardContent>
-                  <CardFooter className="flex justify-end gap-2">
+                  <CardFooter className="flex flex-wrap justify-end gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="text-blue-600 border-blue-600"
+                      onClick={() => handleManageMealCurryOptions(meal)}
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        className="w-4 h-4 mr-1"
+                      >
+                        <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"></path>
+                        <path d="M17.943 17.215a7.5 7.5 0 0 0 -10.415 -10.415"></path>
+                        <path d="M12 8l1.5 2.5"></path>
+                        <path d="M11 12.5l1.5 2.5"></path>
+                        <path d="M16 14l0.5 3"></path>
+                      </svg>
+                      Curry Options
+                    </Button>
                     <Button 
                       variant="outline" 
                       size="sm" 
