@@ -36,14 +36,21 @@ export function CurryOptionsModal({
   lastCurryOption,
   isInCart = false
 }: CurryOptionsModalProps) {
-  // Define curry options for this meal
-  const curryOptions: CurryOption[] = [
-    { id: "regular", name: "Regular Curry", priceAdjustment: 0 },
-    { id: "spicy", name: "Spicy Curry", priceAdjustment: 25 },
-    { id: "extra-spicy", name: "Extra Spicy Curry", priceAdjustment: 35 },
-    { id: "butter", name: "Butter Curry", priceAdjustment: 50 },
-    { id: "garlic", name: "Garlic Curry", priceAdjustment: 40 },
-  ];
+  // Extract curry options from the meal (convert from array format to object format)
+  const curryOptions: CurryOption[] = meal.curryOptions ? 
+    meal.curryOptions.map((option: any) => ({
+      id: option[0],
+      name: option[1],
+      priceAdjustment: option[2]
+    })) : 
+    // Fallback to default options if none are provided in the meal
+    [
+      { id: "regular", name: "Regular Curry", priceAdjustment: 0 },
+      { id: "spicy", name: "Spicy Curry", priceAdjustment: 25 },
+      { id: "extra-spicy", name: "Extra Spicy Curry", priceAdjustment: 35 },
+      { id: "butter", name: "Butter Curry", priceAdjustment: 50 },
+      { id: "garlic", name: "Garlic Curry", priceAdjustment: 40 },
+    ];
 
   // If the user has a last selected curry option, use that as default; otherwise use the first option
   const defaultSelectedOption = lastCurryOption ? lastCurryOption.id : curryOptions[0].id;
