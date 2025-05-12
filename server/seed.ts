@@ -102,8 +102,8 @@ export async function seedDatabase() {
       console.log("Guest user created successfully");
     }
 
-    // Check if there are meals in the database
-    const existingMeals = await db.select().from(meals).execute();
+    // Check if there are meals in MongoDB instead of PostgreSQL
+    const existingMeals = await MealModel.find().lean();
 
     // Add sample meals if none exist
     if (existingMeals.length === 0 && milletMeals.length > 0) {
