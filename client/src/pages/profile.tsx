@@ -28,7 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
-import OrderSummaryModal from "@/components/orders/OrderSummaryModal";
+
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -453,48 +453,171 @@ const Profile = () => {
                               />
                             </div>
                           </div>
-                          <div className="border-t pt-4">
-                            <h4 className="font-medium mb-2">Order Items</h4>
-                            <div className="space-y-2">
-                              {order.items?.map((item: any) => (
-                                <div
-                                  key={item.id}
-                                  className="flex justify-between items-center bg-neutral-light p-2 rounded"
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-10 h-10 rounded overflow-hidden">
-                                      <img
-                                        src={item.meal?.imageUrl}
-                                        alt={item.meal?.name}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    </div>
-                                    <div>
+                          {expandedOrderId === order.id ? (
+                            /* Expanded Order Summary */
+                            <div className="border-t pt-4">
+                              {/* Order Summary Header */}
+                              <h4 className="text-lg font-medium mb-4">Order Summary</h4>
+                              
+                              {/* Item Details Section */}
+                              <div className="mb-6">
+                                <h5 className="font-medium mb-3 text-md">Item Details</h5>
+                                <div className="space-y-3">
+                                  {order.items?.map((item: any) => (
+                                    <div key={item.id} className="flex justify-between bg-neutral-50 p-3 rounded-md">
+                                      <div className="flex gap-3">
+                                        <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                                          <img
+                                            src={item.meal?.imageUrl || "https://via.placeholder.com/64?text=Meal"}
+                                            alt={item.meal?.name}
+                                            className="w-full h-full object-cover"
+                                          />
+                                        </div>
+                                        <div>
+                                          <p className="font-medium">{item.meal?.name}</p>
+                                          <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                                          {item.curryOptionName && (
+                                            <p className="text-sm text-gray-600">
+                                              Curry: {item.curryOptionName}
+                                              {item.curryOptionPrice > 0 && ` (+${formatPrice(item.curryOptionPrice)})`}
+                                            </p>
+                                          )}
+                                          {item.notes && (
+                                            <p className="text-sm text-gray-600">Notes: {item.notes}</p>
+                                          )}
+                                        </div>
+                                      </div>
                                       <p className="font-medium">
-                                        {item.meal?.name}
-                                      </p>
-                                      <p className="text-sm text-gray-500">
-                                        Qty: {item.quantity}
+                                        {formatPrice(
+                                          (item.price || (item.meal?.price + (item.curryOptionPrice || 0))) * item.quantity
+                                        )}
                                       </p>
                                     </div>
-                                  </div>
-                                  <p className="font-medium">
-                                    {formatPrice(item.price * item.quantity)}
-                                  </p>
+                                  ))}
                                 </div>
-                              ))}
+                              </div>
+                              
+                              {/* Bill Details Section */}
+                              <div className="mb-6 bg-gray-50 p-4 rounded-md">
+                                <h5 className="font-medium mb-3 text-md">Bill Details</h5>
+                                <div className="space-y-2">
+                                  <div className="flex justify-between text-sm">
+                                    <span>Item Total</span>
+                                    <span>{formatPrice(order.totalPrice)}</span>
+                                  </div>
+                                  {order.deliveryFee > 0 && (
+                                    <div className="flex justify-between text-sm">
+                                      <span>Delivery Fee</span>
+                                      <span>{formatPrice(order.deliveryFee)}</span>
+                                    </div>
+                                  )}
+                                  {order.discount > 0 && (
+                                    <div className="flex justify-between text-sm text-green-600">
+                                      <span>Discount</span>
+                                      <span>-{formatPrice(order.discount)}</span>
+                                    </div>
+                                  )}
+                                  <div className="border-t border-gray-200 mt-2 pt-2"></div>
+                                  <div className="flex justify-between font-bold">
+                                    <span>Total</span>
+                                    <span>{formatPrice(order.finalAmount || order.totalPrice)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Order Details Section */}
+                              <div className="mb-6">
+                                <h5 className="font-medium mb-3 text-md">Order Details</h5>
+                                <div className="space-y-2 text-sm">
+                                  <div className="flex items-start gap-2">
+                                    <span className="font-medium w-32">Payment Method:</span>
+                                    <span className="capitalize">{order.paymentMethod || 'Online payment'}</span>
+                                  </div>
+                                  {order.razorpayOrderId && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="font-medium w-32">Transaction ID:</span>
+                                      <span className="text-xs font-mono bg-gray-100 p-1 rounded">{order.razorpayOrderId}</span>
+                                    </div>
+                                  )}
+                                  {order.deliveryAddress && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="font-medium w-32">Delivery Address:</span>
+                                      <span>{order.deliveryAddress}</span>
+                                    </div>
+                                  )}
+                                  {order.deliveryTime && (
+                                    <div className="flex items-start gap-2">
+                                      <span className="font-medium w-32">Delivery Time:</span>
+                                      <span>{format(new Date(order.deliveryTime), "MMMM d, yyyy 'at' h:mm a")}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {/* Support Section */}
+                              <div className="bg-blue-50 p-4 rounded-lg">
+                                <h5 className="font-medium mb-2">Need Help?</h5>
+                                <p className="text-sm mb-3">If you have any questions about your order, please contact our support team.</p>
+                                <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50">
+                                  Contact Support
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          {order.deliveryTime && (
-                            <div className="mt-4 text-sm text-gray-600">
-                              <p>
-                                Delivery Time:{" "}
-                                {format(
-                                  new Date(order.deliveryTime),
-                                  "MMMM d, yyyy 'at' h:mm a",
+                          ) : (
+                            /* Collapsed Order Summary (just show a few items) */
+                            <div className="border-t pt-4">
+                              <h4 className="font-medium mb-2">Order Items</h4>
+                              <div className="space-y-2">
+                                {order.items?.slice(0, 2).map((item: any) => (
+                                  <div
+                                    key={item.id}
+                                    className="flex justify-between items-center bg-neutral-light p-2 rounded"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-10 h-10 rounded overflow-hidden">
+                                        <img
+                                          src={item.meal?.imageUrl || "https://via.placeholder.com/40?text=Meal"}
+                                          alt={item.meal?.name}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      </div>
+                                      <div>
+                                        <p className="font-medium">
+                                          {item.meal?.name}
+                                        </p>
+                                        <p className="text-sm text-gray-500">
+                                          Qty: {item.quantity}
+                                          {item.curryOptionName && ` • ${item.curryOptionName}`}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <p className="font-medium">
+                                      {formatPrice(
+                                        (item.price || (item.meal?.price + (item.curryOptionPrice || 0))) * item.quantity
+                                      )}
+                                    </p>
+                                  </div>
+                                ))}
+                                
+                                {order.items?.length > 2 && (
+                                  <p className="text-sm text-gray-500 mt-2">
+                                    +{order.items.length - 2} more items
+                                  </p>
                                 )}
-                              </p>
-                              <p>Delivery Address: {order.deliveryAddress}</p>
+                              </div>
+                              
+                              {order.deliveryTime && (
+                                <div className="mt-4 text-sm text-gray-600">
+                                  <p>
+                                    Delivery Time:{" "}
+                                    {format(
+                                      new Date(order.deliveryTime),
+                                      "MMMM d, yyyy 'at' h:mm a",
+                                    )}
+                                  </p>
+                                  <p>Delivery Address: {order.deliveryAddress}</p>
+                                </div>
+                              )}
                             </div>
                           )}
                         </div>
