@@ -510,9 +510,11 @@ export default function AdminPortalPage() {
     }
     
     const curryData = {
+      id: formData.get('id') as string,
       name: formData.get('name') as string,
       priceAdjustment: parseFloat(formData.get('priceAdjustment') as string),
-      ...(mealId && { mealId: parseInt(mealId) }),
+      description: formData.get('description') as string,
+      mealId: mealId && mealId !== "all" ? parseInt(mealId) : null,
     };
     
     if (selectedCurry) {
@@ -522,30 +524,26 @@ export default function AdminPortalPage() {
     }
   };
 
-  // Filter users by role
+  // Filtered users based on role
   const filteredUsers = users?.filter((user: any) => {
     if (userRoleFilter === "all") return true;
     return user.role === userRoleFilter;
   });
 
-  // Filter meals by type
+  // Filtered meals based on type
   const filteredMeals = meals?.filter((meal: any) => {
     if (mealTypeFilter === "all") return true;
     return meal.mealType === mealTypeFilter;
   });
 
-  // Check if user has admin access
-  if (!(user?.role === "admin" || user?.role === "manager")) {
+  // If user is not admin or manager, show access denied message
+  if (user?.role !== "admin" && user?.role !== "manager") {
     return (
-      <div className="container mx-auto py-10">
-        <Card>
-          <CardHeader>
-            <CardTitle>Access Denied</CardTitle>
-            <CardDescription>
-              You do not have permission to access the admin portal.
-            </CardDescription>
-          </CardHeader>
-        </Card>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+        <p className="text-muted-foreground">
+          You do not have permission to access this page.
+        </p>
       </div>
     );
   }
@@ -1063,6 +1061,8 @@ export default function AdminPortalPage() {
             </DialogContent>
           </Dialog>
         </TabsContent>
+
+
       </Tabs>
 
       {selectedMealForCurryOptions && (
