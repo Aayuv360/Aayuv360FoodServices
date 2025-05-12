@@ -7,6 +7,7 @@ import {
   type CustomMealPlan, type InsertCustomMealPlan, type Address, type InsertAddress
 } from "@shared/schema";
 import { milletMeals } from "./mealItems";
+import { CurryOption } from "../shared/mongoModels";
 
 import * as expressSession from "express-session";
 
@@ -854,10 +855,65 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(addresses).where(eq(addresses.id, id));
     return result.rowCount ? result.rowCount > 0 : false;
   }
+  
+  // Curry Option operations - using MongoDB directly
+  async getCurryOptions(): Promise<any[]> {
+    try {
+      return await CurryOption.find().lean();
+    } catch (error) {
+      console.error('Error getting curry options:', error);
+      return [];
+    }
+  }
+  
+  async getCurryOption(id: string): Promise<any | undefined> {
+    try {
+      const curryOption = await CurryOption.findOne({ id }).lean();
+      return curryOption || undefined;
+    } catch (error) {
+      console.error('Error getting curry option:', error);
+      return undefined;
+    }
+  }
+  
+  async createCurryOption(curryOptionData: any): Promise<any> {
+    try {
+      const newCurryOption = new CurryOption(curryOptionData);
+      await newCurryOption.save();
+      return newCurryOption.toObject();
+    } catch (error) {
+      console.error('Error creating curry option:', error);
+      throw error;
+    }
+  }
+  
+  async updateCurryOption(id: string, updateData: any): Promise<any | undefined> {
+    try {
+      const updatedCurryOption = await CurryOption.findOneAndUpdate(
+        { id },
+        { ...updateData, updatedAt: new Date() },
+        { new: true }
+      ).lean();
+      
+      return updatedCurryOption || undefined;
+    } catch (error) {
+      console.error('Error updating curry option:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteCurryOption(id: string): Promise<boolean> {
+    try {
+      const result = await CurryOption.deleteOne({ id });
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error('Error deleting curry option:', error);
+      return false;
+    }
+  }
 }
 
 // Initialize storage with MongoDB, but have MemStorage as fallback
-import { mongoStorage } from './mongoStorage';
 
 // Declare global for type safety
 declare global {
@@ -868,7 +924,8 @@ declare global {
 const memStorage = new MemStorage();
 
 // Export the appropriate storage based on the global flag
-let defaultStorage: IStorage = mongoStorage;
+const dbStorage = new DatabaseStorage();
+let defaultStorage: IStorage = dbStorage;
 
 // Let other modules change the storage implementation
 export function createFallbackStorage(): IStorage {
@@ -883,6 +940,6 @@ export const storage = new Proxy({} as IStorage, {
     // Always get the latest storage implementation
     return global.useMemoryFallback 
       ? memStorage[prop as keyof IStorage]
-      : mongoStorage[prop as keyof IStorage];
+      : dbStorage[prop as keyof IStorage];
   }
 });
