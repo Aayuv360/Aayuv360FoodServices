@@ -566,10 +566,9 @@ export default function AdminPortalPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="users">User Management</TabsTrigger>
           <TabsTrigger value="meals">Meal Management</TabsTrigger>
-          <TabsTrigger value="curry-options">Curry Options</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
