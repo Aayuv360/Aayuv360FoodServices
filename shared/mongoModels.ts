@@ -26,6 +26,11 @@ export interface MealDocument extends Document {
   ingredients?: string[];
   allergens?: string[];
   isAvailable: boolean;
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  fiber?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -135,6 +140,11 @@ const mealSchema = new Schema<MealDocument>({
   ingredients: [String],
   allergens: [String],
   isAvailable: { type: Boolean, default: true },
+  calories: Number,
+  protein: Number,
+  carbs: Number,
+  fat: Number,
+  fiber: Number,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

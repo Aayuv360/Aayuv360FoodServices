@@ -83,25 +83,31 @@ async function updateNutritionValues() {
     // Update each meal with nutrition values
     let updatedCount = 0;
     
-    for (const meal of meals) {
+    // Create an array of update operations
+    const updateOperations = meals.map(meal => {
       const nutritionValues = generateNutritionValues(meal.category);
       
-      // Update the meal document
-      await Meal.updateOne(
-        { _id: meal._id },
-        { 
-          $set: {
-            calories: nutritionValues.calories,
-            protein: nutritionValues.protein,
-            carbs: nutritionValues.carbs,
-            fat: nutritionValues.fat,
-            fiber: nutritionValues.fiber
+      return {
+        updateOne: {
+          filter: { _id: meal._id },
+          update: { 
+            $set: {
+              calories: nutritionValues.calories,
+              protein: nutritionValues.protein,
+              carbs: nutritionValues.carbs,
+              fat: nutritionValues.fat,
+              fiber: nutritionValues.fiber
+            }
           }
         }
-      );
-      
-      updatedCount++;
-      console.log(`Updated ${meal.name} (${meal.category}) with nutrition values`);
+      };
+    });
+    
+    // Execute all updates in a single bulk operation
+    if (updateOperations.length > 0) {
+      const result = await Meal.bulkWrite(updateOperations);
+      updatedCount = result.modifiedCount;
+      console.log(`Bulk updated ${updatedCount} meals with nutrition values`);
     }
     
     console.log(`Successfully updated nutrition values for ${updatedCount} meals`);
