@@ -1691,11 +1691,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/admin/curry-options", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const curryOptionData = {
-        id: `curry_${Date.now()}`,
+        id: req.body.id || `curry_${Date.now()}`,
         name: req.body.name,
         description: req.body.description || "",
         priceAdjustment: parseFloat(req.body.priceAdjustment) || 0,
-        mealId: req.body.mealId || null,
+        mealIds: req.body.mealIds || [],
         createdAt: new Date(),
         updatedAt: new Date()
       };
