@@ -723,39 +723,12 @@ export default function AdminPortalPage() {
 
         <TabsContent value="meals" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle>Meals</CardTitle>
-                <CardDescription>
-                  Manage meals, descriptions, prices, and availability.
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => {
-                  const percentage = window.prompt("Enter price increase percentage (e.g., 5 for 5% increase)", "5");
-                  if (percentage !== null) {
-                    const value = parseFloat(percentage);
-                    if (!isNaN(value)) {
-                      bulkUpdatePricesMutation.mutate({ percentage: value });
-                    }
-                  }
-                }}>
-                  Update All Prices
-                </Button>
-                <Button onClick={handleAddMeal}>
-                  <PlusCircle className="w-4 h-4 mr-2" />
-                  Add Meal
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <Select
-                  value={mealTypeFilter}
-                  onValueChange={setMealTypeFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Filter by meal type" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Meals</CardTitle>
+              <div className="flex space-x-2">
+                <Select value={mealTypeFilter} onValueChange={setMealTypeFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by type" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Types</SelectItem>
@@ -765,7 +738,57 @@ export default function AdminPortalPage() {
                     <SelectItem value="Snack">Snack</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button onClick={handleAddMeal}>
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Add Meal
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline">
+                      Bulk Price Update
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Bulk Price Update</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will update the prices of all meals by the specified percentage.
+                        Enter a positive number to increase prices or a negative number to decrease prices.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                      <div className="space-y-2">
+                        <label htmlFor="percentage" className="text-sm font-medium">
+                          Percentage
+                        </label>
+                        <Input
+                          id="percentage"
+                          type="number"
+                          placeholder="e.g., 5 for 5% increase"
+                          className="col-span-3"
+                          defaultValue={5}
+                        />
+                      </div>
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          const input = document.getElementById("percentage") as HTMLInputElement;
+                          const value = parseFloat(input.value);
+                          if (!isNaN(value)) {
+                            bulkUpdatePricesMutation.mutate({ percentage: value });
+                          }
+                        }}
+                      >
+                        Update Prices
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
+            </CardHeader>
+            <CardContent>
               {isLoadingMeals ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -846,21 +869,21 @@ export default function AdminPortalPage() {
           </Card>
 
           <Dialog open={isMealDialogOpen} onOpenChange={setIsMealDialogOpen}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>
                   {selectedMeal ? "Edit Meal" : "Add Meal"}
                 </DialogTitle>
                 <DialogDescription>
-                  {selectedMeal
-                    ? "Update meal information"
-                    : "Fill in the information for the new meal"}
+                  {selectedMeal 
+                    ? "Update meal information." 
+                    : "Create a new meal."}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleMealFormSubmit}>
-                <div className="grid grid-cols-2 gap-4 py-4">
-                  <div className="space-y-2">
-                    <label htmlFor="name" className="text-sm font-medium">
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="name" className="text-right text-sm font-medium">
                       Name
                     </label>
                     <Input
@@ -868,10 +891,23 @@ export default function AdminPortalPage() {
                       name="name"
                       defaultValue={selectedMeal?.name}
                       required
+                      className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="price" className="text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="description" className="text-right text-sm font-medium">
+                      Description
+                    </label>
+                    <Input
+                      id="description"
+                      name="description"
+                      defaultValue={selectedMeal?.description}
+                      required
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="price" className="text-right text-sm font-medium">
                       Price (₹)
                     </label>
                     <Input
@@ -881,21 +917,11 @@ export default function AdminPortalPage() {
                       step="0.01"
                       defaultValue={selectedMeal?.price || 100}
                       required
+                      className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2 col-span-full">
-                    <label htmlFor="description" className="text-sm font-medium">
-                      Description
-                    </label>
-                    <Input
-                      id="description"
-                      name="description"
-                      defaultValue={selectedMeal?.description}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2 col-span-full">
-                    <label htmlFor="imageUrl" className="text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="imageUrl" className="text-right text-sm font-medium">
                       Image URL
                     </label>
                     <Input
@@ -903,18 +929,19 @@ export default function AdminPortalPage() {
                       name="imageUrl"
                       defaultValue={selectedMeal?.imageUrl || "/meal-placeholder.jpg"}
                       required
+                      className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="milletType" className="text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="milletType" className="text-right text-sm font-medium">
                       Millet Type
                     </label>
                     <Select
                       name="milletType"
                       defaultValue={selectedMeal?.milletType || "Foxtail Millet"}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a millet type" />
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select millet type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Foxtail Millet">Foxtail Millet</SelectItem>
@@ -929,16 +956,16 @@ export default function AdminPortalPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="mealType" className="text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="mealType" className="text-right text-sm font-medium">
                       Meal Type
                     </label>
                     <Select
                       name="mealType"
                       defaultValue={selectedMeal?.mealType || "Dinner"}
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a meal type" />
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select meal type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Breakfast">Breakfast</SelectItem>
@@ -948,70 +975,15 @@ export default function AdminPortalPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="calories" className="text-sm font-medium">
-                      Calories
-                    </label>
-                    <Input
-                      id="calories"
-                      name="calories"
-                      type="number"
-                      defaultValue={selectedMeal?.calories || 350}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="protein" className="text-sm font-medium">
-                      Protein (g)
-                    </label>
-                    <Input
-                      id="protein"
-                      name="protein"
-                      type="number"
-                      defaultValue={selectedMeal?.protein || 12}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="carbs" className="text-sm font-medium">
-                      Carbs (g)
-                    </label>
-                    <Input
-                      id="carbs"
-                      name="carbs"
-                      type="number"
-                      defaultValue={selectedMeal?.carbs || 45}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="fat" className="text-sm font-medium">
-                      Fat (g)
-                    </label>
-                    <Input
-                      id="fat"
-                      name="fat"
-                      type="number"
-                      defaultValue={selectedMeal?.fat || 15}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="fiber" className="text-sm font-medium">
-                      Fiber (g)
-                    </label>
-                    <Input
-                      id="fiber"
-                      name="fiber"
-                      type="number"
-                      defaultValue={selectedMeal?.fiber || 8}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="available" className="text-sm font-medium">
-                      Availability
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="available" className="text-right text-sm font-medium">
+                      Available
                     </label>
                     <Select
                       name="available"
                       defaultValue={(selectedMeal?.available?.toString() || "true")}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="col-span-3">
                         <SelectValue placeholder="Select availability" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1020,21 +992,81 @@ export default function AdminPortalPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2 col-span-full">
-                    <label htmlFor="dietaryPreferences" className="text-sm font-medium">
-                      Dietary Preferences (comma-separated)
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="calories" className="text-right text-sm font-medium">
+                      Calories
                     </label>
-                    <Input 
-                      id="dietaryPreferences" 
-                      name="dietaryPreferences" 
-                      defaultValue={selectedMeal?.dietaryPreferences?.join(', ') || "Vegetarian"}
-                      required 
+                    <Input
+                      id="calories"
+                      name="calories"
+                      type="number"
+                      defaultValue={selectedMeal?.calories || 350}
+                      className="col-span-3"
                     />
                   </div>
-                  
-                  <div className="space-y-2 col-span-full">
-                    <label htmlFor="curryOptions" className="text-sm font-medium">
-                      Curry Options (Format: id,name,price; e.g.: regular,Regular Curry,0;spicy,Spicy Curry,25)
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="protein" className="text-right text-sm font-medium">
+                      Protein (g)
+                    </label>
+                    <Input
+                      id="protein"
+                      name="protein"
+                      type="number"
+                      defaultValue={selectedMeal?.protein || 12}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="carbs" className="text-right text-sm font-medium">
+                      Carbs (g)
+                    </label>
+                    <Input
+                      id="carbs"
+                      name="carbs"
+                      type="number"
+                      defaultValue={selectedMeal?.carbs || 45}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="fat" className="text-right text-sm font-medium">
+                      Fat (g)
+                    </label>
+                    <Input
+                      id="fat"
+                      name="fat"
+                      type="number"
+                      defaultValue={selectedMeal?.fat || 15}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="fiber" className="text-right text-sm font-medium">
+                      Fiber (g)
+                    </label>
+                    <Input
+                      id="fiber"
+                      name="fiber"
+                      type="number"
+                      defaultValue={selectedMeal?.fiber || 8}
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="dietaryPreferences" className="text-right text-sm font-medium">
+                      Dietary Preferences
+                    </label>
+                    <Input
+                      id="dietaryPreferences"
+                      name="dietaryPreferences"
+                      defaultValue={selectedMeal?.dietaryPreferences?.join(', ') || "Vegetarian"}
+                      placeholder="Comma-separated, e.g.: Vegetarian, Non-Vegetarian"
+                      className="col-span-3"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="curryOptions" className="text-right text-sm font-medium">
+                      Curry Options
                     </label>
                     <Input 
                       id="curryOptions" 
@@ -1046,13 +1078,15 @@ export default function AdminPortalPage() {
                         : 
                         "regular,Regular Curry,0;spicy,Spicy Curry,25"
                       }
+                      placeholder="id,name,price; separated by semicolons"
+                      className="col-span-3"
                     />
-                    <p className="text-xs text-gray-500 mt-1">
-                      Format: id,name,price; Multiple options separated by semicolons.
-                    </p>
+                  </div>
+                  <div className="col-span-full px-4 text-xs text-muted-foreground">
+                    Format: id,name,price; Multiple options separated by semicolons
                   </div>
                 </div>
-                <DialogFooter className="mt-4">
+                <DialogFooter>
                   <Button type="submit">
                     {selectedMeal ? "Update Meal" : "Create Meal"}
                   </Button>
