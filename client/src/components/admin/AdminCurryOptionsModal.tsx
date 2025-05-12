@@ -208,25 +208,26 @@ export function AdminCurryOptionsModal({
             </DialogHeader>
             <form onSubmit={handleCurryFormSubmit} className="mt-4">
               <div className="space-y-5">
-                <div className="space-y-2">
-                  <label htmlFor="id" className="text-sm font-medium block">
-                    ID
-                  </label>
-                  <Input
-                    id="id"
-                    name="id"
-                    defaultValue={selectedCurryOption?.id || `curry_${Date.now()}`}
-                    placeholder="e.g., regular, spicy, mild"
-                    required
-                    disabled={!!selectedCurryOption}
-                    className="w-full"
-                  />
-                  {!selectedCurryOption && (
+                {!selectedCurryOption ? (
+                  <div className="space-y-2">
+                    <label htmlFor="id" className="text-sm font-medium block">
+                      ID <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="id"
+                      name="id"
+                      defaultValue={`curry_${Date.now()}`}
+                      placeholder="e.g., regular, spicy, mild"
+                      required
+                      className="w-full"
+                    />
                     <p className="text-xs text-gray-500 mt-1">
                       Must be unique and URL-friendly (lowercase, no spaces)
                     </p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <input type="hidden" name="id" value={selectedCurryOption.id} />
+                )}
                 
                 <div className="space-y-2">
                   <label htmlFor="name" className="text-sm font-medium block">
