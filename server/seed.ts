@@ -2,6 +2,7 @@ import { db } from "./db";
 import { users, meals } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { milletMeals } from "./mealItems";
+import { Meal as MealModel } from "../shared/mongoModels";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
 

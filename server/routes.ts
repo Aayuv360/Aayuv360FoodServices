@@ -16,7 +16,7 @@ import {
   subscriptionPaymentMap,
   razorpay
 } from "./razorpay";
-import { Meal as MealModel } from "../shared/mongoModels";
+import { Meal as MealModel, CartItem as CartItemModel } from "../shared/mongoModels";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
@@ -100,15 +100,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Public meal routes
   app.get("/api/meals", async (req, res) => {
     try {
-      console.log("Fetching all meals...");
-      const meals = await storage.getAllMeals();
+      console.log("Fetching all meals directly from MongoDB...");
+      // Use MongoDB directly instead of going through storage
+      const meals = await MealModel.find().lean();
       console.log(`Retrieved ${meals.length} meals from MongoDB`);
-      if (meals.length === 0) {
-        // If no meals, check if MongoDB has connection
-        console.log("No meals found, checking MongoDB status...");
-        const count = await MealModel.countDocuments();
-        console.log(`MongoDB meal collection has ${count} documents`);
-      }
       res.json(meals);
     } catch (err) {
       console.error("Error fetching meals:", err);
@@ -119,7 +114,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/meals/:id", async (req, res) => {
     try {
       const mealId = parseInt(req.params.id);
-      const meal = await storage.getMeal(mealId);
+      
+      // Use MongoDB directly instead of going through storage
+      const meal = await MealModel.findOne({ id: mealId }).lean();
       
       if (!meal) {
         return res.status(404).json({ message: "Meal not found" });
