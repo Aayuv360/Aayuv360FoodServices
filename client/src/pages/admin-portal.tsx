@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, PlusCircle, Edit, Trash2 } from "lucide-react";
+import { Loader2, PlusCircle, Edit, Trash2, Plus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -27,18 +27,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
@@ -54,6 +51,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import MealCurryOptionsModal from "@/components/admin/MealCurryOptionsModal";
 
 export default function AdminPortalPage() {
   const { user } = useAuth();
@@ -74,56 +72,60 @@ export default function AdminPortalPage() {
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/users`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch users data');
+      const res = await apiRequest("GET", "/api/admin/users");
+      if (!res.ok) {
+        throw new Error("Failed to fetch users");
       }
-      return response.json();
+      return await res.json();
     },
-    enabled: !!user && user.role === "admin",
+    enabled: user?.role === "admin" || user?.role === "manager",
   });
 
   // Fetch meals
   const { data: meals, isLoading: isLoadingMeals } = useQuery({
     queryKey: ["/api/admin/meals"],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/meals`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch meals data');
+      const res = await apiRequest("GET", "/api/admin/meals");
+      if (!res.ok) {
+        throw new Error("Failed to fetch meals");
       }
-      return response.json();
+      return await res.json();
     },
-    enabled: !!user && user.role === "admin",
+    enabled: user?.role === "admin" || user?.role === "manager",
   });
 
   // Fetch curry options
   const { data: curryOptions, isLoading: isLoadingCurryOptions } = useQuery({
     queryKey: ["/api/admin/curry-options"],
     queryFn: async () => {
-      const response = await fetch(`/api/admin/curry-options`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch curry options data');
+      const res = await apiRequest("GET", "/api/admin/curry-options");
+      if (!res.ok) {
+        throw new Error("Failed to fetch curry options");
       }
-      return response.json();
+      return await res.json();
     },
-    enabled: !!user && user.role === "admin",
+    enabled: user?.role === "admin" || user?.role === "manager",
   });
 
-  // User CRUD mutations
+  // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (userData: any) => {
-      const response = await apiRequest("POST", "/api/admin/users", userData);
-      return response.json();
+      const res = await apiRequest("POST", "/api/admin/users", userData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create user");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setIsUserDialogOpen(false);
       toast({
         title: "Success",
-        description: "User has been created successfully",
+        description: "User created successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create user",
@@ -132,20 +134,25 @@ export default function AdminPortalPage() {
     },
   });
 
+  // Update user mutation
   const updateUserMutation = useMutation({
     mutationFn: async ({ id, userData }: { id: number; userData: any }) => {
-      const response = await apiRequest("PATCH", `/api/admin/users/${id}`, userData);
-      return response.json();
+      const res = await apiRequest("PUT", `/api/admin/users/${id}`, userData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update user");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       setIsUserDialogOpen(false);
       toast({
         title: "Success",
-        description: "User has been updated successfully",
+        description: "User updated successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update user",
@@ -154,41 +161,25 @@ export default function AdminPortalPage() {
     },
   });
 
-  const deleteUserMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/admin/users/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
-      toast({
-        title: "Success",
-        description: "User has been deleted successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete user",
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Meal CRUD mutations
+  // Create meal mutation
   const createMealMutation = useMutation({
     mutationFn: async (mealData: any) => {
-      const response = await apiRequest("POST", "/api/admin/meals", mealData);
-      return response.json();
+      const res = await apiRequest("POST", "/api/admin/meals", mealData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create meal");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
       setIsMealDialogOpen(false);
       toast({
         title: "Success",
-        description: "Meal has been created successfully",
+        description: "Meal created successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create meal",
@@ -197,20 +188,25 @@ export default function AdminPortalPage() {
     },
   });
 
+  // Update meal mutation
   const updateMealMutation = useMutation({
     mutationFn: async ({ id, mealData }: { id: number; mealData: any }) => {
-      const response = await apiRequest("PATCH", `/api/admin/meals/${id}`, mealData);
-      return response.json();
+      const res = await apiRequest("PUT", `/api/admin/meals/${id}`, mealData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update meal");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
       setIsMealDialogOpen(false);
       toast({
         title: "Success",
-        description: "Meal has been updated successfully",
+        description: "Meal updated successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update meal",
@@ -219,18 +215,24 @@ export default function AdminPortalPage() {
     },
   });
 
+  // Delete meal mutation
   const deleteMealMutation = useMutation({
     mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/admin/meals/${id}`);
+      const res = await apiRequest("DELETE", `/api/admin/meals/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete meal");
+      }
+      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
       toast({
         title: "Success",
-        description: "Meal has been deleted successfully",
+        description: "Meal deleted successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete meal",
@@ -239,21 +241,25 @@ export default function AdminPortalPage() {
     },
   });
 
-  // Curry option CRUD mutations
+  // Create curry option mutation
   const createCurryOptionMutation = useMutation({
     mutationFn: async (curryData: any) => {
-      const response = await apiRequest("POST", "/api/admin/curry-options", curryData);
-      return response.json();
+      const res = await apiRequest("POST", "/api/admin/curry-options", curryData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create curry option");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
       setIsCurryDialogOpen(false);
       toast({
         title: "Success",
-        description: "Curry option has been created successfully",
+        description: "Curry option created successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to create curry option",
@@ -262,20 +268,25 @@ export default function AdminPortalPage() {
     },
   });
 
+  // Update curry option mutation
   const updateCurryOptionMutation = useMutation({
     mutationFn: async ({ id, curryData }: { id: string; curryData: any }) => {
-      const response = await apiRequest("PATCH", `/api/admin/curry-options/${id}`, curryData);
-      return response.json();
+      const res = await apiRequest("PUT", `/api/admin/curry-options/${id}`, curryData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update curry option");
+      }
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
       setIsCurryDialogOpen(false);
       toast({
         title: "Success",
-        description: "Curry option has been updated successfully",
+        description: "Curry option updated successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update curry option",
@@ -284,18 +295,24 @@ export default function AdminPortalPage() {
     },
   });
 
+  // Delete curry option mutation
   const deleteCurryOptionMutation = useMutation({
     mutationFn: async (id: string) => {
-      await apiRequest("DELETE", `/api/admin/curry-options/${id}`);
+      const res = await apiRequest("DELETE", `/api/admin/curry-options/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete curry option");
+      }
+      return true;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
       toast({
         title: "Success",
-        description: "Curry option has been deleted successfully",
+        description: "Curry option deleted successfully",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: error.message || "Failed to delete curry option",
@@ -304,36 +321,31 @@ export default function AdminPortalPage() {
     },
   });
 
-  const isLoading = isLoadingUsers || isLoadingMeals || isLoadingCurryOptions;
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
-  if (!user || user.role !== "admin") {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <h1 className="text-2xl font-bold mb-2">Access Restricted</h1>
-        <p className="text-muted-foreground text-center">
-          The admin portal is only available to administrators.
-        </p>
-      </div>
-    );
-  }
-
-  // Filtered users based on role
-  const filteredUsers = userRoleFilter === "all" 
-    ? users 
-    : users?.filter((u: any) => u.role === userRoleFilter);
-
-  // Filtered meals based on type
-  const filteredMeals = mealTypeFilter === "all" 
-    ? meals 
-    : meals?.filter((m: any) => m.mealType === mealTypeFilter);
+  // Bulk price update mutation
+  const bulkUpdatePricesMutation = useMutation({
+    mutationFn: async (data: { percentage: number }) => {
+      const res = await apiRequest("POST", "/api/admin/meals/bulk-update-prices", data);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update prices");
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
+      toast({
+        title: "Success",
+        description: "Meal prices updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update prices",
+        variant: "destructive",
+      });
+    },
+  });
 
   // User form handlers
   const handleAddUser = () => {
@@ -346,23 +358,22 @@ export default function AdminPortalPage() {
     setIsUserDialogOpen(true);
   };
 
-  const handleDeleteUser = (userId: number) => {
-    deleteUserMutation.mutate(userId);
-  };
-
   const handleUserFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+    
     const userData = {
       username: formData.get('username') as string,
-      password: formData.get('password') as string,
       email: formData.get('email') as string,
-      name: formData.get('name') as string,
-      phone: formData.get('phone') as string,
-      address: formData.get('address') as string,
       role: formData.get('role') as string,
     };
+
+    // Only include password if it's provided
+    const password = formData.get('password') as string;
+    if (password) {
+      userData['password'] = password;
+    }
 
     if (selectedUser) {
       updateUserMutation.mutate({ id: selectedUser.id, userData });
@@ -382,29 +393,30 @@ export default function AdminPortalPage() {
     setIsMealDialogOpen(true);
   };
 
-  const handleDeleteMeal = (mealId: number) => {
-    deleteMealMutation.mutate(mealId);
-  };
-
   const handleMealFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+    
     const mealData = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
       price: parseFloat(formData.get('price') as string),
-      mealType: formData.get('mealType') as string,
       imageUrl: formData.get('imageUrl') as string,
       milletType: formData.get('milletType') as string,
-      calories: parseFloat(formData.get('calories') as string) || null,
-      protein: parseFloat(formData.get('protein') as string) || null,
-      carbs: parseFloat(formData.get('carbs') as string) || null,
-      fat: parseFloat(formData.get('fat') as string) || null,
-      fiber: parseFloat(formData.get('fiber') as string) || null,
-      available: formData.get('available') === 'on',
-      dietaryPreferences: Array.from(formData.getAll('dietaryPreferences') as string[]),
-      allergens: Array.from(formData.getAll('allergens') as string[]),
+      mealType: formData.get('mealType') as string,
+      calories: parseInt(formData.get('calories') as string) || null,
+      protein: parseInt(formData.get('protein') as string) || null,
+      carbs: parseInt(formData.get('carbs') as string) || null,
+      fat: parseInt(formData.get('fat') as string) || null,
+      fiber: parseInt(formData.get('fiber') as string) || null,
+      available: (formData.get('available') as string) === 'true',
+      
+      // Split and trim the comma-separated list
+      dietaryPreferences: (formData.get('dietaryPreferences') as string)
+        .split(',')
+        .map(pref => pref.trim())
+        .filter(Boolean),
     };
 
     if (selectedMeal) {
@@ -420,10 +432,12 @@ export default function AdminPortalPage() {
     setIsCurryDialogOpen(true);
   };
   
-  const handleAddCurryOptionForMeal = (mealId: number) => {
-    setSelectedCurry(null);
-    setSelectedMealForCurryOptions(meals?.find((m: any) => m.id === mealId));
-    setIsCurryDialogOpen(true);
+  const handleAddCurryOptionForMeal = (mealId: number | undefined) => {
+    if (mealId) {
+      setSelectedCurry(null);
+      setSelectedMealForCurryOptions(meals?.find((m: any) => m.id === mealId));
+      setIsCurryDialogOpen(true);
+    }
   };
 
   const handleEditCurryOption = (curry: any) => {
@@ -469,62 +483,83 @@ export default function AdminPortalPage() {
     }
   };
 
+  // Filtered users based on role
+  const filteredUsers = users?.filter((user: any) => {
+    if (userRoleFilter === "all") return true;
+    return user.role === userRoleFilter;
+  });
+
+  // Filtered meals based on type
+  const filteredMeals = meals?.filter((meal: any) => {
+    if (mealTypeFilter === "all") return true;
+    return meal.mealType === mealTypeFilter;
+  });
+
+  // If user is not admin or manager, show access denied message
+  if (user?.role !== "admin" && user?.role !== "manager") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
+        <p className="text-muted-foreground">
+          You do not have permission to access this page.
+        </p>
+      </div>
+    );
+  }
+
+  if (isLoadingUsers || isLoadingMeals || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-4 md:p-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Admin Portal</h1>
-          <p className="text-muted-foreground">
-            Manage users, menu items, and curry options
-          </p>
+    <div className="container py-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Admin Portal</h1>
+        <div className="text-sm text-muted-foreground">
+          Logged in as <span className="font-medium">{user.username}</span> ({user.role})
         </div>
       </div>
 
-      <Tabs 
-        defaultValue="users" 
-        className="space-y-6" 
-        onValueChange={setActiveTab}
-      >
-        <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="meals">Menu Items</TabsTrigger>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="users">User Management</TabsTrigger>
+          <TabsTrigger value="meals">Meal Management</TabsTrigger>
           <TabsTrigger value="curry-options">Curry Options</TabsTrigger>
-          <TabsTrigger value="tools">Tools</TabsTrigger>
         </TabsList>
 
-        {/* Users Management Tab */}
-        <TabsContent value="users" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold">User Management</h2>
-              <Select
-                defaultValue={userRoleFilter}
-                onValueChange={(value) => setUserRoleFilter(value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Roles</SelectItem>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="manager">Manager</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleAddUser}>
-              <PlusCircle className="w-4 h-4 mr-2" /> Add User
-            </Button>
-          </div>
-
-          {/* Users Table */}
+        <TabsContent value="users" className="space-y-4">
           <Card>
-            <CardContent className="p-0">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Users</CardTitle>
+              <div className="flex space-x-2">
+                <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="user">User</SelectItem>
+                  </SelectContent>
+                </Select>
+                {user.role === "admin" && (
+                  <Button onClick={handleAddUser}>
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Add User
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>ID</TableHead>
-                    <TableHead>Name</TableHead>
                     <TableHead>Username</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Role</TableHead>
@@ -532,74 +567,41 @@ export default function AdminPortalPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers && filteredUsers.length > 0 ? (
+                  {filteredUsers?.length > 0 ? (
                     filteredUsers.map((user: any) => (
                       <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.id}</TableCell>
-                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.id}</TableCell>
                         <TableCell>{user.username}</TableCell>
                         <TableCell>{user.email}</TableCell>
                         <TableCell>
                           <Badge 
-                            className={
-                              user.role === 'admin' 
-                                ? 'bg-purple-100 text-purple-800' 
-                                : user.role === 'manager'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-gray-100 text-gray-800'
+                            variant={
+                              user.role === "admin" 
+                                ? "destructive" 
+                                : user.role === "manager" 
+                                  ? "default" 
+                                  : "secondary"
                             }
                           >
                             {user.role}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex space-x-2">
-                            <Button 
-                              variant="outline" 
-                              size="icon" 
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="icon"
-                                  className="text-red-500"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete the
-                                    user and all associated data.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    className="bg-red-500 text-white"
-                                    onClick={() => handleDeleteUser(user.id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleEditUser(user)}
+                            disabled={user.role === "admin" && user.username !== "admin"}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-                        {userRoleFilter === "all" 
-                          ? "No users found" 
-                          : `No users with role '${userRoleFilter}' found`}
+                      <TableCell colSpan={5} className="text-center h-24">
+                        No users found
                       </TableCell>
                     </TableRow>
                   )}
@@ -608,101 +610,93 @@ export default function AdminPortalPage() {
             </CardContent>
           </Card>
 
-          {/* User Dialog */}
+          {/* User form dialog */}
           <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
-            <DialogContent className="max-w-md">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {selectedUser ? 'Edit User' : 'Add New User'}
+                  {selectedUser ? "Edit User" : "Add User"}
                 </DialogTitle>
                 <DialogDescription>
                   {selectedUser 
-                    ? 'Update user details and permissions' 
-                    : 'Create a new user account'}
+                    ? "Update user information." 
+                    : "Create a new user account."}
                 </DialogDescription>
               </DialogHeader>
-              
-              <form onSubmit={handleUserFormSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleUserFormSubmit}>
+                <div className="space-y-4 py-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input 
-                      id="name" 
-                      name="name" 
-                      placeholder="John Doe" 
-                      defaultValue={selectedUser?.name || ''} 
-                      required 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
+                    <label htmlFor="username" className="text-sm font-medium">
+                      Username
+                    </label>
                     <Input 
                       id="username" 
                       name="username" 
-                      placeholder="johndoe" 
-                      defaultValue={selectedUser?.username || ''} 
+                      defaultValue={selectedUser?.username} 
                       required 
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    name="email" 
-                    type="email" 
-                    placeholder="john@example.com" 
-                    defaultValue={selectedUser?.email || ''} 
-                    required 
-                  />
-                </div>
-                {!selectedUser && (
                   <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
+                    <label htmlFor="email" className="text-sm font-medium">
+                      Email
+                    </label>
                     <Input 
-                      id="password" 
-                      name="password" 
-                      type="password" 
-                      placeholder="••••••••" 
-                      required={!selectedUser}
+                      id="email" 
+                      name="email" 
+                      type="email" 
+                      defaultValue={selectedUser?.email} 
+                      required 
                     />
                   </div>
-                )}
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input 
-                    id="phone" 
-                    name="phone" 
-                    placeholder="+91 98765 43210" 
-                    defaultValue={selectedUser?.phone || ''} 
-                  />
+                  {!selectedUser && (
+                    <div className="space-y-2">
+                      <label htmlFor="password" className="text-sm font-medium">
+                        Password
+                      </label>
+                      <Input 
+                        id="password" 
+                        name="password" 
+                        type="password" 
+                        required={!selectedUser} 
+                      />
+                    </div>
+                  )}
+                  {selectedUser && (
+                    <div className="space-y-2">
+                      <label htmlFor="password" className="text-sm font-medium">
+                        New Password (leave blank to keep current)
+                      </label>
+                      <Input 
+                        id="password" 
+                        name="password" 
+                        type="password" 
+                      />
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    <label htmlFor="role" className="text-sm font-medium">
+                      Role
+                    </label>
+                    <Select 
+                      name="role" 
+                      defaultValue={selectedUser?.role || "user"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="manager">Manager</SelectItem>
+                        {user.role === "admin" && (
+                          <SelectItem value="admin">Admin</SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="address">Address</Label>
-                  <Textarea 
-                    id="address" 
-                    name="address" 
-                    placeholder="123 Main St, Hyderabad" 
-                    defaultValue={selectedUser?.address || ''} 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Role</Label>
-                  <Select defaultValue={selectedUser?.role || 'user'} name="role">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">User</SelectItem>
-                      <SelectItem value="manager">Manager</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <DialogFooter>
+                <DialogFooter className="mt-4">
                   <Button type="submit">
-                    {selectedUser ? 'Update User' : 'Create User'}
+                    {selectedUser ? "Update User" : "Create User"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -710,35 +704,95 @@ export default function AdminPortalPage() {
           </Dialog>
         </TabsContent>
 
-        {/* Menu Items Tab */}
-        <TabsContent value="meals" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold">Menu Items</h2>
-              <Select
-                defaultValue={mealTypeFilter}
-                onValueChange={(value) => setMealTypeFilter(value)}
-              >
-                <SelectTrigger className="w-[180px]">
-                  <SelectValue placeholder="Filter by type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="breakfast">Breakfast</SelectItem>
-                  <SelectItem value="lunch">Lunch</SelectItem>
-                  <SelectItem value="dinner">Dinner</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleAddMeal}>
-              <PlusCircle className="w-4 h-4 mr-2" /> Add Menu Item
-            </Button>
-          </div>
-
-          {/* Menu Items Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredMeals && filteredMeals.length > 0 ? (
-              filteredMeals.map((meal: any) => (
+        <TabsContent value="meals" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Meals</CardTitle>
+              <div className="flex space-x-2">
+                <Select value={mealTypeFilter} onValueChange={setMealTypeFilter}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Filter by type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="breakfast">Breakfast</SelectItem>
+                    <SelectItem value="lunch">Lunch</SelectItem>
+                    <SelectItem value="dinner">Dinner</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button onClick={handleAddMeal}>
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Add Meal
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline">
+                      Bulk Price Update
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Bulk Price Update</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will update the prices of all meals by the specified percentage.
+                        Enter a positive number to increase prices or a negative number to decrease prices.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <form className="space-y-4 py-2">
+                      <div className="space-y-2">
+                        <label htmlFor="percentage" className="text-sm font-medium">
+                          Percentage Change
+                        </label>
+                        <div className="flex items-center">
+                          <Input
+                            id="percentage"
+                            name="percentage"
+                            type="number"
+                            placeholder="e.g. 10 or -5"
+                            className="w-full"
+                          />
+                          <span className="ml-2">%</span>
+                        </div>
+                      </div>
+                    </form>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => {
+                          const percentageInput = document.getElementById('percentage') as HTMLInputElement;
+                          const percentage = parseFloat(percentageInput.value);
+                          
+                          if (isNaN(percentage)) {
+                            toast({
+                              title: "Error",
+                              description: "Please enter a valid percentage",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          
+                          try {
+                            bulkUpdatePricesMutation.mutate({ percentage });
+                          } catch (error: any) {
+                            toast({
+                              title: "Error",
+                              description: error.message || "Failed to update prices",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                      >
+                        Continue
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredMeals?.length > 0 ? (
+                  filteredMeals.map((meal: any) => (
                 <Card key={meal.id} className="overflow-hidden">
                   {meal.imageUrl && (
                     <div className="aspect-video w-full overflow-hidden">
@@ -837,8 +891,8 @@ export default function AdminPortalPage() {
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
                           <AlertDialogAction 
-                            className="bg-red-500 text-white"
-                            onClick={() => handleDeleteMeal(meal.id)}
+                            onClick={() => deleteMealMutation.mutate(meal.id)}
+                            className="bg-red-500 hover:bg-red-600"
                           >
                             Delete
                           </AlertDialogAction>
@@ -847,70 +901,108 @@ export default function AdminPortalPage() {
                     </AlertDialog>
                   </CardFooter>
                 </Card>
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center text-muted-foreground">
-                {mealTypeFilter === "all" 
-                  ? "No menu items found" 
-                  : `No ${mealTypeFilter} items found`}
+                  ))
+                ) : (
+                  <div className="col-span-full text-center py-8">
+                    <p className="text-muted-foreground">No meals found</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
 
-          {/* Meal Dialog */}
+          {/* Meal form dialog */}
           <Dialog open={isMealDialogOpen} onOpenChange={setIsMealDialogOpen}>
-            <DialogContent className="max-w-xl">
+            <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
                 <DialogTitle>
-                  {selectedMeal ? 'Edit Menu Item' : 'Add New Menu Item'}
+                  {selectedMeal ? "Edit Meal" : "Add Meal"}
                 </DialogTitle>
                 <DialogDescription>
                   {selectedMeal 
-                    ? 'Update menu item details' 
-                    : 'Create a new menu item'}
+                    ? "Update meal information." 
+                    : "Create a new meal."}
                 </DialogDescription>
               </DialogHeader>
-              
-              <form onSubmit={handleMealFormSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
+              <form onSubmit={handleMealFormSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-2">
+                  <div className="space-y-2 col-span-full">
+                    <label htmlFor="name" className="text-sm font-medium">
+                      Name
+                    </label>
                     <Input 
                       id="name" 
                       name="name" 
-                      placeholder="Ragi Mudde" 
-                      defaultValue={selectedMeal?.name || ''} 
+                      defaultValue={selectedMeal?.name}
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2 col-span-full">
+                    <label htmlFor="description" className="text-sm font-medium">
+                      Description
+                    </label>
+                    <Input 
+                      id="description" 
+                      name="description" 
+                      defaultValue={selectedMeal?.description}
                       required 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="price">Price (₹)</Label>
+                    <label htmlFor="price" className="text-sm font-medium">
+                      Price (₹)
+                    </label>
                     <Input 
                       id="price" 
                       name="price" 
                       type="number" 
-                      placeholder="199" 
-                      defaultValue={selectedMeal?.price || ''} 
+                      defaultValue={selectedMeal?.price}
                       required 
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea 
-                    id="description" 
-                    name="description" 
-                    placeholder="Delicious millet dish..." 
-                    defaultValue={selectedMeal?.description || ''}
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="mealType">Meal Type</Label>
-                    <Select defaultValue={selectedMeal?.mealType || 'dinner'} name="mealType">
+                    <label htmlFor="imageUrl" className="text-sm font-medium">
+                      Image URL
+                    </label>
+                    <Input 
+                      id="imageUrl" 
+                      name="imageUrl" 
+                      defaultValue={selectedMeal?.imageUrl}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="milletType" className="text-sm font-medium">
+                      Millet Type
+                    </label>
+                    <Select 
+                      name="milletType" 
+                      defaultValue={selectedMeal?.milletType || "finger_millet"}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder="Select millet type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="finger_millet">Finger Millet (Ragi)</SelectItem>
+                        <SelectItem value="jowar">Jowar</SelectItem>
+                        <SelectItem value="pearl_millet">Pearl Millet (Bajra)</SelectItem>
+                        <SelectItem value="foxtail_millet">Foxtail Millet</SelectItem>
+                        <SelectItem value="little_millet">Little Millet</SelectItem>
+                        <SelectItem value="kodo_millet">Kodo Millet</SelectItem>
+                        <SelectItem value="barnyard_millet">Barnyard Millet</SelectItem>
+                        <SelectItem value="mixed">Mixed Millet</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="mealType" className="text-sm font-medium">
+                      Meal Type
+                    </label>
+                    <Select 
+                      name="mealType" 
+                      defaultValue={selectedMeal?.mealType || "dinner"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select meal type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="breakfast">Breakfast</SelectItem>
@@ -920,93 +1012,92 @@ export default function AdminPortalPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="milletType">Millet Type</Label>
-                    <Input 
-                      id="milletType" 
-                      name="milletType" 
-                      placeholder="Ragi, Jowar, etc." 
-                      defaultValue={selectedMeal?.milletType || ''} 
-                      required 
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="imageUrl">Image URL</Label>
-                  <Input 
-                    id="imageUrl" 
-                    name="imageUrl" 
-                    placeholder="https://example.com/image.jpg" 
-                    defaultValue={selectedMeal?.imageUrl || ''}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="calories">Calories</Label>
+                    <label htmlFor="calories" className="text-sm font-medium">
+                      Calories
+                    </label>
                     <Input 
                       id="calories" 
                       name="calories" 
                       type="number" 
-                      placeholder="250" 
-                      defaultValue={selectedMeal?.calories || ''}
+                      defaultValue={selectedMeal?.calories}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="protein">Protein (g)</Label>
+                    <label htmlFor="protein" className="text-sm font-medium">
+                      Protein (g)
+                    </label>
                     <Input 
                       id="protein" 
                       name="protein" 
                       type="number" 
-                      placeholder="15" 
-                      defaultValue={selectedMeal?.protein || ''}
+                      defaultValue={selectedMeal?.protein}
                     />
                   </div>
-                </div>
-                <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="carbs">Carbs (g)</Label>
+                    <label htmlFor="carbs" className="text-sm font-medium">
+                      Carbs (g)
+                    </label>
                     <Input 
                       id="carbs" 
                       name="carbs" 
                       type="number" 
-                      placeholder="30" 
-                      defaultValue={selectedMeal?.carbs || ''}
+                      defaultValue={selectedMeal?.carbs}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fat">Fat (g)</Label>
+                    <label htmlFor="fat" className="text-sm font-medium">
+                      Fat (g)
+                    </label>
                     <Input 
                       id="fat" 
                       name="fat" 
                       type="number" 
-                      placeholder="10" 
-                      defaultValue={selectedMeal?.fat || ''}
+                      defaultValue={selectedMeal?.fat}
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="fiber">Fiber (g)</Label>
+                    <label htmlFor="fiber" className="text-sm font-medium">
+                      Fiber (g)
+                    </label>
                     <Input 
                       id="fiber" 
                       name="fiber" 
                       type="number" 
-                      placeholder="5" 
-                      defaultValue={selectedMeal?.fiber || ''}
+                      defaultValue={selectedMeal?.fiber}
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Switch 
-                      id="available" 
+                  <div className="space-y-2">
+                    <label htmlFor="available" className="text-sm font-medium">
+                      Availability
+                    </label>
+                    <Select 
                       name="available" 
-                      defaultChecked={selectedMeal?.available !== false}
+                      defaultValue={selectedMeal?.available?.toString() || "true"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select availability" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Available</SelectItem>
+                        <SelectItem value="false">Unavailable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2 col-span-full">
+                    <label htmlFor="dietaryPreferences" className="text-sm font-medium">
+                      Dietary Preferences (comma-separated)
+                    </label>
+                    <Input 
+                      id="dietaryPreferences" 
+                      name="dietaryPreferences" 
+                      defaultValue={selectedMeal?.dietaryPreferences?.join(', ') || "Vegetarian"}
+                      required 
                     />
-                    <Label htmlFor="available">Available</Label>
                   </div>
                 </div>
-                
-                <DialogFooter>
+                <DialogFooter className="mt-4">
                   <Button type="submit">
-                    {selectedMeal ? 'Update Item' : 'Create Item'}
+                    {selectedMeal ? "Update Meal" : "Create Meal"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -1014,270 +1105,174 @@ export default function AdminPortalPage() {
           </Dialog>
         </TabsContent>
 
-        {/* Curry Options Tab */}
-        <TabsContent value="curry-options" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Curry Options</h2>
-            <Button onClick={handleAddCurryOption}>
-              <PlusCircle className="w-4 h-4 mr-2" /> Add Curry Option
-            </Button>
-          </div>
-
-          {/* Curry Options Table */}
+        <TabsContent value="curry-options" className="space-y-4">
           <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Price Adjustment</TableHead>
-                    <TableHead>Associated Meal</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {curryOptions && curryOptions.length > 0 ? (
-                    curryOptions.map((curry: any) => (
-                      <TableRow key={curry.id}>
-                        <TableCell className="font-medium">{curry.id}</TableCell>
-                        <TableCell>{curry.name}</TableCell>
-                        <TableCell>
-                          {curry.priceAdjustment >= 0 
-                            ? `+₹${curry.priceAdjustment}` 
-                            : `-₹${Math.abs(curry.priceAdjustment)}`}
-                        </TableCell>
-                        <TableCell>
-                          {curry.mealId 
-                            ? <Badge variant="outline" className="bg-amber-50">
-                                {meals?.find((meal: any) => meal.id === curry.mealId)?.name || `Meal #${curry.mealId}`}
-                              </Badge>
-                            : <Badge variant="outline" className="bg-blue-50">Global</Badge>
-                          }
-                        </TableCell>
-                        <TableCell className="max-w-xs truncate">{curry.description}</TableCell>
-                        <TableCell>
-                          <div className="flex space-x-2">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Curry Options</CardTitle>
+              <Button onClick={handleAddCurryOption}>
+                <PlusCircle className="w-4 h-4 mr-2" />
+                Add Curry Option
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {isLoadingCurryOptions ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : curryOptions?.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {curryOptions.map((curry: any) => (
+                    <Card key={curry.id} className="shadow-sm">
+                      <CardHeader className="pb-2">
+                        <div className="flex justify-between items-center">
+                          <CardTitle className="text-lg">{curry.name}</CardTitle>
+                          <div className="flex gap-1">
                             <Button 
-                              variant="outline" 
+                              variant="ghost" 
                               size="icon" 
                               onClick={() => handleEditCurryOption(curry)}
+                              className="h-8 w-8"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button 
-                                  variant="outline" 
-                                  size="icon"
-                                  className="text-red-500"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This action cannot be undone. This will permanently delete this curry option.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction 
-                                    className="bg-red-500 text-white"
-                                    onClick={() => handleDeleteCurryOption(curry.id)}
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => handleDeleteCurryOption(curry.id)}
+                              className="h-8 w-8 text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={5} className="text-center py-6 text-muted-foreground">
-                        No curry options found
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                        </div>
+                        <CardDescription>{curry.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">
+                            Price Adjustment: ₹{curry.priceAdjustment}
+                          </span>
+                          <Badge variant="outline" className={curry.mealId ? "" : "bg-blue-50"}>
+                            {curry.mealId ? (
+                              <>
+                                Specific to{" "}
+                                {(() => {
+                                  const meal = meals?.find((m: any) => m.id === curry.mealId);
+                                  return meal?.name || `Meal #${curry.mealId}`;
+                                })()}
+                              </>
+                            ) : (
+                              "Available for all meals"
+                            )}
+                          </Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">No curry options found</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Curry Option Dialog */}
+          {/* Curry option form dialog */}
           <Dialog open={isCurryDialogOpen} onOpenChange={setIsCurryDialogOpen}>
-            <DialogContent className="max-w-md">
+            <DialogContent>
               <DialogHeader>
                 <DialogTitle>
-                  {selectedCurry ? 'Edit Curry Option' : 'Add New Curry Option'}
+                  {selectedCurry ? "Edit Curry Option" : "Add Curry Option"}
                 </DialogTitle>
                 <DialogDescription>
                   {selectedCurry 
-                    ? 'Update curry option details' 
-                    : 'Create a new curry option'}
+                    ? "Update curry option information." 
+                    : "Create a new curry option."}
                 </DialogDescription>
               </DialogHeader>
-              
-              <form onSubmit={handleCurryFormSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="id">ID</Label>
-                  <Input 
-                    id="id" 
-                    name="id" 
-                    placeholder="regular" 
-                    defaultValue={selectedCurry?.id || ''} 
-                    required 
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Use a unique identifier like 'regular', 'spicy', etc.
-                  </p>
+              <form onSubmit={handleCurryFormSubmit}>
+                <div className="space-y-4 py-2">
+                  {selectedCurry && (
+                    <input type="hidden" name="id" value={selectedCurry.id} />
+                  )}
+                  <div className="space-y-2">
+                    <label htmlFor="name" className="text-sm font-medium">
+                      Name
+                    </label>
+                    <Input 
+                      id="name" 
+                      name="name" 
+                      defaultValue={selectedCurry?.name} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="description" className="text-sm font-medium">
+                      Description
+                    </label>
+                    <Input 
+                      id="description" 
+                      name="description" 
+                      defaultValue={selectedCurry?.description} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="priceAdjustment" className="text-sm font-medium">
+                      Price Adjustment (₹)
+                    </label>
+                    <Input 
+                      id="priceAdjustment" 
+                      name="priceAdjustment" 
+                      type="number" 
+                      defaultValue={selectedCurry?.priceAdjustment || 0} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="mealId" className="text-sm font-medium">
+                      Associated Meal
+                    </label>
+                    <Select 
+                      name="mealId" 
+                      defaultValue={selectedCurry?.mealId?.toString() || selectedMealForCurryOptions?.id?.toString() || "all"}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select meal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Meals</SelectItem>
+                        {meals?.map((meal: any) => (
+                          <SelectItem key={meal.id} value={meal.id.toString()}>
+                            {meal.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input 
-                    id="name" 
-                    name="name" 
-                    placeholder="Regular Curry" 
-                    defaultValue={selectedCurry?.name || ''} 
-                    required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="priceAdjustment">Price Adjustment (₹)</Label>
-                  <Input 
-                    id="priceAdjustment" 
-                    name="priceAdjustment" 
-                    type="number" 
-                    placeholder="0" 
-                    defaultValue={selectedCurry?.priceAdjustment || '0'} 
-                    required 
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Use positive values for price additions and negative for discounts
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea 
-                    id="description" 
-                    name="description" 
-                    placeholder="Medium spicy traditional curry..." 
-                    defaultValue={selectedCurry?.description || ''}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="mealId">Associated Meal</Label>
-                  <Select
-                    name="mealId"
-                    defaultValue={selectedCurry?.mealId?.toString() || "all"}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select meal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Meals (Global)</SelectItem>
-                      {meals?.map((meal: any) => (
-                        <SelectItem key={meal.id} value={meal.id.toString()}>
-                          {meal.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Select the specific meal this curry option applies to, or "All Meals" if it's a global option
-                  </p>
-                </div>
-                
-                <DialogFooter>
+                <DialogFooter className="mt-4">
                   <Button type="submit">
-                    {selectedCurry ? 'Update Option' : 'Create Option'}
+                    {selectedCurry ? "Update Curry Option" : "Create Curry Option"}
                   </Button>
                 </DialogFooter>
               </form>
             </DialogContent>
           </Dialog>
         </TabsContent>
-
-        {/* Tools Tab */}
-        <TabsContent value="tools" className="space-y-6">
-          <h2 className="text-xl font-semibold">Database Tools</h2>
-          
-          {/* Price Update Tool */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Price Adjustment Tool</CardTitle>
-              <CardDescription>
-                Fix price display issues by updating all meal prices in the database.
-                This tool divides all meal prices by 100 to convert from paise to rupees.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-                  <h3 className="font-medium text-amber-800 mb-1">Warning</h3>
-                  <p className="text-amber-700 text-sm">
-                    This action will modify all meal prices in the database by dividing them by 100.
-                    Only use this if prices are currently displaying incorrectly (e.g., ₹16,000 instead of ₹160).
-                    This operation cannot be undone.
-                  </p>
-                </div>
-                
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="destructive">
-                      Update All Meal Prices
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will permanently adjust all meal prices in the database by dividing
-                        the current values by 100. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction 
-                        onClick={async () => {
-                          try {
-                            const response = await apiRequest("POST", "/api/admin/update-prices");
-                            const data = await response.json();
-                            
-                            toast({
-                              title: "Success",
-                              description: data.message || "Prices updated successfully",
-                            });
-                            
-                            // Refresh the meals data
-                            queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
-                            queryClient.invalidateQueries({ queryKey: ["/api/meals"] });
-                          } catch (error: any) {
-                            toast({
-                              title: "Error",
-                              description: error.message || "Failed to update prices",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                      >
-                        Continue
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
+
+      {/* Import MealCurryOptionsModal component */}
+      <MealCurryOptionsModal 
+        isOpen={isMealCurryOptionsModalOpen}
+        onOpenChange={setIsMealCurryOptionsModalOpen}
+        selectedMeal={selectedMealForCurryOptions}
+        curryOptions={curryOptions || []}
+        onEditCurryOption={handleEditCurryOption}
+        onDeleteCurryOption={handleDeleteCurryOption}
+        onAddCurryOption={handleAddCurryOptionForMeal}
+      />
     </div>
   );
 }
