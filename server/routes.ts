@@ -163,12 +163,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/cart", async (req, res) => {
     try {
       const userId = req.isAuthenticated() ? (req.user as any).id : 0;
-      const cartItems = await storage.getCartItems(userId);
+      
+      // Use MongoDB directly instead of going through storage
+      const cartItems = await CartItemModel.find({ userId }).lean();
       
       // Enrich cart items with meal details and curry options
       const enrichedCartItems = await Promise.all(
         cartItems.map(async (item) => {
-          const meal = await storage.getMeal(item.mealId);
+          // Use MongoDB directly to get meal
+          const meal = await MealModel.findOne({ id: item.mealId }).lean();
           
           // Only add curry option if the necessary fields exist
           let mealWithCurryOption = meal;
@@ -177,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             mealWithCurryOption = {
               ...meal,
               // curryOption is not in the Meal type, but we need it for the frontend
-            } as any;
+            };
             
             // Add the curry option to the object
             (mealWithCurryOption as any).curryOption = {

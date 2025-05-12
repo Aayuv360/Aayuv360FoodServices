@@ -103,25 +103,25 @@ export async function seedDatabase() {
       console.log("Guest user created successfully");
     }
 
-    // Check if there are meals in MongoDB instead of PostgreSQL
+    // Check if there are meals in MongoDB
     const existingMeals = await MealModel.find().lean();
 
     // Add sample meals if none exist
     if (existingMeals.length === 0 && milletMeals.length > 0) {
-      console.log("Adding sample meals...");
+      console.log("Adding sample meals to MongoDB...");
 
-      // Insert all millet meals
-      for (const meal of milletMeals) {
-        await db
-          .insert(meals)
-          .values({
-            ...meal,
-            available: true,
-          })
-          .execute();
-      }
+      // Create promises for all meal insertions
+      const mealInsertPromises = milletMeals.map(meal => {
+        return MealModel.create({
+          ...meal,
+          available: true,
+        });
+      });
 
-      console.log(`${milletMeals.length} sample meals added successfully`);
+      // Insert all meals in parallel
+      await Promise.all(mealInsertPromises);
+      
+      console.log(`${milletMeals.length} sample meals added successfully to MongoDB`);
     }
 
     console.log("Database seeding completed successfully");
