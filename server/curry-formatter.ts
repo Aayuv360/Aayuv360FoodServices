@@ -33,9 +33,12 @@ export function formatMealCurryOptions(meal: any, globalOptions: any[]) {
     curryOptions = formatCurryOptions(meal.curryOptions);
   } else {
     // Otherwise use applicable global options
-    const mealSpecificOptions = globalOptions.filter(option => 
-      option.mealId === null || option.mealId === meal.id
-    );
+    const mealSpecificOptions = globalOptions.filter(option => {
+      // Check both legacy mealId field and new mealIds array
+      const legacyMatch = option.mealId === null || option.mealId === meal.id;
+      const arrayMatch = Array.isArray(option.mealIds) && option.mealIds.includes(meal.id);
+      return legacyMatch || arrayMatch;
+    });
     
     curryOptions = formatCurryOptions(mealSpecificOptions);
   }

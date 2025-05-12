@@ -1314,9 +1314,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...result,
         curryOptions: result.curryOptions && result.curryOptions.length > 0 
           ? formatCurryOptions(result.curryOptions, mealId) 
-          : formatCurryOptions(globalCurryOptions.filter((option: any) => 
-              option.mealId === null || option.mealId === mealId
-            ), mealId)
+          : formatCurryOptions(globalCurryOptions.filter((option: any) => {
+              // Check if this curry option applies to this meal either through:
+              // 1. Legacy mealId field, or
+              // 2. New mealIds array containing this meal's ID
+              const legacyMatch = option.mealId === null || option.mealId === mealId;
+              const arrayMatch = Array.isArray(option.mealIds) && option.mealIds.includes(mealId);
+              return legacyMatch || arrayMatch;
+            }), mealId)
       };
       
       console.log(`Admin: Successfully updated meal with ID ${mealId}`);
@@ -1348,6 +1353,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Set necessary properties
+      // Instead of single mealId, use mealIds array for multiple meal associations
+      if (!curryOptionData.mealIds) {
+        curryOptionData.mealIds = [mealId]; // Add current meal to mealIds array
+      } else if (Array.isArray(curryOptionData.mealIds) && !curryOptionData.mealIds.includes(mealId)) {
+        curryOptionData.mealIds.push(mealId); // Add current meal to existing array if not already included
+      }
+      
+      // Keep mealId for backward compatibility
       curryOptionData.mealId = mealId;
       curryOptionData.updatedAt = new Date();
       
