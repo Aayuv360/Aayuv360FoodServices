@@ -67,6 +67,7 @@ export default function AdminPortalPage() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
   const [selectedCurryOption, setSelectedCurryOption] = useState<any>(null);
+  const [selectedMealIds, setSelectedMealIds] = useState<number[]>([]);
 
   // Curry options parsing function removed - now handled by backend
 
@@ -441,11 +442,14 @@ export default function AdminPortalPage() {
   // Curry option handlers
   const handleAddCurryOption = () => {
     setSelectedCurryOption(null);
+    setSelectedMealIds([]);
     setIsCurryOptionDialogOpen(true);
   };
 
   const handleEditCurryOption = (option: any) => {
     setSelectedCurryOption(option);
+    // Initialize selected meal IDs from the option
+    setSelectedMealIds(option.mealIds || []);
     setIsCurryOptionDialogOpen(true);
   };
 
@@ -458,22 +462,32 @@ export default function AdminPortalPage() {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     
-    // Get the associated meal IDs
-    const mealIds = formData.getAll('mealIds') as string[];
-    
     const optionData = {
       id: formData.get('id') as string || `curry_${Date.now()}`,
       name: formData.get('name') as string,
       priceAdjustment: parseFloat(formData.get('priceAdjustment') as string),
       description: formData.get('description') as string || "",
-      mealIds: mealIds.map(id => parseInt(id))
+      mealIds: selectedMealIds // Use the state value directly
     };
+    
+    console.log("Submitting curry option with meal IDs:", selectedMealIds);
     
     if (selectedCurryOption) {
       updateCurryOptionMutation.mutate({ id: selectedCurryOption.id, optionData });
     } else {
       createCurryOptionMutation.mutate(optionData);
     }
+  };
+  
+  // Toggle a meal ID in the selection
+  const toggleMealSelection = (mealId: number) => {
+    setSelectedMealIds(current => {
+      if (current.includes(mealId)) {
+        return current.filter(id => id !== mealId);
+      } else {
+        return [...current, mealId];
+      }
+    });
   };
 
   // Filtered users based on role
@@ -1284,14 +1298,14 @@ export default function AdminPortalPage() {
                         {meals.map((meal: any) => (
                           <div key={meal.id} className="flex items-start space-x-2">
                             <Checkbox 
-                              id={`meal-${meal.id}`} 
-                              name="mealIds" 
-                              value={meal.id.toString()}
-                              defaultChecked={selectedCurryOption?.mealIds?.includes(meal.id)}
+                              id={`meal-${meal.id}`}
+                              checked={selectedMealIds.includes(meal.id)}
+                              onCheckedChange={() => toggleMealSelection(meal.id)}
                             />
                             <label
                               htmlFor={`meal-${meal.id}`}
                               className="text-sm cursor-pointer leading-tight"
+                              onClick={() => toggleMealSelection(meal.id)}
                             >
                               {meal.name}
                               <span className="text-xs block text-muted-foreground">
