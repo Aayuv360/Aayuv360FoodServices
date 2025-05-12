@@ -43,11 +43,20 @@ const Profile = () => {
   const [location, navigate] = useLocation();
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   
   // Parse the URL search params to get the active tab
   const urlParams = new URLSearchParams(window.location.search);
   const tabParam = urlParams.get('tab');
   const [currentTab, setCurrentTab] = useState(tabParam || "profile");
+  
+  const toggleOrderDetails = (orderId: number) => {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null);
+    } else {
+      setExpandedOrderId(orderId);
+    }
+  };
   
   // Update tab when URL changes
   useEffect(() => {
@@ -409,8 +418,14 @@ const Profile = () => {
                   ) : (
                     <div className="space-y-4">
                       {orders.map((order: any) => (
-                        <div key={order.id} className="border rounded-lg p-4">
-                          <div className="flex flex-col md:flex-row justify-between mb-4 gap-2">
+                        <div 
+                          key={order.id} 
+                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                        >
+                          <div 
+                            className="flex flex-col md:flex-row justify-between mb-4 gap-2 cursor-pointer"
+                            onClick={() => toggleOrderDetails(order.id)}
+                          >
                             <div>
                               <p className="text-sm text-gray-500">
                                 Order #{order.id}
@@ -433,6 +448,9 @@ const Profile = () => {
                               <p className="font-bold text-primary">
                                 {formatPrice(order.totalPrice)}
                               </p>
+                              <ChevronRight 
+                                className={`h-5 w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`} 
+                              />
                             </div>
                           </div>
                           <div className="border-t pt-4">
