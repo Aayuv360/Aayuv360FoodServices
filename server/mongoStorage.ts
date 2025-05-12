@@ -1024,9 +1024,24 @@ export class MongoDBStorage implements IStorage {
   
   async createCurryOption(curryOptionData: any): Promise<any> {
     try {
-      const newCurryOption = new CurryOption(curryOptionData);
+      console.log('Creating curry option with data:', JSON.stringify(curryOptionData));
+      
+      // Ensure mealIds is properly formatted as an array
+      let mealIds = curryOptionData.mealIds || [];
+      if (!Array.isArray(mealIds)) {
+        mealIds = [];
+      }
+      
+      // Create with properly formatted data
+      const newCurryOption = new CurryOption({
+        ...curryOptionData,
+        mealIds: mealIds
+      });
+      
       await newCurryOption.save();
-      return newCurryOption.toObject();
+      const result = newCurryOption.toObject();
+      console.log('Created curry option result:', result);
+      return result;
     } catch (error) {
       console.error('Error creating curry option:', error);
       throw error;
@@ -1035,12 +1050,27 @@ export class MongoDBStorage implements IStorage {
   
   async updateCurryOption(id: string, updateData: any): Promise<any | undefined> {
     try {
+      console.log('Updating curry option with ID:', id);
+      console.log('Update data received:', JSON.stringify(updateData));
+      
+      // Ensure mealIds is properly formatted as an array
+      let mealIds = updateData.mealIds || [];
+      if (!Array.isArray(mealIds)) {
+        mealIds = [];
+      }
+      
+      // Apply the update with ensured array format
       const updatedCurryOption = await CurryOption.findOneAndUpdate(
         { id },
-        { ...updateData, updatedAt: new Date() },
+        { 
+          ...updateData,
+          mealIds: mealIds,
+          updatedAt: new Date() 
+        },
         { new: true }
       ).lean();
       
+      console.log('Updated curry option result:', updatedCurryOption);
       return updatedCurryOption || undefined;
     } catch (error) {
       console.error('Error updating curry option:', error);
