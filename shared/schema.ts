@@ -190,7 +190,10 @@ export const insertAddressSchema = createInsertSchema(addresses).omit({
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type Meal = typeof meals.$inferSelect;
+// Extend the meal type to include curry options as an array of [id, name, priceAdjustment]
+export type Meal = typeof meals.$inferSelect & {
+  curryOptions?: [string, string, number][]
+};
 export type InsertMeal = z.infer<typeof insertMealSchema>;
 
 export type Subscription = typeof subscriptions.$inferSelect;

@@ -53,7 +53,10 @@ export function CurryOptionsModal({
     ];
 
   // If the user has a last selected curry option, use that as default; otherwise use the first option
-  const defaultSelectedOption = lastCurryOption ? lastCurryOption.id : curryOptions[0].id;
+  // Make sure curryOptions is not empty before accessing the first element
+  const defaultSelectedOption = lastCurryOption ? 
+    lastCurryOption.id : 
+    (curryOptions.length > 0 ? curryOptions[0].id : "regular");
   const [selectedOption, setSelectedOption] = useState<string>(defaultSelectedOption);
 
   // Using imported formatPrice function from utils
