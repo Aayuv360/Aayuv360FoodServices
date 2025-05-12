@@ -62,12 +62,8 @@ export default function AdminPortalPage() {
   const [mealTypeFilter, setMealTypeFilter] = useState("all");
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false);
   const [isMealDialogOpen, setIsMealDialogOpen] = useState(false);
-  const [isCurryDialogOpen, setIsCurryDialogOpen] = useState(false);
-  const [isMealCurryOptionsModalOpen, setIsMealCurryOptionsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
-  const [selectedCurry, setSelectedCurry] = useState<any>(null);
-  const [selectedMealForCurryOptions, setSelectedMealForCurryOptions] = useState<any>(null);
   
   // Function to parse and validate curry options string
   // Format should be: id1,name1,price1;id2,name2,price2
@@ -802,10 +798,6 @@ export default function AdminPortalPage() {
                       meal={meal} 
                       onEditMeal={handleEditMeal}
                       onDeleteMeal={(mealId) => deleteMealMutation.mutate(mealId)}
-                      onManageCurryOptions={(selectedMeal) => {
-                        setSelectedMealForCurryOptions(selectedMeal);
-                        setIsMealCurryOptionsModalOpen(true);
-                      }}
                     />
                   ))}
                 </div>
@@ -1047,14 +1039,6 @@ export default function AdminPortalPage() {
 
 
       </Tabs>
-
-      {selectedMealForCurryOptions && (
-        <AdminCurryOptionsModal
-          open={isMealCurryOptionsModalOpen}
-          onOpenChange={setIsMealCurryOptionsModalOpen}
-          meal={selectedMealForCurryOptions}
-        />
-      )}
     </div>
   );
 }
