@@ -1,8 +1,8 @@
 import { 
-  User, Meal, CartItem, Order, Subscription, Address, Location, Review,
+  User, Meal, CartItem, Order, Subscription, Address, Location, Review, CurryOption,
   UserDocument, MealDocument, CartItemDocument, OrderDocument, 
-  SubscriptionDocument, AddressDocument, LocationDocument, ReviewDocument,
-  getNextSequence
+  SubscriptionDocument, AddressDocument, LocationDocument, ReviewDocument, CurryOptionDocument,
+  getNextSequence, CurryOption as CurryOptionType
 } from '../shared/mongoModels';
 import { createSessionStore, SessionStore } from './session-store';
 import { milletMeals } from './mealItems';
