@@ -64,37 +64,7 @@ export default function AdminPortalPage() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
   
-  // Function to parse and validate curry options string
-  // Format should be: id1,name1,price1;id2,name2,price2
-  const parseAndValidateCurryOptions = (optionsStr: string): [string, string, number][] | undefined => {
-    if (!optionsStr.trim()) return undefined;
-    
-    try {
-      // Split by semicolons to get each option
-      const optionsArray = optionsStr.split(';')
-        .map(option => option.trim())
-        .filter(option => !!option);
-      
-      return optionsArray.map(option => {
-        // Split each option by commas
-        const [id, name, priceStr] = option.split(',').map(part => part.trim());
-        const price = parseFloat(priceStr);
-        
-        if (!id || !name || isNaN(price)) {
-          throw new Error(`Invalid curry option format: ${option}`);
-        }
-        
-        return [id, name, price];
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: `Invalid curry options format. Use format: id1,name1,price1;id2,name2,price2`,
-        variant: "destructive",
-      });
-      return undefined;
-    }
-  };
+  // Curry options parsing function removed - now handled by backend
 
   // Query to fetch users
   const { data: users, isLoading: isLoadingUsers } = useQuery({
@@ -335,11 +305,6 @@ export default function AdminPortalPage() {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     
-    // Parse curry options
-    const curryOptionsString = formData.get('curryOptions') as string;
-    const curryOptions = parseAndValidateCurryOptions(curryOptionsString);
-    if (curryOptionsString && !curryOptions) return; // Stop if validation failed
-    
     const mealData = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
@@ -363,8 +328,7 @@ export default function AdminPortalPage() {
         .map(pref => pref.trim())
         .filter(Boolean),
       
-      // Add curry options if provided
-      ...(curryOptions && { curryOptions }),
+      // Curry options will be handled by backend default values
     };
 
     if (selectedMeal) {
@@ -659,9 +623,9 @@ export default function AdminPortalPage() {
           </Card>
 
           <Dialog open={isMealDialogOpen} onOpenChange={setIsMealDialogOpen}>
-            <DialogContent className="sm:max-w-[600px]">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-xl">
                   {selectedMeal ? "Edit Meal" : "Add Meal"}
                 </DialogTitle>
                 <DialogDescription>
@@ -671,222 +635,225 @@ export default function AdminPortalPage() {
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleMealFormSubmit}>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="name" className="text-right text-sm font-medium">
-                      Name
-                    </label>
-                    <Input
-                      id="name"
-                      name="name"
-                      defaultValue={selectedMeal?.name}
-                      required
-                      className="col-span-3"
-                    />
+                <div className="space-y-6 py-4">
+                  {/* Basic Information Section */}
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <h3 className="text-base font-semibold mb-4 text-gray-900">Basic Information</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="name" className="text-sm font-medium block">
+                          Name <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          id="name"
+                          name="name"
+                          defaultValue={selectedMeal?.name}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="price" className="text-sm font-medium block">
+                          Price (₹) <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          id="price"
+                          name="price"
+                          type="number"
+                          step="0.01"
+                          defaultValue={selectedMeal?.price || 199}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 md:col-span-2">
+                        <label htmlFor="description" className="text-sm font-medium block">
+                          Description <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                          id="description"
+                          name="description"
+                          defaultValue={selectedMeal?.description}
+                          required
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="available" className="text-sm font-medium block">
+                          Available
+                        </label>
+                        <Select
+                          name="available"
+                          defaultValue={selectedMeal?.available === false ? "false" : "true"}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Is this meal available?" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Yes</SelectItem>
+                            <SelectItem value="false">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="imageUrl" className="text-sm font-medium block">
+                          Image URL
+                        </label>
+                        <Input
+                          id="imageUrl"
+                          name="imageUrl"
+                          defaultValue={selectedMeal?.imageUrl || "/meal-placeholder.jpg"}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="description" className="text-right text-sm font-medium">
-                      Description
-                    </label>
-                    <Input
-                      id="description"
-                      name="description"
-                      defaultValue={selectedMeal?.description}
-                      required
-                      className="col-span-3"
-                    />
+                  
+                  {/* Meal Classification Section */}
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <h3 className="text-base font-semibold mb-4 text-gray-900">Meal Classification</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="milletType" className="text-sm font-medium block">
+                          Millet Type
+                        </label>
+                        <Select
+                          name="milletType"
+                          defaultValue={selectedMeal?.milletType || "Pearl Millet"}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a millet type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Pearl Millet">Pearl Millet (Bajra)</SelectItem>
+                            <SelectItem value="Finger Millet">Finger Millet (Ragi)</SelectItem>
+                            <SelectItem value="Sorghum">Sorghum (Jowar)</SelectItem>
+                            <SelectItem value="Foxtail Millet">Foxtail Millet (Kangni)</SelectItem>
+                            <SelectItem value="Little Millet">Little Millet (Kutki)</SelectItem>
+                            <SelectItem value="Barnyard Millet">Barnyard Millet (Sanwa)</SelectItem>
+                            <SelectItem value="Kodo Millet">Kodo Millet</SelectItem>
+                            <SelectItem value="Mixed Millet">Mixed Millet</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="mealType" className="text-sm font-medium block">
+                          Meal Type
+                        </label>
+                        <Select
+                          name="mealType"
+                          defaultValue={selectedMeal?.mealType || "Dinner"}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a meal type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Breakfast">Breakfast</SelectItem>
+                            <SelectItem value="Lunch">Lunch</SelectItem>
+                            <SelectItem value="Dinner">Dinner</SelectItem>
+                            <SelectItem value="Snack">Snack</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="servingSize" className="text-sm font-medium block">
+                          Serving Size
+                        </label>
+                        <Input
+                          id="servingSize"
+                          name="servingSize"
+                          defaultValue={selectedMeal?.servingSize || "1 bowl (250g)"}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="dietaryPreferences" className="text-sm font-medium block">
+                          Dietary Preferences
+                        </label>
+                        <Input
+                          id="dietaryPreferences"
+                          name="dietaryPreferences"
+                          defaultValue={selectedMeal?.dietaryPreferences?.join(', ') || "Vegetarian"}
+                          placeholder="Comma-separated, e.g.: Vegetarian, Non-Vegetarian"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="price" className="text-right text-sm font-medium">
-                      Price (₹)
-                    </label>
-                    <Input
-                      id="price"
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      defaultValue={selectedMeal?.price || 199}
-                      required
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="servingSize" className="text-right text-sm font-medium">
-                      Serving Size
-                    </label>
-                    <Input
-                      id="servingSize"
-                      name="servingSize"
-                      defaultValue={selectedMeal?.servingSize || "1 bowl (250g)"}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="available" className="text-right text-sm font-medium">
-                      Available
-                    </label>
-                    <Select
-                      name="available"
-                      defaultValue={selectedMeal?.available === false ? "false" : "true"}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Is this meal available?" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Yes</SelectItem>
-                        <SelectItem value="false">No</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="milletType" className="text-right text-sm font-medium">
-                      Millet Type
-                    </label>
-                    <Select
-                      name="milletType"
-                      defaultValue={selectedMeal?.milletType || "Pearl Millet"}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select a millet type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pearl Millet">Pearl Millet (Bajra)</SelectItem>
-                        <SelectItem value="Finger Millet">Finger Millet (Ragi)</SelectItem>
-                        <SelectItem value="Sorghum">Sorghum (Jowar)</SelectItem>
-                        <SelectItem value="Foxtail Millet">Foxtail Millet (Kangni)</SelectItem>
-                        <SelectItem value="Little Millet">Little Millet (Kutki)</SelectItem>
-                        <SelectItem value="Barnyard Millet">Barnyard Millet (Sanwa)</SelectItem>
-                        <SelectItem value="Kodo Millet">Kodo Millet</SelectItem>
-                        <SelectItem value="Mixed Millet">Mixed Millet</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="mealType" className="text-right text-sm font-medium">
-                      Meal Type
-                    </label>
-                    <Select
-                      name="mealType"
-                      defaultValue={selectedMeal?.mealType || "Dinner"}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select a meal type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Breakfast">Breakfast</SelectItem>
-                        <SelectItem value="Lunch">Lunch</SelectItem>
-                        <SelectItem value="Dinner">Dinner</SelectItem>
-                        <SelectItem value="Snack">Snack</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="imageUrl" className="text-right text-sm font-medium">
-                      Image URL
-                    </label>
-                    <Input
-                      id="imageUrl"
-                      name="imageUrl"
-                      defaultValue={selectedMeal?.imageUrl || "/meal-placeholder.jpg"}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="calories" className="text-right text-sm font-medium">
-                      Calories
-                    </label>
-                    <Input
-                      id="calories"
-                      name="calories"
-                      type="number"
-                      defaultValue={selectedMeal?.calories || 350}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="protein" className="text-right text-sm font-medium">
-                      Protein (g)
-                    </label>
-                    <Input
-                      id="protein"
-                      name="protein"
-                      type="number"
-                      defaultValue={selectedMeal?.protein || 12}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="carbs" className="text-right text-sm font-medium">
-                      Carbs (g)
-                    </label>
-                    <Input
-                      id="carbs"
-                      name="carbs"
-                      type="number"
-                      defaultValue={selectedMeal?.carbs || 45}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="fat" className="text-right text-sm font-medium">
-                      Fat (g)
-                    </label>
-                    <Input
-                      id="fat"
-                      name="fat"
-                      type="number"
-                      defaultValue={selectedMeal?.fat || 15}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="fiber" className="text-right text-sm font-medium">
-                      Fiber (g)
-                    </label>
-                    <Input
-                      id="fiber"
-                      name="fiber"
-                      type="number"
-                      defaultValue={selectedMeal?.fiber || 8}
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="dietaryPreferences" className="text-right text-sm font-medium">
-                      Dietary Preferences
-                    </label>
-                    <Input
-                      id="dietaryPreferences"
-                      name="dietaryPreferences"
-                      defaultValue={selectedMeal?.dietaryPreferences?.join(', ') || "Vegetarian"}
-                      placeholder="Comma-separated, e.g.: Vegetarian, Non-Vegetarian"
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="curryOptions" className="text-right text-sm font-medium">
-                      Curry Options
-                    </label>
-                    <Input 
-                      id="curryOptions" 
-                      name="curryOptions" 
-                      defaultValue={selectedMeal?.curryOptions ? 
-                        selectedMeal.curryOptions.map((option: any) => 
-                          `${option[0]},${option[1]},${option[2]}`
-                        ).join(';') 
-                        : 
-                        "regular,Regular Curry,0;spicy,Spicy Curry,25"
-                      }
-                      placeholder="id,name,price; separated by semicolons"
-                      className="col-span-3"
-                    />
-                  </div>
-                  <div className="col-span-full px-4 text-xs text-muted-foreground">
-                    Format: id,name,price; Multiple options separated by semicolons
+                  
+                  {/* Nutritional Information Section */}
+                  <div className="border rounded-lg p-4 bg-gray-50">
+                    <h3 className="text-base font-semibold mb-4 text-gray-900">Nutritional Information</h3>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="calories" className="text-sm font-medium block">
+                          Calories
+                        </label>
+                        <Input
+                          id="calories"
+                          name="calories"
+                          type="number"
+                          defaultValue={selectedMeal?.calories || 350}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="protein" className="text-sm font-medium block">
+                          Protein (g)
+                        </label>
+                        <Input
+                          id="protein"
+                          name="protein"
+                          type="number"
+                          defaultValue={selectedMeal?.protein || 12}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="carbs" className="text-sm font-medium block">
+                          Carbs (g)
+                        </label>
+                        <Input
+                          id="carbs"
+                          name="carbs"
+                          type="number"
+                          defaultValue={selectedMeal?.carbs || 45}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="fat" className="text-sm font-medium block">
+                          Fat (g)
+                        </label>
+                        <Input
+                          id="fat"
+                          name="fat"
+                          type="number"
+                          defaultValue={selectedMeal?.fat || 15}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label htmlFor="fiber" className="text-sm font-medium block">
+                          Fiber (g)
+                        </label>
+                        <Input
+                          id="fiber"
+                          name="fiber"
+                          type="number"
+                          defaultValue={selectedMeal?.fiber || 8}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <DialogFooter>
-                  <Button type="submit">
+                
+                <DialogFooter className="pt-4 border-t">
+                  <Button type="submit" className="w-full sm:w-auto">
                     {selectedMeal ? "Update Meal" : "Create Meal"}
                   </Button>
                 </DialogFooter>
