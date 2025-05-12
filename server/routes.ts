@@ -1690,12 +1690,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Create a new curry option (admin)
   app.post("/api/admin/curry-options", isAuthenticated, isAdmin, async (req, res) => {
     try {
+      // Ensure mealIds is an array of numbers
+      let mealIds = req.body.mealIds || [];
+      if (mealIds && Array.isArray(mealIds)) {
+        // Convert string IDs to numbers if needed
+        mealIds = mealIds.map(id => typeof id === 'string' ? parseInt(id) : id);
+      }
+      
       const curryOptionData = {
         id: req.body.id || `curry_${Date.now()}`,
         name: req.body.name,
         description: req.body.description || "",
         priceAdjustment: parseFloat(req.body.priceAdjustment) || 0,
-        mealIds: req.body.mealIds || [],
+        mealIds: mealIds,
         createdAt: new Date(),
         updatedAt: new Date()
       };
@@ -1717,8 +1724,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid curry option ID" });
       }
       
+      // Ensure mealIds is an array of numbers
+      let mealIds = req.body.mealIds || [];
+      if (mealIds && Array.isArray(mealIds)) {
+        // Convert string IDs to numbers if needed
+        mealIds = mealIds.map(id => typeof id === 'string' ? parseInt(id) : id);
+      }
+      
       const updateData = {
         ...req.body,
+        mealIds,
         updatedAt: new Date()
       };
       

@@ -129,7 +129,8 @@ export interface CurryOptionDocument extends Document {
   name: string;
   description?: string;
   priceAdjustment: number;
-  mealId?: number | null;
+  mealId?: number | null; // Kept for backward compatibility
+  mealIds?: number[]; // Array of meal IDs that this curry option applies to
   createdAt: Date;
   updatedAt: Date;
 }
@@ -319,7 +320,8 @@ const curryOptionDocumentSchema = new Schema<CurryOptionDocument>({
   name: { type: String, required: true },
   description: String,
   priceAdjustment: { type: Number, required: true },
-  mealId: { type: Number, default: null },
+  mealId: { type: Number, default: null }, // Kept for backward compatibility
+  mealIds: { type: [Number], default: [] }, // Array of meal IDs that this curry option applies to
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
