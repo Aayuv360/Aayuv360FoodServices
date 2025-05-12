@@ -13,6 +13,14 @@ export interface UserDocument extends Document {
   stripeSubscriptionId?: string;
 }
 
+export interface CurryOption {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+  description?: string;
+  mealId?: number | null;
+}
+
 export interface MealDocument extends Document {
   id: number;
   name: string;
@@ -31,6 +39,7 @@ export interface MealDocument extends Document {
   carbs?: number;
   fat?: number;
   fiber?: number;
+  curryOptions?: CurryOption[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -114,6 +123,17 @@ export interface LocationDocument extends Document {
   updatedAt: Date;
 }
 
+// Define CurryOption model
+export interface CurryOptionDocument extends Document {
+  id: string;
+  name: string;
+  description?: string;
+  priceAdjustment: number;
+  mealId?: number | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Define Mongoose schemas
 const userSchema = new Schema<UserDocument>({
   id: { type: Number, required: true, unique: true },
@@ -125,6 +145,14 @@ const userSchema = new Schema<UserDocument>({
   stripeSubscriptionId: String,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+});
+
+const curryOptionSchema = new Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  priceAdjustment: { type: Number, required: true },
+  description: String,
+  mealId: { type: Number, default: null },
 });
 
 const mealSchema = new Schema<MealDocument>({
@@ -145,6 +173,7 @@ const mealSchema = new Schema<MealDocument>({
   carbs: Number,
   fat: Number,
   fiber: Number,
+  curryOptions: [curryOptionSchema],
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
@@ -266,6 +295,19 @@ const counterSchema = new Schema({
 
 export const Review = mongoose.model<ReviewDocument>('Review', reviewSchema);
 export const Counter = mongoose.model('Counter', counterSchema);
+
+// Curry Option schema
+const curryOptionDocumentSchema = new Schema<CurryOptionDocument>({
+  id: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  description: String,
+  priceAdjustment: { type: Number, required: true },
+  mealId: { type: Number, default: null },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
+export const CurryOption = mongoose.model<CurryOptionDocument>('CurryOption', curryOptionDocumentSchema);
 
 // Function to get the next sequence value for a given model
 export async function getNextSequence(name: string): Promise<number> {
