@@ -1087,11 +1087,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/subscriptions", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {
-      const subscriptions = await storage.getAllSubscriptions();
+      // Use MongoDB storage implementation directly
+      const subscriptions = await mongoStorage.getAllSubscriptions();
       
-      // Enrich subscriptions with user information
+      // Enrich subscriptions with user information - use MongoDB directly
       const enrichedSubscriptions = await Promise.all(subscriptions.map(async (subscription) => {
-        const user = await storage.getUser(subscription.userId);
+        const user = await mongoStorage.getUser(subscription.userId);
         return {
           ...subscription,
           userName: user?.name || "Unknown User"
@@ -1115,7 +1116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid status" });
       }
       
-      const updatedOrder = await storage.updateOrderStatus(orderId, status);
+      // Use MongoDB storage implementation directly
+      const updatedOrder = await mongoStorage.updateOrderStatus(orderId, status);
       
       if (!updatedOrder) {
         return res.status(404).json({ message: "Order not found" });
@@ -1131,7 +1133,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin Portal endpoints (admin only)
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const users = await storage.getAllUsers();
+      // Use MongoDB storage implementation directly
+      const users = await mongoStorage.getAllUsers();
       res.json(users);
     } catch (err) {
       console.error("Error fetching users:", err);
@@ -1143,9 +1146,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userData = req.body;
       
-      // Check if username or email already exists
-      const existingUser = await storage.getUserByUsername(userData.username) || 
-                          await storage.getUserByEmail(userData.email);
+      // Check if username or email already exists - use MongoDB directly
+      const existingUser = await mongoStorage.getUserByUsername(userData.username) || 
+                          await mongoStorage.getUserByEmail(userData.email);
       
       if (existingUser) {
         return res.status(400).json({ 
@@ -1153,7 +1156,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      const newUser = await storage.createUser(userData);
+      // Use MongoDB storage implementation directly
+      const newUser = await mongoStorage.createUser(userData);
       res.status(201).json(newUser);
     } catch (err) {
       console.error("Error creating user:", err);
@@ -1166,7 +1170,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = parseInt(req.params.id);
       const userData = req.body;
       
-      const updatedUser = await storage.updateUser(userId, userData);
+      // Use MongoDB storage implementation directly
+      const updatedUser = await mongoStorage.updateUser(userId, userData);
       
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found" });
