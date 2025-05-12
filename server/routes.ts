@@ -1266,6 +1266,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Curry Option API Routes
+  
+  // Get all curry options
+  app.get("/api/curry-options", async (req, res) => {
+    try {
+      const curryOptions = await storage.getCurryOptions();
+      res.json(curryOptions);
+    } catch (error) {
+      console.error("Error fetching curry options:", error);
+      res.status(500).json({ message: "Failed to fetch curry options" });
+    }
+  });
+  
+  // Get a specific curry option by ID
+  app.get("/api/curry-options/:id", async (req, res) => {
+    try {
+      const id = req.params.id;
+      const curryOption = await storage.getCurryOption(id);
+      
+      if (!curryOption) {
+        return res.status(404).json({ message: "Curry option not found" });
+      }
+      
+      res.json(curryOption);
+    } catch (error) {
+      console.error("Error fetching curry option:", error);
+      res.status(500).json({ message: "Failed to fetch curry option" });
+    }
+  });
+  
+  // Create a new curry option (admin only)
+  app.post("/api/curry-options", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const curryOptionData = {
+        id: `curry_${Date.now()}`,
+        name: req.body.name,
+        description: req.body.description || "",
+        priceAdjustment: parseFloat(req.body.priceAdjustment) || 0,
+        mealId: req.body.mealId || null,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      const newCurryOption = await storage.createCurryOption(curryOptionData);
+      res.status(201).json(newCurryOption);
+    } catch (error) {
+      console.error("Error creating curry option:", error);
+      res.status(500).json({ message: "Failed to create curry option" });
+    }
+  });
+  
+  // Update a curry option (admin only)
+  app.patch("/api/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = req.params.id;
+      const updateData = {
+        ...req.body,
+        updatedAt: new Date()
+      };
+      
+      const updatedCurryOption = await storage.updateCurryOption(id, updateData);
+      
+      if (!updatedCurryOption) {
+        return res.status(404).json({ message: "Curry option not found" });
+      }
+      
+      res.json(updatedCurryOption);
+    } catch (error) {
+      console.error("Error updating curry option:", error);
+      res.status(500).json({ message: "Failed to update curry option" });
+    }
+  });
+  
+  // Delete a curry option (admin only)
+  app.delete("/api/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const id = req.params.id;
+      const success = await storage.deleteCurryOption(id);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Curry option not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting curry option:", error);
+      res.status(500).json({ message: "Failed to delete curry option" });
+    }
+  });
+  
+  // Get curry options for a specific meal
+  app.get("/api/meals/:mealId/curry-options", async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.mealId);
+      if (isNaN(mealId)) {
+        return res.status(400).json({ message: "Invalid meal ID" });
+      }
+      
+      // Get all curry options and filter by meal ID
+      const allCurryOptions = await storage.getCurryOptions();
+      const mealCurryOptions = allCurryOptions.filter(option => 
+        option.mealId === mealId || option.mealId === null
+      );
+      
+      res.json(mealCurryOptions);
+    } catch (error) {
+      console.error("Error fetching meal curry options:", error);
+      res.status(500).json({ message: "Failed to fetch meal curry options" });
+    }
+  });
+
   // Create HTTP server
   const httpServer = createServer(app);
   return httpServer;

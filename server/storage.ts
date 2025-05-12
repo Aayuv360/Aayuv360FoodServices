@@ -129,6 +129,7 @@ export class MemStorage implements IStorage {
     this.cartItems = new Map();
     this.reviews = new Map();
     this.addresses = new Map();
+    this.curryOptions = new Map();
     
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000, // prune expired entries every 24h
@@ -467,6 +468,48 @@ export class MemStorage implements IStorage {
   
   async deleteAddress(id: number): Promise<boolean> {
     return this.addresses.delete(id);
+  }
+  
+  // Curry Option operations
+  async getCurryOptions(): Promise<any[]> {
+    return Array.from(this.curryOptions.values());
+  }
+  
+  async getCurryOption(id: string): Promise<any | undefined> {
+    return this.curryOptions.get(id);
+  }
+  
+  async createCurryOption(curryOption: any): Promise<any> {
+    const id = curryOption.id || `curry_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+    const newCurryOption = {
+      ...curryOption,
+      id,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.curryOptions.set(id, newCurryOption);
+    return newCurryOption;
+  }
+  
+  async updateCurryOption(id: string, curryOption: any): Promise<any | undefined> {
+    if (!this.curryOptions.has(id)) {
+      return undefined;
+    }
+    
+    const existingCurryOption = this.curryOptions.get(id);
+    const updatedCurryOption = {
+      ...existingCurryOption,
+      ...curryOption,
+      id,
+      updatedAt: new Date()
+    };
+    
+    this.curryOptions.set(id, updatedCurryOption);
+    return updatedCurryOption;
+  }
+  
+  async deleteCurryOption(id: string): Promise<boolean> {
+    return this.curryOptions.delete(id);
   }
 }
 
