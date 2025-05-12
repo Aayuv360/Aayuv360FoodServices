@@ -1135,6 +1135,26 @@ export default function AdminPortalPage() {
                       required 
                     />
                   </div>
+                  
+                  <div className="space-y-2 col-span-full">
+                    <label htmlFor="curryOptions" className="text-sm font-medium">
+                      Curry Options (Format: id,name,price; e.g.: regular,Regular Curry,0;spicy,Spicy Curry,25)
+                    </label>
+                    <Input 
+                      id="curryOptions" 
+                      name="curryOptions" 
+                      defaultValue={selectedMeal?.curryOptions ? 
+                        selectedMeal.curryOptions.map((option: any) => 
+                          `${option[0]},${option[1]},${option[2]}`
+                        ).join(';') 
+                        : 
+                        "regular,Regular Curry,0;spicy,Spicy Curry,25"
+                      }
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Format: id,name,price; Multiple options separated by semicolons.
+                    </p>
+                  </div>
                 </div>
                 <DialogFooter className="mt-4">
                   <Button type="submit">

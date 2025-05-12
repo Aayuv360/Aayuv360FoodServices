@@ -155,6 +155,7 @@ const curryOptionSchema = new Schema({
   mealId: { type: Number, default: null },
 });
 
+// Schema definition to support both object curryOptions and array format
 const mealSchema = new Schema<MealDocument>({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
@@ -173,7 +174,23 @@ const mealSchema = new Schema<MealDocument>({
   carbs: Number,
   fat: Number,
   fiber: Number,
-  curryOptions: [curryOptionSchema],
+  // Support both formats: array of arrays [id, name, price] or curryOptionSchema objects
+  curryOptions: { 
+    type: Schema.Types.Mixed, 
+    default: [],
+    get: function(val: any) {
+      // Convert object format to array format if needed
+      if (Array.isArray(val) && val.length > 0) {
+        // If already in array format, return as-is
+        if (Array.isArray(val[0])) {
+          return val;
+        }
+        // Convert from object format to array format
+        return val.map((opt: any) => [opt.id, opt.name, opt.priceAdjustment]);
+      }
+      return val;
+    }
+  },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
