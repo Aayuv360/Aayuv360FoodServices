@@ -361,8 +361,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const { quantity } = req.body;
       
-      // Use MongoDB storage implementation directly
-      const { mongoStorage } = require('./mongoStorage');
+      // Use MongoDB storage implementation directly (already imported at top)
       
       // Verify item belongs to user
       const cartItems = await mongoStorage.getCartItems(userId);
@@ -401,8 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemId = parseInt(req.params.id);
       const userId = (req.user as any).id;
       
-      // Use MongoDB storage implementation directly
-      const { mongoStorage } = require('./mongoStorage');
+      // Use MongoDB storage implementation directly (already imported at top)
       
       // Verify item belongs to user
       const cartItems = await mongoStorage.getCartItems(userId);
@@ -442,8 +440,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const itemId = parseInt(req.params.id);
       const userId = (req.user as any).id;
       
-      // Use MongoDB storage implementation directly
-      const { mongoStorage } = require('./mongoStorage');
+      // Use MongoDB storage implementation directly (already imported at top)
       
       // Verify item belongs to user
       const cartItems = await mongoStorage.getCartItems(userId);
