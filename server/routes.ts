@@ -524,7 +524,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       });
       
-      const address = await storage.createAddress(addressData);
+      // Use MongoDB storage implementation directly
+      const address = await mongoStorage.createAddress(addressData);
       res.status(201).json(address);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -541,7 +542,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const addressId = parseInt(req.params.id);
       
-      const address = await storage.getAddressById(addressId);
+      // Use MongoDB storage implementation directly
+      const address = await mongoStorage.getAddressById(addressId);
       
       if (!address) {
         return res.status(404).json({ message: "Address not found" });
@@ -552,7 +554,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      const updatedAddress = await storage.updateAddress(addressId, req.body);
+      const updatedAddress = await mongoStorage.updateAddress(addressId, req.body);
       res.json(updatedAddress);
     } catch (err) {
       console.error("Error updating address:", err);
@@ -565,7 +567,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const addressId = parseInt(req.params.id);
       
-      const address = await storage.getAddressById(addressId);
+      // Use MongoDB storage implementation directly
+      const address = await mongoStorage.getAddressById(addressId);
       
       if (!address) {
         return res.status(404).json({ message: "Address not found" });
@@ -576,7 +579,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Access denied" });
       }
       
-      await storage.deleteAddress(addressId);
+      await mongoStorage.deleteAddress(addressId);
       res.status(204).send();
     } catch (err) {
       console.error("Error deleting address:", err);
@@ -588,7 +591,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/preferences", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const preferences = await storage.getUserPreferences(userId);
+      
+      // Use MongoDB storage implementation directly
+      const preferences = await mongoStorage.getUserPreferences(userId);
       
       if (!preferences) {
         return res.status(404).json({ message: "User preferences not found" });
@@ -605,8 +610,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       
-      // Check if preferences already exist
-      const existingPreferences = await storage.getUserPreferences(userId);
+      // Check if preferences already exist - use MongoDB directly
+      const existingPreferences = await mongoStorage.getUserPreferences(userId);
       
       if (existingPreferences) {
         return res.status(400).json({ message: "User preferences already exist. Use PATCH to update." });
@@ -617,7 +622,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId
       });
       
-      const preferences = await storage.createUserPreferences(preferencesData);
+      // Use MongoDB storage implementation directly
+      const preferences = await mongoStorage.createUserPreferences(preferencesData);
       res.status(201).json(preferences);
     } catch (err) {
       if (err instanceof z.ZodError) {
