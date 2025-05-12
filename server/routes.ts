@@ -1197,35 +1197,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all curry options from the CurryOption collection
       const globalCurryOptions = await CurryOption.find().lean();
       
-      // Enhance each meal with curry options as requested format: [id, curryname, price]
+      // Enhance each meal with curry options as object format {id, name, priceAdjustment}
       const enhancedMeals = meals.map(meal => {
-        let curryOptionsArray = [];
-        
         // If meal has embedded curry options, use those
         if (meal.curryOptions && meal.curryOptions.length > 0) {
-          curryOptionsArray = meal.curryOptions.map((option: any) => [
-            option.id,
-            option.name,
-            option.priceAdjustment
-          ]);
+          // If curryOptions is already in object format, just return the meal
+          if (typeof meal.curryOptions[0] === 'object' && !Array.isArray(meal.curryOptions[0])) {
+            return meal;
+          }
+          
+          // If curryOptions is in array format, convert to object format
+          return {
+            ...meal,
+            curryOptions: meal.curryOptions.map((option: any) => {
+              if (Array.isArray(option)) {
+                return {
+                  id: option[0],
+                  name: option[1],
+                  priceAdjustment: option[2]
+                };
+              }
+              return option;
+            })
+          };
         } else {
           // Otherwise use applicable global options
           const mealSpecificOptions = globalCurryOptions.filter((option: any) => 
             option.mealId === null || option.mealId === meal.id
           );
           
-          curryOptionsArray = mealSpecificOptions.map((option: any) => [
-            option.id,
-            option.name,
-            option.priceAdjustment
-          ]);
+          // Use the formatter utility to convert to object format
+          return {
+            ...meal,
+            curryOptions: formatCurryOptions(mealSpecificOptions, meal.id)
+          };
         }
-        
-        // Return meal with curry options in the requested format
-        return {
-          ...meal,
-          curryOptions: curryOptionsArray
-        };
       });
       
       console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
@@ -1238,14 +1244,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      const mealData = req.body;
+      let mealData = { ...req.body };
       console.log("Admin: Creating new meal in MongoDB...");
+      
+      // Ensure curry options are in the correct format
+      if (mealData.curryOptions && Array.isArray(mealData.curryOptions)) {
+        // Convert curry options from object format to array format for storage
+        // This ensures backward compatibility with existing code
+        mealData.curryOptions = mealData.curryOptions.map((option: any) => {
+          if (typeof option === 'object' && !Array.isArray(option) && option.id) {
+            return [option.id, option.name, option.priceAdjustment];
+          }
+          return option;
+        });
+      }
       
       // Use MongoDB directly instead of going through storage
       const newMeal = await MealModel.create(mealData);
       console.log(`Admin: Created new meal with ID ${newMeal.id}`);
       
-      res.status(201).json(newMeal);
+      // Return the meal with curry options in object format
+      const responseData = {
+        ...newMeal.toObject(),
+        curryOptions: newMeal.curryOptions ? formatCurryOptions(newMeal.curryOptions, newMeal.id) : []
+      };
+      
+      res.status(201).json(responseData);
     } catch (err) {
       console.error("Error creating meal:", err);
       res.status(500).json({ message: "Error creating meal" });
@@ -1255,9 +1279,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/meals/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const mealId = parseInt(req.params.id);
-      const mealData = req.body;
+      let mealData = { ...req.body };
       
       console.log(`Admin: Updating meal with ID ${mealId} in MongoDB...`);
+      
+      // Ensure curry options are in the correct format for storage
+      if (mealData.curryOptions && Array.isArray(mealData.curryOptions)) {
+        // Convert curry options from object format to array format for storage
+        mealData.curryOptions = mealData.curryOptions.map((option: any) => {
+          if (typeof option === 'object' && !Array.isArray(option) && option.id) {
+            return [option.id, option.name, option.priceAdjustment];
+          }
+          return option;
+        });
+      }
       
       // Use MongoDB directly instead of going through storage
       const result = await MealModel.findOneAndUpdate(
@@ -1271,8 +1306,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Meal not found" });
       }
       
+      // Get all curry options from the CurryOption collection for formatting
+      const globalCurryOptions = await CurryOption.find().lean();
+      
+      // Format the response with curry options in object format
+      const formattedResult = {
+        ...result,
+        curryOptions: result.curryOptions && result.curryOptions.length > 0 
+          ? formatCurryOptions(result.curryOptions, mealId) 
+          : formatCurryOptions(globalCurryOptions.filter((option: any) => 
+              option.mealId === null || option.mealId === mealId
+            ), mealId)
+      };
+      
       console.log(`Admin: Successfully updated meal with ID ${mealId}`);
-      res.json(result);
+      res.json(formattedResult);
     } catch (err) {
       console.error("Error updating meal:", err);
       res.status(500).json({ message: "Error updating meal" });
