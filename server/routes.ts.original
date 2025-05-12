@@ -6,7 +6,6 @@ import { z } from "zod";
 import { mealPlannerService } from "./mealPlanner";
 import { analyticsService, AnalyticsDateRange } from "./analytics";
 import { formatCurryOptions, formatMealCurryOptions } from "./curry-formatter";
-import { registerMealRoutes } from "./meals-routes";
 import {
   createOrder,
   createSubscription,
@@ -72,9 +71,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Setup authentication module
   setupAuth(app);
-  
-  // Register meal routes with object-formatted curry options
-  registerMealRoutes(app);
 
   // Middleware that ensures authentication
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
