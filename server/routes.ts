@@ -639,14 +639,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       
-      // Ensure preferences exist
-      const existingPreferences = await storage.getUserPreferences(userId);
+      // Ensure preferences exist - use MongoDB directly
+      const existingPreferences = await mongoStorage.getUserPreferences(userId);
       
       if (!existingPreferences) {
         return res.status(404).json({ message: "User preferences not found. Create them first." });
       }
       
-      const updatedPreferences = await storage.updateUserPreferences(userId, req.body);
+      // Use MongoDB storage implementation directly
+      const updatedPreferences = await mongoStorage.updateUserPreferences(userId, req.body);
       res.json(updatedPreferences);
     } catch (err) {
       console.error("Error updating user preferences:", err);
@@ -658,7 +659,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/subscriptions", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const subscriptions = await storage.getSubscriptionsByUserId(userId);
+      // Use MongoDB storage implementation directly
+      const subscriptions = await mongoStorage.getSubscriptionsByUserId(userId);
       res.json(subscriptions);
     } catch (err) {
       console.error("Error fetching user subscriptions:", err);
@@ -673,7 +675,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const isAdmin = (req.user as any).role === 'admin';
       const subscriptionId = parseInt(req.params.id);
       
-      const subscription = await storage.getSubscription(subscriptionId);
+      // Use MongoDB storage implementation directly
+      const subscription = await mongoStorage.getSubscription(subscriptionId);
       
       if (!subscription) {
         return res.status(404).json({ message: "Subscription not found" });
@@ -704,7 +707,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const subscriptionData = insertSubscriptionSchema.parse(requestData);
       
-      const subscription = await storage.createSubscription(subscriptionData);
+      // Use MongoDB storage implementation directly
+      const subscription = await mongoStorage.createSubscription(subscriptionData);
       res.status(201).json(subscription);
     } catch (err) {
       if (err instanceof z.ZodError) {
@@ -721,8 +725,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const subscriptionId = parseInt(req.params.id);
       
-      // Ensure subscription exists and belongs to the user
-      const existingSubscription = await storage.getSubscription(subscriptionId);
+      // Ensure subscription exists and belongs to the user - use MongoDB directly
+      const existingSubscription = await mongoStorage.getSubscription(subscriptionId);
       
       if (!existingSubscription) {
         return res.status(404).json({ message: "Subscription not found" });
@@ -732,7 +736,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You do not have permission to modify this subscription" });
       }
       
-      const updatedSubscription = await storage.updateSubscription(subscriptionId, req.body);
+      // Use MongoDB storage implementation directly
+      const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, req.body);
       res.json(updatedSubscription);
     } catch (err) {
       console.error("Error updating subscription:", err);
@@ -746,8 +751,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const subscriptionId = parseInt(req.params.id);
       
-      // Ensure subscription exists and belongs to the user
-      const existingSubscription = await storage.getSubscription(subscriptionId);
+      // Ensure subscription exists and belongs to the user - use MongoDB directly
+      const existingSubscription = await mongoStorage.getSubscription(subscriptionId);
       
       if (!existingSubscription) {
         return res.status(404).json({ message: "Subscription not found" });
@@ -757,12 +762,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You do not have permission to access this subscription" });
       }
       
-      const mealPlans = await storage.getCustomMealPlans(subscriptionId);
+      // Use MongoDB storage implementation directly
+      const mealPlans = await mongoStorage.getCustomMealPlans(subscriptionId);
       
-      // Enrich meal plans with meal details
+      // Enrich meal plans with meal details - use MongoDB directly
       const enrichedMealPlans = await Promise.all(
         mealPlans.map(async (plan) => {
-          const meal = await storage.getMeal(plan.mealId);
+          const meal = await mongoStorage.getMeal(plan.mealId);
           return {
             ...plan,
             meal
