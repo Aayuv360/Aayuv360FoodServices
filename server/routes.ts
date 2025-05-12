@@ -932,7 +932,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/orders", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const orders = await storage.getOrdersByUserId(userId);
+      // Use MongoDB storage implementation directly
+      const orders = await mongoStorage.getOrdersByUserId(userId);
       res.json(orders);
     } catch (err) {
       console.error("Error fetching orders:", err);
@@ -945,8 +946,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const orderId = parseInt(req.params.id);
       
-      // Get the order
-      const order = await storage.getOrder(orderId);
+      // Get the order - use MongoDB directly
+      const order = await mongoStorage.getOrder(orderId);
       
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
@@ -957,13 +958,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You do not have permission to access this order" });
       }
       
-      // Get order items
-      const orderItems = await storage.getOrderItems(orderId);
+      // Get order items - use MongoDB directly
+      const orderItems = await mongoStorage.getOrderItems(orderId);
       
-      // Enrich order items with meal details
+      // Enrich order items with meal details - use MongoDB directly
       const enrichedOrderItems = await Promise.all(
         orderItems.map(async (item) => {
-          const meal = await storage.getMeal(item.mealId);
+          const meal = await mongoStorage.getMeal(item.mealId);
           return {
             ...item,
             meal
@@ -988,8 +989,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const orderId = parseInt(req.params.id);
       const { status, razorpayPaymentId, razorpayOrderId, razorpaySignature } = req.body;
       
-      // Get the order
-      const order = await storage.getOrder(orderId);
+      // Get the order - use MongoDB directly
+      const order = await mongoStorage.getOrder(orderId);
       
       if (!order) {
         return res.status(404).json({ message: "Order not found" });
@@ -1034,11 +1035,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
       
-      // Update the order status
-      await storage.updateOrderStatus(orderId, status);
+      // Update the order status - use MongoDB directly
+      await mongoStorage.updateOrderStatus(orderId, status);
       
-      // Get the updated order
-      const updatedOrder = await storage.getOrder(orderId);
+      // Get the updated order - use MongoDB directly
+      const updatedOrder = await mongoStorage.getOrder(orderId);
       
       res.json(updatedOrder);
     } catch (err) {
@@ -1065,11 +1066,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Order Management endpoints (for managers and admins)
   app.get("/api/admin/orders", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {
-      const orders = await storage.getAllOrders();
+      // Use MongoDB storage implementation directly
+      const orders = await mongoStorage.getAllOrders();
       
-      // Enrich orders with user information
+      // Enrich orders with user information - use MongoDB directly
       const enrichedOrders = await Promise.all(orders.map(async (order) => {
-        const user = await storage.getUser(order.userId);
+        const user = await mongoStorage.getUser(order.userId);
         return {
           ...order,
           userName: user?.name || "Unknown User"
