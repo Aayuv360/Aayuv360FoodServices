@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, PlusCircle, Edit, Trash2, Plus } from "lucide-react";
+import { Loader2, PlusCircle, Edit, Trash2, Plus, Pencil, Trash, ArrowUpCircle } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -27,7 +27,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -1102,6 +1104,214 @@ export default function AdminPortalPage() {
                 <DialogFooter className="pt-4 border-t">
                   <Button type="submit" className="w-full sm:w-auto">
                     {selectedMeal ? "Update Meal" : "Create Meal"}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </TabsContent>
+
+        <TabsContent value="curry-options" className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Curry Options</CardTitle>
+              <div className="flex space-x-2">
+                <Button
+                  onClick={handleAddCurryOption}
+                  className="flex items-center"
+                >
+                  <span className="flex items-center">
+                    <Plus size={18} className="mr-1" /> Add Curry Option
+                  </span>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {isLoadingCurryOptions ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ID</TableHead>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Price Adjustment</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead>Associated Meals</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {!curryOptions || curryOptions.length === 0 ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={6}
+                            className="text-center py-4"
+                          >
+                            No curry options found
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        curryOptions?.map((option: any) => (
+                          <TableRow key={option.id}>
+                            <TableCell>{option.id}</TableCell>
+                            <TableCell className="font-medium">{option.name}</TableCell>
+                            <TableCell>₹{option.priceAdjustment.toFixed(2)}</TableCell>
+                            <TableCell className="max-w-xs truncate">{option.description || '-'}</TableCell>
+                            <TableCell>
+                              {option.mealIds && option.mealIds.length > 0 ? (
+                                <Badge variant="outline">{option.mealIds.length} meals</Badge>
+                              ) : (
+                                <Badge variant="secondary">No meals</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => handleEditCurryOption(option)}
+                                >
+                                  <Edit size={16} />
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-red-500"
+                                  onClick={() => handleDeleteCurryOption(option.id)}
+                                >
+                                  <Trash2 size={16} />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Curry Option Dialog */}
+          <Dialog open={isCurryOptionDialogOpen} onOpenChange={setIsCurryOptionDialogOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedCurryOption ? "Edit Curry Option" : "Add Curry Option"}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedCurryOption
+                    ? "Update the curry option details."
+                    : "Add a new curry option for meals."}
+                </DialogDescription>
+              </DialogHeader>
+
+              <form onSubmit={handleCurryOptionFormSubmit} className="space-y-6">
+                {/* Hidden ID field for updates */}
+                {selectedCurryOption && (
+                  <input
+                    type="hidden"
+                    name="id"
+                    value={selectedCurryOption.id}
+                  />
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="name"
+                      className="text-sm font-medium block"
+                    >
+                      Name <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="name"
+                      name="name"
+                      defaultValue={selectedCurryOption?.name}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label
+                      htmlFor="priceAdjustment"
+                      className="text-sm font-medium block"
+                    >
+                      Price Adjustment (₹) <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      id="priceAdjustment"
+                      name="priceAdjustment"
+                      type="number"
+                      step="0.01"
+                      defaultValue={selectedCurryOption?.priceAdjustment || 0}
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label
+                    htmlFor="description"
+                    className="text-sm font-medium block"
+                  >
+                    Description
+                  </label>
+                  <Textarea
+                    id="description"
+                    name="description"
+                    defaultValue={selectedCurryOption?.description || ""}
+                    placeholder="Describe the curry option..."
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium block">
+                    Associated Meals <span className="text-red-500">*</span>
+                  </label>
+                  <div className="border rounded-md p-4 max-h-60 overflow-y-auto">
+                    {isLoadingMeals ? (
+                      <div className="flex justify-center py-2">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                      </div>
+                    ) : meals && meals.length > 0 ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {meals.map((meal: any) => (
+                          <div key={meal.id} className="flex items-start space-x-2">
+                            <Checkbox 
+                              id={`meal-${meal.id}`} 
+                              name="mealIds" 
+                              value={meal.id.toString()}
+                              defaultChecked={selectedCurryOption?.mealIds?.includes(meal.id)}
+                            />
+                            <label
+                              htmlFor={`meal-${meal.id}`}
+                              className="text-sm cursor-pointer leading-tight"
+                            >
+                              {meal.name}
+                              <span className="text-xs block text-muted-foreground">
+                                {meal.category} • {meal.mealType === "veg" ? "Veg" : "Non-veg"}
+                              </span>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground text-center py-2">
+                        No meals available
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <DialogFooter className="pt-4 border-t">
+                  <Button type="submit" className="w-full sm:w-auto">
+                    {selectedCurryOption ? "Update Curry Option" : "Create Curry Option"}
                   </Button>
                 </DialogFooter>
               </form>
