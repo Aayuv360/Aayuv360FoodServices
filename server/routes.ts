@@ -108,27 +108,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all curry options from the CurryOption collection
       const globalCurryOptions = await CurryOption.find().lean();
       
-      // Enhance each meal with curry options (either from the meal document or global ones)
+      // Enhance each meal with curry options as requested format: [id, curryname, price]
       const enhancedMeals = meals.map(meal => {
-        // If meal doesn't have curry options or has an empty array, add global options
-        if (!meal.curryOptions || meal.curryOptions.length === 0) {
-          const mealSpecificOptions = globalCurryOptions.filter(option => 
+        let curryOptionsArray = [];
+        
+        // If meal has embedded curry options, use those
+        if (meal.curryOptions && meal.curryOptions.length > 0) {
+          curryOptionsArray = meal.curryOptions.map((option: any) => [
+            option.id,
+            option.name,
+            option.priceAdjustment
+          ]);
+        } else {
+          // Otherwise use applicable global options
+          const mealSpecificOptions = globalCurryOptions.filter((option: any) => 
             option.mealId === null || option.mealId === meal.id
           );
           
-          return {
-            ...meal,
-            curryOptions: mealSpecificOptions.map(option => ({
-              id: option.id,
-              name: option.name,
-              priceAdjustment: option.priceAdjustment,
-              description: option.description
-            }))
-          };
+          curryOptionsArray = mealSpecificOptions.map((option: any) => [
+            option.id,
+            option.name,
+            option.priceAdjustment
+          ]);
         }
         
-        // Otherwise return meal with its existing curry options
-        return meal;
+        // Return meal with curry options in the requested format
+        return {
+          ...meal,
+          curryOptions: curryOptionsArray
+        };
       });
       
       console.log(`Retrieved ${meals.length} meals from MongoDB`);
@@ -150,7 +158,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Meal not found" });
       }
       
-      res.json(meal);
+      // Get curry options for this meal
+      let curryOptionsArray = [];
+      
+      // If meal has embedded curry options, use those
+      if (meal.curryOptions && meal.curryOptions.length > 0) {
+        curryOptionsArray = meal.curryOptions.map((option: any) => [
+          option.id,
+          option.name,
+          option.priceAdjustment
+        ]);
+      } else {
+        // Otherwise get global curry options applicable to this meal
+        const globalCurryOptions = await CurryOption.find({
+          $or: [{ mealId: null }, { mealId: mealId }]
+        }).lean();
+        
+        curryOptionsArray = globalCurryOptions.map((option: any) => [
+          option.id,
+          option.name,
+          option.priceAdjustment
+        ]);
+      }
+      
+      // Add curry options to the meal
+      const enhancedMeal = {
+        ...meal,
+        curryOptions: curryOptionsArray
+      };
+      
+      res.json(enhancedMeal);
     } catch (err) {
       console.error("Error fetching meal:", err);
       res.status(500).json({ message: "Error fetching meal" });
@@ -1092,27 +1129,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get all curry options from the CurryOption collection
       const globalCurryOptions = await CurryOption.find().lean();
       
-      // Enhance each meal with curry options (either from the meal document or global ones)
+      // Enhance each meal with curry options as requested format: [id, curryname, price]
       const enhancedMeals = meals.map(meal => {
-        // If meal doesn't have curry options or has an empty array, add global options
-        if (!meal.curryOptions || meal.curryOptions.length === 0) {
-          const mealSpecificOptions = globalCurryOptions.filter(option => 
+        let curryOptionsArray = [];
+        
+        // If meal has embedded curry options, use those
+        if (meal.curryOptions && meal.curryOptions.length > 0) {
+          curryOptionsArray = meal.curryOptions.map((option: any) => [
+            option.id,
+            option.name,
+            option.priceAdjustment
+          ]);
+        } else {
+          // Otherwise use applicable global options
+          const mealSpecificOptions = globalCurryOptions.filter((option: any) => 
             option.mealId === null || option.mealId === meal.id
           );
           
-          return {
-            ...meal,
-            curryOptions: mealSpecificOptions.map(option => ({
-              id: option.id,
-              name: option.name,
-              priceAdjustment: option.priceAdjustment,
-              description: option.description
-            }))
-          };
+          curryOptionsArray = mealSpecificOptions.map((option: any) => [
+            option.id,
+            option.name,
+            option.priceAdjustment
+          ]);
         }
         
-        // Otherwise return meal with its existing curry options
-        return meal;
+        // Return meal with curry options in the requested format
+        return {
+          ...meal,
+          curryOptions: curryOptionsArray
+        };
       });
       
       console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
