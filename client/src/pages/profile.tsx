@@ -4,7 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, UserCircle, ClockIcon, History, LogOut } from "lucide-react";
+import { Loader2, UserCircle, ClockIcon, History, LogOut, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -28,6 +28,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
+import OrderSummaryModal from "@/components/orders/OrderSummaryModal";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
