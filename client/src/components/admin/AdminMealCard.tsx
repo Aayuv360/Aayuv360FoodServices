@@ -23,14 +23,12 @@ interface AdminMealCardProps {
   };
   onEditMeal: (meal: Meal) => void;
   onDeleteMeal: (mealId: number) => void;
-  onManageCurryOptions: (meal: Meal) => void;
 }
 
 const AdminMealCard = ({ 
   meal, 
   onEditMeal, 
-  onDeleteMeal, 
-  onManageCurryOptions 
+  onDeleteMeal
 }: AdminMealCardProps) => {
   // Map dietary preferences to color schemes
   const dietaryBadgeColor = (preference: string) => {
@@ -54,10 +52,6 @@ const AdminMealCard = ({
 
   const handleEditClick = () => {
     onEditMeal(meal);
-  };
-
-  const handleManageCurryClick = () => {
-    onManageCurryOptions(meal);
   };
 
   return (
@@ -103,15 +97,6 @@ const AdminMealCard = ({
             className="flex-1 bg-white hover:bg-gray-50 text-gray-700"
           >
             <Edit className="h-4 w-4 mr-1" /> Edit
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleManageCurryClick}
-            className="flex-1 bg-white hover:bg-gray-50 text-gray-700"
-          >
-            <PlusCircle className="h-4 w-4 mr-1" /> Curry
           </Button>
           
           <AlertDialog>
