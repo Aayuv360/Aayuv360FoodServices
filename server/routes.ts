@@ -17,7 +17,11 @@ import {
   subscriptionPaymentMap,
   razorpay
 } from "./razorpay";
-import { Meal as MealModel, CartItem as CartItemModel, CurryOption } from "../shared/mongoModels";
+import { 
+  Meal as MealModel, 
+  CartItem as CartItemModel, 
+  CurryOption
+} from "../shared/mongoModels";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
@@ -29,8 +33,7 @@ import {
   insertCustomMealPlanSchema,
   insertAddressSchema,
   Meal,
-  CartItem,
-  Address
+  CartItem
 } from "@shared/schema";
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
@@ -463,8 +466,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       
-      // Use MongoDB storage implementation directly
-      const { mongoStorage } = require('./mongoStorage');
+      // Use MongoDB storage from imports
       await mongoStorage.clearCart(userId);
       
       res.status(204).send();
@@ -478,7 +480,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/addresses", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const addresses = await storage.getAddresses(userId);
+      
+      // Use MongoDB storage implementation directly
+      const addresses = await mongoStorage.getAddresses(userId);
+      
       res.json(addresses);
     } catch (err) {
       console.error("Error fetching addresses:", err);
@@ -491,7 +496,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const addressId = parseInt(req.params.id);
       
-      const address = await storage.getAddressById(addressId);
+      // Use MongoDB storage implementation directly
+      const address = await mongoStorage.getAddressById(addressId);
       
       if (!address) {
         return res.status(404).json({ message: "Address not found" });
