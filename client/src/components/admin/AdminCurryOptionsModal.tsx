@@ -51,19 +51,25 @@ export function AdminCurryOptionsModal({
   const [isAddEditFormVisible, setIsAddEditFormVisible] = useState(false);
   const [selectedCurryOption, setSelectedCurryOption] = useState<CurryOption | null>(null);
   
-  // Convert meal curry options from array format to object format
-  const curryOptions: CurryOption[] = meal.curryOptions ? 
-    meal.curryOptions.map((option: any) => ({
-      id: option[0],
-      name: option[1],
-      priceAdjustment: option[2],
-      description: option[3] || ""
-    })) : [];
+  // Use curry options directly in object format
+  const curryOptions: CurryOption[] = Array.isArray(meal.curryOptions) ? 
+    meal.curryOptions.map((option: any) => {
+      // Handle both formats: array [id, name, price] or object {id, name, priceAdjustment}
+      if (Array.isArray(option)) {
+        return {
+          id: option[0],
+          name: option[1],
+          priceAdjustment: option[2],
+          description: option[3] || ""
+        };
+      }
+      return option;
+    }) : [];
   
-  // Create curry option mutation
+  // Create curry option mutation using meal curry API
   const createCurryOptionMutation = useMutation({
     mutationFn: async (curryData: any) => {
-      const res = await apiRequest("POST", "/api/admin/curry-options", curryData);
+      const res = await apiRequest("POST", `/api/admin/meals/${meal.id}/curry-options`, curryData);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to create curry option");
@@ -71,7 +77,6 @@ export function AdminCurryOptionsModal({
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
       toast({
         title: "Success",
@@ -88,10 +93,11 @@ export function AdminCurryOptionsModal({
     },
   });
 
-  // Update curry option mutation
+  // Update curry option mutation using meal curry API
   const updateCurryOptionMutation = useMutation({
     mutationFn: async ({ id, curryData }: { id: string; curryData: any }) => {
-      const res = await apiRequest("PUT", `/api/admin/curry-options/${id}`, curryData);
+      // Update using the meal-specific curry options API
+      const res = await apiRequest("PUT", `/api/admin/meals/${meal.id}/curry-options/${id}`, curryData);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to update curry option");
@@ -99,7 +105,6 @@ export function AdminCurryOptionsModal({
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
       toast({
         title: "Success",
@@ -116,10 +121,10 @@ export function AdminCurryOptionsModal({
     },
   });
 
-  // Delete curry option mutation
+  // Delete curry option mutation using meal curry API
   const deleteCurryOptionMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await apiRequest("DELETE", `/api/admin/curry-options/${id}`);
+      const res = await apiRequest("DELETE", `/api/admin/meals/${meal.id}/curry-options/${id}`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to delete curry option");
@@ -127,7 +132,6 @@ export function AdminCurryOptionsModal({
       return true;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
       queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
       toast({
         title: "Success",
