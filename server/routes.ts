@@ -1395,6 +1395,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Curry Option API Routes
   
+  // === Regular curry options API routes ===
   // Get all curry options
   app.get("/api/curry-options", async (req, res) => {
     try {
@@ -1423,8 +1424,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Create a new curry option (admin only)
-  app.post("/api/curry-options", isAuthenticated, isAdmin, async (req, res) => {
+  // === Admin curry options API routes ===
+  // Get all curry options (admin)
+  app.get("/api/admin/curry-options", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const curryOptions = await storage.getCurryOptions();
+      res.json(curryOptions);
+    } catch (error) {
+      console.error("Error fetching curry options:", error);
+      res.status(500).json({ message: "Failed to fetch curry options" });
+    }
+  });
+  
+  // Create a new curry option (admin)
+  app.post("/api/admin/curry-options", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const curryOptionData = {
         id: `curry_${Date.now()}`,
@@ -1444,8 +1457,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Update a curry option (admin only)
-  app.patch("/api/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
+  // Update a curry option (admin)
+  app.put("/api/admin/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = req.params.id;
       const updateData = {
@@ -1466,8 +1479,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Delete a curry option (admin only)
-  app.delete("/api/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
+  // Delete a curry option (admin)
+  app.delete("/api/admin/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = req.params.id;
       const success = await storage.deleteCurryOption(id);
