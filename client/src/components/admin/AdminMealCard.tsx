@@ -61,7 +61,7 @@ const AdminMealCard = ({
   };
 
   return (
-    <Card className="bg-white rounded-lg overflow-hidden hover:shadow-lg transition duration-300">
+    <div className="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-100">
       <div className="relative">
         <img
           src={meal.imageUrl || "/meal-placeholder.jpg"}
@@ -76,87 +76,75 @@ const AdminMealCard = ({
         </Badge>
       </div>
       
-      <CardContent className="p-4 space-y-2">
-        <div className="flex justify-between items-start">
-          <h3 className="font-semibold text-lg">{meal.name}</h3>
-          <p className="font-bold text-lg">{formatPrice(meal.price)}</p>
+      <div className="p-4">
+        <div className="flex justify-between items-start mb-3">
+          <h3 className="font-semibold text-lg text-gray-900">{meal.name}</h3>
+          <p className="font-bold text-lg text-primary">{formatPrice(meal.price)}</p>
         </div>
         
-        <p className="text-sm text-gray-600 h-12 overflow-hidden">{meal.description}</p>
+        <p className="text-sm text-gray-600 h-12 overflow-hidden line-clamp-2">{meal.description}</p>
         
-        <div className="flex flex-wrap gap-1 mt-2">
+        <div className="flex flex-wrap gap-1 mt-3 mb-4">
           {meal.dietaryPreferences?.map((pref, index) => (
             <span
               key={index}
-              className={`text-xs px-2 py-1 rounded-full ${dietaryBadgeColor(pref)}`}
+              className={`text-xs px-2 py-0.5 rounded-full ${dietaryBadgeColor(pref)}`}
             >
               {pref}
             </span>
           ))}
         </div>
         
-        <div className="text-xs text-gray-500 mt-2">
-          <span className="font-medium">Category:</span> {meal.category || "N/A"}
-        </div>
-        
-        <div className="text-xs text-gray-500">
-          <span className="font-medium">Meal Type:</span> {meal.mealType}
-        </div>
-
-        {meal.curryOptions && meal.curryOptions.length > 0 && (
-          <div className="text-xs text-gray-500">
-            <span className="font-medium">Curry Options:</span> {meal.curryOptions.length} options
-          </div>
-        )}
-      </CardContent>
-      
-      <CardFooter className="p-4 pt-0 flex justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleEditClick}
-        >
-          <Edit className="h-4 w-4 mr-1" /> Edit
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleManageCurryClick}
-        >
-          <PlusCircle className="h-4 w-4 mr-1" /> Curry Options
-        </Button>
-        
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-red-200 text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4 mr-1" /> Delete
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Meal</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete {meal.name}? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => onDeleteMeal(meal.id)}
-                className="bg-red-600 hover:bg-red-700"
+        <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleEditClick}
+            className="flex-1 bg-white hover:bg-gray-50 text-gray-700"
+          >
+            <Edit className="h-4 w-4 mr-1" /> Edit
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManageCurryClick}
+            className="flex-1 bg-white hover:bg-gray-50 text-gray-700"
+          >
+            <PlusCircle className="h-4 w-4 mr-1" /> Curry
+          </Button>
+          
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-none bg-white border-red-200 text-red-600 hover:bg-red-50 w-9 px-0"
               >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </CardFooter>
-    </Card>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Meal</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete {meal.name}? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => onDeleteMeal(meal.id)}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+    </div>
   );
 };
 

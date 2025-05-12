@@ -188,7 +188,7 @@ export function AdminCurryOptionsModal({
         {isAddEditFormVisible ? (
           <>
             <DialogHeader>
-              <DialogTitle className="flex justify-between items-center">
+              <DialogTitle className="flex items-center">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -198,7 +198,7 @@ export function AdminCurryOptionsModal({
                   <ChevronLeft className="h-4 w-4 mr-1" />
                   Back
                 </Button>
-                <span>{selectedCurryOption ? "Edit Curry Option" : "Add Curry Option"}</span>
+                <span>{selectedCurryOption ? "Edit Curry Option" : "Add New Curry Option"}</span>
               </DialogTitle>
               <DialogDescription>
                 {selectedCurryOption
@@ -206,10 +206,10 @@ export function AdminCurryOptionsModal({
                   : "Fill in the information for the new curry option"}
               </DialogDescription>
             </DialogHeader>
-            <form onSubmit={handleCurryFormSubmit}>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="id" className="text-right text-sm font-medium">
+            <form onSubmit={handleCurryFormSubmit} className="mt-4">
+              <div className="space-y-5">
+                <div className="space-y-2">
+                  <label htmlFor="id" className="text-sm font-medium block">
                     ID
                   </label>
                   <Input
@@ -219,17 +219,18 @@ export function AdminCurryOptionsModal({
                     placeholder="e.g., regular, spicy, mild"
                     required
                     disabled={!!selectedCurryOption}
-                    className="col-span-3"
+                    className="w-full"
                   />
                   {!selectedCurryOption && (
-                    <p className="text-xs text-gray-500 mt-1 col-span-4 text-right">
+                    <p className="text-xs text-gray-500 mt-1">
                       Must be unique and URL-friendly (lowercase, no spaces)
                     </p>
                   )}
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="name" className="text-right text-sm font-medium">
-                    Name
+                
+                <div className="space-y-2">
+                  <label htmlFor="name" className="text-sm font-medium block">
+                    Name <span className="text-red-500">*</span>
                   </label>
                   <Input
                     id="name"
@@ -237,12 +238,13 @@ export function AdminCurryOptionsModal({
                     defaultValue={selectedCurryOption?.name}
                     placeholder="e.g., Regular Curry, Spicy Curry"
                     required
-                    className="col-span-3"
+                    className="w-full"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="priceAdjustment" className="text-right text-sm font-medium">
-                    Price Adjustment (₹)
+                
+                <div className="space-y-2">
+                  <label htmlFor="priceAdjustment" className="text-sm font-medium block">
+                    Price Adjustment (₹) <span className="text-red-500">*</span>
                   </label>
                   <Input
                     id="priceAdjustment"
@@ -251,14 +253,15 @@ export function AdminCurryOptionsModal({
                     step="0.01"
                     defaultValue={selectedCurryOption?.priceAdjustment || 0}
                     required
-                    className="col-span-3"
+                    className="w-full"
                   />
-                  <p className="text-xs text-gray-500 mt-1 col-span-4 text-right">
-                    Amount to add to base meal price
+                  <p className="text-xs text-gray-500 mt-1">
+                    Amount to add to base meal price (can be negative for discounts)
                   </p>
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="description" className="text-right text-sm font-medium">
+                
+                <div className="space-y-2">
+                  <label htmlFor="description" className="text-sm font-medium block">
                     Description
                   </label>
                   <Input
@@ -266,38 +269,37 @@ export function AdminCurryOptionsModal({
                     name="description"
                     defaultValue={selectedCurryOption?.description}
                     placeholder="Description of the curry option"
-                    className="col-span-3"
+                    className="w-full"
                   />
                 </div>
               </div>
-              <DialogFooter>
-                <Button type="button" variant="outline" onClick={handleBackClick} className="mr-2">
+              
+              <div className="flex justify-end gap-2 mt-6 border-t pt-4">
+                <Button type="button" variant="outline" onClick={handleBackClick}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {selectedCurryOption ? "Update Curry Option" : "Create Curry Option"}
+                <Button type="submit" className="bg-primary">
+                  {selectedCurryOption ? "Update Option" : "Create Option"}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
           </>
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle className="flex justify-between items-center">
-                <span>Manage Curry Options for {meal.name}</span>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleAddCurryOption}
-                  className="ml-auto"
-                >
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Curry Option
-                </Button>
+              <DialogTitle>
+                Manage Curry Options for {meal.name}
               </DialogTitle>
               <DialogDescription>
                 Create, edit, or delete curry options for this meal.
               </DialogDescription>
+              <Button 
+                onClick={handleAddCurryOption}
+                className="w-full mt-4 bg-green-50 hover:bg-green-100 text-green-700 border border-green-200"
+              >
+                <PlusCircle className="h-4 w-4 mr-2" />
+                Add Curry Option
+              </Button>
             </DialogHeader>
             
             <div className="mt-4 space-y-4">
@@ -308,57 +310,64 @@ export function AdminCurryOptionsModal({
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {curryOptions.map((curry) => (
-                    <Card key={curry.id} className="shadow-sm">
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-semibold text-lg">{curry.name}</h3>
-                          <div className="flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditCurryOption(curry)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>
-                                    Delete Curry Option
-                                  </AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Are you sure you want to delete this curry option? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeleteCurryOption(curry.id)}
-                                    className="bg-red-600 hover:bg-red-700"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                    <div 
+                      key={curry.id} 
+                      className="bg-white border border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg text-gray-900">{curry.name}</h3>
+                          <div className="mt-1">
+                            <span className={`text-sm font-medium ${curry.priceAdjustment > 0 ? 'text-green-600' : curry.priceAdjustment < 0 ? 'text-red-600' : 'text-gray-500'}`}>
+                              {curry.priceAdjustment > 0 ? "+" : ""}{formatPrice(curry.priceAdjustment)}
+                            </span>
                           </div>
-                        </div>
-                        
-                        <div className="space-y-1 text-sm">
-                          <p className="font-medium text-primary">
-                            {curry.priceAdjustment > 0 ? "+" : ""}{formatPrice(curry.priceAdjustment)}
-                          </p>
                           {curry.description && (
-                            <p className="text-gray-600">{curry.description}</p>
+                            <p className="text-sm text-gray-500 mt-1 line-clamp-2">{curry.description}</p>
                           )}
                         </div>
-                      </CardContent>
-                    </Card>
+                        <div className="flex gap-2 ml-4">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditCurryOption(curry)}
+                            className="h-8 rounded-full hover:bg-gray-100"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button 
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  Delete Curry Option
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete this curry option? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteCurryOption(curry.id)}
+                                  className="bg-red-600 hover:bg-red-700"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               )}
