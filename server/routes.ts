@@ -198,8 +198,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/meals/type/:type", async (req, res) => {
     try {
       const mealType = req.params.type;
-      const meals = await storage.getMealsByType(mealType);
-      res.json(meals);
+      
+      // Use MongoDB directly
+      const meals = await MealModel.find({ mealType }).lean();
+      
+      // Get all curry options from the CurryOption collection
+      const globalCurryOptions = await CurryOption.find().lean();
+      
+      // Enhance each meal with curry options in the requested format
+      const enhancedMeals = meals.map(meal => {
+        let curryOptionsArray = [];
+        
+        // If meal has embedded curry options, use those
+        if (meal.curryOptions && meal.curryOptions.length > 0) {
+          curryOptionsArray = meal.curryOptions;
+        } else {
+          // Otherwise use global curry options
+          curryOptionsArray = globalCurryOptions.map(option => [
+            option._id.toString(),
+            option.name,
+            option.priceAdjustment
+          ]);
+        }
+        
+        return {
+          ...meal,
+          curryOptions: curryOptionsArray
+        };
+      });
+      
+      res.json(enhancedMeals);
     } catch (err) {
       console.error("Error fetching meals by type:", err);
       res.status(500).json({ message: "Error fetching meals by type" });
