@@ -96,43 +96,30 @@ export default function AdminPortalPage() {
     }
   };
 
-  // Fetch users
+  // Query to fetch users
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/users");
       if (!res.ok) {
-        throw new Error("Failed to fetch users");
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to fetch users");
       }
       return await res.json();
     },
-    enabled: user?.role === "admin" || user?.role === "manager",
   });
 
-  // Fetch meals
+  // Query to fetch meals
   const { data: meals, isLoading: isLoadingMeals } = useQuery({
     queryKey: ["/api/admin/meals"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/admin/meals");
       if (!res.ok) {
-        throw new Error("Failed to fetch meals");
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to fetch meals");
       }
       return await res.json();
     },
-    enabled: user?.role === "admin" || user?.role === "manager",
-  });
-
-  // Fetch curry options
-  const { data: curryOptions, isLoading: isLoadingCurryOptions } = useQuery({
-    queryKey: ["/api/admin/curry-options"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/curry-options");
-      if (!res.ok) {
-        throw new Error("Failed to fetch curry options");
-      }
-      return await res.json();
-    },
-    enabled: user?.role === "admin" || user?.role === "manager",
   });
 
   // Create user mutation
@@ -251,7 +238,7 @@ export default function AdminPortalPage() {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to delete meal");
       }
-      return true;
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
@@ -319,10 +306,10 @@ export default function AdminPortalPage() {
       role: formData.get('role') as string,
     };
 
-    // Only include password if it's provided
+    // Only include password if it's provided and non-empty
     const password = formData.get('password') as string;
     if (password) {
-      userData['password'] = password;
+      (userData as any).password = password;
     }
 
     if (selectedUser) {
@@ -348,25 +335,27 @@ export default function AdminPortalPage() {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     
-    // Get curry options string if provided and parse it to array format
-    const curryOptionsStr = formData.get('curryOptions') as string;
-    const curryOptions = curryOptionsStr ? 
-      parseAndValidateCurryOptions(curryOptionsStr) : 
-      undefined;
+    // Parse curry options
+    const curryOptionsString = formData.get('curryOptions') as string;
+    const curryOptions = parseAndValidateCurryOptions(curryOptionsString);
+    if (curryOptionsString && !curryOptions) return; // Stop if validation failed
     
     const mealData = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
       price: parseFloat(formData.get('price') as string),
-      imageUrl: formData.get('imageUrl') as string,
+      servingSize: formData.get('servingSize') as string,
+      available: formData.get('available') === 'true',
       milletType: formData.get('milletType') as string,
       mealType: formData.get('mealType') as string,
-      calories: parseInt(formData.get('calories') as string) || null,
-      protein: parseInt(formData.get('protein') as string) || null,
-      carbs: parseInt(formData.get('carbs') as string) || null,
-      fat: parseInt(formData.get('fat') as string) || null,
-      fiber: parseInt(formData.get('fiber') as string) || null,
-      available: (formData.get('available') as string) === 'true',
+      imageUrl: formData.get('imageUrl') as string,
+      
+      // Parse nutritional data
+      calories: parseInt(formData.get('calories') as string, 10),
+      protein: parseInt(formData.get('protein') as string, 10),
+      carbs: parseInt(formData.get('carbs') as string, 10),
+      fat: parseInt(formData.get('fat') as string, 10),
+      fiber: parseInt(formData.get('fiber') as string, 10),
       
       // Split and trim the comma-separated list
       dietaryPreferences: (formData.get('dietaryPreferences') as string)
@@ -413,33 +402,22 @@ export default function AdminPortalPage() {
 
   return (
     <div className="container mx-auto py-10">
-      <Tabs defaultValue="users" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="users">User Management</TabsTrigger>
-          <TabsTrigger value="meals">Meal Management</TabsTrigger>
+      <h1 className="text-3xl font-bold mb-6">Admin Portal</h1>
+      
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="meals">Meals</TabsTrigger>
+          <TabsTrigger value="orders">Orders</TabsTrigger>
         </TabsList>
-
+        
         <TabsContent value="users" className="space-y-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <div>
-                <CardTitle>Users</CardTitle>
-                <CardDescription>
-                  Manage registered users and their roles.
-                </CardDescription>
-              </div>
-              <Button onClick={handleAddUser}>
-                <PlusCircle className="w-4 h-4 mr-2" />
-                Add User
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="mb-4">
-                <Select
-                  value={userRoleFilter}
-                  onValueChange={setUserRoleFilter}
-                >
-                  <SelectTrigger>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle>Users</CardTitle>
+              <div className="flex space-x-2">
+                <Select value={userRoleFilter} onValueChange={setUserRoleFilter}>
+                  <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>
                   <SelectContent>
@@ -449,54 +427,56 @@ export default function AdminPortalPage() {
                     <SelectItem value="user">User</SelectItem>
                   </SelectContent>
                 </Select>
+                <Button onClick={handleAddUser}>
+                  <PlusCircle className="w-4 h-4 mr-2" />
+                  Add User
+                </Button>
               </div>
+            </CardHeader>
+            <CardContent>
               {isLoadingUsers ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : filteredUsers?.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Username</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">ID</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user: any) => (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-mono text-xs">{user.id}</TableCell>
+                        <TableCell>{user.username}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            user.role === "admin" ? "bg-red-500" : 
+                            user.role === "manager" ? "bg-blue-500" : 
+                            "bg-green-500"
+                          }>
+                            {user.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditUser(user)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((user: any) => (
-                        <TableRow key={user.id}>
-                          <TableCell>{user.username}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                user.role === "admin"
-                                  ? "destructive"
-                                  : user.role === "manager"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                            >
-                              {user.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEditUser(user)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               ) : (
                 <div className="flex justify-center py-8 text-muted-foreground">
                   No users found.
@@ -504,26 +484,24 @@ export default function AdminPortalPage() {
               )}
             </CardContent>
           </Card>
-
-          <Dialog
-            open={isUserDialogOpen}
-            onOpenChange={setIsUserDialogOpen}
-          >
-            <DialogContent>
+          
+          {/* User Edit/Add Dialog */}
+          <Dialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen}>
+            <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>
                   {selectedUser ? "Edit User" : "Add User"}
                 </DialogTitle>
                 <DialogDescription>
-                  {selectedUser
-                    ? "Update user information"
-                    : "Fill in the information for the new user"}
+                  {selectedUser 
+                    ? "Update user information and role." 
+                    : "Create a new user account."}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleUserFormSubmit}>
                 <div className="grid gap-4 py-4">
-                  <div className="space-y-2">
-                    <label htmlFor="username" className="text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="username" className="text-right text-sm font-medium">
                       Username
                     </label>
                     <Input
@@ -531,32 +509,37 @@ export default function AdminPortalPage() {
                       name="username"
                       defaultValue={selectedUser?.username}
                       required
+                      className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="email" className="text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="email" className="text-right text-sm font-medium">
                       Email
                     </label>
                     <Input
                       id="email"
                       name="email"
+                      type="email"
                       defaultValue={selectedUser?.email}
                       required
+                      className="col-span-3"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="password" className="text-sm font-medium">
-                      Password {selectedUser && "(leave blank to keep current)"}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="password" className="text-right text-sm font-medium">
+                      Password
                     </label>
                     <Input
                       id="password"
                       name="password"
                       type="password"
-                      required={!selectedUser}
+                      placeholder={selectedUser ? "Leave blank to keep unchanged" : ""}
+                      className="col-span-3"
+                      {...(selectedUser ? {} : { required: true })}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="role" className="text-sm font-medium">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="role" className="text-right text-sm font-medium">
                       Role
                     </label>
                     <Select
@@ -722,22 +705,38 @@ export default function AdminPortalPage() {
                       name="price"
                       type="number"
                       step="0.01"
-                      defaultValue={selectedMeal?.price || 100}
+                      defaultValue={selectedMeal?.price || 199}
                       required
                       className="col-span-3"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="imageUrl" className="text-right text-sm font-medium">
-                      Image URL
+                    <label htmlFor="servingSize" className="text-right text-sm font-medium">
+                      Serving Size
                     </label>
                     <Input
-                      id="imageUrl"
-                      name="imageUrl"
-                      defaultValue={selectedMeal?.imageUrl || "/meal-placeholder.jpg"}
-                      required
+                      id="servingSize"
+                      name="servingSize"
+                      defaultValue={selectedMeal?.servingSize || "1 bowl (250g)"}
                       className="col-span-3"
                     />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <label htmlFor="available" className="text-right text-sm font-medium">
+                      Available
+                    </label>
+                    <Select
+                      name="available"
+                      defaultValue={selectedMeal?.available === false ? "false" : "true"}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Is this meal available?" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="true">Yes</SelectItem>
+                        <SelectItem value="false">No</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="milletType" className="text-right text-sm font-medium">
@@ -745,20 +744,19 @@ export default function AdminPortalPage() {
                     </label>
                     <Select
                       name="milletType"
-                      defaultValue={selectedMeal?.milletType || "Foxtail Millet"}
+                      defaultValue={selectedMeal?.milletType || "Pearl Millet"}
                     >
                       <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select millet type" />
+                        <SelectValue placeholder="Select a millet type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Foxtail Millet">Foxtail Millet</SelectItem>
-                        <SelectItem value="Pearl Millet">Pearl Millet</SelectItem>
-                        <SelectItem value="Finger Millet">Finger Millet</SelectItem>
-                        <SelectItem value="Little Millet">Little Millet</SelectItem>
-                        <SelectItem value="Barnyard Millet">Barnyard Millet</SelectItem>
+                        <SelectItem value="Pearl Millet">Pearl Millet (Bajra)</SelectItem>
+                        <SelectItem value="Finger Millet">Finger Millet (Ragi)</SelectItem>
+                        <SelectItem value="Sorghum">Sorghum (Jowar)</SelectItem>
+                        <SelectItem value="Foxtail Millet">Foxtail Millet (Kangni)</SelectItem>
+                        <SelectItem value="Little Millet">Little Millet (Kutki)</SelectItem>
+                        <SelectItem value="Barnyard Millet">Barnyard Millet (Sanwa)</SelectItem>
                         <SelectItem value="Kodo Millet">Kodo Millet</SelectItem>
-                        <SelectItem value="Proso Millet">Proso Millet</SelectItem>
-                        <SelectItem value="Sorghum">Sorghum</SelectItem>
                         <SelectItem value="Mixed Millet">Mixed Millet</SelectItem>
                       </SelectContent>
                     </Select>
@@ -772,7 +770,7 @@ export default function AdminPortalPage() {
                       defaultValue={selectedMeal?.mealType || "Dinner"}
                     >
                       <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select meal type" />
+                        <SelectValue placeholder="Select a meal type" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Breakfast">Breakfast</SelectItem>
@@ -783,21 +781,15 @@ export default function AdminPortalPage() {
                     </Select>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <label htmlFor="available" className="text-right text-sm font-medium">
-                      Available
+                    <label htmlFor="imageUrl" className="text-right text-sm font-medium">
+                      Image URL
                     </label>
-                    <Select
-                      name="available"
-                      defaultValue={(selectedMeal?.available?.toString() || "true")}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select availability" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="true">Available</SelectItem>
-                        <SelectItem value="false">Unavailable</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Input
+                      id="imageUrl"
+                      name="imageUrl"
+                      defaultValue={selectedMeal?.imageUrl || "/meal-placeholder.jpg"}
+                      className="col-span-3"
+                    />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <label htmlFor="calories" className="text-right text-sm font-medium">
