@@ -26,28 +26,30 @@ const NutritionModal = ({ meal, open, onClose }: NutritionModalProps) => {
         <div className="space-y-3">
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Calories</span>
-            <span>{meal.calories} kcal</span>
+            <span>{meal.calories ? `${meal.calories} kcal` : 'Coming soon'}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Protein</span>
-            <span>{meal.protein}g</span>
+            <span>{meal.protein ? `${meal.protein}g` : 'Coming soon'}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Carbohydrates</span>
-            <span>{meal.carbs}g</span>
+            <span>{meal.carbs ? `${meal.carbs}g` : 'Coming soon'}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Fat</span>
-            <span>{meal.fat}g</span>
+            <span>{meal.fat ? `${meal.fat}g` : 'Coming soon'}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Fiber</span>
-            <span>{meal.fiber}g</span>
+            <span>{meal.fiber ? `${meal.fiber}g` : 'Coming soon'}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="font-medium">Sugar</span>
-            <span>{meal.sugar}g</span>
-          </div>
+          {meal.sugar !== undefined && (
+            <div className="flex justify-between">
+              <span className="font-medium">Sugar</span>
+              <span>{meal.sugar}g</span>
+            </div>
+          )}
         </div>
 
         <div className="mt-6 bg-neutral-light p-3 rounded-lg">
