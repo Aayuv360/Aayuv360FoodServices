@@ -51,7 +51,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import MealCurryOptionsModal from "@/components/admin/MealCurryOptionsModal";
+import { AdminCurryOptionsModal } from "@/components/admin/AdminCurryOptionsModal";
+import AdminMealCard from "@/components/admin/AdminMealCard";
 
 export default function AdminPortalPage() {
   const { user } = useAuth();
@@ -794,71 +795,19 @@ export default function AdminPortalPage() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : filteredMeals?.length > 0 ? (
-                <div className="rounded-md border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Price</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredMeals.map((meal: any) => (
-                        <TableRow key={meal.id}>
-                          <TableCell className="font-medium">{meal.name}</TableCell>
-                          <TableCell>{meal.mealType}</TableCell>
-                          <TableCell>₹{meal.price.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={meal.available ? "default" : "secondary"}
-                            >
-                              {meal.available ? "Available" : "Unavailable"}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleEditMeal(meal)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>
-                                      Delete Meal
-                                    </AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete this meal? This action cannot be
-                                      undone.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => deleteMealMutation.mutate(meal.id)}
-                                    >
-                                      Delete
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredMeals.map((meal: any) => (
+                    <AdminMealCard 
+                      key={meal.id} 
+                      meal={meal} 
+                      onEditMeal={handleEditMeal}
+                      onDeleteMeal={(mealId) => deleteMealMutation.mutate(mealId)}
+                      onManageCurryOptions={(selectedMeal) => {
+                        setSelectedMealForCurryOptions(selectedMeal);
+                        setIsMealCurryOptionsModalOpen(true);
+                      }}
+                    />
+                  ))}
                 </div>
               ) : (
                 <div className="flex justify-center py-8 text-muted-foreground">
