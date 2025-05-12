@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { mongoStorage } from "./mongoStorage";
 import { z } from "zod";
 import { mealPlannerService } from "./mealPlanner";
 import { analyticsService, AnalyticsDateRange } from "./analytics";
@@ -294,8 +295,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         curryOptionPrice
       };
       
-      // Use the MongoDB storage implementation directly
-      const { mongoStorage } = require('./mongoStorage');
+      // Use MongoDB storage implementation
       const cartItem = await mongoStorage.addToCart(cartItemData);
       const meal = await mongoStorage.getMeal(cartItem.mealId);
       
