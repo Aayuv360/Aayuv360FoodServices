@@ -79,6 +79,13 @@ export interface IStorage {
   createAddress(address: InsertAddress): Promise<Address>;
   updateAddress(id: number, address: Partial<Address>): Promise<Address | undefined>;
   deleteAddress(id: number): Promise<boolean>;
+  
+  // Curry Option operations
+  getCurryOptions(): Promise<any[]>;
+  getCurryOption(id: string): Promise<any | undefined>;
+  createCurryOption(curryOption: any): Promise<any>;
+  updateCurryOption(id: string, curryOption: any): Promise<any | undefined>;
+  deleteCurryOption(id: string): Promise<boolean>;
 }
 
 import createMemoryStore from "memorystore";
@@ -96,6 +103,7 @@ export class MemStorage implements IStorage {
   private cartItems: Map<number, CartItem>;
   private reviews: Map<number, Review>;
   private addresses: Map<number, Address>;
+  private curryOptions: Map<string, any>; // Curry options storage
   
   sessionStore: expressSession.Store;
   

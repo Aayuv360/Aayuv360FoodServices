@@ -1001,6 +1001,62 @@ export class MongoDBStorage implements IStorage {
       throw error;
     }
   }
+  
+  // Curry Options CRUD methods
+  async getCurryOptions(): Promise<any[]> {
+    try {
+      return await CurryOption.find().lean();
+    } catch (error) {
+      console.error('Error getting curry options:', error);
+      return [];
+    }
+  }
+  
+  async getCurryOption(id: string): Promise<any | undefined> {
+    try {
+      const curryOption = await CurryOption.findOne({ id }).lean();
+      return curryOption || undefined;
+    } catch (error) {
+      console.error('Error getting curry option:', error);
+      return undefined;
+    }
+  }
+  
+  async createCurryOption(curryOptionData: any): Promise<any> {
+    try {
+      const newCurryOption = new CurryOption(curryOptionData);
+      await newCurryOption.save();
+      return newCurryOption.toObject();
+    } catch (error) {
+      console.error('Error creating curry option:', error);
+      throw error;
+    }
+  }
+  
+  async updateCurryOption(id: string, updateData: any): Promise<any | undefined> {
+    try {
+      const updatedCurryOption = await CurryOption.findOneAndUpdate(
+        { id },
+        { ...updateData, updatedAt: new Date() },
+        { new: true }
+      ).lean();
+      
+      return updatedCurryOption || undefined;
+    } catch (error) {
+      console.error('Error updating curry option:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteCurryOption(id: string): Promise<boolean> {
+    try {
+      const result = await CurryOption.deleteOne({ id });
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error('Error deleting curry option:', error);
+      return false;
+    }
+  }
 }
 
 // Export a singleton instance
