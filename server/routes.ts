@@ -1327,6 +1327,141 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Admin route to update or add a curry option for a meal
+  app.post("/api/admin/meals/:id/curry-options", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      const curryOptionData = req.body;
+      
+      console.log(`Admin: Creating/updating curry option for meal ID ${mealId}`);
+      
+      // Check if the meal exists
+      const meal = await MealModel.findOne({ id: mealId }).lean();
+      if (!meal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      // Generate an ID if not provided (new curry option)
+      if (!curryOptionData.id) {
+        curryOptionData.id = `curry_${Date.now()}`;
+        curryOptionData.createdAt = new Date();
+      }
+      
+      // Set necessary properties
+      curryOptionData.mealId = mealId;
+      curryOptionData.updatedAt = new Date();
+      
+      // Save the curry option - create or update
+      let curryOption;
+      if (curryOptionData.id) {
+        // Try to find existing curry option
+        const existingOption = await CurryOption.findOne({ id: curryOptionData.id });
+        
+        if (existingOption) {
+          // Update existing curry option
+          curryOption = await CurryOption.findOneAndUpdate(
+            { id: curryOptionData.id },
+            { $set: curryOptionData },
+            { new: true }
+          );
+        } else {
+          // Create new curry option
+          curryOption = await CurryOption.create(curryOptionData);
+        }
+      } else {
+        // Create new curry option
+        curryOption = await CurryOption.create(curryOptionData);
+      }
+      
+      if (!curryOption) {
+        throw new Error(`Failed to create or update curry option`);
+      }
+      
+      console.log(`Admin: Successfully created/updated curry option with ID ${curryOption.id}`);
+      
+      // Return the updated meal with all curry options
+      const globalCurryOptions = await CurryOption.find().lean();
+      const mealSpecificOptions = globalCurryOptions.filter((option: any) => 
+        option.mealId === null || option.mealId === mealId
+      );
+      
+      // Format the response with curry options in object format
+      const formattedOptions = formatCurryOptions(mealSpecificOptions, mealId);
+      
+      res.status(201).json({
+        message: "Curry option created/updated successfully",
+        curryOption,
+        allCurryOptions: formattedOptions
+      });
+    } catch (error) {
+      console.error("Error creating/updating curry option:", error);
+      res.status(500).json({ message: "Failed to create/update curry option" });
+    }
+  });
+  
+  // Admin route to get all curry options for a meal
+  app.get("/api/admin/meals/:id/curry-options", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.id);
+      
+      // Check if the meal exists
+      const meal = await MealModel.findOne({ id: mealId }).lean();
+      if (!meal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+      
+      // Get all curry options from the CurryOption collection
+      const globalCurryOptions = await CurryOption.find().lean();
+      
+      // Filter options for this meal (either meal-specific or global)
+      const mealSpecificOptions = globalCurryOptions.filter((option: any) => 
+        option.mealId === null || option.mealId === mealId
+      );
+      
+      // Format the response with curry options in object format
+      const formattedOptions = formatCurryOptions(mealSpecificOptions, mealId);
+      
+      res.json(formattedOptions);
+    } catch (error) {
+      console.error("Error fetching curry options for meal:", error);
+      res.status(500).json({ message: "Failed to fetch curry options" });
+    }
+  });
+  
+  // Admin route to delete a curry option
+  app.delete("/api/admin/meals/:mealId/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
+    try {
+      const mealId = parseInt(req.params.mealId);
+      const curryOptionId = req.params.id;
+      
+      // Check if the curry option exists
+      const curryOption = await CurryOption.findOne({ id: curryOptionId });
+      if (!curryOption) {
+        return res.status(404).json({ message: "Curry option not found" });
+      }
+      
+      // Delete the curry option
+      await CurryOption.deleteOne({ id: curryOptionId });
+      
+      // Get all curry options for this meal
+      const globalCurryOptions = await CurryOption.find().lean();
+      const mealSpecificOptions = globalCurryOptions.filter((option: any) => 
+        option.mealId === null || option.mealId === mealId
+      );
+      
+      // Format the response with curry options in object format
+      const formattedOptions = formatCurryOptions(mealSpecificOptions, mealId);
+      
+      res.json({
+        message: "Curry option deleted successfully",
+        allCurryOptions: formattedOptions
+      });
+    } catch (error) {
+      console.error("Error deleting curry option:", error);
+      res.status(500).json({ message: "Failed to delete curry option" });
+    }
+  });
+  
   // Admin route to update meal prices (divide by 100)
   app.post("/api/admin/update-prices", isAuthenticated, isAdmin, async (req, res) => {
     try {
@@ -1577,6 +1712,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/admin/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const id = req.params.id;
+      
+      if (!id || id === "undefined") {
+        return res.status(400).json({ message: "Invalid curry option ID" });
+      }
+      
       const updateData = {
         ...req.body,
         updatedAt: new Date()
