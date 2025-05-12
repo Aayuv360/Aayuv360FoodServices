@@ -434,7 +434,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/cart", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      await storage.clearCart(userId);
+      
+      // Use MongoDB storage implementation directly
+      const { mongoStorage } = require('./mongoStorage');
+      await mongoStorage.clearCart(userId);
+      
       res.status(204).send();
     } catch (err) {
       console.error("Error clearing cart:", err);
