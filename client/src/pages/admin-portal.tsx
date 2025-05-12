@@ -431,11 +431,16 @@ export default function AdminPortalPage() {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+    
+    // Get the associated meal ID (or null if "All Meals" is selected)
+    const mealId = formData.get('mealId') as string;
+    
     const curryData = {
       id: formData.get('id') as string,
       name: formData.get('name') as string,
       priceAdjustment: parseFloat(formData.get('priceAdjustment') as string),
       description: formData.get('description') as string,
+      mealId: mealId !== "all" ? parseInt(mealId) : null,
     };
 
     if (selectedCurry) {
@@ -984,6 +989,7 @@ export default function AdminPortalPage() {
                     <TableHead>ID</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Price Adjustment</TableHead>
+                    <TableHead>Associated Meal</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
@@ -998,6 +1004,14 @@ export default function AdminPortalPage() {
                           {curry.priceAdjustment >= 0 
                             ? `+₹${curry.priceAdjustment}` 
                             : `-₹${Math.abs(curry.priceAdjustment)}`}
+                        </TableCell>
+                        <TableCell>
+                          {curry.mealId 
+                            ? <Badge variant="outline" className="bg-amber-50">
+                                {meals?.find((meal: any) => meal.id === curry.mealId)?.name || `Meal #${curry.mealId}`}
+                              </Badge>
+                            : <Badge variant="outline" className="bg-blue-50">Global</Badge>
+                          }
                         </TableCell>
                         <TableCell className="max-w-xs truncate">{curry.description}</TableCell>
                         <TableCell>
@@ -1113,6 +1127,29 @@ export default function AdminPortalPage() {
                     placeholder="Medium spicy traditional curry..." 
                     defaultValue={selectedCurry?.description || ''}
                   />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="mealId">Associated Meal</Label>
+                  <Select
+                    name="mealId"
+                    defaultValue={selectedCurry?.mealId?.toString() || "all"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select meal" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Meals (Global)</SelectItem>
+                      {meals?.map((meal: any) => (
+                        <SelectItem key={meal.id} value={meal.id.toString()}>
+                          {meal.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Select the specific meal this curry option applies to, or "All Meals" if it's a global option
+                  </p>
                 </div>
                 
                 <DialogFooter>
