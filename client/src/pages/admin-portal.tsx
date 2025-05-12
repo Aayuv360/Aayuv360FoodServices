@@ -93,6 +93,19 @@ export default function AdminPortalPage() {
       return await res.json();
     },
   });
+  
+  // Query to fetch curry options
+  const { data: curryOptions, isLoading: isLoadingCurryOptions } = useQuery({
+    queryKey: ["/api/admin/curry-options"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/admin/curry-options");
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to fetch curry options");
+      }
+      return await res.json();
+    },
+  });
 
   // Create user mutation
   const createUserMutation = useMutation({
@@ -228,7 +241,86 @@ export default function AdminPortalPage() {
     },
   });
 
-  // Curry option mutations removed
+  // Curry option mutations
+  const createCurryOptionMutation = useMutation({
+    mutationFn: async (optionData: any) => {
+      const res = await apiRequest("POST", "/api/admin/curry-options", optionData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create curry option");
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
+      setIsCurryOptionDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Curry option created successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create curry option",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateCurryOptionMutation = useMutation({
+    mutationFn: async ({ id, optionData }: { id: string; optionData: any }) => {
+      const res = await apiRequest("PUT", `/api/admin/curry-options/${id}`, optionData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update curry option");
+      }
+      return await res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
+      setIsCurryOptionDialogOpen(false);
+      toast({
+        title: "Success",
+        description: "Curry option updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update curry option",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteCurryOptionMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/admin/curry-options/${id}`);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to delete curry option");
+      }
+      return true;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/curry-options"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/meals"] });
+      toast({
+        title: "Success",
+        description: "Curry option deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete curry option",
+        variant: "destructive",
+      });
+    },
+  });
 
   // Bulk price update mutation
   const bulkUpdatePricesMutation = useMutation({
@@ -344,7 +436,43 @@ export default function AdminPortalPage() {
     }
   };
 
-  // Curry option handlers removed
+  // Curry option handlers
+  const handleAddCurryOption = () => {
+    setSelectedCurryOption(null);
+    setIsCurryOptionDialogOpen(true);
+  };
+
+  const handleEditCurryOption = (option: any) => {
+    setSelectedCurryOption(option);
+    setIsCurryOptionDialogOpen(true);
+  };
+
+  const handleDeleteCurryOption = (id: string) => {
+    deleteCurryOptionMutation.mutate(id);
+  };
+
+  const handleCurryOptionFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const form = e.target as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    // Get the associated meal IDs
+    const mealIds = formData.getAll('mealIds') as string[];
+    
+    const optionData = {
+      id: formData.get('id') as string || `curry_${Date.now()}`,
+      name: formData.get('name') as string,
+      priceAdjustment: parseFloat(formData.get('priceAdjustment') as string),
+      description: formData.get('description') as string || "",
+      mealIds: mealIds.map(id => parseInt(id))
+    };
+    
+    if (selectedCurryOption) {
+      updateCurryOptionMutation.mutate({ id: selectedCurryOption.id, optionData });
+    } else {
+      createCurryOptionMutation.mutate(optionData);
+    }
+  };
 
   // Filtered users based on role
   const filteredUsers = users?.filter((user: any) => {
