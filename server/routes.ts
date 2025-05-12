@@ -16,7 +16,7 @@ import {
   subscriptionPaymentMap,
   razorpay
 } from "./razorpay";
-import { Meal as MealModel, CartItem as CartItemModel } from "../shared/mongoModels";
+import { Meal as MealModel, CartItem as CartItemModel, CurryOption } from "../shared/mongoModels";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
@@ -101,10 +101,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/meals", async (req, res) => {
     try {
       console.log("Fetching all meals directly from MongoDB...");
+      
       // Use MongoDB directly instead of going through storage
       const meals = await MealModel.find().lean();
+      
+      // Get all curry options from the CurryOption collection
+      const globalCurryOptions = await CurryOption.find().lean();
+      
+      // Enhance each meal with curry options (either from the meal document or global ones)
+      const enhancedMeals = meals.map(meal => {
+        // If meal doesn't have curry options or has an empty array, add global options
+        if (!meal.curryOptions || meal.curryOptions.length === 0) {
+          const mealSpecificOptions = globalCurryOptions.filter(option => 
+            option.mealId === null || option.mealId === meal.id
+          );
+          
+          return {
+            ...meal,
+            curryOptions: mealSpecificOptions.map(option => ({
+              id: option.id,
+              name: option.name,
+              priceAdjustment: option.priceAdjustment,
+              description: option.description
+            }))
+          };
+        }
+        
+        // Otherwise return meal with its existing curry options
+        return meal;
+      });
+      
       console.log(`Retrieved ${meals.length} meals from MongoDB`);
-      res.json(meals);
+      res.json(enhancedMeals);
     } catch (err) {
       console.error("Error fetching meals:", err);
       res.status(500).json({ message: "Error fetching meals" });
@@ -1057,10 +1085,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
       console.log("Admin: Fetching all meals from MongoDB...");
+      
       // Use MongoDB directly instead of going through storage
       const meals = await MealModel.find().lean();
+      
+      // Get all curry options from the CurryOption collection
+      const globalCurryOptions = await CurryOption.find().lean();
+      
+      // Enhance each meal with curry options (either from the meal document or global ones)
+      const enhancedMeals = meals.map(meal => {
+        // If meal doesn't have curry options or has an empty array, add global options
+        if (!meal.curryOptions || meal.curryOptions.length === 0) {
+          const mealSpecificOptions = globalCurryOptions.filter(option => 
+            option.mealId === null || option.mealId === meal.id
+          );
+          
+          return {
+            ...meal,
+            curryOptions: mealSpecificOptions.map(option => ({
+              id: option.id,
+              name: option.name,
+              priceAdjustment: option.priceAdjustment,
+              description: option.description
+            }))
+          };
+        }
+        
+        // Otherwise return meal with its existing curry options
+        return meal;
+      });
+      
       console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
-      res.json(meals);
+      res.json(enhancedMeals);
     } catch (err) {
       console.error("Error fetching meals:", err);
       res.status(500).json({ message: "Error fetching meals" });
