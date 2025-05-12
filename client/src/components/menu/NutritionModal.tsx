@@ -26,23 +26,25 @@ const NutritionModal = ({ meal, open, onClose }: NutritionModalProps) => {
         <div className="space-y-3">
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Calories</span>
-            <span>{meal.calories ? `${meal.calories} kcal` : 'Coming soon'}</span>
+            <span>
+              {meal.calories ? `${meal.calories} kcal` : "Coming soon"}
+            </span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Protein</span>
-            <span>{meal.protein ? `${meal.protein}g` : 'Coming soon'}</span>
+            <span>{meal.protein ? `${meal.protein}g` : "Coming soon"}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Carbohydrates</span>
-            <span>{meal.carbs ? `${meal.carbs}g` : 'Coming soon'}</span>
+            <span>{meal.carbs ? `${meal.carbs}g` : "Coming soon"}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Fat</span>
-            <span>{meal.fat ? `${meal.fat}g` : 'Coming soon'}</span>
+            <span>{meal.fat ? `${meal.fat}g` : "Coming soon"}</span>
           </div>
           <div className="flex justify-between border-b pb-2">
             <span className="font-medium">Fiber</span>
-            <span>{meal.fiber ? `${meal.fiber}g` : 'Coming soon'}</span>
+            <span>{meal.fiber ? `${meal.fiber}g` : "Coming soon"}</span>
           </div>
           {meal.sugar !== undefined && (
             <div className="flex justify-between">
@@ -63,7 +65,10 @@ const NutritionModal = ({ meal, open, onClose }: NutritionModalProps) => {
         </div>
 
         <div className="mt-4 text-center">
-          <Button onClick={onClose} className="bg-primary hover:bg-primary/90 text-white">
+          <Button
+            onClick={onClose}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
             Close
           </Button>
         </div>
