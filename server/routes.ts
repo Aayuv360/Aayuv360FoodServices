@@ -788,8 +788,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const subscriptionId = parseInt(req.params.id);
       
-      // Ensure subscription exists and belongs to the user
-      const existingSubscription = await storage.getSubscription(subscriptionId);
+      // Ensure subscription exists and belongs to the user - use MongoDB directly
+      const existingSubscription = await mongoStorage.getSubscription(subscriptionId);
       
       if (!existingSubscription) {
         return res.status(404).json({ message: "Subscription not found" });
@@ -805,13 +805,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionId
       });
       
-      // Ensure meal exists
-      const meal = await storage.getMeal(mealPlanData.mealId);
+      // Ensure meal exists - use MongoDB directly
+      const meal = await mongoStorage.getMeal(mealPlanData.mealId);
       if (!meal) {
         return res.status(404).json({ message: "Meal not found" });
       }
       
-      const mealPlan = await storage.createCustomMealPlan(mealPlanData);
+      // Use MongoDB storage implementation directly
+      const mealPlan = await mongoStorage.createCustomMealPlan(mealPlanData);
       res.status(201).json({
         ...mealPlan,
         meal
@@ -832,8 +833,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const subscriptionId = parseInt(req.params.subscriptionId);
       const planId = parseInt(req.params.planId);
       
-      // Ensure subscription exists and belongs to the user
-      const existingSubscription = await storage.getSubscription(subscriptionId);
+      // Ensure subscription exists and belongs to the user - use MongoDB directly
+      const existingSubscription = await mongoStorage.getSubscription(subscriptionId);
       
       if (!existingSubscription) {
         return res.status(404).json({ message: "Subscription not found" });
@@ -843,8 +844,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "You do not have permission to modify this subscription" });
       }
       
-      // Delete the custom meal plan
-      const success = await storage.deleteCustomMealPlan(planId);
+      // Delete the custom meal plan - use MongoDB directly
+      const success = await mongoStorage.deleteCustomMealPlan(planId);
       
       if (!success) {
         return res.status(404).json({ message: "Custom meal plan not found" });
@@ -873,12 +874,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...orderData,
         status: "pending" // Adding required status field
       };
-      const order = await storage.createOrder(orderWithStatus);
+      // Use MongoDB storage implementation directly
+      const order = await mongoStorage.createOrder(orderWithStatus);
       
       // Create order items from cart if provided
       if (req.body.fromCart) {
-        // Get all cart items for the user
-        const cartItems = await storage.getCartItems(userId);
+        // Get all cart items for the user - use MongoDB directly
+        const cartItems = await mongoStorage.getCartItems(userId);
         
         // Create order items from cart items
         for (const cartItem of cartItems) {
@@ -886,17 +888,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
             orderId: order.id,
             mealId: cartItem.mealId,
             quantity: cartItem.quantity,
-            price: cartItem.quantity * ((await storage.getMeal(cartItem.mealId))?.price || 0),
+            price: cartItem.quantity * ((await mongoStorage.getMeal(cartItem.mealId))?.price || 0),
             curryOptionId: cartItem.curryOptionId,
             curryOptionName: cartItem.curryOptionName,
             curryOptionPrice: cartItem.curryOptionPrice
           };
           
-          await storage.createOrderItem(orderItem);
+          // Use MongoDB storage implementation directly
+          await mongoStorage.createOrderItem(orderItem);
         }
         
-        // Clear the cart
-        await storage.clearCart(userId);
+        // Clear the cart - use MongoDB directly
+        await mongoStorage.clearCart(userId);
       } else if (req.body.items && Array.isArray(req.body.items)) {
         // Create order items from the provided items array
         for (const item of req.body.items) {
@@ -904,13 +907,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             orderId: order.id,
             mealId: item.mealId,
             quantity: item.quantity,
-            price: item.price || item.quantity * ((await storage.getMeal(item.mealId))?.price || 0),
+            price: item.price || item.quantity * ((await mongoStorage.getMeal(item.mealId))?.price || 0),
             curryOptionId: item.curryOptionId,
             curryOptionName: item.curryOptionName,
             curryOptionPrice: item.curryOptionPrice
           };
           
-          await storage.createOrderItem(orderItem);
+          // Use MongoDB storage implementation directly
+          await mongoStorage.createOrderItem(orderItem);
         }
       }
       
