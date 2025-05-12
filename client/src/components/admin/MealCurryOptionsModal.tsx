@@ -50,10 +50,14 @@ export default function MealCurryOptionsModal({
 
         <div className="space-y-4 my-4 max-h-[400px] overflow-y-auto pr-2">
           {curryOptions
-            ?.filter(
-              (curry: any) =>
-                curry.mealId === selectedMeal?.id || curry.mealId === null
-            )
+            ?.filter((curry: any) => {
+              // Check if this curry option applies to this meal either through:
+              // 1. Legacy mealId field, or
+              // 2. New mealIds array containing this meal's ID
+              const legacyMatch = curry.mealId === selectedMeal?.id || curry.mealId === null;
+              const arrayMatch = Array.isArray(curry.mealIds) && curry.mealIds.includes(selectedMeal?.id);
+              return legacyMatch || arrayMatch;
+            })
             .map((curry: any) => (
               <Card key={curry.id} className="shadow-sm border">
                 <CardHeader className="py-3">
@@ -89,21 +93,24 @@ export default function MealCurryOptionsModal({
                     </span>
                     <Badge
                       variant="outline"
-                      className={curry.mealId === null ? "bg-blue-50" : ""}
+                      className={curry.mealId === null && (!curry.mealIds || curry.mealIds.length === 0) ? "bg-blue-50" : ""}
                     >
-                      {curry.mealId === null
+                      {curry.mealId === null && (!curry.mealIds || curry.mealIds.length === 0)
                         ? "Available for all meals"
-                        : "Meal specific"}
+                        : Array.isArray(curry.mealIds) && curry.mealIds.length > 0
+                          ? `Applied to ${curry.mealIds.length} meal${curry.mealIds.length > 1 ? 's' : ''}`
+                          : "Meal specific"}
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
             ))}
 
-          {curryOptions?.filter(
-            (curry: any) =>
-              curry.mealId === selectedMeal?.id || curry.mealId === null
-          ).length === 0 && (
+          {curryOptions?.filter((curry: any) => {
+            const legacyMatch = curry.mealId === selectedMeal?.id || curry.mealId === null;
+            const arrayMatch = Array.isArray(curry.mealIds) && curry.mealIds.includes(selectedMeal?.id);
+            return legacyMatch || arrayMatch;
+          }).length === 0 && (
             <div className="text-center py-6">
               <p className="text-muted-foreground">
                 No curry options available for this meal.

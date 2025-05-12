@@ -36,13 +36,24 @@ export function CurryOptionsModal({
   lastCurryOption,
   isInCart = false
 }: CurryOptionsModalProps) {
-  // Extract curry options from the meal (convert from array format to object format)
+  // Extract curry options from the meal
   const curryOptions: CurryOption[] = meal.curryOptions ? 
-    meal.curryOptions.map((option: any) => ({
-      id: option[0],
-      name: option[1],
-      priceAdjustment: option[2]
-    })) : 
+    meal.curryOptions.map((option: any) => {
+      // Handle both formats: object format {id, name, price} or array format [id, name, price]
+      if (Array.isArray(option)) {
+        return {
+          id: option[0],
+          name: option[1],
+          priceAdjustment: option[2]
+        };
+      } else {
+        return {
+          id: option.id,
+          name: option.name,
+          priceAdjustment: option.price || option.priceAdjustment || 0
+        };
+      }
+    }) : 
     // Fallback to default options if none are provided in the meal
     [
       { id: "regular", name: "Regular Curry", priceAdjustment: 0 },
