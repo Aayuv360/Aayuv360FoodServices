@@ -11,13 +11,16 @@ export function cn(...inputs: ClassValue[]) {
  * @param currency Currency code (default: INR)
  * @returns Formatted price string
  */
-export function formatPrice(price: number | undefined, currency: string = "INR"): string {
-  if (price === undefined) return '₹0';
-  
+export function formatPrice(
+  price: number | undefined,
+  currency: string = "INR",
+): string {
+  if (price === undefined) return "₹0";
+
   // Check if price is likely in paise (high value) or already in rupees (lower value)
   // A typical millet meal shouldn't cost more than ₹1000, so we use that as threshold
-  const finalPrice = price > 1000 ? price / 100 : price;
-  
+  const finalPrice = price;
+
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency,

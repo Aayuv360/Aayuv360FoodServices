@@ -44,6 +44,7 @@ const Profile = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<number | null>(null);
   
   // Parse the URL search params to get the active tab
   const urlParams = new URLSearchParams(window.location.search);
@@ -55,6 +56,14 @@ const Profile = () => {
       setExpandedOrderId(null);
     } else {
       setExpandedOrderId(orderId);
+    }
+  };
+  
+  const toggleSubscriptionDetails = (subscriptionId: number) => {
+    if (expandedSubscriptionId === subscriptionId) {
+      setExpandedSubscriptionId(null);
+    } else {
+      setExpandedSubscriptionId(subscriptionId);
     }
   };
   
@@ -328,57 +337,205 @@ const Profile = () => {
                       {subscriptions.map((subscription: any) => (
                         <div
                           key={subscription.id}
-                          className="border rounded-lg p-4 flex flex-col md:flex-row justify-between gap-4"
+                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
                         >
-                          <div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-lg font-bold capitalize">
-                                {subscription.plan} Plan
-                              </h3>
-                              <span
-                                className={`text-xs px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(
-                                  subscription.isActive,
-                                )}`}
-                              >
-                                {subscription.isActive ? "Active" : "Inactive"}
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mb-2">
-                              {subscription.mealsPerMonth} meals per month
-                            </p>
-                            <div className="text-sm text-gray-500">
-                              <p>
-                                Started:{" "}
-                                {format(
-                                  new Date(subscription.startDate),
-                                  "MMMM d, yyyy",
-                                )}
+                          {/* Subscription Header - Always Visible */}
+                          <div 
+                            className="flex flex-col md:flex-row justify-between gap-4 cursor-pointer"
+                            onClick={() => toggleSubscriptionDetails(subscription.id)}
+                          >
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-lg font-bold capitalize">
+                                  {subscription.plan} Plan
+                                </h3>
+                                <span
+                                  className={`text-xs px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(
+                                    subscription.isActive,
+                                  )}`}
+                                >
+                                  {subscription.isActive ? "Active" : "Inactive"}
+                                </span>
+                              </div>
+                              <p className="text-gray-600 mb-2">
+                                {subscription.mealsPerMonth} meals per month
                               </p>
-                              {subscription.endDate && (
+                              <div className="text-sm text-gray-500">
                                 <p>
-                                  Ends:{" "}
+                                  Started:{" "}
                                   {format(
-                                    new Date(subscription.endDate),
+                                    new Date(subscription.startDate),
                                     "MMMM d, yyyy",
                                   )}
                                 </p>
-                              )}
+                                {subscription.endDate && (
+                                  <p>
+                                    Ends:{" "}
+                                    {format(
+                                      new Date(subscription.endDate),
+                                      "MMMM d, yyyy",
+                                    )}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex flex-col justify-center items-end">
+                              <p className="text-xl font-bold text-primary mb-2">
+                                {formatPrice(subscription.price)}
+                                <span className="text-sm text-gray-500">
+                                  /month
+                                </span>
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  className="border-primary text-primary hover:bg-primary hover:text-white"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Manage action
+                                  }}
+                                >
+                                  Manage
+                                </Button>
+                                <ChevronRight 
+                                  className={`h-5 w-5 text-gray-400 transition-transform ${expandedSubscriptionId === subscription.id ? 'rotate-90' : ''}`} 
+                                />
+                              </div>
                             </div>
                           </div>
-                          <div className="flex flex-col justify-center items-end">
-                            <p className="text-xl font-bold text-primary mb-2">
-                              {formatPrice(subscription.price)}
-                              <span className="text-sm text-gray-500">
-                                /month
-                              </span>
-                            </p>
-                            <Button
-                              variant="outline"
-                              className="border-primary text-primary hover:bg-primary hover:text-white"
-                            >
-                              Manage
-                            </Button>
-                          </div>
+                          
+                          {/* Expanded Subscription Details */}
+                          {expandedSubscriptionId === subscription.id && (
+                            <div className="border-t mt-4 pt-4">
+                              {/* Subscription Details */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Left Column */}
+                                <div>
+                                  <h4 className="font-medium mb-3">Subscription Details</h4>
+                                  <div className="bg-neutral-50 p-4 rounded-md space-y-3">
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">Subscription ID:</span>
+                                      <span className="font-medium">{subscription.id}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">Status:</span>
+                                      <span className={`font-medium ${subscription.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                                        {subscription.isActive ? 'Active' : 'Inactive'}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">Plan Type:</span>
+                                      <span className="font-medium capitalize">{subscription.plan}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">Next Billing:</span>
+                                      <span className="font-medium">
+                                        {format(
+                                          new Date(subscription.nextBillingDate || new Date(subscription.startDate).setMonth(new Date(subscription.startDate).getMonth() + 1)),
+                                          "MMMM d, yyyy"
+                                        )}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">Payment Method:</span>
+                                      <span className="font-medium capitalize">{subscription.paymentMethod || 'Credit Card'}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                {/* Right Column */}
+                                <div>
+                                  <h4 className="font-medium mb-3">Plan Benefits</h4>
+                                  <div className="bg-neutral-50 p-4 rounded-md space-y-3">
+                                    <div className="flex items-center gap-2">
+                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      </span>
+                                      <span>{subscription.mealsPerMonth} meals per month</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      </span>
+                                      <span>Free delivery on all orders</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      </span>
+                                      <span>Customize meal plan options</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      </span>
+                                      <span>Priority customer support</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Action Buttons for Subscription */}
+                              <div className="flex flex-wrap gap-3 mt-6">
+                                <Button variant="default" className="bg-primary hover:bg-primary/90">
+                                  Modify Subscription
+                                </Button>
+                                <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
+                                  View Meal Plan
+                                </Button>
+                                <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
+                                  Cancel Subscription
+                                </Button>
+                              </div>
+                              
+                              {/* Upcoming Deliveries */}
+                              {subscription.isActive && (
+                                <div className="mt-6">
+                                  <h4 className="font-medium mb-3">Upcoming Deliveries</h4>
+                                  <div className="border rounded-md overflow-hidden">
+                                    <div className="bg-gray-50 p-3 border-b">
+                                      <div className="grid grid-cols-3 font-medium">
+                                        <div>Date</div>
+                                        <div>Status</div>
+                                        <div>Actions</div>
+                                      </div>
+                                    </div>
+                                    <div className="divide-y">
+                                      {/* Generate next 2 upcoming deliveries */}
+                                      {[...Array(2)].map((_, index) => {
+                                        const deliveryDate = new Date();
+                                        deliveryDate.setDate(deliveryDate.getDate() + (index + 1) * 7);
+                                        
+                                        return (
+                                          <div key={index} className="p-3 grid grid-cols-3 items-center">
+                                            <div>{format(deliveryDate, "MMMM d, yyyy")}</div>
+                                            <div>
+                                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
+                                                Scheduled
+                                              </span>
+                                            </div>
+                                            <div>
+                                              <Button variant="ghost" size="sm" className="h-8 px-2 text-primary">
+                                                Customize
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
