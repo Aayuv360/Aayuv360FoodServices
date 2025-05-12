@@ -67,6 +67,38 @@ export default function AdminPortalPage() {
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
   const [selectedCurry, setSelectedCurry] = useState<any>(null);
   const [selectedMealForCurryOptions, setSelectedMealForCurryOptions] = useState<any>(null);
+  
+  // Function to parse and validate curry options string
+  // Format should be: id1,name1,price1;id2,name2,price2
+  const parseAndValidateCurryOptions = (optionsStr: string): [string, string, number][] | undefined => {
+    if (!optionsStr.trim()) return undefined;
+    
+    try {
+      // Split by semicolons to get each option
+      const optionsArray = optionsStr.split(';')
+        .map(option => option.trim())
+        .filter(option => !!option);
+      
+      return optionsArray.map(option => {
+        // Split each option by commas
+        const [id, name, priceStr] = option.split(',').map(part => part.trim());
+        const price = parseFloat(priceStr);
+        
+        if (!id || !name || isNaN(price)) {
+          throw new Error(`Invalid curry option format: ${option}`);
+        }
+        
+        return [id, name, price];
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Invalid curry options format. Use format: id1,name1,price1;id2,name2,price2`,
+        variant: "destructive",
+      });
+      return undefined;
+    }
+  };
 
   // Fetch users
   const { data: users, isLoading: isLoadingUsers } = useQuery({
@@ -398,6 +430,12 @@ export default function AdminPortalPage() {
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
     
+    // Get curry options string if provided and parse it to array format
+    const curryOptionsStr = formData.get('curryOptions') as string;
+    const curryOptions = curryOptionsStr ? 
+      parseAndValidateCurryOptions(curryOptionsStr) : 
+      undefined;
+    
     const mealData = {
       name: formData.get('name') as string,
       description: formData.get('description') as string,
@@ -417,6 +455,9 @@ export default function AdminPortalPage() {
         .split(',')
         .map(pref => pref.trim())
         .filter(Boolean),
+      
+      // Add curry options if provided
+      ...(curryOptions && { curryOptions }),
     };
 
     if (selectedMeal) {

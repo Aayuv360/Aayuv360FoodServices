@@ -1184,7 +1184,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/admin/meals/:id", isAuthenticated, isAdmin, async (req, res) => {
+  app.put("/api/admin/meals/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const mealId = parseInt(req.params.id);
       const mealData = req.body;
