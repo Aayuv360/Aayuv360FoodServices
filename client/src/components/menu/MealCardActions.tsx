@@ -32,23 +32,94 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     // Close the auth modal
     setShowAuthModal(false);
     
-    // If we have a pending curry selection, show the curry options modal
-    if (pendingCurryAction) {
+    // If we have a pending curry selection and meal has curry options, show the curry options modal
+    if (pendingCurryAction && hasCurryOptions()) {
       setPendingCurryAction(false);
       setShowCurryOptionsModal(true);
+    } else if (!hasCurryOptions()) {
+      // If meal has no curry options, add directly to cart
+      addMealDirectlyToCart();
+    }
+  };
+  
+  // Helper function to check if meal has curry options
+  const hasCurryOptions = () => {
+    if (!meal.curryOptions) return false;
+    return meal.curryOptions.length > 0;
+  };
+  
+  // Helper function to add meal directly to cart without customization
+  const addMealDirectlyToCart = async () => {
+    try {
+      // Create a default curry option
+      const defaultCurryOption = {
+        id: "regular",
+        name: "Regular Curry",
+        priceAdjustment: 0
+      };
+      
+      // Create meal with default curry option
+      const mealWithDefaultCurry = {
+        ...meal,
+        curryOption: defaultCurryOption
+      };
+      
+      // Check if this item already exists in cart
+      const existingItem = cartItems.find(item => 
+        item.meal?.id === meal.id && 
+        (item.meal as any)?.curryOption?.id === defaultCurryOption.id
+      );
+      
+      if (existingItem) {
+        // Increment quantity of existing item
+        await updateCartItem(existingItem.id, existingItem.quantity + 1);
+        
+        toast({
+          title: "Quantity increased",
+          description: `${meal.name} quantity increased`,
+        });
+      } else {
+        // Add as new
+        await addToCart(mealWithDefaultCurry);
+        
+        toast({
+          title: "Added to cart",
+          description: `${meal.name} added to your cart`,
+        });
+      }
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating your cart. Please try again.",
+        variant: "destructive",
+      });
     }
   };
   
   const handleAddClick = () => {
     // If user is not logged in, show auth modal
     if (!user) {
-      // Set a flag to show curry options after successful login
-      setPendingCurryAction(true);
+      // If meal has no curry options, we'll add directly after login
+      if (!hasCurryOptions()) {
+        // After login, we'll add directly instead of showing curry options
+        setPendingCurryAction(false);
+      } else {
+        // After login, we'll show curry options
+        setPendingCurryAction(true);
+      }
+      
       setShowAuthModal(true);
       return;
     }
     
-    // If logged in, show curry options modal
+    // If meal has no curry options, add directly to cart
+    if (!hasCurryOptions()) {
+      addMealDirectlyToCart();
+      return;
+    }
+    
+    // If meal has curry options, show the customization modal
     setShowCurryOptionsModal(true);
   };
   
