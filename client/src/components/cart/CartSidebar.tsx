@@ -316,23 +316,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     return false;
   };
   
-  // Helper to log meal data (for debugging)
-  const logMealData = (meal: any) => {
-    console.log("Meal data:", {
-      id: meal?.id,
-      name: meal?.name,
-      hasCurryOptionsArray: Boolean(meal?.curryOptions),
-      curryOptionsLength: meal?.curryOptions?.length || 0,
-      curryOptions: meal?.curryOptions
-    });
-  };
-  
   // Handle customizing an item
   const handleCustomizeItem = (item: any) => {
-    // For debugging
-    console.log("Item being customized:", item);
-    logMealData(item.meal);
-    
     // Set the customizing meal which will open the modal
     setCustomizingMeal(item.meal);
   };
@@ -662,8 +647,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                       </div>
                                       <div>
                                         {/* Only show Customize button if meal has curry options */}
-                                        {/* Debug: Add a data attribute to show if this item has curry options */}
-                                        <div data-has-options={hasCurryOptions(item.meal).toString()} className="hidden"></div>
                                         {hasCurryOptions(item.meal) && (
                                           <Button
                                             variant="link"
