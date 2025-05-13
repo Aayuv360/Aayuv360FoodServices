@@ -117,16 +117,19 @@ export function CartProvider({ children }: { children: ReactNode }) {
     try {
       setLoading(true);
 
-      // Check if meal has curry option (from the CurryOptionsModal)
-      const hasCurryOption = (meal as any).curryOption !== undefined;
+      // Check if meal has a selected curry (from the CurryOptionsModal)
+      const hasSelectedCurry = (meal as any).curryOption !== undefined;
+      console.log("Adding to cart with curry option:", (meal as any).curryOption, "hasSelectedCurry:", hasSelectedCurry);
 
       // Prepare the payload
       const payload = {
         mealId: meal.id,
         quantity,
-        // If meal has curry option, include it in the request
-        ...(hasCurryOption && {
-          curryOption: (meal as any).curryOption,
+        // Include the complete curryOptions array from the meal
+        curryOptions: meal.curryOptions || [],
+        // If meal has selected curry, include it in the request with the new key
+        ...(hasSelectedCurry && {
+          selectedCurry: (meal as any).curryOption,
         }),
       };
 
@@ -137,7 +140,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         if (item.mealId !== meal.id) return false;
 
         // If this meal has a curry option, we need to match that too
-        if (hasCurryOption) {
+        if (hasSelectedCurry) {
           const itemCurryId = item.meal && (item.meal as any).curryOption?.id;
           const mealCurryId = (meal as any).curryOption?.id;
           return itemCurryId === mealCurryId;
@@ -176,7 +179,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
 
       // Store the last curry option used for this meal
-      if (hasCurryOption && (meal as any).curryOption) {
+      if (hasSelectedCurry && (meal as any).curryOption) {
         setLastCurryOptions((prev) => ({
           ...prev,
           [meal.id]: (meal as any).curryOption,

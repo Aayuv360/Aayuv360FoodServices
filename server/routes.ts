@@ -284,17 +284,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // curryOption is not in the Meal type, but we need it for the frontend
             };
             
-            // Add the curry option to the curryOptions array of the meal
+            // Add the curry options array if it doesn't exist
             if (!(mealWithCurryOption as any).curryOptions) {
               (mealWithCurryOption as any).curryOptions = [];
             }
             
-            // Add the selected curry option as the only option in the array
-            (mealWithCurryOption as any).curryOptions = [{
+            // Add the selectedCurry property
+            (mealWithCurryOption as any).selectedCurry = {
               id: item.curryOptionId,
               name: item.curryOptionName,
               priceAdjustment: item.curryOptionPrice || 0
-            }];
+            };
           }
           
           return {
@@ -315,15 +315,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       
-      // Handle curry option if present
+      // Handle selected curry if present
       let curryOptionId = null;
       let curryOptionName = null;
       let curryOptionPrice = null;
       
-      if (req.body.curryOption) {
-        curryOptionId = req.body.curryOption.id;
-        curryOptionName = req.body.curryOption.name;
-        curryOptionPrice = req.body.curryOption.priceAdjustment || 0;
+      // Use selectedCurry instead of curryOption
+      if (req.body.selectedCurry) {
+        curryOptionId = req.body.selectedCurry.id;
+        curryOptionName = req.body.selectedCurry.name;
+        curryOptionPrice = req.body.selectedCurry.priceAdjustment || 0;
       }
       
       // For MongoDB we'll bypass the schema validation temporarily
