@@ -724,26 +724,26 @@ const Profile = () => {
                               </div>
                               
                               {/* Support Section */}
-                              <div className="bg-blue-50 p-4 rounded-lg">
-                                <h5 className="font-medium mb-2">Need Help?</h5>
-                                <p className="text-sm mb-3">If you have any questions about your order, please contact our support team.</p>
-                                <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50">
+                              <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+                                <h5 className="font-medium mb-1.5 sm:mb-2 text-sm sm:text-base">Need Help?</h5>
+                                <p className="text-xs sm:text-sm mb-2 sm:mb-3">If you have any questions about your order, please contact our support team.</p>
+                                <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 sm:h-9 text-xs sm:text-sm px-2.5 sm:px-4">
                                   Contact Support
                                 </Button>
                               </div>
                             </div>
                           ) : (
                             /* Collapsed Order Summary (just show a few items) */
-                            <div className="border-t pt-4">
-                              <h4 className="font-medium mb-2">Order Items</h4>
-                              <div className="space-y-2">
+                            <div className="border-t pt-3 sm:pt-4">
+                              <h4 className="font-medium mb-1.5 sm:mb-2 text-sm sm:text-base">Order Items</h4>
+                              <div className="space-y-1.5 sm:space-y-2">
                                 {order.items?.slice(0, 2).map((item: any) => (
                                   <div
                                     key={item.id}
-                                    className="flex justify-between items-center bg-neutral-light p-2 rounded"
+                                    className="flex justify-between items-center bg-neutral-light p-1.5 sm:p-2 rounded"
                                   >
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-10 h-10 rounded overflow-hidden">
+                                    <div className="flex items-center gap-1.5 sm:gap-2">
+                                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded overflow-hidden">
                                         <img
                                           src={item.meal?.imageUrl || "https://via.placeholder.com/40?text=Meal"}
                                           alt={item.meal?.name}
@@ -751,16 +751,16 @@ const Profile = () => {
                                         />
                                       </div>
                                       <div>
-                                        <p className="font-medium">
+                                        <p className="font-medium text-xs sm:text-sm line-clamp-1">
                                           {item.meal?.name}
                                         </p>
-                                        <p className="text-sm text-gray-500">
+                                        <p className="text-[10px] sm:text-sm text-gray-500">
                                           Qty: {item.quantity}
                                           {item.curryOptionName && ` • ${item.curryOptionName}`}
                                         </p>
                                       </div>
                                     </div>
-                                    <p className="font-medium">
+                                    <p className="font-medium text-xs sm:text-sm">
                                       {formatPrice(
                                         (item.price || (item.meal?.price + (item.curryOptionPrice || 0))) * item.quantity
                                       )}
@@ -769,22 +769,22 @@ const Profile = () => {
                                 ))}
                                 
                                 {order.items?.length > 2 && (
-                                  <p className="text-sm text-gray-500 mt-2">
+                                  <p className="text-[10px] sm:text-sm text-gray-500 mt-1.5 sm:mt-2">
                                     +{order.items.length - 2} more items
                                   </p>
                                 )}
                               </div>
                               
                               {order.deliveryTime && (
-                                <div className="mt-4 text-sm text-gray-600">
+                                <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
                                   <p>
                                     Delivery Time:{" "}
                                     {format(
                                       new Date(order.deliveryTime),
-                                      "MMMM d, yyyy 'at' h:mm a",
+                                      "MMM d, yyyy 'at' h:mm a",
                                     )}
                                   </p>
-                                  <p>Delivery Address: {order.deliveryAddress}</p>
+                                  <p className="break-words">Delivery Address: {order.deliveryAddress}</p>
                                 </div>
                               )}
                             </div>
