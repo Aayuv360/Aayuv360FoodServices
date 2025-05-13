@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Info } from "lucide-react";
+import { Info, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NutritionModal from "./NutritionModal";
 import { MealCardActions } from "./MealCardActions";
 import { Meal } from "@shared/schema";
 import { formatPrice } from "@/lib/utils";
+import { useAuth } from "@/hooks/use-auth";
+import { useQuery } from "@tanstack/react-query";
 
 interface MenuCardProps {
   meal: Meal & {
@@ -15,6 +17,21 @@ interface MenuCardProps {
 
 const MenuCard = ({ meal }: MenuCardProps) => {
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
+  const { user } = useAuth();
+  
+  // Check if user has active subscriptions
+  const { data: subscriptions } = useQuery({
+    queryKey: ["/api/subscriptions"],
+    queryFn: async () => {
+      if (!user) return [];
+      const response = await fetch("/api/subscriptions");
+      if (!response.ok) return [];
+      return response.json();
+    },
+    enabled: !!user,
+  });
+  
+  const hasActiveSubscription = subscriptions && subscriptions.some((sub: any) => sub.isActive);
 
   // Map dietary preferences to color schemes
   const dietaryBadgeColor = (preference: string) => {
@@ -38,7 +55,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
 
   return (
     <>
-      <div className="bg-white rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300">
+      <div className={`${hasActiveSubscription ? 'bg-gradient-to-b from-white to-amber-50 ring-2 ring-amber-200' : 'bg-white'} rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300`}>
         <div className="relative">
           <img
             src={meal.imageUrl || "https://via.placeholder.com/300x200?text=Millet+Meal"}
@@ -53,6 +70,11 @@ const MenuCard = ({ meal }: MenuCardProps) => {
           {meal.isNew && (
             <div className="absolute top-2 right-2 bg-secondary text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs">
               New
+            </div>
+          )}
+          {hasActiveSubscription && (
+            <div className="absolute top-2 left-2 bg-amber-400 text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 flex items-center gap-1 text-[10px] sm:text-xs shadow-md">
+              <Star className="h-3 w-3" fill="white" /> Subscriber
             </div>
           )}
         </div>
