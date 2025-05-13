@@ -55,7 +55,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
 
   return (
     <>
-      <div className={`${hasActiveSubscription ? 'bg-gradient-to-b from-white to-amber-50 ring-2 ring-amber-200' : 'bg-white'} rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300`}>
+      <div className={`${hasActiveSubscription ? 'bg-gradient-to-b from-white to-amber-50 ring-2 ring-amber-200' : 'bg-white'} rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300 flex flex-col h-full`}>
         <div className="relative">
           <img
             src={meal.imageUrl ? meal.imageUrl : "https://via.placeholder.com/300x200?text=Millet+Meal"}
@@ -78,7 +78,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
             </div>
           )}
         </div>
-        <div className="p-3 sm:p-4">
+        <div className="p-3 sm:p-4 flex-grow flex flex-col">
           <div className="flex justify-between items-start mb-1 sm:mb-2">
             <h3 className="text-base sm:text-lg font-bold line-clamp-1">{meal.name}</h3>
             <div className="flex items-center ml-2 flex-shrink-0">
@@ -96,7 +96,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
               </span>
             ))}
           </div>
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mt-auto">
             <Button
               variant="ghost"
               size="sm"
