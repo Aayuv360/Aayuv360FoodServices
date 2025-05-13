@@ -278,11 +278,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Fetch the complete meal directly to get curry options
           const fullMeal = meal ? await MealModel.findOne({ id: meal.id }).lean() : null;
           
+          // Check if cart item has stored curry options
+          const cartItemCurryOptions = (item as any).curryOptions || [];
+          
           // Create a base enriched meal object with curry options
           let mealWithCurryOption = {
             ...meal,
-            // Always use the full meal's curry options if available
-            curryOptions: fullMeal?.curryOptions || meal?.curryOptions || []
+            // Use cart item's curry options, fallback to meal's curry options if available
+            curryOptions: cartItemCurryOptions.length > 0 
+              ? cartItemCurryOptions 
+              : (fullMeal?.curryOptions || meal?.curryOptions || [])
           };
           
           // If the item has curry option selections, add them
@@ -327,10 +332,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Fetch the complete meal to get its curry options
-      const fullMeal = await MealModel.findOne({ id: req.body.mealId }).lean();
+      const mealDetails = await MealModel.findOne({ id: req.body.mealId }).lean();
       
       // Extract curryOptions array from request, meal, or use empty array
-      const mealCurryOptions = req.body.curryOptions || fullMeal?.curryOptions || [];
+      const mealCurryOptions = req.body.curryOptions || mealDetails?.curryOptions || [];
       
       // For MongoDB we'll bypass the schema validation temporarily
       // as we're working directly with MongoDB models
