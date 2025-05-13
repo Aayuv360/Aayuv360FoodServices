@@ -152,62 +152,62 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-light py-12">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row gap-6">
+    <div className="min-h-screen bg-neutral-light py-6 sm:py-12">
+      <div className="container mx-auto px-3 sm:px-4">
+        <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
           {/* Sidebar */}
-          <div className="w-full md:w-64 space-y-4">
+          <div className="w-full md:w-64 space-y-3 sm:space-y-4">
             <Card>
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center space-y-4 py-6">
-                  <UserCircle className="h-20 w-20 text-primary" />
+              <CardContent className="p-3 sm:p-4">
+                <div className="flex flex-col items-center space-y-3 sm:space-y-4 py-4 sm:py-6">
+                  <UserCircle className="h-16 w-16 sm:h-20 sm:w-20 text-primary" />
                   <div className="text-center">
-                    <h2 className="text-xl font-bold">{user.name}</h2>
-                    <p className="text-gray-500 text-sm">{user.email}</p>
+                    <h2 className="text-lg sm:text-xl font-bold">{user.name}</h2>
+                    <p className="text-gray-500 text-xs sm:text-sm">{user.email}</p>
                   </div>
                 </div>
-                <div className="space-y-2 mt-6">
+                <div className="space-y-1.5 sm:space-y-2 mt-4 sm:mt-6">
                   <Button
                     variant={currentTab === "profile" ? "default" : "ghost"}
-                    className="w-full justify-start"
+                    className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                     onClick={() => {
                       setCurrentTab("profile");
                       navigate("/profile", { replace: true });
                     }}
                   >
-                    <UserCircle className="mr-2 h-4 w-4" />
+                    <UserCircle className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Profile
                   </Button>
                   <Button
                     variant={
                       currentTab === "subscriptions" ? "default" : "ghost"
                     }
-                    className="w-full justify-start"
+                    className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                     onClick={() => {
                       setCurrentTab("subscriptions"); 
                       navigate("/profile?tab=subscriptions", { replace: true });
                     }}
                   >
-                    <ClockIcon className="mr-2 h-4 w-4" />
+                    <ClockIcon className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Subscriptions
                   </Button>
                   <Button
                     variant={currentTab === "orders" ? "default" : "ghost"}
-                    className="w-full justify-start"
+                    className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                     onClick={() => {
                       setCurrentTab("orders");
                       navigate("/profile?tab=orders", { replace: true });
                     }}
                   >
-                    <History className="mr-2 h-4 w-4" />
+                    <History className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Order History
                   </Button>
                   <Button
                     variant="ghost"
-                    className="w-full justify-start text-destructive hover:text-destructive/90 hover:bg-destructive/10"
+                    className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
                     onClick={logout}
                   >
-                    <LogOut className="mr-2 h-4 w-4" />
+                    <LogOut className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Logout
                   </Button>
                 </div>
@@ -218,28 +218,31 @@ const Profile = () => {
           <div className="flex-1">
             {currentTab === "profile" && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Your Profile</CardTitle>
-                  <CardDescription>
+                <CardHeader className="py-4 sm:py-6">
+                  <CardTitle className="text-lg sm:text-xl">Your Profile</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     Manage your account information and delivery address
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-3 sm:px-6">
                   <Form {...form}>
                     <form
                       onSubmit={form.handleSubmit(onSubmit)}
-                      className="space-y-6"
+                      className="space-y-4 sm:space-y-6"
                     >
                       <FormField
                         control={form.control}
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Full Name</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">Full Name</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input 
+                                className="text-xs sm:text-sm h-8 sm:h-10" 
+                                {...field} 
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs" />
                           </FormItem>
                         )}
                       />
@@ -249,11 +252,14 @@ const Profile = () => {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">Email</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input 
+                                className="text-xs sm:text-sm h-8 sm:h-10" 
+                                {...field} 
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs" />
                           </FormItem>
                         )}
                       />
@@ -263,11 +269,14 @@ const Profile = () => {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Phone Number</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">Phone Number</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input 
+                                className="text-xs sm:text-sm h-8 sm:h-10" 
+                                {...field} 
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs" />
                           </FormItem>
                         )}
                       />
@@ -277,22 +286,25 @@ const Profile = () => {
                         name="address"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Delivery Address</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">Delivery Address</FormLabel>
                             <FormControl>
-                              <Input {...field} />
+                              <Input 
+                                className="text-xs sm:text-sm h-8 sm:h-10" 
+                                {...field} 
+                              />
                             </FormControl>
-                            <FormMessage />
+                            <FormMessage className="text-xs" />
                           </FormItem>
                         )}
                       />
 
                       <Button
                         type="submit"
-                        className="bg-primary hover:bg-primary/90"
+                        className="bg-primary hover:bg-primary/90 text-xs sm:text-sm h-auto py-1.5 sm:py-2 mt-2 sm:mt-4"
                         disabled={updateProfileMutation.isPending}
                       >
                         {updateProfileMutation.isPending ? (
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          <Loader2 className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                         ) : null}
                         {updateProfileMutation.isPending
                           ? "Saving..."
@@ -306,66 +318,66 @@ const Profile = () => {
 
             {currentTab === "subscriptions" && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Your Subscriptions</CardTitle>
-                  <CardDescription>
+                <CardHeader className="py-4 sm:py-6">
+                  <CardTitle className="text-lg sm:text-xl">Your Subscriptions</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     Manage your active meal plans and subscriptions
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-3 sm:px-6">
                   {isLoadingSubscriptions ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="flex justify-center py-6 sm:py-8">
+                      <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
                     </div>
                   ) : !subscriptions || subscriptions.length === 0 ? (
-                    <div className="text-center py-8 bg-neutral-light rounded-lg">
-                      <h3 className="text-lg font-medium mb-2">
+                    <div className="text-center py-6 sm:py-8 bg-neutral-light rounded-lg">
+                      <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">
                         No active subscriptions
                       </h3>
-                      <p className="text-gray-600 mb-4">
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                         You don't have any active subscriptions yet.
                       </p>
                       <Button
                         asChild
-                        className="bg-primary hover:bg-primary/90"
+                        className="bg-primary hover:bg-primary/90 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                       >
                         <a href="/subscription">Browse Plans</a>
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {subscriptions.map((subscription: any) => (
                         <div
                           key={subscription.id}
-                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                          className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
                         >
                           {/* Subscription Header - Always Visible */}
                           <div 
-                            className="flex flex-col md:flex-row justify-between gap-4 cursor-pointer"
+                            className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-4 cursor-pointer"
                             onClick={() => toggleSubscriptionDetails(subscription.id)}
                           >
                             <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-lg font-bold capitalize">
+                              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
+                                <h3 className="text-base sm:text-lg font-bold capitalize">
                                   {subscription.plan} Plan
                                 </h3>
                                 <span
-                                  className={`text-xs px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(
+                                  className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(
                                     subscription.isActive,
                                   )}`}
                                 >
                                   {subscription.isActive ? "Active" : "Inactive"}
                                 </span>
                               </div>
-                              <p className="text-gray-600 mb-2">
+                              <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
                                 {subscription.mealsPerMonth} meals per month
                               </p>
-                              <div className="text-sm text-gray-500">
+                              <div className="text-xs sm:text-sm text-gray-500">
                                 <p>
                                   Started:{" "}
                                   {format(
                                     new Date(subscription.startDate),
-                                    "MMMM d, yyyy",
+                                    "MMM d, yyyy",
                                   )}
                                 </p>
                                 {subscription.endDate && (
@@ -373,23 +385,23 @@ const Profile = () => {
                                     Ends:{" "}
                                     {format(
                                       new Date(subscription.endDate),
-                                      "MMMM d, yyyy",
+                                      "MMM d, yyyy",
                                     )}
                                   </p>
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-col justify-center items-end">
-                              <p className="text-xl font-bold text-primary mb-2">
+                            <div className="flex flex-row sm:flex-col justify-between sm:justify-center items-center sm:items-end mt-2 sm:mt-0">
+                              <p className="text-base sm:text-xl font-bold text-primary mb-0 sm:mb-2">
                                 {formatPrice(subscription.price)}
-                                <span className="text-sm text-gray-500">
+                                <span className="text-xs sm:text-sm text-gray-500">
                                   /month
                                 </span>
                               </p>
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5 sm:gap-2">
                                 <Button
                                   variant="outline"
-                                  className="border-primary text-primary hover:bg-primary hover:text-white"
+                                  className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm h-7 sm:h-9 py-0 px-2 sm:px-3"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     // Manage action
@@ -398,7 +410,7 @@ const Profile = () => {
                                   Manage
                                 </Button>
                                 <ChevronRight 
-                                  className={`h-5 w-5 text-gray-400 transition-transform ${expandedSubscriptionId === subscription.id ? 'rotate-90' : ''}`} 
+                                  className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedSubscriptionId === subscription.id ? 'rotate-90' : ''}`} 
                                 />
                               </div>
                             </div>
