@@ -78,12 +78,12 @@ const Menu = () => {
     : [];
 
   return (
-    <div className="py-12 bg-neutral-light min-h-screen">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="py-8 sm:py-12 bg-neutral-light min-h-screen">
+      <div className="container mx-auto px-3 sm:px-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Our Menu</h1>
-            <p className="text-gray-600">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Our Menu</h1>
+            <p className="text-sm sm:text-base text-gray-600">
               Explore our delicious millet-based dishes for {today}
             </p>
           </div>
@@ -104,7 +104,7 @@ const Menu = () => {
         </div>
 
         {/* Menu Filters */}
-        <div className="mb-8 flex flex-wrap gap-2">
+        <div className="mb-6 sm:mb-8 flex flex-wrap gap-1.5 sm:gap-2">
           <FilterButton
             active={filter === "all"}
             onClick={() => setFilter("all")}
@@ -148,25 +148,25 @@ const Menu = () => {
 
         {/* Menu Items Grid */}
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className="flex justify-center py-8 sm:py-12">
+            <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
           </div>
         ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-destructive">
+          <div className="text-center py-8 sm:py-12">
+            <p className="text-destructive text-sm sm:text-base">
               Error loading menu. Please try again later.
             </p>
           </div>
         ) : filteredMeals.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg shadow p-8">
-            <h3 className="text-lg font-medium mb-2">No meals found</h3>
-            <p className="text-gray-600">
+          <div className="text-center py-8 sm:py-12 bg-white rounded-lg shadow p-6 sm:p-8">
+            <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">No meals found</h3>
+            <p className="text-sm sm:text-base text-gray-600">
               No meals match your current filters. Try adjusting your search or
               filters.
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
             {filteredMeals.map((meal: any) => (
               <MenuCard key={meal.id} meal={meal} />
             ))}
@@ -186,7 +186,7 @@ interface FilterButtonProps {
 const FilterButton = ({ children, active, onClick }: FilterButtonProps) => (
   <Button
     variant={active ? "default" : "outline"}
-    className={`rounded-full text-sm ${
+    className={`rounded-full text-xs sm:text-sm h-auto py-1.5 sm:py-2 px-3 sm:px-4 ${
       active
         ? "bg-primary text-white"
         : "bg-white text-neutral-dark hover:bg-gray-100"
