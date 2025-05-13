@@ -60,7 +60,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
           <img
             src={meal.imageUrl ? meal.imageUrl : "https://via.placeholder.com/300x200?text=Millet+Meal"}
             alt={meal.name}
-            className="w-full h-36 sm:h-44 object-cover"
+            className="w-full h-44 sm:h-56 object-cover"
           />
           {meal.isPopular && (
             <div className="absolute top-2 right-2 bg-accent text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs">
@@ -73,24 +73,24 @@ const MenuCard = ({ meal }: MenuCardProps) => {
             </div>
           )}
           {hasActiveSubscription && (
-            <div className="absolute top-2 left-2 bg-amber-400 text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 flex items-center gap-1 text-[10px] sm:text-xs shadow-md">
-              <Star className="h-3 w-3" fill="white" /> Subscriber
+            <div className="absolute top-2.5 left-2.5 bg-amber-400 text-white rounded-full px-2 sm:px-3 py-0.5 sm:py-1 flex items-center gap-1.5 text-xs sm:text-sm shadow-md">
+              <Star className="h-3.5 w-3.5 sm:h-4 sm:w-4" fill="white" /> Subscriber
             </div>
           )}
         </div>
-        <div className="p-3 sm:p-4 flex-grow flex flex-col">
-          <div className="flex justify-between items-start mb-1 sm:mb-2">
-            <h3 className="text-base sm:text-lg font-bold line-clamp-1">{meal.name}</h3>
+        <div className="p-4 sm:p-5 flex-grow flex flex-col">
+          <div className="flex justify-between items-start mb-2 sm:mb-3">
+            <h3 className="text-lg sm:text-xl font-bold line-clamp-1">{meal.name}</h3>
             <div className="flex items-center ml-2 flex-shrink-0">
-              <span className="text-primary font-semibold text-sm sm:text-base">{formatPrice(meal.price)}</span>
+              <span className="text-primary font-semibold text-base sm:text-lg">{formatPrice(meal.price)}</span>
             </div>
           </div>
-          <p className="text-gray-600 text-xs sm:text-sm mb-1 sm:mb-2 line-clamp-2">{meal.description}</p>
-          <div className="flex flex-wrap gap-1 sm:gap-2 mb-2 sm:mb-3">
+          <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-4 line-clamp-2">{meal.description}</p>
+          <div className="flex flex-wrap gap-1.5 sm:gap-2.5 mb-3 sm:mb-4">
             {meal.dietaryPreferences?.map((preference, index) => (
               <span
                 key={index}
-                className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded ${dietaryBadgeColor(preference)}`}
+                className={`text-xs sm:text-sm px-2 sm:px-3 py-0.5 sm:py-1 rounded ${dietaryBadgeColor(preference)}`}
               >
                 {preference.charAt(0).toUpperCase() + preference.slice(1)}
               </span>
@@ -99,11 +99,10 @@ const MenuCard = ({ meal }: MenuCardProps) => {
           <div className="flex justify-between items-center mt-auto">
             <Button
               variant="ghost"
-              size="sm"
-              className="text-accent hover:text-primary transition duration-200 flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 h-auto text-xs sm:text-sm"
+              className="text-accent hover:text-primary transition duration-200 flex items-center gap-1 sm:gap-1.5 p-2 sm:p-2.5 h-auto text-sm sm:text-base"
               onClick={() => setNutritionModalOpen(true)}
             >
-              <Info className="h-3 w-3 sm:h-4 sm:w-4" />
+              <Info className="h-4 w-4 sm:h-5 sm:w-5" />
               <span className="hidden xs:inline">Nutrition</span>
             </Button>
             <MealCardActions meal={meal} />
