@@ -596,46 +596,46 @@ const Profile = () => {
                             onClick={() => toggleOrderDetails(order.id)}
                           >
                             <div>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-xs sm:text-sm text-gray-500">
                                 Order #{order.id}
                               </p>
-                              <p className="text-sm text-gray-500">
+                              <p className="text-xs sm:text-sm text-gray-500">
                                 {format(
                                   new Date(order.createdAt),
-                                  "MMMM d, yyyy",
+                                  "MMM d, yyyy",
                                 )}
                               </p>
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 sm:gap-2">
                               <span
-                                className={`text-xs px-2 py-0.5 rounded-full capitalize ${getOrderStatusClass(
+                                className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full capitalize ${getOrderStatusClass(
                                   order.status,
                                 )}`}
                               >
                                 {order.status}
                               </span>
-                              <p className="font-bold text-primary">
+                              <p className="text-sm sm:text-base font-bold text-primary">
                                 {formatPrice(order.totalPrice)}
                               </p>
                               <ChevronRight 
-                                className={`h-5 w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`} 
+                                className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`} 
                               />
                             </div>
                           </div>
                           {expandedOrderId === order.id ? (
                             /* Expanded Order Summary */
-                            <div className="border-t pt-4">
+                            <div className="border-t pt-3 sm:pt-4">
                               {/* Order Summary Header */}
-                              <h4 className="text-lg font-medium mb-4">Order Summary</h4>
+                              <h4 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">Order Summary</h4>
                               
                               {/* Item Details Section */}
-                              <div className="mb-6">
-                                <h5 className="font-medium mb-3 text-md">Item Details</h5>
-                                <div className="space-y-3">
+                              <div className="mb-4 sm:mb-6">
+                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">Item Details</h5>
+                                <div className="space-y-2 sm:space-y-3">
                                   {order.items?.map((item: any) => (
-                                    <div key={item.id} className="flex justify-between bg-neutral-50 p-3 rounded-md">
-                                      <div className="flex gap-3">
-                                        <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                                    <div key={item.id} className="flex justify-between bg-neutral-50 p-2 sm:p-3 rounded-md">
+                                      <div className="flex gap-2 sm:gap-3">
+                                        <div className="w-12 h-12 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
                                           <img
                                             src={item.meal?.imageUrl || "https://via.placeholder.com/64?text=Meal"}
                                             alt={item.meal?.name}
@@ -643,20 +643,20 @@ const Profile = () => {
                                           />
                                         </div>
                                         <div>
-                                          <p className="font-medium">{item.meal?.name}</p>
-                                          <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                                          <p className="font-medium text-sm sm:text-base">{item.meal?.name}</p>
+                                          <p className="text-xs sm:text-sm text-gray-600">Qty: {item.quantity}</p>
                                           {item.curryOptionName && (
-                                            <p className="text-sm text-gray-600">
+                                            <p className="text-xs sm:text-sm text-gray-600">
                                               Curry: {item.curryOptionName}
                                               {item.curryOptionPrice > 0 && ` (+${formatPrice(item.curryOptionPrice)})`}
                                             </p>
                                           )}
                                           {item.notes && (
-                                            <p className="text-sm text-gray-600">Notes: {item.notes}</p>
+                                            <p className="text-xs sm:text-sm text-gray-600">Notes: {item.notes}</p>
                                           )}
                                         </div>
                                       </div>
-                                      <p className="font-medium">
+                                      <p className="font-medium text-xs sm:text-sm self-center">
                                         {formatPrice(
                                           (item.price || (item.meal?.price + (item.curryOptionPrice || 0))) * item.quantity
                                         )}
@@ -667,10 +667,10 @@ const Profile = () => {
                               </div>
                               
                               {/* Bill Details Section */}
-                              <div className="mb-6 bg-gray-50 p-4 rounded-md">
-                                <h5 className="font-medium mb-3 text-md">Bill Details</h5>
-                                <div className="space-y-2">
-                                  <div className="flex justify-between text-sm">
+                              <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-md">
+                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">Bill Details</h5>
+                                <div className="space-y-1.5 sm:space-y-2">
+                                  <div className="flex justify-between text-xs sm:text-sm">
                                     <span>Item Total</span>
                                     <span>{formatPrice(order.totalPrice)}</span>
                                   </div>
