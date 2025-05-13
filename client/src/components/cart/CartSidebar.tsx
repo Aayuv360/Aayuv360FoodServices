@@ -458,20 +458,20 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full">
+        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full overflow-hidden">
           {/* Header */}
-          <SheetHeader className="p-4 border-b">
+          <SheetHeader className="p-3 sm:p-4 border-b">
             <div className="flex justify-between items-center">
-              <SheetTitle>
+              <SheetTitle className="text-lg sm:text-xl">
                 Your Cart
               </SheetTitle>
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-7 w-7 sm:h-8 sm:w-8"
                 onClick={onClose}
               >
-                <X className="h-4 w-4" />
+                <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
               </Button>
             </div>
           </SheetHeader>
@@ -483,16 +483,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 {/* Cart Items */}
                 <div className="flex-grow overflow-y-auto">
                   {cartItems.length === 0 ? (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 mx-auto text-gray-300 mb-4">
+                    <div className="text-center py-6 sm:py-8 px-4">
+                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
                         <ShoppingCartIcon className="w-full h-full" />
                       </div>
-                      <p className="text-gray-500 mb-4">Your cart is empty</p>
+                      <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">Your cart is empty</p>
                       <Button
                         onClick={() => {
                           navigate("/menu");
                           onClose();
                         }}
+                        className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
                       >
                         Browse Menu
                       </Button>
@@ -523,9 +524,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           return (
                             <div
                               key={item.id}
-                              className="flex items-start border-b py-3"
+                              className="flex items-start border-b py-2 sm:py-3"
                             >
-                              <div className="w-16 h-16 rounded overflow-hidden flex-shrink-0">
+                              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
                                 <img
                                   src={
                                     item.meal?.imageUrl ||
@@ -535,13 +536,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              <div className="flex-grow px-3">
-                                <h4 className="font-medium text-sm">
+                              <div className="flex-grow px-2 sm:px-3">
+                                <h4 className="font-medium text-xs sm:text-sm line-clamp-1">
                                   {item.meal?.name}
                                 </h4>
                                 {/* Display curry option if available */}
                                 {(item.meal as any)?.curryOption && (
-                                  <p className="text-xs text-gray-600">
+                                  <p className="text-[10px] sm:text-xs text-gray-600">
                                     with{" "}
                                     {(item.meal as any).curryOption.name}
                                     {(item.meal as any).curryOption
