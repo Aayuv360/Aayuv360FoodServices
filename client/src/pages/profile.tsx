@@ -418,9 +418,9 @@ const Profile = () => {
                           
                           {/* Expanded Subscription Details */}
                           {expandedSubscriptionId === subscription.id && (
-                            <div className="border-t mt-4 pt-4">
+                            <div className="border-t mt-3 sm:mt-4 pt-3 sm:pt-4">
                               {/* Subscription Details */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 {/* Left Column */}
                                 <div>
                                   <h4 className="font-medium mb-3">Subscription Details</h4>
@@ -558,41 +558,41 @@ const Profile = () => {
 
             {currentTab === "orders" && (
               <Card>
-                <CardHeader>
-                  <CardTitle>Order History</CardTitle>
-                  <CardDescription>
+                <CardHeader className="py-4 sm:py-6">
+                  <CardTitle className="text-lg sm:text-xl">Order History</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     View your past orders and delivery status
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="px-3 sm:px-6">
                   {isLoadingOrders ? (
-                    <div className="flex justify-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <div className="flex justify-center py-6 sm:py-8">
+                      <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
                     </div>
                   ) : !orders || orders.length === 0 ? (
-                    <div className="text-center py-8 bg-neutral-light rounded-lg">
-                      <h3 className="text-lg font-medium mb-2">
+                    <div className="text-center py-6 sm:py-8 bg-neutral-light rounded-lg">
+                      <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">
                         No orders yet
                       </h3>
-                      <p className="text-gray-600 mb-4">
+                      <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
                         You haven't placed any orders yet.
                       </p>
                       <Button
                         asChild
-                        className="bg-primary hover:bg-primary/90"
+                        className="bg-primary hover:bg-primary/90 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                       >
                         <a href="/menu">Browse Menu</a>
                       </Button>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-3 sm:space-y-4">
                       {orders.map((order: any) => (
                         <div 
                           key={order.id} 
-                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                          className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
                         >
                           <div 
-                            className="flex flex-col md:flex-row justify-between mb-4 gap-2 cursor-pointer"
+                            className="flex flex-col sm:flex-row justify-between mb-3 sm:mb-4 gap-2 cursor-pointer"
                             onClick={() => toggleOrderDetails(order.id)}
                           >
                             <div>
