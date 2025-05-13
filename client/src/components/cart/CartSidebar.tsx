@@ -795,17 +795,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     selectLocation={selectLocation}
                   />
                   
-                  <div className="border-t pt-4 mt-4">
-                    <h3 className="font-medium text-sm mb-2">
+                  <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
+                    <h3 className="font-medium text-xs sm:text-sm mb-1.5 sm:mb-2">
                       Delivery Type
                     </h3>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1.5 sm:gap-2">
                       <Button
                         type="button"
                         variant={
                           deliveryType === "default" ? "default" : "outline"
                         }
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                         onClick={() => setDeliveryType("default")}
                       >
                         Standard
@@ -815,7 +815,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         variant={
                           deliveryType === "express" ? "default" : "outline"
                         }
-                        className="flex-1"
+                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                         onClick={() => setDeliveryType("express")}
                       >
                         Express (+₹40)
@@ -823,7 +823,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </div>
                   </div>
                   
-                  <div className="text-sm text-gray-500 mt-4">
+                  <div className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
                     <p>
                       We currently deliver only in Hyderabad, within a 10km
                       radius of our service locations.
@@ -896,19 +896,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             )}
 
             {currentStep === "success" && (
-              <div className="p-4 text-center">
-                <div className="bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Check className="h-10 w-10 text-primary" />
+              <div className="p-3 sm:p-4 text-center">
+                <div className="bg-primary/10 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Check className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                 </div>
-                <h2 className="text-2xl font-semibold mb-2">
+                <h2 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2">
                   Order Placed Successfully!
                 </h2>
-                <p className="text-muted-foreground mb-6">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6">
                   Your order #{orderId} has been placed successfully.
                 </p>
-                <div className="border p-4 rounded-md mb-6">
-                  <h3 className="font-medium text-left mb-2">Order Details</h3>
-                  <div className="text-sm text-left space-y-2">
+                <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
+                  <h3 className="font-medium text-sm sm:text-base text-left mb-1.5 sm:mb-2">Order Details</h3>
+                  <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
                     <div className="flex justify-between">
                       <span>Order Number</span>
                       <span>#{orderId}</span>
@@ -932,16 +932,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </div>
                   </div>
                 </div>
-                <Button className="w-full mb-2" onClick={() => {
-                  onClose();
-                  setCurrentStep("cart");
-                  navigate("/menu");
-                }}>
+                <Button 
+                  className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2" 
+                  onClick={() => {
+                    onClose();
+                    setCurrentStep("cart");
+                    navigate("/menu");
+                  }}
+                >
                   Continue Shopping
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                   onClick={() => {
                     onClose();
                     setCurrentStep("cart");
