@@ -662,7 +662,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                         <Button
                                           variant="link"
                                           size="sm"
-                                          className="p-0 h-6 text-xs text-destructive"
+                                          className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-destructive"
                                           onClick={() => removeCartItem(item.id)}
                                         >
                                           Remove
@@ -956,28 +956,28 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           {currentStep !== "success" && cartItems.length > 0 && (
             <div className="border-t">
               {currentStep === "cart" ? (
-                <div className="p-4">
+                <div className="p-3 sm:p-4">
                   <Button
                     onClick={handleNextStep}
-                    className="w-full bg-primary text-white font-medium"
+                    className="w-full bg-primary text-white font-medium text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
                     disabled={loading || cartItems.length === 0}
                   >
                     Proceed
                   </Button>
                 </div>
               ) : (
-                <div className="p-4 flex gap-2">
+                <div className="p-3 sm:p-4 flex gap-1.5 sm:gap-2">
                   <Button
                     variant="outline"
                     onClick={handlePreviousStep}
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
                   >
-                    <ChevronLeft className="mr-1 h-4 w-4" />
+                    <ChevronLeft className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                     Back
                   </Button>
                   <Button
                     onClick={handleNextStep}
-                    className="flex-1"
+                    className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
                     disabled={loading || isCreatingOrder}
                   >
                     {currentStep === "delivery" && "Continue to Payment"}
@@ -987,7 +987,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           <>Processing...</>
                         ) : (
                           <>
-                            <CreditCard className="mr-1 h-4 w-4" />
+                            <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                             Pay{" "}
                             {formatPrice(
                               calculateCartTotal() +
