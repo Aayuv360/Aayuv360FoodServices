@@ -288,14 +288,51 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
   };
   
-  // Helper function to check if meal has curry options
+  // Helper function to check if a specific cart item has curry options
   const hasCurryOptions = (meal: any) => {
-    if (!meal?.curryOptions) return false;
-    return meal.curryOptions.length > 0;
+    // First check if meal object exists
+    if (!meal) return false;
+    
+    // In the cart, the server enriches meals with curry options in different ways
+    // Main patterns to check:
+    
+    // 1. Direct curryOptions array (from regular meal data)
+    if (meal.curryOptions && meal.curryOptions.length > 0) {
+      return true;
+    }
+    
+    // 2. The meal might have curry options that we can detect from the name or category
+    const nameIndicatesCurry = 
+      meal.name?.toLowerCase().includes("curry") || 
+      meal.category?.toLowerCase().includes("curry");
+    
+    // 3. For cart items, the selected curry option is added as a curryOption property
+    // This indicates the meal supports curry options
+    if (meal.curryOption) {
+      return true;
+    }
+    
+    // Return false if no curry options were found
+    return false;
+  };
+  
+  // Helper to log meal data (for debugging)
+  const logMealData = (meal: any) => {
+    console.log("Meal data:", {
+      id: meal?.id,
+      name: meal?.name,
+      hasCurryOptionsArray: Boolean(meal?.curryOptions),
+      curryOptionsLength: meal?.curryOptions?.length || 0,
+      curryOptions: meal?.curryOptions
+    });
   };
   
   // Handle customizing an item
   const handleCustomizeItem = (item: any) => {
+    // For debugging
+    console.log("Item being customized:", item);
+    logMealData(item.meal);
+    
     // Set the customizing meal which will open the modal
     setCustomizingMeal(item.meal);
   };
@@ -625,6 +662,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                       </div>
                                       <div>
                                         {/* Only show Customize button if meal has curry options */}
+                                        {/* Debug: Add a data attribute to show if this item has curry options */}
+                                        <div data-has-options={hasCurryOptions(item.meal).toString()} className="hidden"></div>
                                         {hasCurryOptions(item.meal) && (
                                           <Button
                                             variant="link"
