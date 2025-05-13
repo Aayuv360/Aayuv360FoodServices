@@ -38,31 +38,33 @@ export function RepeatCustomizationModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] p-4 sm:p-6 max-h-[90vh] overflow-auto">
+        <DialogHeader className="pb-2 sm:pb-3">
           <div className="flex items-center justify-between">
-            <DialogTitle>{isInCart ? 'Update your customization?' : 'Repeat previous customization?'}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
+              {isInCart ? 'Update your customization?' : 'Repeat previous customization?'}
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5 sm:h-6 sm:w-6"
               onClick={onClose}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm mt-1">
             {isInCart 
               ? `How would you like to update ${meal.name} in your cart?` 
               : `How would you like to add ${meal.name} to your cart?`}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
           {lastCurryOption && (
-            <div className="bg-primary/5 p-4 rounded-lg">
-              <h3 className="font-medium mb-1">Last Selection</h3>
-              <p className="text-sm text-gray-600">
+            <div className="bg-primary/5 p-3 sm:p-4 rounded-lg">
+              <h3 className="font-medium text-sm sm:text-base mb-1">Last Selection</h3>
+              <p className="text-xs sm:text-sm text-gray-600">
                 {meal.name} with {lastCurryOption.name}
                 {lastCurryOption.priceAdjustment > 0 && (
                   <span className="text-primary">
@@ -74,18 +76,18 @@ export function RepeatCustomizationModal({
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2">
             <Button
               onClick={onChooseNew}
               variant="outline"
-              className="w-full"
+              className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
             >
               I'll choose
             </Button>
             <Button
               onClick={onRepeatLast}
               variant="default"
-              className="w-full"
+              className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
               disabled={!lastCurryOption}
             >
               {isInCart ? 'Keep previous' : 'Repeat last'}
