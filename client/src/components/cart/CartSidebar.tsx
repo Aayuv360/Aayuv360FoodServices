@@ -288,6 +288,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
   };
   
+  // Helper function to check if meal has curry options
+  const hasCurryOptions = (meal: any) => {
+    if (!meal?.curryOptions) return false;
+    return meal.curryOptions.length > 0;
+  };
+  
   // Handle customizing an item
   const handleCustomizeItem = (item: any) => {
     // Set the customizing meal which will open the modal
@@ -618,16 +624,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                         )}
                                       </div>
                                       <div>
-                                        <Button
-                                          variant="link"
-                                          size="sm"
-                                          className="p-0 h-6 text-xs text-primary mr-2"
-                                          onClick={() =>
-                                            handleCustomizeItem(item)
-                                          }
-                                        >
-                                          Customize
-                                        </Button>
+                                        {/* Only show Customize button if meal has curry options */}
+                                        {hasCurryOptions(item.meal) && (
+                                          <Button
+                                            variant="link"
+                                            size="sm"
+                                            className="p-0 h-6 text-xs text-primary mr-2"
+                                            onClick={() =>
+                                              handleCustomizeItem(item)
+                                            }
+                                          >
+                                            Customize
+                                          </Button>
+                                        )}
                                         <Button
                                           variant="link"
                                           size="sm"
