@@ -562,7 +562,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    className="h-6 w-6 rounded-full"
+                                    className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
                                     onClick={() => {
                                       if (item.quantity > 1) {
                                         updateCartItem(
@@ -574,25 +574,25 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                       }
                                     }}
                                   >
-                                    <Minus className="h-3 w-3" />
+                                    <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                   </Button>
-                                  <span className="mx-2 text-sm font-medium">
+                                  <span className="mx-1.5 sm:mx-2 text-xs sm:text-sm font-medium">
                                     {item.quantity}
                                   </span>
                                   <Button
                                     variant="outline"
                                     size="icon"
-                                    className="h-6 w-6 rounded-full"
+                                    className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
                                     onClick={() =>
                                       updateCartItem(item.id, item.quantity + 1)
                                     }
                                   >
-                                    <Plus className="h-3 w-3" />
+                                    <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                   </Button>
                                   
                                   <div className="flex-grow"></div>
                                   
-                                  <p className="text-primary text-sm font-semibold">
+                                  <p className="text-primary text-xs sm:text-sm font-semibold">
                                     {formatPrice(
                                       ((item.meal?.price || 0) +
                                         ((item.meal as any)?.curryOption
@@ -602,22 +602,22 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   </p>
                                 </div>
                                 {/* Special instructions */}
-                                <div className="mt-2">
+                                <div className="mt-1.5 sm:mt-2">
                                   {isEditingNotes ? (
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5 sm:space-y-2">
                                       <Input
                                         value={noteText}
                                         onChange={(e) =>
                                           setNoteText(e.target.value)
                                         }
                                         placeholder="Add special instructions"
-                                        className="h-8 text-xs"
+                                        className="h-7 sm:h-8 text-[10px] sm:text-xs"
                                       />
-                                      <div className="flex justify-end gap-2">
+                                      <div className="flex justify-end gap-1.5 sm:gap-2">
                                         <Button
                                           variant="ghost"
                                           size="sm"
-                                          className="h-7 text-xs"
+                                          className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
                                           onClick={() => setEditingItemId(null)}
                                         >
                                           Cancel
@@ -625,7 +625,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                         <Button
                                           variant="default"
                                           size="sm"
-                                          className="h-7 text-xs"
+                                          className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
                                           onClick={handleSaveNotes}
                                         >
                                           Save
@@ -635,12 +635,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   ) : (
                                     <div className="flex justify-between">
                                       <div
-                                        className="text-xs text-gray-500 flex items-center gap-1 cursor-pointer hover:text-primary transition-colors"
+                                        className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1 cursor-pointer hover:text-primary transition-colors"
                                         onClick={handleEditNotes}
                                       >
-                                        <MessageSquare className="h-3 w-3" />
+                                        <MessageSquare className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                         {item.notes ? (
-                                          <span>{item.notes}</span>
+                                          <span className="line-clamp-1 max-w-[120px] sm:max-w-[180px]">{item.notes}</span>
                                         ) : (
                                           <span>Add instructions</span>
                                         )}
@@ -651,7 +651,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                           <Button
                                             variant="link"
                                             size="sm"
-                                            className="p-0 h-6 text-xs text-primary mr-2"
+                                            className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary mr-1.5 sm:mr-2"
                                             onClick={() =>
                                               handleCustomizeItem(item)
                                             }
