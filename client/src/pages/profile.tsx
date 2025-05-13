@@ -399,16 +399,7 @@ const Profile = () => {
                                 </span>
                               </p>
                               <div className="flex items-center gap-1.5 sm:gap-2">
-                                <Button
-                                  variant="outline"
-                                  className="border-primary text-primary hover:bg-primary hover:text-white text-xs sm:text-sm h-7 sm:h-9 py-0 px-2 sm:px-3"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    // Manage action
-                                  }}
-                                >
-                                  Manage
-                                </Button>
+
                                 <ChevronRight 
                                   className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedSubscriptionId === subscription.id ? 'rotate-90' : ''}`} 
                                 />
@@ -496,17 +487,7 @@ const Profile = () => {
                               </div>
                               
                               {/* Action Buttons for Subscription */}
-                              <div className="flex flex-wrap gap-3 mt-6">
-                                <Button variant="default" className="bg-primary hover:bg-primary/90">
-                                  Modify Subscription
-                                </Button>
-                                <Button variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-50">
-                                  View Meal Plan
-                                </Button>
-                                <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
-                                  Cancel Subscription
-                                </Button>
-                              </div>
+
                               
                               {/* Upcoming Deliveries */}
                               {subscription.isActive && (
