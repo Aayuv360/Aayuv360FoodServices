@@ -60,7 +60,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
           <img
             src={meal.imageUrl ? meal.imageUrl : "https://via.placeholder.com/300x200?text=Millet+Meal"}
             alt={meal.name}
-            className="w-full h-32 sm:h-40 object-cover"
+            className="w-full h-36 sm:h-44 object-cover"
           />
           {meal.isPopular && (
             <div className="absolute top-2 right-2 bg-accent text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs">
@@ -78,9 +78,9 @@ const MenuCard = ({ meal }: MenuCardProps) => {
             </div>
           )}
         </div>
-        <div className="p-2 sm:p-3 flex-grow flex flex-col">
+        <div className="p-3 sm:p-4 flex-grow flex flex-col">
           <div className="flex justify-between items-start mb-1 sm:mb-2">
-            <h3 className="text-sm sm:text-base font-bold line-clamp-1">{meal.name}</h3>
+            <h3 className="text-base sm:text-lg font-bold line-clamp-1">{meal.name}</h3>
             <div className="flex items-center ml-2 flex-shrink-0">
               <span className="text-primary font-semibold text-sm sm:text-base">{formatPrice(meal.price)}</span>
             </div>

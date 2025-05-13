@@ -103,26 +103,26 @@ const SubscriptionPlans = () => {
                   Most Popular
                 </div>
               )}
-              <div className="p-4">
-                <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
-                <div className="text-2xl font-accent font-semibold text-primary mb-2">
+              <div className="p-5">
+                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                <div className="text-3xl font-accent font-semibold text-primary mb-3">
                   ₹{plan.price}
-                  <span className="text-xs text-gray-500">/month</span>
+                  <span className="text-sm text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 mb-3 text-sm">
+                <p className="text-gray-600 mb-4">
                   {plan.id === "basic"
                     ? "Perfect for individuals looking to try our millet meals."
                     : plan.id === "premium"
                       ? "Ideal for regular healthy eating with greater variety."
                       : "Complete solution for families seeking healthy millet meals."}
                 </p>
-                <ul className="space-y-2 mb-4 text-sm">
+                <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
                       {feature.included ? (
-                        <CheckIcon className="h-4 w-4 text-success mr-1.5 mt-0.5" />
+                        <CheckIcon className="h-5 w-5 text-success mr-2 mt-0.5" />
                       ) : (
-                        <X className="h-4 w-4 text-gray-400 mr-1.5 mt-0.5" />
+                        <X className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
                       )}
                       <span className={feature.included ? "" : "text-gray-400"}>
                         {feature.text}
@@ -131,7 +131,7 @@ const SubscriptionPlans = () => {
                   ))}
                 </ul>
                 <Button
-                  className="w-full bg-primary hover:bg-primary/90 text-white h-9 text-sm"
+                  className="w-full bg-primary hover:bg-primary/90 text-white h-10 text-base"
                   onClick={() => handleSelectPlan(plan)}
                 >
                   Select Plan

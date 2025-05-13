@@ -349,7 +349,7 @@ const Profile = () => {
                       {subscriptions.map((subscription: any) => (
                         <div
                           key={subscription.id}
-                          className="border rounded-lg p-2 sm:p-3 hover:shadow-md transition-shadow"
+                          className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
                         >
                           {/* Subscription Header - Always Visible */}
                           <div 
