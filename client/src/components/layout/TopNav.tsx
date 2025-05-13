@@ -63,11 +63,11 @@ export default function TopNav() {
   );
   
   return (
-    <nav className="container mx-auto px-4 mt-2 mb-6">
+    <nav className="container mx-auto px-2 sm:px-4 mt-2 mb-4 sm:mb-6">
       <div className="flex flex-col gap-2">
         {/* Main navigation */}
-        <div className="flex justify-center md:justify-start">
-          <div className="flex items-center space-x-1 md:space-x-2 bg-muted/30 rounded-full px-2 py-1 border">
+        <div className="flex justify-center md:justify-start overflow-x-auto pb-1 no-scrollbar">
+          <div className="flex items-center space-x-1 md:space-x-2 bg-muted/30 rounded-full px-1.5 sm:px-2 py-1 border">
             {navLinks.map((link) => {
               const Icon = link.icon;
               const isActive = activeLink === link.href;
@@ -79,13 +79,13 @@ export default function TopNav() {
                 >
                   <a 
                     className={cn(
-                      "flex items-center space-x-1 px-3 py-2 rounded-full text-sm font-medium transition-colors",
+                      "flex items-center space-x-0.5 sm:space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                       isActive 
                         ? "bg-primary text-primary-foreground" 
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     )}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                     <span>{link.label}</span>
                   </a>
                 </Link>
@@ -96,8 +96,8 @@ export default function TopNav() {
         
         {/* Admin navigation - only shown if user has admin links */}
         {filteredAdminLinks.length > 0 && (
-          <div className="flex justify-center md:justify-start">
-            <div className="flex items-center space-x-1 md:space-x-2 bg-amber-100/70 rounded-full px-2 py-1 border border-amber-200">
+          <div className="flex justify-center md:justify-start overflow-x-auto pb-1 no-scrollbar">
+            <div className="flex items-center space-x-1 md:space-x-2 bg-amber-100/70 rounded-full px-1.5 sm:px-2 py-1 border border-amber-200">
               {filteredAdminLinks.map((link) => {
                 const Icon = link.icon;
                 const isActive = activeLink === link.href;
@@ -109,13 +109,13 @@ export default function TopNav() {
                   >
                     <a 
                       className={cn(
-                        "flex items-center space-x-1 px-3 py-2 rounded-full text-sm font-medium transition-colors",
+                        "flex items-center space-x-0.5 sm:space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
                         isActive 
                           ? "bg-amber-500 text-white" 
                           : "text-amber-700 hover:text-amber-900 hover:bg-amber-200"
                       )}
                     >
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span>{link.label}</span>
                     </a>
                   </Link>

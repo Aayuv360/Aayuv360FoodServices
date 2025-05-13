@@ -48,14 +48,14 @@ export function AuthModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle className="text-center text-2xl font-bold">
+      <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-4 sm:p-6 overflow-y-auto max-h-[90vh] md:max-h-[80vh]">
+        <DialogHeader className="mb-2 sm:mb-4">
+          <DialogTitle className="text-center text-xl sm:text-2xl font-bold">
             {mode === "subscribe"
               ? "Login to Subscribe"
-              : "Welcome to MealMillet"}
+              : "Welcome to Aayuv"}
           </DialogTitle>
-          <DialogDescription className="text-center">
+          <DialogDescription className="text-center text-xs sm:text-sm">
             {mode === "subscribe"
               ? "Login or create an account to continue with your subscription"
               : "Login or create an account to access all features"}
@@ -64,13 +64,13 @@ export function AuthModal({
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="register">Register</TabsTrigger>
+            <TabsTrigger value="login" className="text-xs sm:text-sm py-1.5 sm:py-2">Login</TabsTrigger>
+            <TabsTrigger value="register" className="text-xs sm:text-sm py-1.5 sm:py-2">Register</TabsTrigger>
           </TabsList>
-          <TabsContent value="login" className="mt-4">
+          <TabsContent value="login" className="mt-3 sm:mt-4">
             <LoginForm onSuccess={onSuccess} />
           </TabsContent>
-          <TabsContent value="register" className="mt-4">
+          <TabsContent value="register" className="mt-3 sm:mt-4">
             <RegisterForm onSuccess={() => setActiveTab("login")} />
           </TabsContent>
         </Tabs>

@@ -266,30 +266,30 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
   return (
     <>
       {inCart ? (
-        <div className="flex items-center border rounded-full">
+        <div className="flex items-center border rounded-full text-xs sm:text-sm">
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full"
+            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
             onClick={handleRemoveClick}
           >
-            <Minus className="h-3 w-3" />
+            <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
           </Button>
-          <span className="px-2 py-1">{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1">{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full"
+            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
             onClick={handleAddClick}
           >
-            <Plus className="h-3 w-3" />
+            <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
           </Button>
         </div>
       ) : (
         <Button
           variant="outline"
           size="sm"
-          className="rounded-full"
+          className="rounded-full text-xs sm:text-sm py-1 px-3 h-auto"
           onClick={handleAddClick}
         >
           Add

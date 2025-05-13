@@ -399,18 +399,18 @@ const Header = () => {
             )}
           </form>
 
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2 sm:space-x-4">
             <Button
               variant="outline"
-              className="relative flex items-center gap-2 px-4 py-2"
+              className="relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm"
               onClick={toggleCart}
               disabled={!cartItems.length}
             >
-              <ShoppingCart className="h-5 w-5" />
-              <span>Cart</span>
+              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+              <span className="hidden xs:inline">Cart</span>
 
               {cartItems.length > 0 && (
-                <span className="ml-auto bg-primary text-white text-xs rounded-full px-2 py-0.5">
+                <span className="ml-auto bg-primary text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5">
                   {cartItems.length}
                 </span>
               )}
@@ -419,17 +419,17 @@ const Header = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
+                  <Button variant="ghost" className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2">
+                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
                       <AvatarImage
                         src={`https://ui-avatars.com/api/?name=${user.name || user.username || 'User'}&background=random`}
                       />
                       <AvatarFallback>{(user.name || user.username || 'U').charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <span className="ml-2 hidden md:inline">
+                    <span className="ml-1 sm:ml-2 hidden md:inline text-xs sm:text-sm">
                       {(user.name || user.username || 'User').split(" ")[0]}
                     </span>
-                    <ChevronDown className="h-4 w-4" />
+                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
