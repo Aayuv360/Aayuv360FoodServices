@@ -11,7 +11,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface MenuCardProps {
   meal: Meal & {
-    imageUrl?: string;
+    imageUrl?: string | null;
   };
 }
 
@@ -58,7 +58,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
       <div className={`${hasActiveSubscription ? 'bg-gradient-to-b from-white to-amber-50 ring-2 ring-amber-200' : 'bg-white'} rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300`}>
         <div className="relative">
           <img
-            src={meal.imageUrl || "https://via.placeholder.com/300x200?text=Millet+Meal"}
+            src={meal.imageUrl ? meal.imageUrl : "https://via.placeholder.com/300x200?text=Millet+Meal"}
             alt={meal.name}
             className="w-full h-40 sm:h-48 object-cover"
           />
