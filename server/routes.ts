@@ -275,18 +275,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Use MongoDB directly to get meal
           const meal = await MealModel.findOne({ id: item.mealId }).lean();
           
-          // Only add curry option if the necessary fields exist
-          let mealWithCurryOption = meal;
+          // Create a base enriched meal object
+          let mealWithCurryOption = {
+            ...meal,
+            // Ensure curryOptions exists (either from the meal or as empty array)
+            curryOptions: meal?.curryOptions || []
+          };
+          
+          // If the item has curry option selections, add them
           if (meal && item.curryOptionId && item.curryOptionName) {
-            // Use type assertion to add the curryOption property
-            mealWithCurryOption = {
-              ...meal,
-              // curryOption is not in the Meal type, but we need it for the frontend
-            };
             
-            // Add the curry options array if it doesn't exist
-            if (!(mealWithCurryOption as any).curryOptions) {
-              (mealWithCurryOption as any).curryOptions = [];
+            // The item might not have curry options property, so use type assertion 
+            // and default to an empty array
+            const itemCurryOptions = (item as any).curryOptions || [];
+            (mealWithCurryOption as any).curryOptions = itemCurryOptions;
+            
+            // If there are no curry options stored in the cart item, but the meal has them, use those
+            if (itemCurryOptions.length === 0 && meal.curryOptions) {
+              (mealWithCurryOption as any).curryOptions = meal.curryOptions;
             }
             
             // Add the selectedCurry property
@@ -327,6 +333,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         curryOptionPrice = req.body.selectedCurry.priceAdjustment || 0;
       }
       
+      // Extract curryOptions array from request if present
+      const mealCurryOptions = req.body.curryOptions || [];
+      
       // For MongoDB we'll bypass the schema validation temporarily
       // as we're working directly with MongoDB models
       const cartItemData = {
@@ -334,7 +343,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId,
         curryOptionId,
         curryOptionName,
-        curryOptionPrice
+        curryOptionPrice,
+        curryOptions: mealCurryOptions
       };
       
       // Use MongoDB storage implementation
@@ -343,11 +353,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Add curry option to the meal object if needed
       let mealWithCurryOption = meal;
+      
+      // Always include the original curry options from the request
+      if (!mealWithCurryOption.curryOptions || !mealWithCurryOption.curryOptions.length) {
+        mealWithCurryOption = {
+          ...mealWithCurryOption,
+          curryOptions: mealCurryOptions
+        };
+      }
+      
+      // Add the selected curry if one was chosen
       if (curryOptionId && curryOptionName) {
         mealWithCurryOption = {
-          ...meal,
-          // Include the meal's curry options array
-          curryOptions: meal?.curryOptions || [],
+          ...mealWithCurryOption,
           // Add selected curry as a separate property
           selectedCurry: {
             id: curryOptionId,
