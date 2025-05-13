@@ -103,26 +103,26 @@ const SubscriptionPlans = () => {
                   Most Popular
                 </div>
               )}
-              <div className="p-6 sm:p-7">
-                <h3 className="text-2xl font-bold mb-3">{plan.name}</h3>
-                <div className="text-4xl font-accent font-semibold text-primary mb-4">
+              <div className="p-5">
+                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                <div className="text-3xl font-accent font-semibold text-primary mb-3">
                   ₹{plan.price}
-                  <span className="text-base text-gray-500">/month</span>
+                  <span className="text-sm text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 mb-5 text-base">
+                <p className="text-gray-600 mb-4">
                   {plan.id === "basic"
                     ? "Perfect for individuals looking to try our millet meals."
                     : plan.id === "premium"
                       ? "Ideal for regular healthy eating with greater variety."
                       : "Complete solution for families seeking healthy millet meals."}
                 </p>
-                <ul className="space-y-4 mb-8 text-base">
+                <ul className="space-y-3 mb-6">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
                       {feature.included ? (
-                        <CheckIcon className="h-6 w-6 text-success mr-3 mt-0.5" />
+                        <CheckIcon className="h-5 w-5 text-success mr-2 mt-0.5" />
                       ) : (
-                        <X className="h-6 w-6 text-gray-400 mr-3 mt-0.5" />
+                        <X className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
                       )}
                       <span className={feature.included ? "" : "text-gray-400"}>
                         {feature.text}
