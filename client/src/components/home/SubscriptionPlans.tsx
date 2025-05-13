@@ -88,41 +88,41 @@ const SubscriptionPlans = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
           {plans.map((plan) => (
             <div
               key={plan.id}
               className={`${
                 plan.featured
-                  ? "bg-white border-2 border-primary transform scale-105 z-10"
+                  ? "bg-white border-2 border-primary transform scale-103 z-10"
                   : "bg-neutral-light"
-              } rounded-lg overflow-hidden card-shadow transition-transform hover:scale-105 relative`}
+              } rounded-lg overflow-hidden card-shadow transition-transform hover:scale-103 relative`}
             >
               {plan.featured && (
                 <div className="absolute top-0 right-0 bg-primary text-white text-xs font-accent py-1 px-3 rounded-bl-lg">
                   Most Popular
                 </div>
               )}
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                <div className="text-3xl font-accent font-semibold text-primary mb-4">
+              <div className="p-4">
+                <h3 className="text-lg font-bold mb-1">{plan.name}</h3>
+                <div className="text-2xl font-accent font-semibold text-primary mb-2">
                   ₹{plan.price}
-                  <span className="text-sm text-gray-500">/month</span>
+                  <span className="text-xs text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-3 text-sm">
                   {plan.id === "basic"
                     ? "Perfect for individuals looking to try our millet meals."
                     : plan.id === "premium"
                       ? "Ideal for regular healthy eating with greater variety."
                       : "Complete solution for families seeking healthy millet meals."}
                 </p>
-                <ul className="space-y-3 mb-8">
+                <ul className="space-y-2 mb-4 text-sm">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-start">
                       {feature.included ? (
-                        <CheckIcon className="h-5 w-5 text-success mr-2 mt-0.5" />
+                        <CheckIcon className="h-4 w-4 text-success mr-1.5 mt-0.5" />
                       ) : (
-                        <X className="h-5 w-5 text-gray-400 mr-2 mt-0.5" />
+                        <X className="h-4 w-4 text-gray-400 mr-1.5 mt-0.5" />
                       )}
                       <span className={feature.included ? "" : "text-gray-400"}>
                         {feature.text}
@@ -131,7 +131,7 @@ const SubscriptionPlans = () => {
                   ))}
                 </ul>
                 <Button
-                  className="w-full bg-primary hover:bg-primary/90 text-white"
+                  className="w-full bg-primary hover:bg-primary/90 text-white h-9 text-sm"
                   onClick={() => handleSelectPlan(plan)}
                 >
                   Select Plan
