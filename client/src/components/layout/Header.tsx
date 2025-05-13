@@ -232,21 +232,21 @@ const Header = () => {
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="container mx-auto px-2 sm:px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
           {/* Logo */}
           <div className="flex items-center justify-between w-full md:w-auto">
             <Link href="/" className="flex items-center">
-              <div className="h-10 w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
+              <div className="h-8 w-8 sm:h-10 sm:w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-base sm:text-lg font-bold">
                 A
               </div>
-              <h1 className="text-2xl font-bold text-primary">Aayuv</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-primary">Aayuv</h1>
             </Link>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[20px]">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  <span>{userLocation || "Select Location"}</span>
+                <div className="cursor-pointer text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
+                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                  <span className="truncate max-w-[120px] sm:max-w-none">{userLocation || "Select Location"}</span>
                 </div>
               </DropdownMenuTrigger>
 
@@ -303,9 +303,9 @@ const Header = () => {
 
           <form
             onSubmit={handleSearchSubmit}
-            className="flex-grow max-w-xl relative"
+            className="flex-grow max-w-xl relative order-last md:order-none my-2 md:my-0"
           >
-            <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+            <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
 
             <input
               type="text"
@@ -318,8 +318,8 @@ const Header = () => {
                   setShowSearchResults(false);
                 }
               }}
-              placeholder="Search for millet meals..."
-              className="w-full py-2 pl-10 pr-10 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="Search meals..."
+              className="w-full py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
             />
 
             {searchQuery && (
@@ -329,15 +329,15 @@ const Header = () => {
                   setSearchQuery("");
                   setShowSearchResults(false);
                 }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                <XMarkIcon className="w-5 h-5" />
+                <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             )}
 
             {/* Search Results */}
             {showSearchResults && searchQuery.length > 1 && (
-              <div className="absolute top-full left-0 right-0 bg-white shadow-lg rounded-lg mt-1 max-h-80 overflow-auto z-50">
+              <div className="absolute top-full left-0 right-0 bg-white shadow-lg rounded-lg mt-1 max-h-60 sm:max-h-80 overflow-auto z-50">
                 {filteredMeals.length > 0 ? (
                   <>
                     <div className="p-3 border-b">
