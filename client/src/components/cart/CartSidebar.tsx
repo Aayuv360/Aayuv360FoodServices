@@ -288,32 +288,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
   };
   
-  // Helper function to check if a specific cart item has curry options
+  // Helper function to check if meal has curry options
   const hasCurryOptions = (meal: any) => {
-    // First check if meal object exists
     if (!meal) return false;
-    
-    // In the cart, the server enriches meals with curry options in different ways
-    // Main patterns to check:
-    
-    // 1. Direct curryOptions array (from regular meal data)
-    if (meal.curryOptions && meal.curryOptions.length > 0) {
-      return true;
-    }
-    
-    // 2. The meal might have curry options that we can detect from the name or category
-    const nameIndicatesCurry = 
-      meal.name?.toLowerCase().includes("curry") || 
-      meal.category?.toLowerCase().includes("curry");
-    
-    // 3. For cart items, the selected curry option is added as a curryOption property
-    // This indicates the meal supports curry options
-    if (meal.curryOption) {
-      return true;
-    }
-    
-    // Return false if no curry options were found
-    return false;
+    if (!meal.curryOptions) return false;
+    return meal.curryOptions.length > 0;
   };
   
   // Handle customizing an item
