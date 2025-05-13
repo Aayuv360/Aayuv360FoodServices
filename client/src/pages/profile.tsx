@@ -675,19 +675,19 @@ const Profile = () => {
                                     <span>{formatPrice(order.totalPrice)}</span>
                                   </div>
                                   {order.deliveryFee > 0 && (
-                                    <div className="flex justify-between text-sm">
+                                    <div className="flex justify-between text-xs sm:text-sm">
                                       <span>Delivery Fee</span>
                                       <span>{formatPrice(order.deliveryFee)}</span>
                                     </div>
                                   )}
                                   {order.discount > 0 && (
-                                    <div className="flex justify-between text-sm text-green-600">
+                                    <div className="flex justify-between text-xs sm:text-sm text-green-600">
                                       <span>Discount</span>
                                       <span>-{formatPrice(order.discount)}</span>
                                     </div>
                                   )}
-                                  <div className="border-t border-gray-200 mt-2 pt-2"></div>
-                                  <div className="flex justify-between font-bold">
+                                  <div className="border-t border-gray-200 mt-2 sm:mt-3 pt-2 sm:pt-3"></div>
+                                  <div className="flex justify-between font-bold text-xs sm:text-sm">
                                     <span>Total</span>
                                     <span>{formatPrice(order.finalAmount || order.totalPrice)}</span>
                                   </div>
@@ -695,29 +695,29 @@ const Profile = () => {
                               </div>
                               
                               {/* Order Details Section */}
-                              <div className="mb-6">
-                                <h5 className="font-medium mb-3 text-md">Order Details</h5>
-                                <div className="space-y-2 text-sm">
-                                  <div className="flex items-start gap-2">
-                                    <span className="font-medium w-32">Payment Method:</span>
+                              <div className="mb-4 sm:mb-6">
+                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">Order Details</h5>
+                                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                                  <div className="flex items-start gap-1.5 sm:gap-2">
+                                    <span className="font-medium w-24 sm:w-32">Payment Method:</span>
                                     <span className="capitalize">{order.paymentMethod || 'Online payment'}</span>
                                   </div>
                                   {order.razorpayOrderId && (
-                                    <div className="flex items-start gap-2">
-                                      <span className="font-medium w-32">Transaction ID:</span>
-                                      <span className="text-xs font-mono bg-gray-100 p-1 rounded">{order.razorpayOrderId}</span>
+                                    <div className="flex items-start gap-1.5 sm:gap-2">
+                                      <span className="font-medium w-24 sm:w-32">Transaction ID:</span>
+                                      <span className="text-[9px] sm:text-xs font-mono bg-gray-100 p-0.5 sm:p-1 rounded truncate max-w-[150px] sm:max-w-none">{order.razorpayOrderId}</span>
                                     </div>
                                   )}
                                   {order.deliveryAddress && (
-                                    <div className="flex items-start gap-2">
-                                      <span className="font-medium w-32">Delivery Address:</span>
-                                      <span>{order.deliveryAddress}</span>
+                                    <div className="flex items-start gap-1.5 sm:gap-2">
+                                      <span className="font-medium w-24 sm:w-32">Delivery Address:</span>
+                                      <span className="break-words">{order.deliveryAddress}</span>
                                     </div>
                                   )}
                                   {order.deliveryTime && (
-                                    <div className="flex items-start gap-2">
-                                      <span className="font-medium w-32">Delivery Time:</span>
-                                      <span>{format(new Date(order.deliveryTime), "MMMM d, yyyy 'at' h:mm a")}</span>
+                                    <div className="flex items-start gap-1.5 sm:gap-2">
+                                      <span className="font-medium w-24 sm:w-32">Delivery Time:</span>
+                                      <span>{format(new Date(order.deliveryTime), "MMM d, yyyy 'at' h:mm a")}</span>
                                     </div>
                                   )}
                                 </div>
