@@ -728,38 +728,38 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       {addresses.map((address) => (
                         <div 
                           key={address.id}
-                          className={`border rounded-md p-3 cursor-pointer ${
+                          className={`border rounded-md p-2 sm:p-3 cursor-pointer ${
                             selectedAddressId === address.id ? "border-primary bg-primary/5" : ""
                           }`}
                           onClick={() => setSelectedAddressId(address.id)}
                         >
                           <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium text-sm">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <div className="font-medium text-xs sm:text-sm">
                                 {address.name}
                               </div>
                               {address.isDefault && (
-                                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1.5 sm:px-2 py-0.5 rounded">
                                   Default
                                 </span>
                               )}
                             </div>
                             {selectedAddressId === address.id && (
-                              <Check className="h-5 w-5 text-primary" />
+                              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             )}
                           </div>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-1">
                             {address.addressLine1}
                           </p>
                           {address.addressLine2 && (
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
                               {address.addressLine2}
                             </p>
                           )}
-                          <p className="text-sm text-gray-600">
+                          <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
                             {address.city}, {address.state} - {address.pincode}
                           </p>
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
                             Phone: {address.phone}
                           </p>
                         </div>
@@ -772,14 +772,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   )}
                   
                   {/* Button to add a new address */}
-                  <div className="mt-4">
+                  <div className="mt-3 sm:mt-4">
                     <Button
                       type="button"
                       variant="outline"
-                      className="w-full flex items-center justify-center"
+                      className="w-full flex items-center justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
                       onClick={() => setAddressModalOpen(true)}
                     >
-                      <PlusCircle className="mr-2 h-4 w-4" />
+                      <PlusCircle className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       Add New Address
                     </Button>
                   </div>
