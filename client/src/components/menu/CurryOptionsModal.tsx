@@ -87,44 +87,44 @@ export function CurryOptionsModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] p-4 sm:p-6 max-h-[90vh] overflow-auto">
+        <DialogHeader className="pb-2 sm:pb-3">
           <div className="flex items-center justify-between">
-            <DialogTitle>{isInCart ? 'Update Your Customization' : 'Customize Your Meal'}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">{isInCart ? 'Update Your Customization' : 'Customize Your Meal'}</DialogTitle>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6"
+              className="h-5 w-5 sm:h-6 sm:w-6"
               onClick={onClose}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3 w-3 sm:h-4 sm:w-4" />
             </Button>
           </div>
-          <DialogDescription>
+          <DialogDescription className="text-xs sm:text-sm mt-1">
             Choose a curry style for {meal.name}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-3 sm:mt-4 space-y-3 sm:space-y-4">
           <RadioGroup
             defaultValue={selectedOption}
             onValueChange={setSelectedOption}
-            className="space-y-2"
+            className="space-y-1.5 sm:space-y-2"
           >
             {curryOptions.map((option) => (
               <div
                 key={option.id}
-                className={`flex items-center justify-between space-x-2 rounded-md border p-3 ${
+                className={`flex items-center justify-between space-x-2 rounded-md border p-2 sm:p-3 ${
                   lastCurryOption && option.id === lastCurryOption.id ? "border-primary bg-primary/5" : ""
                 }`}
               >
-                <div className="flex items-center space-x-3">
-                  <RadioGroupItem value={option.id} id={option.id} />
-                  <Label htmlFor={option.id} className="cursor-pointer">
+                <div className="flex items-center space-x-2 sm:space-x-3">
+                  <RadioGroupItem value={option.id} id={option.id} className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <Label htmlFor={option.id} className="cursor-pointer text-xs sm:text-sm">
                     {option.name}
                   </Label>
                 </div>
-                <div className="text-sm font-medium">
+                <div className="text-xs sm:text-sm font-medium">
                   {option.priceAdjustment > 0 ? (
                     <span className="text-primary">
                       +{formatPrice(option.priceAdjustment)}
@@ -139,7 +139,7 @@ export function CurryOptionsModal({
 
           <Button 
             onClick={handleAddToCart} 
-            className="w-full"
+            className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2 mt-2"
           >
             {isInCart ? 'Update Selection' : 'Add to Cart'}
           </Button>
