@@ -704,9 +704,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       </div>
 
                       {/* Cancellation Policy */}
-                      <div className="px-4 py-3 border-t">
-                        <h3 className="font-medium text-sm mb-1">Cancellation Policy</h3>
-                        <p className="text-xs text-gray-600">
+                      <div className="px-3 sm:px-4 py-2 sm:py-3 border-t">
+                        <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">Cancellation Policy</h3>
+                        <p className="text-[10px] sm:text-xs text-gray-600">
                           Orders can be cancelled before they are confirmed by the restaurant.
                           Once confirmed, refunds will be processed as per our policy.
                         </p>
@@ -718,13 +718,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             )}
 
             {currentStep === "delivery" && (
-              <div className="p-4">
-                <div className="space-y-4">
-                  <h3 className="font-medium">Delivery Address</h3>
+              <div className="p-3 sm:p-4">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="font-medium text-sm sm:text-base">Delivery Address</h3>
                   
                   {/* Display existing addresses */}
                   {addresses.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {addresses.map((address) => (
                         <div 
                           key={address.id}
@@ -834,39 +834,41 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             )}
 
             {currentStep === "payment" && (
-              <div className="p-4">
-                <h3 className="font-medium mb-4">Choose Payment Method</h3>
+              <div className="p-3 sm:p-4">
+                <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Choose Payment Method</h3>
                 <RadioGroup
                   defaultValue={selectedPaymentMethod}
                   onValueChange={setSelectedPaymentMethod}
                 >
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-2 border p-3 rounded-md">
+                  <div className="space-y-1.5 sm:space-y-2">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 border p-2 sm:p-3 rounded-md">
                       <RadioGroupItem
                         value="razorpay"
                         id="razorpay"
                         checked={selectedPaymentMethod === "razorpay"}
+                        className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                       />
-                      <Label htmlFor="razorpay" className="flex-grow">
+                      <Label htmlFor="razorpay" className="flex-grow text-xs sm:text-sm">
                         Razorpay (Credit/Debit Card, UPI, etc.)
                       </Label>
                     </div>
-                    <div className="flex items-center space-x-2 border p-3 rounded-md">
+                    <div className="flex items-center space-x-1.5 sm:space-x-2 border p-2 sm:p-3 rounded-md">
                       <RadioGroupItem
                         value="cod"
                         id="cod"
                         checked={selectedPaymentMethod === "cod"}
+                        className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                       />
-                      <Label htmlFor="cod" className="flex-grow">
+                      <Label htmlFor="cod" className="flex-grow text-xs sm:text-sm">
                         Cash on Delivery
                       </Label>
                     </div>
                   </div>
                 </RadioGroup>
 
-                <div className="mt-6">
-                  <h3 className="font-medium mb-2">Order Summary</h3>
-                  <div className="space-y-2 text-sm">
+                <div className="mt-4 sm:mt-6">
+                  <h3 className="font-medium text-sm sm:text-base mb-1.5 sm:mb-2">Order Summary</h3>
+                  <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span>Item Total</span>
                       <span>{formatPrice(calculateCartTotal())}</span>
@@ -879,7 +881,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>Taxes</span>
                       <span>{formatPrice(20)}</span>
                     </div>
-                    <div className="flex justify-between pt-2 border-t font-medium">
+                    <div className="flex justify-between pt-1.5 sm:pt-2 border-t font-medium">
                       <span>Total</span>
                       <span>
                         {formatPrice(
