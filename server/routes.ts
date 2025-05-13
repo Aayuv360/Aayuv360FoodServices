@@ -346,11 +346,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (curryOptionId && curryOptionName) {
         mealWithCurryOption = {
           ...meal,
-          curryOptions: [{
+          // Include the meal's curry options array
+          curryOptions: meal?.curryOptions || [],
+          // Add selected curry as a separate property
+          selectedCurry: {
             id: curryOptionId,
             name: curryOptionName,
             priceAdjustment: curryOptionPrice || 0
-          }]
+          }
         };
       }
       
