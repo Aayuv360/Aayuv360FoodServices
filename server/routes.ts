@@ -284,12 +284,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               // curryOption is not in the Meal type, but we need it for the frontend
             };
             
-            // Add the curry option to the object
-            (mealWithCurryOption as any).curryOption = {
+            // Add the curry option to the curryOptions array of the meal
+            if (!(mealWithCurryOption as any).curryOptions) {
+              (mealWithCurryOption as any).curryOptions = [];
+            }
+            
+            // Add the selected curry option as the only option in the array
+            (mealWithCurryOption as any).curryOptions = [{
               id: item.curryOptionId,
               name: item.curryOptionName,
               priceAdjustment: item.curryOptionPrice || 0
-            };
+            }];
           }
           
           return {
@@ -340,11 +345,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (curryOptionId && curryOptionName) {
         mealWithCurryOption = {
           ...meal,
-          curryOption: {
+          curryOptions: [{
             id: curryOptionId,
             name: curryOptionName,
             priceAdjustment: curryOptionPrice || 0
-          }
+          }]
         };
       }
       
