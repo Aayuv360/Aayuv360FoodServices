@@ -288,11 +288,31 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
   };
   
-  // Helper function to check if meal has curry options
+  // Helper function to check if a meal is customizable with curry options
   const hasCurryOptions = (meal: any) => {
     if (!meal) return false;
-    if (!meal.curryOptions) return false;
-    return meal.curryOptions.length > 0;
+    
+    // Check several possible ways curry options might be stored:
+    
+    // 1. Direct curryOptions array
+    if (meal.curryOptions && meal.curryOptions.length > 0) {
+      return true;
+    }
+    
+    // 2. Selected curry option (indicates the meal is customizable)
+    if (meal.curryOption || meal.selectedCurry) {
+      return true;
+    }
+    
+    // 3. Check if meal name or category indicates curry
+    const nameHasCurry = meal.name?.toLowerCase().includes('curry');
+    const categoryHasCurry = meal.category?.toLowerCase().includes('curry');
+    
+    if (nameHasCurry || categoryHasCurry) {
+      return true;
+    }
+    
+    return false;
   };
   
   // Handle customizing an item
