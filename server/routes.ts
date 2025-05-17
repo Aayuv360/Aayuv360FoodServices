@@ -243,22 +243,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Location data for delivery areas
-  app.get("/api/locations", (req, res) => {
-    // Sample data for Hyderabad delivery areas
-    const deliveryAreas = [
-      { id: 1, area: "Hitech City", pincode: "500081", deliveryFee: 30 },
-      { id: 2, area: "Gachibowli", pincode: "500032", deliveryFee: 30 },
-      { id: 3, area: "Madhapur", pincode: "500081", deliveryFee: 30 },
-      { id: 4, area: "Kondapur", pincode: "500084", deliveryFee: 40 },
-      { id: 5, area: "Jubilee Hills", pincode: "500033", deliveryFee: 50 },
-      { id: 6, area: "Banjara Hills", pincode: "500034", deliveryFee: 50 },
-      { id: 7, area: "Ameerpet", pincode: "500016", deliveryFee: 60 },
-      { id: 8, area: "Begumpet", pincode: "500016", deliveryFee: 60 },
-      { id: 9, area: "Somajiguda", pincode: "500082", deliveryFee: 70 },
-      { id: 10, area: "Kukatpally", pincode: "500072", deliveryFee: 80 }
-    ];
-    
-    res.json(deliveryAreas);
+  app.get("/api/locations", async (req, res) => {
+    try {
+      // Use mongoStorage to get locations
+      const locations = await mongoStorage.getLocations();
+      
+      // If no locations found, seed with default Hyderabad locations
+      if (!locations || locations.length === 0) {
+        console.log("No locations found in database, seeding default locations");
+        const defaultLocations = [
+          { id: 1, area: "Hitech City", pincode: "500081", deliveryFee: 30 },
+          { id: 2, area: "Gachibowli", pincode: "500032", deliveryFee: 30 },
+          { id: 3, area: "Madhapur", pincode: "500081", deliveryFee: 30 },
+          { id: 4, area: "Kondapur", pincode: "500084", deliveryFee: 40 },
+          { id: 5, area: "Jubilee Hills", pincode: "500033", deliveryFee: 50 },
+          { id: 6, area: "Banjara Hills", pincode: "500034", deliveryFee: 50 },
+          { id: 7, area: "Ameerpet", pincode: "500016", deliveryFee: 60 },
+          { id: 8, area: "Begumpet", pincode: "500016", deliveryFee: 60 },
+          { id: 9, area: "Somajiguda", pincode: "500082", deliveryFee: 70 },
+          { id: 10, area: "Kukatpally", pincode: "500072", deliveryFee: 80 }
+        ];
+        
+        // Add default locations one by one
+        for (const location of defaultLocations) {
+          await mongoStorage.createLocation(location);
+        }
+        
+        // Return the newly created locations
+        return res.json(defaultLocations);
+      }
+      
+      res.json(locations);
+    } catch (error) {
+      console.error("Error fetching locations:", error);
+      res.status(500).json({ message: "Error fetching locations" });
+    }
   });
   
   // Cart routes
