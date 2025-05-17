@@ -524,10 +524,11 @@ export default function AdminPortalPage() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="meals">Meals</TabsTrigger>
           <TabsTrigger value="curry-options">Curry Options</TabsTrigger>
+          <TabsTrigger value="locations">Locations</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">
@@ -1332,6 +1333,10 @@ export default function AdminPortalPage() {
               </form>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        <TabsContent value="locations" className="space-y-4">
+          <LocationManagement />
         </TabsContent>
       </Tabs>
     </div>

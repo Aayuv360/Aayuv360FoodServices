@@ -271,9 +271,9 @@ const Header = () => {
                         <div className="flex items-start">
                           <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0 mt-0.5" />
                           <div>
-                            <div className="font-medium">{loc.name}</div>
+                            <div className="font-medium">{loc.area}</div>
                             <div className="text-xs text-muted-foreground">
-                              PIN: {loc.pincode}
+                              PIN: {loc.pincode} • ₹{(loc.deliveryFee / 100).toFixed(2)} delivery
                             </div>
                           </div>
                         </div>
