@@ -929,71 +929,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       
-      // Debug the incoming order request
-      console.log("Order request items:", JSON.stringify(req.body.items));
+      // Get the cart items first, regardless of the fromCart flag
+      const cartItems = await mongoStorage.getCartItems(userId);
       
-      // Create a fresh copy of the request body with properly set prices
-      const processedRequestBody = { ...req.body };
+      // Create order items from cart - this is the simplest and safest approach
+      let orderItems = [];
       
-      // Make sure we have an items array
-      if (!processedRequestBody.items) {
-        processedRequestBody.items = [];
+      // Always use cart items to create the order
+      for (const cartItem of cartItems) {
+        const meal = await mongoStorage.getMeal(cartItem.mealId);
+        if (meal) {
+          // Calculate total price for this item
+          const basePrice = cartItem.quantity * meal.price;
+          const optionPrice = cartItem.curryOptionPrice ? cartItem.quantity * cartItem.curryOptionPrice : 0;
+          const totalPrice = basePrice + optionPrice;
+          
+          orderItems.push({
+            mealId: cartItem.mealId,
+            quantity: cartItem.quantity,
+            price: totalPrice, // Set the price explicitly
+            notes: cartItem.notes || "",
+            curryOptionId: cartItem.curryOptionId,
+            curryOptionName: cartItem.curryOptionName,
+            curryOptionPrice: cartItem.curryOptionPrice
+          });
+        }
       }
       
-      // If fromCart is true, we need to fetch cart items and use them directly
-      if (processedRequestBody.fromCart) {
-        const cartItems = await mongoStorage.getCartItems(userId);
-        
-        // Create properly formatted order items from cart
-        processedRequestBody.items = await Promise.all(
-          cartItems.map(async (cartItem) => {
-            const meal = await mongoStorage.getMeal(cartItem.mealId);
-            
-            // Calculate proper price
-            let itemPrice = cartItem.quantity * (meal?.price || 0);
-            if (cartItem.curryOptionPrice) {
-              itemPrice += cartItem.quantity * cartItem.curryOptionPrice;
-            }
-            
-            return {
-              mealId: cartItem.mealId,
-              quantity: cartItem.quantity,
-              price: itemPrice,
-              notes: cartItem.notes,
-              curryOptionId: cartItem.curryOptionId,
-              curryOptionName: cartItem.curryOptionName,
-              curryOptionPrice: cartItem.curryOptionPrice
-            };
-          })
-        );
-      } else if (Array.isArray(processedRequestBody.items)) {
-        // Process each item to ensure it has a price
-        processedRequestBody.items = await Promise.all(
-          processedRequestBody.items.map(async (item) => {
-            // Always fetch the meal to be sure we have accurate pricing
-            const meal = await mongoStorage.getMeal(item.mealId);
-            
-            // Calculate proper price
-            let itemPrice = item.quantity * (meal?.price || 0);
-            if (item.curryOptionPrice) {
-              itemPrice += item.quantity * item.curryOptionPrice;
-            }
-            
-            return {
-              ...item,
-              price: itemPrice
-            };
-          })
-        );
-      }
+      // Calculate total price for the entire order
+      const totalOrderPrice = orderItems.reduce((sum, item) => sum + item.price, 0);
       
-      console.log("Processed items with prices:", JSON.stringify(processedRequestBody.items));
+      // Create order object with all required fields
+      const orderData = {
+        userId: userId,
+        deliveryAddress: req.body.deliveryAddress,
+        totalPrice: totalOrderPrice + (req.body.deliveryCharge || 0),
+        items: orderItems,
+        deliveryCharge: req.body.deliveryCharge || 0
+      };
       
-      // Validate order data with correctly set prices
-      const orderData = insertOrderSchema.parse({
-        ...processedRequestBody,
-        userId
-      });
+      // Validate order data
+      const validatedOrder = insertOrderSchema.parse(orderData);
       
       // Create the order with default status
       const orderWithStatus = {
