@@ -1,30 +1,147 @@
 import mongoose from 'mongoose';
 
-let connected = false;
+// MongoDB connection with retry mechanism for Replit
+async function connectToMongoDB() {
+  const MAX_RETRIES = 3;
+  let retries = 0;
+  let connected = false;
 
-export async function connectToMongoDB() {
-  if (connected) return;
+  while (!connected && retries < MAX_RETRIES) {
+    try {
+      const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/millet-meals';
+      
+      if (!MONGODB_URI) {
+        throw new Error('MongoDB URI is not defined in environment variables');
+      }
+      
+      console.log(`Connecting to MongoDB (attempt ${retries + 1}/${MAX_RETRIES})...`);
+      
+      // Mongoose 6+ no longer needs useNewUrlParser, useUnifiedTopology
+      await mongoose.connect(MONGODB_URI, {
+        serverSelectionTimeoutMS: 30000, // Increase server selection timeout
+        connectTimeoutMS: 30000,         // Connection timeout
+        socketTimeoutMS: 45000,          // Socket timeout
+      });
+      
+      connected = true;
+      console.log('Successfully connected to MongoDB');
+      
+      // Set up connection error handlers
+      mongoose.connection.on('error', (err) => {
+        console.error('MongoDB connection error:', err);
+      });
+      
+      mongoose.connection.on('disconnected', () => {
+        console.log('MongoDB disconnected. Application will continue in degraded mode.');
+      });
+      
+      // Initialize collections with a delay to ensure connection is stable
+      setTimeout(() => {
+        setupCollections().catch(err => {
+          console.error('Error setting up collections:', err);
+        });
+      }, 1000);
+      
+      return mongoose.connection;
+    } catch (error) {
+      retries++;
+      console.error(`MongoDB connection attempt ${retries} failed:`, error);
+      
+      if (retries >= MAX_RETRIES) {
+        console.error('All MongoDB connection attempts failed. App will continue with limited functionality.');
+      } else {
+        // Wait before next retry (exponential backoff)
+        const delay = 1000 * Math.pow(2, retries);
+        console.log(`Retrying in ${delay/1000} seconds...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
   
+  // Return undefined if connection failed after retries
+  return mongoose.connection;
+}
+
+// Setup collections and indexes with better error handling
+async function setupCollections() {
   try {
-    const uri = process.env.MONGODB_URI;
-    if (!uri) {
-      throw new Error("MONGODB_URI must be set. Did you forget to provision a MongoDB database?");
+    const { 
+      User, Meal, CartItem, Order, Subscription, Address, Location, Counter 
+    } = await import('../shared/mongoModels');
+    
+    // Create indexes (with try/catch for each one)
+    try {
+      await User.createIndexes();
+    } catch (err) {
+      console.warn('Warning: Failed to create User indexes:', err);
     }
     
-    await mongoose.connect(uri);
-    connected = true;
+    try {
+      await Meal.createIndexes();
+    } catch (err) {
+      console.warn('Warning: Failed to create Meal indexes:', err);
+    }
+    
+    try {
+      await CartItem.createIndexes();
+    } catch (err) {
+      console.warn('Warning: Failed to create CartItem indexes:', err);
+    }
+    
+    try {
+      await Order.createIndexes();
+    } catch (err) {
+      console.warn('Warning: Failed to create Order indexes:', err);
+    }
+    
+    try {
+      await Subscription.createIndexes();
+    } catch (err) {
+      console.warn('Warning: Failed to create Subscription indexes:', err);
+    }
+    
+    try {
+      await Address.createIndexes();
+    } catch (err) {
+      console.warn('Warning: Failed to create Address indexes:', err);
+    }
+    
+    try {
+      await Location.createIndexes();
+    } catch (err) {
+      console.warn('Warning: Failed to create Location indexes:', err);
+    }
+    
+    // Initialize counters if they don't exist
+    const counters = ['user', 'meal', 'cartItem', 'order', 'subscription', 'address', 'location'];
+    for (const counter of counters) {
+      try {
+        await Counter.findOneAndUpdate(
+          { _id: counter },
+          { $setOnInsert: { seq: 0 } },
+          { upsert: true }
+        );
+      } catch (err) {
+        console.warn(`Warning: Failed to initialize counter '${counter}':`, err);
+      }
+    }
+    
+    console.log('MongoDB collections and indexes initialization completed');
   } catch (error) {
-    throw error;
+    console.error('Error setting up MongoDB collections:', error);
+    // Don't throw, allow the application to continue
   }
 }
 
-export async function disconnectFromMongoDB() {
-  if (!connected) return;
-  
+// Disconnect from MongoDB
+async function disconnectFromMongoDB() {
   try {
     await mongoose.disconnect();
-    connected = false;
+    console.log('Disconnected from MongoDB');
   } catch (error) {
-    throw error;
+    console.error('MongoDB disconnection error:', error);
   }
 }
+
+// Export connection functions
+export { connectToMongoDB, disconnectFromMongoDB };

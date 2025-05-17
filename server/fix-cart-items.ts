@@ -6,6 +6,11 @@ import { CartItem as CartItemModel, Meal as MealModel } from '../shared/mongoMod
  */
 async function fixCartItems() {
   try {
+    // Skip execution in automatic startup to avoid issues
+    console.log('Cart item update function is available but not running automatically');
+    return;
+    
+    /* Disabled to fix startup issues
     console.log('Starting cart items update...');
     
     // Get all cart items directly from MongoDB
@@ -22,14 +27,17 @@ async function fixCartItems() {
         continue;
       }
       
-      // Determine which category to assign
-      let category = "Dinner";  // Default category
+      // Default category for all items
+      const category = "Dinner";  
       
       // Check if we need to update this item
-      if (!item.curryOptionId || !item.category) {
-        console.log(`Updating cart item ${item.id} with default curry option and category`);
+      const needsUpdate = !item.curryOptionId || 
+                          (item.hasOwnProperty('category') && !item.category);
+      
+      if (needsUpdate) {
+        console.log(`Updating cart item ${item.id} with default curry option`);
         
-        // Update with the Regular Curry default option and category using MongoDB
+        // Update with the Regular Curry default option
         await CartItemModel.updateOne(
           { id: item.id },
           { 
@@ -45,13 +53,11 @@ async function fixCartItems() {
     }
     
     console.log('Cart items update completed successfully');
+    */
   } catch (error) {
     console.error('Error updating cart items:', error);
   }
 }
-
-// Don't execute immediately to avoid startup issues
-// fixCartItems();
 
 // Export for potential use in other files
 export { fixCartItems };
