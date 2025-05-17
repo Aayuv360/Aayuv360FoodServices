@@ -21,11 +21,10 @@ import { AuthModal } from "@/components/auth/AuthModal";
 // Type definition for location
 interface Location {
   id: number;
-  name: string;
+  area: string; // Changed from name to area to match the MongoDB schema
   pincode: string;
-  lat: number;
-  lng: number;
-  available: boolean;
+  deliveryFee: number;
+  available?: boolean;
 }
 
 // Type definition for meal
@@ -166,11 +165,11 @@ const Header = () => {
           // Use the closest location (first in the returned list)
           const closestLocation = nearbyLocations[0];
           setUserLocation(
-            `${closestLocation.name} - ${closestLocation.pincode}`,
+            `${closestLocation.area} - ${closestLocation.pincode}`,
           );
           toast({
             title: "Location Set",
-            description: `Your location is set to ${closestLocation.name}`,
+            description: `Your location is set to ${closestLocation.area}`,
           });
         } else {
           toast({
@@ -196,7 +195,7 @@ const Header = () => {
   };
 
   const selectLocation = (location: Location) => {
-    setUserLocation(`${location.name} - ${location.pincode}`);
+    setUserLocation(`${location.area} - ${location.pincode}`);
     setLocationQuery("");
   };
 
