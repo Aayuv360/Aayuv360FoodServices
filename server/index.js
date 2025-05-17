@@ -1,7 +1,11 @@
+// Simple MongoDB-based server
 const express = require('express');
+const mongoose = require('mongoose');
 const { createServer } = require('http');
-const { setupVite, serveStatic, log } = require('./vite');
-const { connectToMongoDB } = require('./db');
+const dotenv = require('dotenv');
+
+// Load environment variables
+dotenv.config();
 
 // Create Express app
 const app = express();
@@ -10,61 +14,40 @@ app.use(express.urlencoded({ extended: false }));
 
 // Simple logging middleware
 app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
-      log(logLine);
-    }
-  });
-  
+  console.log(`${req.method} ${req.path}`);
   next();
 });
 
-// Error handling middleware
-app.use((err, _req, res, _next) => {
-  const status = err.status || err.statusCode || 500;
-  const message = err.message || "Internal Server Error";
-  res.status(status).json({ message });
-  console.error(err);
-});
-
-// Start the server
+// Connect to MongoDB
 async function startServer() {
   try {
     // Connect to MongoDB
-    await connectToMongoDB();
+    const uri = process.env.MONGODB_URI;
+    if (!uri) {
+      throw new Error('Missing MONGODB_URI environment variable');
+    }
+    
+    console.log('Connecting to MongoDB...');
+    await mongoose.connect(uri);
+    console.log('MongoDB connection successful');
     
     // Create HTTP server
     const server = createServer(app);
     
-    // Register API routes
-    const routesModule = require('./routes');
-    await routesModule.registerRoutes(app);
-    
-    // Set up Vite for development
-    if (process.env.NODE_ENV === "development") {
-      await setupVite(app, server);
-    } else {
-      serveStatic(app);
-    }
+    // Add a simple test endpoint
+    app.get('/api/test', (req, res) => {
+      res.json({ message: 'Server is running correctly with MongoDB' });
+    });
     
     // Start listening
     const port = process.env.PORT || 5000;
-    server.listen(port, "0.0.0.0", () => {
-      log(`Server running on port ${port}`);
-      console.log(`Server started successfully on port ${port}`);
+    server.listen(port, '0.0.0.0', () => {
+      console.log(`Server running on port ${port}`);
     });
     
     return server;
   } catch (error) {
-    console.error('Failed to start server:', error);
+    console.error('Server startup error:', error);
     process.exit(1);
   }
 }
