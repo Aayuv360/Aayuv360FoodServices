@@ -969,11 +969,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } else if (req.body.items && Array.isArray(req.body.items)) {
         // Create order items from the provided items array
         for (const item of req.body.items) {
+          // Get the meal to ensure we have accurate price
+          const meal = await mongoStorage.getMeal(item.mealId);
+          if (!meal) {
+            continue; // Skip if meal not found
+          }
+          
+          // Calculate the correct price
+          let itemPrice = item.quantity * meal.price;
+          
+          // Add curry option price adjustment if applicable
+          if (item.curryOptionPrice) {
+            itemPrice += item.quantity * item.curryOptionPrice;
+          }
+          
           const orderItem = {
             orderId: order.id,
             mealId: item.mealId,
             quantity: item.quantity,
-            price: item.price || item.quantity * ((await mongoStorage.getMeal(item.mealId))?.price || 0),
+            price: itemPrice,
             curryOptionId: item.curryOptionId,
             curryOptionName: item.curryOptionName,
             curryOptionPrice: item.curryOptionPrice
