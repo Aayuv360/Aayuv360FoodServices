@@ -1189,6 +1189,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Order not found" });
       }
       
+      // Create delivery notification based on order status
+      try {
+        // Map order status to delivery status
+        let deliveryStatus: 'preparing' | 'out_for_delivery' | 'nearby' | 'delivered' | null = null;
+        
+        switch (status) {
+          case 'confirmed':
+            deliveryStatus = 'preparing';
+            break;
+          case 'processing':
+            deliveryStatus = 'out_for_delivery';
+            break; 
+          case 'delivered':
+            deliveryStatus = 'delivered';
+            break;
+        }
+        
+        // Send delivery notification if status is mapped
+        if (deliveryStatus) {
+          await updateOrderDeliveryStatus(updatedOrder.id, updatedOrder.userId, deliveryStatus);
+        }
+      } catch (err) {
+        console.error("Failed to send delivery notification:", err);
+        // Don't fail the request if notification fails
+      }
+      
       res.json(updatedOrder);
     } catch (err) {
       console.error("Error updating order status:", err);

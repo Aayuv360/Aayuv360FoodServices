@@ -29,7 +29,7 @@ export interface NotificationItem {
 export function NotificationManager() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("app");
+  const [activeTab, setActiveTab] = useState("delivery");
   
   // Query to fetch user notifications
   const { data: notifications = [], refetch: refetchNotifications } = useQuery({
