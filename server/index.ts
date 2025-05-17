@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { fixCartItems } from "./fix-cart-items";
 import { connectToMongoDB } from "./mongodb";
 import dotenv from 'dotenv';
 
@@ -96,9 +95,7 @@ app.use((req, res, next) => {
   }, () => {
     log(`serving on port ${port}`);
     
-    // Fix cart items with default curry options if needed
-    fixCartItems().catch(err => 
-      console.error("Error running cart item fix script:", err)
-    );
+    // Cart items fixing no longer needed for MongoDB
+    console.log("Server started successfully");
   });
 })();

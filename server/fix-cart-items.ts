@@ -50,8 +50,8 @@ async function fixCartItems() {
   }
 }
 
-// Execute immediately
-fixCartItems();
+// Don't execute immediately to avoid startup issues
+// fixCartItems();
 
 // Export for potential use in other files
 export { fixCartItems };
