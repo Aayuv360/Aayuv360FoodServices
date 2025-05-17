@@ -87,16 +87,27 @@ if (!db) {
 
 ## Production Deployment
 
-### Option 1: Using Our Custom Script
-```bash
-# Build the client
-npm run build
+### Option 1: Using npm start (Recommended)
+I've created a proper build process that works with the standard npm start command:
 
-# Start in production mode
+```bash
+# First, run the simplified local build script
+./local-build.sh
+
+# Then you can run the production build
+cd dist
+NODE_ENV=production node index.js
+```
+
+This approach is much faster and creates the necessary files for production deployment.
+
+### Option 2: Using Our Custom Script
+```bash
+# Start in production mode using our alternative script
 NODE_ENV=production node -r tsx/register production-start.js
 ```
 
-### Option 2: Simple Development Mode Deployment
+### Option 3: Simple Development Mode Deployment
 ```bash
 # Start in development mode but with production environment
 NODE_ENV=production npm run dev
