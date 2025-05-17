@@ -40,7 +40,6 @@ import {
 } from "@shared/schema";
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
-import migrateDatabaseCartItems from "./migrate-cart-items";
 
 // Define schema for user preferences and custom meal plans
 const insertUserPreferencesSchema = z.object({
@@ -69,18 +68,8 @@ interface CartItemWithMeal extends CartItem {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Run database migrations
-  try {
-    await migrateDatabaseCartItems();
-    console.log("Database migrations completed successfully");
-  } catch (error) {
-    console.error("Error running database migrations:", error);
-  }
-  
-  // Seed the database with initial data (admin users, etc.)
   try {
     await seedDatabase();
-    console.log("Database seeded successfully");
   } catch (error) {
     console.error("Error seeding database:", error);
   }
