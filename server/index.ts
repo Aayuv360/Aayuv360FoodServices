@@ -27,7 +27,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Connect to MongoDB
 async function connectToDatabase() {
   try {
     const uri = process.env.MONGODB_URI;
@@ -35,9 +34,7 @@ async function connectToDatabase() {
       throw new Error("MONGODB_URI must be set");
     }
     
-    console.log('Connecting to MongoDB...');
     await mongoose.connect(uri);
-    console.log('Successfully connected to MongoDB');
     return true;
   } catch (error) {
     console.error('MongoDB connection error:', error);
@@ -58,7 +55,6 @@ async function connectToDatabase() {
     // Register API routes
     const server = await registerRoutes(app);
     
-    // Error handling middleware
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
@@ -66,21 +62,18 @@ async function connectToDatabase() {
       console.error(err);
     });
     
-    // Set up Vite for development
     if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
       serveStatic(app);
     }
     
-    // Start listening
     const port = process.env.PORT || 5000;
     server.listen({
       port,
       host: "0.0.0.0",
     }, () => {
       log(`Server running on port ${port}`);
-      console.log(`Server started successfully on port ${port}`);
     });
   } catch (error) {
     console.error('Failed to start server:', error);
