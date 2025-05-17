@@ -24,6 +24,10 @@ import {
   CartItem as CartItemModel, 
   CurryOption
 } from "../shared/mongoModels";
+import {
+  getUserDeliveryStatusUpdates,
+  updateOrderDeliveryStatus
+} from "./delivery-status";
 import { 
   insertUserSchema, 
   insertCartItemSchema, 
