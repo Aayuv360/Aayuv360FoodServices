@@ -515,19 +515,15 @@ export class MemStorage implements IStorage {
 
 // Already imported memorystore above, don't reimport
 
-// This class is completely removed as MongoDB is now the only data source
-// @deprecated - Remove this class in future updates
+// Remove this class in future updates
 export class DatabaseStorage {
-  // This is a placeholder to maintain compatibility until we finish removing all references
+  sessionStore: any;
+  
   constructor() {
-    console.warn('DatabaseStorage is deprecated and non-functional');
+    console.warn('DatabaseStorage is deprecated - use mongoStorage directly');
+    this.sessionStore = {};
   }
 }
-  
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    console.warn('DatabaseStorage is deprecated, use mongoStorage directly');
-    return undefined;
-  }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
     console.warn('DatabaseStorage is deprecated, use mongoStorage directly');

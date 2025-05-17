@@ -42,12 +42,14 @@ export function formatMealCurryOptions(meal: any, globalOptions: any[]) {
         return true;
       }
       
-      // Check mealIds array if it exists - strict matching only
-      if (Array.isArray(option.mealIds) && option.mealIds.includes(meal.id)) {
-        return true;
+      // Check mealIds array - this is the preferred approach going forward
+      if (Array.isArray(option.mealIds) && option.mealIds.length > 0) {
+        // Only return true if this specific meal ID is in the array
+        return option.mealIds.includes(meal.id);
       }
       
-      // Do not show options with no mealId or mealIds association
+      // If no mealIds array or it's empty, don't show this option
+      // This ensures options are only shown for their specifically assigned meals
       return false;
     });
     
