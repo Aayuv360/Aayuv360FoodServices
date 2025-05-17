@@ -929,7 +929,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       
-      // Validate order data
+      // Add price to order items if not provided
+      if (req.body.items && Array.isArray(req.body.items)) {
+        for (const item of req.body.items) {
+          if (!item.price) {
+            const meal = await mongoStorage.getMeal(item.mealId);
+            if (meal) {
+              // Calculate base price from meal
+              item.price = item.quantity * meal.price;
+              
+              // Add curry option price if applicable
+              if (item.curryOptionPrice) {
+                item.price += item.quantity * item.curryOptionPrice;
+              }
+            } else {
+              // Set a default price if meal not found (prevents validation errors)
+              item.price = 0;
+            }
+          }
+        }
+      }
+      
+      // Validate order data with updated prices
       const orderData = insertOrderSchema.parse({
         ...req.body,
         userId
