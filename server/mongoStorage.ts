@@ -5,7 +5,7 @@ import {
   getNextSequence, CurryOption as CurryOptionType
 } from '../shared/mongoModels';
 import { createSessionStore, SessionStore } from './session-store';
-// Sample meals will be loaded from the database
+import { milletMeals, MealDataItem } from './mealData';
 
 // MongoDB Storage class implementation
 import { IStorage } from './storage';

@@ -1,6 +1,6 @@
 import { connectToMongoDB } from "./db";
 import { User as UserModel } from "../shared/mongoModels";
-import { milletMeals } from "./mealItems";
+import { milletMeals, MealDataItem } from "./mealData";
 import { Meal as MealModel } from "../shared/mongoModels";
 import { scrypt, randomBytes } from "crypto";
 import { promisify } from "util";
