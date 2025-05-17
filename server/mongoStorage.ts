@@ -981,13 +981,34 @@ export class MongoDBStorage implements IStorage {
       return locations.map(loc => loc.toObject());
     } catch (error) {
       console.error('Error getting locations:', error);
-      throw error;
+      return []; // Return empty array on error instead of throwing
+    }
+  }
+  
+  async getLocation(id: number): Promise<any | undefined> {
+    try {
+      const location = await Location.findOne({ id });
+      return location ? location.toObject() : undefined;
+    } catch (error) {
+      console.error('Error getting location:', error);
+      return undefined;
+    }
+  }
+  
+  async getLocationByPincode(pincode: string): Promise<any | undefined> {
+    try {
+      const location = await Location.findOne({ pincode });
+      return location ? location.toObject() : undefined;
+    } catch (error) {
+      console.error('Error getting location by pincode:', error);
+      return undefined;
     }
   }
 
   async createLocation(locationData: any): Promise<any> {
     try {
-      const id = await getNextSequence('location');
+      // Use the provided ID if available, otherwise get next sequence
+      const id = locationData.id || await getNextSequence('location');
       const newLocation = new Location({
         ...locationData,
         id,
@@ -999,6 +1020,33 @@ export class MongoDBStorage implements IStorage {
     } catch (error) {
       console.error('Error creating location:', error);
       throw error;
+    }
+  }
+  
+  async updateLocation(id: number, locationData: any): Promise<any | undefined> {
+    try {
+      const updatedLocation = await Location.findOneAndUpdate(
+        { id },
+        { 
+          ...locationData,
+          updatedAt: new Date() 
+        },
+        { new: true }
+      );
+      return updatedLocation ? updatedLocation.toObject() : undefined;
+    } catch (error) {
+      console.error('Error updating location:', error);
+      return undefined;
+    }
+  }
+  
+  async deleteLocation(id: number): Promise<boolean> {
+    try {
+      const result = await Location.deleteOne({ id });
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      return false;
     }
   }
   
