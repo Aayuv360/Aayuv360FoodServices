@@ -92,7 +92,7 @@ export async function seedDatabase() {
       console.log("Adding sample meals to MongoDB...");
 
       // Create promises for all meal insertions
-      const mealInsertPromises = milletMeals.map(meal => {
+      const mealInsertPromises = milletMeals.map((meal: MealDataItem) => {
         return MealModel.create({
           ...meal,
           available: true,

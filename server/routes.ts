@@ -1874,7 +1874,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get all curry options and filter by meal ID
       const allCurryOptions = await storage.getCurryOptions();
-      const mealCurryOptions = allCurryOptions.filter(option => 
+      const mealCurryOptions = allCurryOptions.filter((option: {mealId?: number | null}) => 
         option.mealId === mealId || option.mealId === null
       );
       

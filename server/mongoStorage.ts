@@ -50,7 +50,7 @@ export class MongoDBStorage implements IStorage {
         console.log("Initializing sample meals...");
         
         // Prepare meal items with required category field
-        const preparedMeals = milletMeals.map(meal => {
+        const preparedMeals = milletMeals.map((meal: MealDataItem) => {
           // Extract category from milletType or use a default
           if (!meal.category) {
             if (meal.mealType?.toLowerCase().includes('ragi') || meal.name?.toLowerCase().includes('ragi')) {
@@ -74,7 +74,7 @@ export class MongoDBStorage implements IStorage {
         const batchSize = 5;
         for (let i = 0; i < preparedMeals.length; i += batchSize) {
           const batch = preparedMeals.slice(i, i + batchSize);
-          await Promise.all(batch.map(meal => {
+          await Promise.all(batch.map((meal: MealDataItem) => {
             return this.createMeal(meal).catch(err => {
               console.error(`Failed to create meal ${meal.name}:`, err);
               return null;
