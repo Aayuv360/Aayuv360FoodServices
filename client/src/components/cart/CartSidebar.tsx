@@ -785,7 +785,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </Button>
                   </div>
                   
-                  {/* Address Modal */}
                   <NewAddressModal
                     addressModalOpen={addressModalOpen}
                     setAddressModalOpen={setAddressModalOpen}
