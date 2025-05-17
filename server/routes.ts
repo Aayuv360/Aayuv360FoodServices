@@ -924,19 +924,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // Order routes
   app.post("/api/orders", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      
-      // Get the cart items directly from MongoDB
       const cartItems = await mongoStorage.getCartItems(userId);
       
       if (!cartItems || cartItems.length === 0) {
         return res.status(400).json({ message: "Your cart is empty" });
       }
       
-      // Create order items directly without validation for now
       const orderItems = [];
       let totalOrderPrice = 0;
       
@@ -944,14 +940,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const meal = await mongoStorage.getMeal(item.mealId);
         if (!meal) continue;
         
-        // Calculate price
         const basePrice = item.quantity * meal.price;
         const optionPrice = item.curryOptionPrice ? item.quantity * item.curryOptionPrice : 0;
         const itemTotalPrice = basePrice + optionPrice;
         
         totalOrderPrice += itemTotalPrice;
         
-        // Add properly formatted item
         orderItems.push({
           mealId: item.mealId,
           quantity: item.quantity,
@@ -965,7 +959,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       const deliveryCharge = req.body.deliveryCharge || 0;
       
-      // Create order directly in MongoDB storage
       const order = await mongoStorage.createOrder({
         userId,
         status: "pending",
@@ -975,61 +968,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         items: orderItems,
         createdAt: new Date()
       });
-      
-      // Create order items from cart if provided
-      if (req.body.fromCart) {
-        // Get all cart items for the user - use MongoDB directly
-        const cartItems = await mongoStorage.getCartItems(userId);
+
+      for (const cartItem of cartItems) {
+        const meal = await mongoStorage.getMeal(cartItem.mealId);
+        if (!meal) continue;
         
-        // Create order items from cart items
-        for (const cartItem of cartItems) {
-          const orderItem = {
-            orderId: order.id,
-            mealId: cartItem.mealId,
-            quantity: cartItem.quantity,
-            price: cartItem.quantity * ((await mongoStorage.getMeal(cartItem.mealId))?.price || 0),
-            curryOptionId: cartItem.curryOptionId,
-            curryOptionName: cartItem.curryOptionName,
-            curryOptionPrice: cartItem.curryOptionPrice
-          };
-          
-          // Use MongoDB storage implementation directly
-          await mongoStorage.createOrderItem(orderItem);
-        }
+        const basePrice = cartItem.quantity * meal.price;
+        const optionPrice = cartItem.curryOptionPrice ? cartItem.quantity * cartItem.curryOptionPrice : 0;
         
-        // Clear the cart - use MongoDB directly
-        await mongoStorage.clearCart(userId);
-      } else if (req.body.items && Array.isArray(req.body.items)) {
-        // Create order items from the provided items array
-        for (const item of req.body.items) {
-          // Get the meal to ensure we have accurate price
-          const meal = await mongoStorage.getMeal(item.mealId);
-          if (!meal) {
-            continue; // Skip if meal not found
-          }
-          
-          // Calculate the correct price
-          let itemPrice = item.quantity * meal.price;
-          
-          // Add curry option price adjustment if applicable
-          if (item.curryOptionPrice) {
-            itemPrice += item.quantity * item.curryOptionPrice;
-          }
-          
-          const orderItem = {
-            orderId: order.id,
-            mealId: item.mealId,
-            quantity: item.quantity,
-            price: itemPrice,
-            curryOptionId: item.curryOptionId,
-            curryOptionName: item.curryOptionName,
-            curryOptionPrice: item.curryOptionPrice
-          };
-          
-          // Use MongoDB storage implementation directly
-          await mongoStorage.createOrderItem(orderItem);
-        }
+        await mongoStorage.createOrderItem({
+          orderId: order.id,
+          mealId: cartItem.mealId,
+          quantity: cartItem.quantity,
+          price: basePrice + optionPrice,
+          curryOptionId: cartItem.curryOptionId || null,
+          curryOptionName: cartItem.curryOptionName || null,
+          curryOptionPrice: cartItem.curryOptionPrice || 0
+        });
       }
+      
+      await mongoStorage.clearCart(userId);
       
       res.status(201).json(order);
     } catch (err) {

@@ -100,17 +100,9 @@ export function NotificationManager() {
                       key={update.id}
                       variant={variant}
                       title={`Order #${update.orderId} - ${update.status.replace('_', ' ')}`}
-                      description={
-                        <div>
-                          <p>{update.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{formattedTime}</p>
-                          {update.estimatedTime && (
-                            <p className="text-xs font-medium mt-1">
-                              Estimated arrival: {update.estimatedTime}
-                            </p>
-                          )}
-                        </div>
-                      }
+                      description={`${update.message}
+${formattedTime}
+${update.estimatedTime ? `Estimated arrival: ${update.estimatedTime}` : ''}`}
                       icon={icon}
                     />
                   );
