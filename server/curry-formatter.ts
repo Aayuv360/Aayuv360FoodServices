@@ -32,27 +32,30 @@ export function formatMealCurryOptions(meal: any, globalOptions: any[]) {
   if (meal.curryOptions && meal.curryOptions.length > 0) {
     curryOptions = formatCurryOptions(meal.curryOptions);
   } else {
-    // Otherwise use applicable global options
+    console.log(`Finding curry options for meal id: ${meal.id}`);
+    
+    // Filter to include ONLY options specifically assigned to this meal 
     const mealSpecificOptions = globalOptions.filter(option => {
-      // Only show curry options that are specifically assigned to this meal through mealIds
-      // Or legacy meal ID match
+      // STRICT matching - Only options explicitly assigned to this meal
       
-      // First check the legacy mealId field (direct match only - no more null mealId)
-      if (option.mealId === meal.id) {
-        return true;
+      // Check direct mealId match (legacy)
+      const directMatch = option.mealId === meal.id;
+      
+      // Check mealIds array match - preferred approach going forward
+      const arrayMatch = Array.isArray(option.mealIds) && 
+                         option.mealIds.length > 0 && 
+                         option.mealIds.includes(meal.id);
+      
+      // Debug output to track which options are being assigned
+      if (directMatch || arrayMatch) {
+        console.log(`Curry option "${option.name}" matched meal ${meal.id}`);
       }
       
-      // Check mealIds array - this is the preferred approach going forward
-      if (Array.isArray(option.mealIds) && option.mealIds.length > 0) {
-        // Only return true if this specific meal ID is in the array
-        return option.mealIds.includes(meal.id);
-      }
-      
-      // If no mealIds array or it's empty, don't show this option
-      // This ensures options are only shown for their specifically assigned meals
-      return false;
+      // Only return options that have an explicit assignment to this meal
+      return directMatch || arrayMatch;
     });
     
+    // Format and return only the options explicitly matched to this meal
     curryOptions = formatCurryOptions(mealSpecificOptions);
   }
   

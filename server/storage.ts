@@ -516,14 +516,16 @@ export class MemStorage implements IStorage {
 // Already imported memorystore above, don't reimport
 
 // Remove this class in future updates
-export class DatabaseStorage {
-  sessionStore: any;
+export class DatabaseStorage implements IStorage {
+  sessionStore: expressSession.Store;
   
   constructor() {
     console.warn('DatabaseStorage is deprecated - use mongoStorage directly');
-    this.sessionStore = {};
+    const MemoryStore = createMemoryStore(expressSession);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000
+    });
   }
-}
   
   async getUserByEmail(email: string): Promise<User | undefined> {
     console.warn('DatabaseStorage is deprecated, use mongoStorage directly');
