@@ -541,15 +541,21 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   {item.meal?.name}
                                 </h4>
                                 {/* Display curry option if available */}
-                                {((item.meal as any)?.curryOption || item.curryOptionName) && (
+                                {((item.meal as any)?.curryOption || (item.meal as any)?.selectedCurry || item.curryOptionName) && (
                                   <p className="text-[10px] sm:text-xs text-gray-600">
                                     with{" "}
-                                    {(item.meal as any)?.curryOption?.name || item.curryOptionName}
-                                    {((item.meal as any)?.curryOption?.priceAdjustment > 0 || item.curryOptionPrice > 0) && (
+                                    {(item.meal as any)?.curryOption?.name || 
+                                     (item.meal as any)?.selectedCurry?.name || 
+                                     item.curryOptionName}
+                                    {((item.meal as any)?.curryOption?.priceAdjustment > 0 || 
+                                      (item.meal as any)?.selectedCurry?.priceAdjustment > 0 || 
+                                      (item.curryOptionPrice && item.curryOptionPrice > 0)) && (
                                       <span className="text-primary ml-1">
                                         (+
                                         {formatPrice(
-                                          (item.meal as any)?.curryOption?.priceAdjustment || item.curryOptionPrice || 0
+                                          (item.meal as any)?.curryOption?.priceAdjustment || 
+                                          (item.meal as any)?.selectedCurry?.priceAdjustment || 
+                                          item.curryOptionPrice || 0
                                         )}
                                         )
                                       </span>
@@ -594,6 +600,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                     {formatPrice(
                                       ((item.meal?.price || 0) +
                                         ((item.meal as any)?.curryOption?.priceAdjustment || 
+                                         (item.meal as any)?.selectedCurry?.priceAdjustment ||
                                          item.curryOptionPrice || 0)) *
                                         item.quantity,
                                     )}

@@ -23,6 +23,9 @@ interface CartItem {
   quantity: number;
   notes?: string | null;
   category?: string | null;
+  curryOptionId?: string;
+  curryOptionName?: string;
+  curryOptionPrice?: number;
   meal?: Meal & {
     curryOption?: CurryOption;
   };
