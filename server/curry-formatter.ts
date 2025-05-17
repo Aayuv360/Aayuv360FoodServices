@@ -34,10 +34,18 @@ export function formatMealCurryOptions(meal: any, globalOptions: any[]) {
   } else {
     // Otherwise use applicable global options
     const mealSpecificOptions = globalOptions.filter(option => {
-      // Check both legacy mealId field and new mealIds array
-      const legacyMatch = option.mealId === null || option.mealId === meal.id;
-      const arrayMatch = Array.isArray(option.mealIds) && option.mealIds.includes(meal.id);
-      return legacyMatch || arrayMatch;
+      // Only show curry options that are specifically assigned to this meal through mealIds
+      // Or legacy meal ID match
+      if (option.mealId === meal.id) {
+        return true;
+      }
+      
+      // Check mealIds array if it exists
+      if (Array.isArray(option.mealIds) && option.mealIds.includes(meal.id)) {
+        return true;
+      }
+      
+      return false;
     });
     
     curryOptions = formatCurryOptions(mealSpecificOptions);
