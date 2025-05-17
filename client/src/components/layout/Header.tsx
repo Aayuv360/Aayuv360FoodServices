@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { ChevronDown, ShoppingCart, MapPin, LogIn } from "lucide-react";
+import { ChevronDown, ShoppingCart, MapPin, LogIn, Bell } from "lucide-react";
+import { NotificationManager } from "@/components/notifications/NotificationManager";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
