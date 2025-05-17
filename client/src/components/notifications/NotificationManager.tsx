@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, MessageSquare, Phone } from "lucide-react";
+import { Bell, MessageSquare, Phone, Truck, Package, MapPin, Clock } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
@@ -37,6 +37,18 @@ export function NotificationManager() {
     queryFn: async () => {
       if (!user) return [];
       const res = await apiRequest("GET", "/api/notifications");
+      if (!res.ok) return [];
+      return await res.json();
+    },
+    enabled: !!user,
+  });
+  
+  // Query to fetch delivery status updates
+  const { data: deliveryUpdates = [], refetch: refetchDeliveryUpdates } = useQuery({
+    queryKey: ["/api/delivery-status"],
+    queryFn: async () => {
+      if (!user) return [];
+      const res = await apiRequest("GET", "/api/delivery-status");
       if (!res.ok) return [];
       return await res.json();
     },
@@ -81,11 +93,12 @@ export function NotificationManager() {
     const intervalId = setInterval(() => {
       if (user) {
         refetchNotifications();
+        refetchDeliveryUpdates();
       }
-    }, 60000); // Refresh every minute
+    }, 30000); // Refresh every 30 seconds for more real-time updates
 
     return () => clearInterval(intervalId);
-  }, [user, refetchNotifications]);
+  }, [user, refetchNotifications, refetchDeliveryUpdates]);
 
   // Render notification items based on type
   const renderNotifications = (notificationList: NotificationItem[]) => {
@@ -137,6 +150,13 @@ export function NotificationManager() {
             <Tabs defaultValue="app" value={activeTab} onValueChange={setActiveTab}>
               <div className="flex justify-between items-center mb-4">
                 <TabsList>
+                  <TabsTrigger value="delivery" className="flex items-center gap-1">
+                    <Truck className="h-4 w-4" />
+                    <span>Delivery</span>
+                    {deliveryUpdates.length > 0 && (
+                      <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                    )}
+                  </TabsTrigger>
                   <TabsTrigger value="app" className="flex items-center gap-1">
                     <Bell className="h-4 w-4" />
                     <span>App</span>
@@ -168,6 +188,51 @@ export function NotificationManager() {
                   Mark all read
                 </Button>
               </div>
+              
+              <TabsContent value="delivery">
+                {deliveryUpdates.length > 0 ? (
+                  <div className="space-y-4 max-h-96 overflow-y-auto p-1">
+                    {deliveryUpdates.map((update: any) => {
+                      // Determine icon and variant based on status
+                      let icon = <Truck className="h-5 w-5" />;
+                      let variant: "default" | "success" | "warning" | "info" = "default";
+                      
+                      switch (update.status) {
+                        case 'preparing':
+                          icon = <Package className="h-5 w-5" />;
+                          variant = 'default';
+                          break;
+                        case 'out_for_delivery':
+                          icon = <Truck className="h-5 w-5" />;
+                          variant = 'info';
+                          break;
+                        case 'nearby':
+                          icon = <MapPin className="h-5 w-5" />;
+                          variant = 'warning';
+                          break;
+                        case 'delivered':
+                          icon = <Package className="h-5 w-5" />;
+                          variant = 'success';
+                          break;
+                      }
+                      
+                      return (
+                        <Notification
+                          key={update.id}
+                          variant={variant}
+                          title={`Order #${update.orderId} Update`}
+                          description={update.message}
+                          icon={icon}
+                        />
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex justify-center items-center py-6 text-muted-foreground">
+                    No delivery updates available
+                  </div>
+                )}
+              </TabsContent>
               
               <TabsContent value="app">
                 {renderNotifications(appNotifications)}
