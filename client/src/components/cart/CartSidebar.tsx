@@ -304,8 +304,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       return true;
     }
     
-    // 3. Check if meal name or category indicates curry
-    const nameHasCurry = meal.name?.toLowerCase().includes('curry');
+      const nameHasCurry = meal.name?.toLowerCase().includes('curry');
     const categoryHasCurry = meal.category?.toLowerCase().includes('curry');
     
     if (nameHasCurry || categoryHasCurry) {
@@ -314,10 +313,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     
     return false;
   };
-  
-  // Handle customizing an item
   const handleCustomizeItem = (item: any) => {
-    // Set the customizing meal which will open the modal
     setCustomizingMeal(item.meal);
   };
 

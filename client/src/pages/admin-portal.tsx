@@ -471,7 +471,7 @@ export default function AdminPortalPage() {
       mealIds: selectedMealIds // Use the state value directly
     };
     
-    console.log("Submitting curry option with meal IDs:", selectedMealIds);
+
     
     if (selectedCurryOption) {
       updateCurryOptionMutation.mutate({ id: selectedCurryOption.id, optionData });
@@ -1228,7 +1228,6 @@ export default function AdminPortalPage() {
               </DialogHeader>
 
               <form onSubmit={handleCurryOptionFormSubmit} className="space-y-6">
-                {/* Hidden ID field for updates */}
                 {selectedCurryOption && (
                   <input
                     type="hidden"

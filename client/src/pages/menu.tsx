@@ -23,7 +23,7 @@ const Menu = () => {
 
     const mealId = params.get("id");
     if (mealId) {
-      console.log("Viewing meal ID:", mealId);
+
     }
 
     const filterParam = params.get("filter");

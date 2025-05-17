@@ -154,7 +154,7 @@ const Header = () => {
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-        console.log(position); // For debugging
+
 
         const { latitude, longitude } = position.coords;
         const nearbyLocations = await fetchLocationsByCoordinates(

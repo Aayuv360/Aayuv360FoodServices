@@ -104,7 +104,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         (category): category is string =>
           category !== undefined && category !== null,
       );
-    console.log(cartItems);
+
     // Return unique categories (compatible with older TS targets)
     return Array.from(new Set(categories));
   };
@@ -122,7 +122,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       // Check if meal has a selected curry (from the CurryOptionsModal)
       const hasSelectedCurry = (meal as any).curryOption !== undefined;
-      console.log("Adding to cart with curry option:", (meal as any).curryOption, "hasSelectedCurry:", hasSelectedCurry);
+
 
       // Prepare the payload
       const payload = {
