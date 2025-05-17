@@ -513,29 +513,16 @@ export class MemStorage implements IStorage {
   }
 }
 
-//import { mongoStorage } from './mongoStorage';
-import createMemoryStore from "memorystore";
+// Already imported memorystore above, don't reimport
 
-const MemoryStore = createMemoryStore(expressSession);
-
-// This DatabaseStorage class is no longer used and is being kept only for reference
-// All database operations now use mongoStorage directly
-export class DatabaseStorage implements IStorage {
-  sessionStore: expressSession.Store;
-  
+// This class is completely removed as MongoDB is now the only data source
+// @deprecated - Remove this class in future updates
+export class DatabaseStorage {
+  // This is a placeholder to maintain compatibility until we finish removing all references
   constructor() {
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
-      // No createTableIfMissing in MemoryStore
-    });
+    console.warn('DatabaseStorage is deprecated and non-functional');
   }
-  
-  // User operations - Stub implementations that forward to mongoStorage
-  async getUser(id: number): Promise<User | undefined> {
-    // This class is deprecated, all DB operations now use mongoStorage directly
-    console.warn('DatabaseStorage is deprecated, use mongoStorage directly');
-    return { id: 0, username: '', email: '', password: '', role: 'user', createdAt: new Date() };
-  }
+}
   
   async getUserByUsername(username: string): Promise<User | undefined> {
     console.warn('DatabaseStorage is deprecated, use mongoStorage directly');

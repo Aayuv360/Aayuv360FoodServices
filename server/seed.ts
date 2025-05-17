@@ -1,6 +1,5 @@
-import { db } from "./db";
-import { users, meals } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { connectToMongoDB } from "./db";
+import { User as UserModel } from "../shared/mongoModels";
 import { milletMeals } from "./mealItems";
 import { Meal as MealModel } from "../shared/mongoModels";
 import { scrypt, randomBytes } from "crypto";
@@ -18,87 +17,69 @@ async function hashPassword(password: string) {
 export async function seedDatabase() {
   try {
     console.log("Starting database seeding...");
+    
+    // Connect to MongoDB
+    await connectToMongoDB();
 
     // Check if admin user exists
-    const adminUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, "admin"))
-      .execute();
+    const adminUser = await UserModel.findOne({ username: "admin" });
 
     // Add admin user if it doesn't exist
-    if (adminUser.length === 0) {
+    if (!adminUser) {
       console.log("Adding admin user...");
 
-      await db
-        .insert(users)
-        .values({
-          username: "admin",
-          password: await hashPassword("admin123"), // Secure in a real app
-          name: "Admin User",
-          email: "admin@aayuv.com",
-          phone: "+91 9876543210",
-          address: "Hyderabad, Telangana",
-          role: "admin",
-          createdAt: new Date(),
-        })
-        .execute();
+      await UserModel.create({
+        username: "admin",
+        password: await hashPassword("admin123"), // Secure in a real app
+        name: "Admin User",
+        email: "admin@aayuv.com",
+        phone: "+91 9876543210",
+        address: "Hyderabad, Telangana",
+        role: "admin",
+        createdAt: new Date(),
+      });
 
       console.log("Admin user created successfully");
     }
 
     // Check if manager user exists
-    const managerUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, "manager"))
-      .execute();
+    const managerUser = await UserModel.findOne({ username: "manager" });
 
     // Add manager user if it doesn't exist
-    if (managerUser.length === 0) {
+    if (!managerUser) {
       console.log("Adding manager user...");
 
-      await db
-        .insert(users)
-        .values({
-          username: "manager",
-          password: await hashPassword("manager123"), // Secure in a real app
-          name: "Manager User",
-          email: "manager@aayuv.com",
-          phone: "+91 9876543211",
-          address: "Gachibowli, Hyderabad",
-          role: "manager",
-          createdAt: new Date(),
-        })
-        .execute();
+      await UserModel.create({
+        username: "manager",
+        password: await hashPassword("manager123"), // Secure in a real app
+        name: "Manager User",
+        email: "manager@aayuv.com",
+        phone: "+91 9876543211",
+        address: "Gachibowli, Hyderabad",
+        role: "manager",
+        createdAt: new Date(),
+      });
 
       console.log("Manager user created successfully");
     }
 
     // Check if guest user exists
-    const guestUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, "guest"))
-      .execute();
+    const guestUser = await UserModel.findOne({ username: "guest" });
 
     // Add guest user if it doesn't exist
-    if (guestUser.length === 0) {
+    if (!guestUser) {
       console.log("Adding guest user...");
 
-      await db
-        .insert(users)
-        .values({
-          username: "guest",
-          password: await hashPassword("guest123"), // Secure in a real app
-          name: "Guest User",
-          email: "guest@example.com",
-          phone: null,
-          address: null,
-          role: "user",
-          createdAt: new Date(),
-        })
-        .execute();
+      await UserModel.create({
+        username: "guest",
+        password: await hashPassword("guest123"), // Secure in a real app
+        name: "Guest User",
+        email: "guest@example.com",
+        phone: null,
+        address: null,
+        role: "user",
+        createdAt: new Date(),
+      });
 
       console.log("Guest user created successfully");
     }
