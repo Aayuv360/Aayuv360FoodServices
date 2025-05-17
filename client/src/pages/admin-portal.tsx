@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, PlusCircle, Edit, Trash2, Plus, Pencil, Trash, ArrowUpCircle } from "lucide-react";
+import { Loader2, PlusCircle, Edit, Trash2, Plus, Pencil, Trash, ArrowUpCircle, Bell } from "lucide-react";
+import LocationManagement from "@/components/admin/LocationManagement";
 import {
   Card,
   CardContent,
