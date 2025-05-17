@@ -18,6 +18,10 @@ export class MemStorage implements IStorage {
       checkPeriod: 86400000 // prune expired entries every 24h
     });
   }
+  
+  async getCurryOptions(): Promise<any[]> {
+    return [];
+  }
 }
 
 // Initialize storage with MongoDB, but have MemStorage as fallback

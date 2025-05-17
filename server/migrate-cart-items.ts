@@ -1,6 +1,8 @@
-import { db } from './db';
-import { sql } from 'drizzle-orm';
-import { cartItems } from '@shared/schema';
+// This file is now deprecated since migration to MongoDB is complete
+// Keeping file for reference but disabling imports
+// import { db } from './db';
+// import { sql } from 'drizzle-orm';
+// import { cartItems } from '@shared/schema';
 
 async function migrateDatabaseCartItems() {
   console.log('Starting cart items migration...');
