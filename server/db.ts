@@ -1,7 +1,15 @@
 import mongoose from 'mongoose';
 
-// MongoDB connection with retry mechanism for Replit
-async function connectToMongoDB() {
+// This file is now just a simple redirect to mongodb.ts
+// to avoid conflicting exports
+import { connectToMongoDB as connect, disconnectFromMongoDB as disconnect } from './mongodb';
+
+// Re-export functions from mongodb.ts
+export const connectToMongoDB = connect;
+export const disconnectFromMongoDB = disconnect;
+
+// Function below is kept for reference but not used
+async function _connectToMongoDBOld() {
   const MAX_RETRIES = 3;
   let retries = 0;
   let connected = false;
@@ -35,13 +43,6 @@ async function connectToMongoDB() {
         console.log('MongoDB disconnected. Application will continue in degraded mode.');
       });
       
-      // Initialize collections with a delay to ensure connection is stable
-      setTimeout(() => {
-        setupCollections().catch(err => {
-          console.error('Error setting up collections:', err);
-        });
-      }, 1000);
-      
       return mongoose.connection;
     } catch (error) {
       retries++;
@@ -58,7 +59,7 @@ async function connectToMongoDB() {
     }
   }
   
-  // Return undefined if connection failed after retries
+  // Return connection object even if failed (will have readyState = 0)
   return mongoose.connection;
 }
 

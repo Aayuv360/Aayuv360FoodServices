@@ -1,7 +1,10 @@
 import mongoose from 'mongoose';
 
+// Make sure mongoose uses the latest promise implementation
+mongoose.Promise = global.Promise;
+
 // MongoDB connection with retry mechanism for Replit
-async function connectToMongoDB() {
+export async function connectToMongoDB() {
   const MAX_RETRIES = 3;
   let retries = 0;
   let connected = false;

@@ -1,5 +1,6 @@
-import { db, pool } from './db';
-import * as schema from '@shared/schema';
+// File disabled after migration to MongoDB
+// import { db, pool } from './db';
+// import * as schema from '@shared/schema';
 
 async function updateDatabase() {
   try {
