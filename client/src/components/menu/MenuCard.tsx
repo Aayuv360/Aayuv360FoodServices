@@ -41,9 +41,12 @@ const MenuCard = ({ meal }: MenuCardProps) => {
       <div className="bg-white rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300">
         <div className="relative">
           <img
-            src={meal.imageUrl || "https://via.placeholder.com/300x200?text=Millet+Meal"}
+            src={
+              meal.imageUrl ||
+              "https://via.placeholder.com/300x200?text=Millet+Meal"
+            }
             alt={meal.name}
-            className="w-full h-40 sm:h-48 object-cover"
+            className="w-full h-32 sm:h-40 object-cover"
           />
           {meal.isPopular && (
             <div className="absolute top-2 right-2 bg-accent text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs">
@@ -56,14 +59,21 @@ const MenuCard = ({ meal }: MenuCardProps) => {
             </div>
           )}
         </div>
-        <div className="p-3 sm:p-4">
+        <div className="p-2 sm:p-3 flex-grow flex flex-col">
           <div className="flex justify-between items-start mb-1 sm:mb-2">
-            <h3 className="text-base sm:text-lg font-bold line-clamp-1">{meal.name}</h3>
+            <h3 className="text-sm sm:text-base font-bold line-clamp-1">
+              {meal.name}
+            </h3>
+
             <div className="flex items-center ml-2 flex-shrink-0">
-              <span className="text-primary font-semibold text-sm sm:text-base">{formatPrice(meal.price)}</span>
+              <span className="text-primary font-semibold text-sm sm:text-base">
+                {formatPrice(meal.price)}
+              </span>
             </div>
           </div>
-          <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">{meal.description}</p>
+          <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
+            {meal.description}
+          </p>
           <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
             {meal.dietaryPreferences?.map((preference, index) => (
               <span
@@ -78,7 +88,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
             <Button
               variant="ghost"
               size="sm"
-              className="text-accent hover:text-primary transition duration-200 flex items-center gap-0.5 sm:gap-1 p-1.5 sm:p-2 h-auto text-xs sm:text-sm"
+              className="text-accent hover:text-primary transition duration-200 flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 h-auto text-xs sm:text-sm"
               onClick={() => setNutritionModalOpen(true)}
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4" />

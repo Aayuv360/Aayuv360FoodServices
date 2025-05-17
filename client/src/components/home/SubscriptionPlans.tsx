@@ -88,7 +88,7 @@ const SubscriptionPlans = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {plans.map((plan) => (
             <div
               key={plan.id}
@@ -103,13 +103,13 @@ const SubscriptionPlans = () => {
                   Most Popular
                 </div>
               )}
-              <div className="p-5">
+              <div className="p-6">
                 <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
-                <div className="text-3xl font-accent font-semibold text-primary mb-3">
+                <div className="text-3xl font-accent font-semibold text-primary mb-4">
                   ₹{plan.price}
                   <span className="text-sm text-gray-500">/month</span>
                 </div>
-                <p className="text-gray-600 mb-4">
+                <p className="text-gray-600 mb-6">
                   {plan.id === "basic"
                     ? "Perfect for individuals looking to try our millet meals."
                     : plan.id === "premium"

@@ -1,221 +1,191 @@
-import { pgTable, text, serial, integer, timestamp, boolean, pgEnum } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Enums
-export const userRoleEnum = pgEnum('user_role', ['user', 'admin', 'manager']);
-export const orderStatusEnum = pgEnum('order_status', ['pending', 'confirmed', 'delivered', 'cancelled']);
-export const subscriptionPlanEnum = pgEnum('subscription_plan', ['basic', 'premium', 'family']);
-export const subscriptionTypeEnum = pgEnum('subscription_type', ['default', 'customized']);
-export const subscriptionStatusEnum = pgEnum('subscription_status', ['pending', 'active', 'expired', 'cancelled']);
-export const mealTypeEnum = pgEnum('meal_type', ['breakfast', 'lunch', 'dinner']);
-export const dietaryPreferenceEnum = pgEnum('dietary_preference', ['vegetarian', 'non-vegetarian', 'vegan', 'gluten-free', 'low-carb', 'high-protein', 'spicy']);
+// Enums as arrays for TypeScript support
+export const userRoles = ['user', 'admin', 'manager'] as const;
+export const orderStatuses = ['pending', 'confirmed', 'delivered', 'cancelled'] as const;
+export const subscriptionPlans = ['basic', 'premium', 'family'] as const;
+export const subscriptionTypes = ['default', 'customized'] as const;
+export const subscriptionStatuses = ['pending', 'active', 'expired', 'cancelled'] as const;
+export const mealTypes = ['breakfast', 'lunch', 'dinner'] as const;
+export const dietaryPreferences = ['vegetarian', 'non-vegetarian', 'vegan', 'gluten-free', 'low-carb', 'high-protein', 'spicy'] as const;
 
-// Users
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  username: text('username').notNull().unique(),
-  password: text('password').notNull(),
-  email: text('email').notNull().unique(),
-  name: text('name').notNull(),
-  phone: text('phone'),
-  address: text('address'),
-  role: userRoleEnum('role').default('user').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
+// Zod schemas for MongoDB document validation
+export const userSchema = z.object({
+  id: z.number(),
+  username: z.string(),
+  password: z.string(),
+  email: z.string().email(),
+  name: z.string(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  role: z.enum(userRoles).default('user'),
+  createdAt: z.date().optional().default(() => new Date()),
+  stripeCustomerId: z.string().optional(),
+  stripeSubscriptionId: z.string().optional()
 });
 
-// Meals
-export const meals = pgTable('meals', {
-  id: serial('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description').notNull(),
-  price: integer('price').notNull(), // In paise/cents
-  imageUrl: text('image_url'),
-  calories: integer('calories'),
-  protein: integer('protein'),
-  carbs: integer('carbs'),
-  fat: integer('fat'),
-  fiber: integer('fiber'),
-  sugar: integer('sugar'),
-  mealType: mealTypeEnum('meal_type').notNull(),
-  isPopular: boolean('is_popular').default(false),
-  isNew: boolean('is_new').default(false),
-  dietaryPreferences: dietaryPreferenceEnum('dietary_preferences').array(),
-  allergens: text('allergens').array(),
-  available: boolean('available').default(true),
-  category: text('category'), // Added for MongoDB compatibility
+export const mealSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  description: z.string(),
+  price: z.number(),
+  imageUrl: z.string().optional(),
+  calories: z.number().optional(),
+  protein: z.number().optional(),
+  carbs: z.number().optional(),
+  fat: z.number().optional(),
+  fiber: z.number().optional(),
+  sugar: z.number().optional(),
+  mealType: z.enum(mealTypes),
+  isPopular: z.boolean().default(false),
+  isNew: z.boolean().default(false),
+  dietaryPreferences: z.array(z.enum(dietaryPreferences)).optional(),
+  allergens: z.array(z.string()).optional(),
+  available: z.boolean().default(true),
+  category: z.string().optional(),
+  curryOptions: z.array(z.tuple([z.string(), z.string(), z.number()])).optional()
 });
 
-// Subscriptions
-export const subscriptions = pgTable('subscriptions', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  plan: subscriptionPlanEnum('plan').notNull(),
-  subscriptionType: subscriptionTypeEnum('subscription_type').default('default').notNull(),
-  startDate: timestamp('start_date').notNull(),
-  endDate: timestamp('end_date'),
-  status: subscriptionStatusEnum('status').default('pending').notNull(),
-  paymentMethod: text('payment_method'),
-  paymentId: text('payment_id'), // Razorpay payment ID
-  orderId: text('order_id'), // Razorpay order ID
-  paymentSignature: text('payment_signature'), // Razorpay signature
-  dietaryPreference: text('dietary_preference'),
-  personCount: integer('person_count').default(1),
-  mealsPerMonth: integer('meals_per_month').notNull(),
-  price: integer('price').notNull(), // Monthly price in paise/cents
+export const curryOptionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  priceAdjustment: z.number().default(0),
+  description: z.string().optional(),
+  mealIds: z.array(z.number()).optional()
 });
 
-// Custom Meal Plans for Subscriptions
-export const customMealPlans = pgTable('custom_meal_plans', {
-  id: serial('id').primaryKey(),
-  subscriptionId: integer('subscription_id').references(() => subscriptions.id).notNull(),
-  dayOfWeek: integer('day_of_week').notNull(), // 0 = Sunday, 1 = Monday, etc.
-  mealId: integer('meal_id').references(() => meals.id).notNull(),
+export const cartItemSchema = z.object({
+  id: z.number(),
+  userId: z.number(),
+  mealId: z.number(),
+  quantity: z.number(),
+  curryOptionId: z.string().optional(),
+  curryOptionName: z.string().optional(),
+  curryOptionPrice: z.number().optional(),
+  notes: z.string().optional(),
+  category: z.string().optional()
 });
 
-// Orders
-export const orders = pgTable('orders', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  status: orderStatusEnum('status').default('pending').notNull(),
-  totalPrice: integer('total_price').notNull(),
-  deliveryTime: timestamp('delivery_time'),
-  deliveryAddress: text('delivery_address').notNull(),
-  createdAt: timestamp('created_at').defaultNow(),
+export const orderSchema = z.object({
+  id: z.number(),
+  userId: z.number(),
+  status: z.enum(orderStatuses).default('pending'),
+  totalPrice: z.number(),
+  deliveryTime: z.date().optional(),
+  deliveryAddress: z.string(),
+  createdAt: z.date().optional().default(() => new Date()),
+  paymentId: z.string().optional(),
+  paymentStatus: z.string().optional(),
+  items: z.array(z.object({
+    mealId: z.number(),
+    quantity: z.number(),
+    price: z.number(),
+    notes: z.string().optional(),
+    curryOptionId: z.string().optional(),
+    curryOptionName: z.string().optional(),
+    curryOptionPrice: z.number().optional()
+  })).optional()
 });
 
-// Order Items
-export const orderItems = pgTable('order_items', {
-  id: serial('id').primaryKey(),
-  orderId: integer('order_id').references(() => orders.id).notNull(),
-  mealId: integer('meal_id').references(() => meals.id).notNull(),
-  quantity: integer('quantity').notNull(),
-  price: integer('price').notNull(), // Price per unit in paise/cents
+export const subscriptionSchema = z.object({
+  id: z.number(),
+  userId: z.number(),
+  plan: z.enum(subscriptionPlans),
+  subscriptionType: z.enum(subscriptionTypes).default('default'),
+  startDate: z.date(),
+  endDate: z.date().optional(),
+  status: z.enum(subscriptionStatuses).default('pending'),
+  paymentMethod: z.string().optional(),
+  paymentId: z.string().optional(),
+  orderId: z.string().optional(),
+  paymentSignature: z.string().optional(),
+  dietaryPreference: z.string().optional(),
+  personCount: z.number().default(1),
+  mealsPerMonth: z.number(),
+  price: z.number(),
+  customMealPlans: z.array(z.object({
+    dayOfWeek: z.number(),
+    mealId: z.number()
+  })).optional()
 });
 
-// User Preferences
-export const userPreferences = pgTable('user_preferences', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  dietaryPreferences: dietaryPreferenceEnum('dietary_preferences').array(),
-  allergies: text('allergies').array(),
+export const addressSchema = z.object({
+  id: z.number(),
+  userId: z.number(),
+  name: z.string(),
+  phone: z.string(),
+  addressLine1: z.string(),
+  addressLine2: z.string().optional(),
+  city: z.string(),
+  state: z.string(),
+  pincode: z.string(),
+  isDefault: z.boolean().default(false),
+  createdAt: z.date().optional().default(() => new Date())
 });
 
-// Cart Items
-export const cartItems = pgTable('cart_items', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  mealId: integer('meal_id').references(() => meals.id).notNull(),
-  quantity: integer('quantity').notNull(),
-  curryOptionId: text('curry_option_id'),
-  curryOptionName: text('curry_option_name'),
-  curryOptionPrice: integer('curry_option_price'),
-  notes: text('notes'),
-  category: text('category'), // To store the meal's category for filtering
+export const reviewSchema = z.object({
+  id: z.number(),
+  userId: z.number(),
+  mealId: z.number(),
+  rating: z.number(),
+  comment: z.string().optional(),
+  createdAt: z.date().optional().default(() => new Date())
 });
 
-// Reviews
-export const reviews = pgTable('reviews', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  mealId: integer('meal_id').references(() => meals.id).notNull(),
-  rating: integer('rating').notNull(),
-  comment: text('comment'),
-  createdAt: timestamp('created_at').defaultNow(),
+export const locationSchema = z.object({
+  id: z.number(),
+  area: z.string(),
+  pincode: z.string(),
+  deliveryAvailable: z.boolean().default(true),
+  deliveryCharge: z.number().default(0)
 });
 
-// Addresses
-export const addresses = pgTable('addresses', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id).notNull(),
-  name: text('name').notNull(), // e.g. "Home", "Office", etc.
-  phone: text('phone').notNull(),
-  addressLine1: text('address_line1').notNull(),
-  addressLine2: text('address_line2'),
-  city: text('city').notNull(),
-  state: text('state').notNull(),
-  pincode: text('pincode').notNull(),
-  isDefault: boolean('is_default').default(false),
-  createdAt: timestamp('created_at').defaultNow(),
-});
+// Insert schemas (omitting auto-generated fields)
+export const insertUserSchema = userSchema.omit({ id: true, createdAt: true, role: true });
+export const insertMealSchema = mealSchema.omit({ id: true });
+export const insertCartItemSchema = cartItemSchema.omit({ id: true });
+export const insertOrderSchema = orderSchema.omit({ id: true, createdAt: true, status: true });
+export const insertSubscriptionSchema = subscriptionSchema.omit({ id: true });
+export const insertAddressSchema = addressSchema.omit({ id: true, createdAt: true });
+export const insertReviewSchema = reviewSchema.omit({ id: true, createdAt: true });
+export const insertCurryOptionSchema = curryOptionSchema;
 
-// Schema validation
-export const insertUserSchema = createInsertSchema(users).omit({
-  id: true,
-  createdAt: true,
-  role: true,
-});
-
-export const insertMealSchema = createInsertSchema(meals).omit({
-  id: true,
-});
-
-export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
-  id: true,
-});
-
-export const insertCustomMealPlanSchema = createInsertSchema(customMealPlans).omit({
-  id: true,
-});
-
-export const insertOrderSchema = createInsertSchema(orders).omit({
-  id: true,
-  createdAt: true,
-  status: true,
-});
-
-export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
-  id: true,
-});
-
-export const insertCartItemSchema = createInsertSchema(cartItems).omit({
-  id: true,
-});
-
-export const insertUserPreferencesSchema = createInsertSchema(userPreferences).omit({
-  id: true,
-});
-
-export const insertReviewSchema = createInsertSchema(reviews).omit({
-  id: true,
-  createdAt: true,
-});
-
-export const insertAddressSchema = createInsertSchema(addresses).omit({
-  id: true,
-  createdAt: true,
-});
-
-// Types
-export type User = typeof users.$inferSelect;
+// Export types
+export type User = z.infer<typeof userSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-// Extend the meal type to include curry options as an array of [id, name, priceAdjustment]
-export type Meal = typeof meals.$inferSelect & {
-  curryOptions?: [string, string, number][]
-};
+export type Meal = z.infer<typeof mealSchema>;
 export type InsertMeal = z.infer<typeof insertMealSchema>;
 
-export type Subscription = typeof subscriptions.$inferSelect;
-export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type CurryOption = z.infer<typeof curryOptionSchema>;
+export type InsertCurryOption = z.infer<typeof insertCurryOptionSchema>;
 
-export type Order = typeof orders.$inferSelect;
-export type InsertOrder = z.infer<typeof insertOrderSchema>;
-
-export type OrderItem = typeof orderItems.$inferSelect;
-export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
-
-export type CartItem = typeof cartItems.$inferSelect;
+export type CartItem = z.infer<typeof cartItemSchema>;
 export type InsertCartItem = z.infer<typeof insertCartItemSchema>;
 
-export type UserPreferences = typeof userPreferences.$inferSelect;
-export type InsertUserPreferences = z.infer<typeof insertUserPreferencesSchema>;
+export type Order = z.infer<typeof orderSchema>;
+export type InsertOrder = z.infer<typeof insertOrderSchema>;
+export type OrderItem = z.infer<z.ZodObject<{
+  mealId: z.ZodNumber;
+  quantity: z.ZodNumber;
+  price: z.ZodNumber;
+  notes: z.ZodOptional<z.ZodString>;
+  curryOptionId: z.ZodOptional<z.ZodString>;
+  curryOptionName: z.ZodOptional<z.ZodString>;
+  curryOptionPrice: z.ZodOptional<z.ZodNumber>;
+}>>;
 
-export type Review = typeof reviews.$inferSelect;
+export type Subscription = z.infer<typeof subscriptionSchema>;
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type CustomMealPlan = z.infer<z.ZodObject<{
+  dayOfWeek: z.ZodNumber;
+  mealId: z.ZodNumber;
+}>>;
+
+export type Address = z.infer<typeof addressSchema>;
+export type InsertAddress = z.infer<typeof insertAddressSchema>;
+
+export type Review = z.infer<typeof reviewSchema>;
 export type InsertReview = z.infer<typeof insertReviewSchema>;
 
-export type CustomMealPlan = typeof customMealPlans.$inferSelect;
-export type InsertCustomMealPlan = z.infer<typeof insertCustomMealPlanSchema>;
-
-export type Address = typeof addresses.$inferSelect;
-export type InsertAddress = z.infer<typeof insertAddressSchema>;
+export type Location = z.infer<typeof locationSchema>;
