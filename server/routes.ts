@@ -973,7 +973,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Create the order with default status
       const orderWithStatus = {
-        ...orderData,
+        ...validatedOrder,
         status: "pending" // Adding required status field
       };
       // Use MongoDB storage implementation directly
