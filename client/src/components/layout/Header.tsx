@@ -400,6 +400,8 @@ const Header = () => {
           </form>
 
           <div className="flex items-center space-x-2 sm:space-x-4">
+            {user && <NotificationManager />}
+            
             <Button
               variant="outline"
               className="relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm"
