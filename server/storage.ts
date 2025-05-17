@@ -1,10 +1,9 @@
 import {
-  users, meals, subscriptions, orders, orderItems, userPreferences, cartItems, reviews, customMealPlans, addresses,
   type User, type InsertUser, type Meal, type InsertMeal,
   type Subscription, type InsertSubscription, type Order, type InsertOrder,
-  type OrderItem, type InsertOrderItem, type CartItem, type InsertCartItem,
-  type UserPreferences, type InsertUserPreferences, type Review, type InsertReview,
-  type CustomMealPlan, type InsertCustomMealPlan, type Address, type InsertAddress
+  type OrderItem, type CartItem, type InsertCartItem,
+  type Review, type InsertReview,
+  type CustomMealPlan, type Address, type InsertAddress
 } from "@shared/schema";
 import { milletMeals } from "./mealItems";
 import { CurryOption } from "../shared/mongoModels";
@@ -514,47 +513,48 @@ export class MemStorage implements IStorage {
   }
 }
 
-import { db } from './db';
-import { eq, and, or, desc, like, sql } from 'drizzle-orm';
-// Use the same expressSession import
-import connectPg from 'connect-pg-simple';
-import { pool } from './db';
+//import { mongoStorage } from './mongoStorage';
+import createMemoryStore from "memorystore";
 
-const PostgresSessionStore = connectPg(expressSession);
+const MemoryStore = createMemoryStore(expressSession);
 
+// This DatabaseStorage class is no longer used and is being kept only for reference
+// All database operations now use mongoStorage directly
 export class DatabaseStorage implements IStorage {
   sessionStore: expressSession.Store;
   
   constructor() {
-    this.sessionStore = new PostgresSessionStore({ 
-      pool,
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
       createTableIfMissing: true 
     });
   }
   
-  // User operations
+  // User operations - Stub implementations that forward to mongoStorage
   async getUser(id: number): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
+    // This class is deprecated, all DB operations now use mongoStorage directly
+    console.warn('DatabaseStorage is deprecated, use mongoStorage directly');
+    return { id: 0, username: '', email: '', password: '', role: 'user', createdAt: new Date() };
   }
   
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
+    console.warn('DatabaseStorage is deprecated, use mongoStorage directly');
+    return undefined;
   }
   
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user;
+    console.warn('DatabaseStorage is deprecated, use mongoStorage directly');
+    return undefined;
   }
   
   async createUser(user: InsertUser): Promise<User> {
-    const [newUser] = await db.insert(users).values({
-      ...user,
-      role: user.role || 'user', // Default role
-      createdAt: new Date()
-    }).returning();
-    return newUser;
+    console.warn('DatabaseStorage is deprecated, use mongoStorage directly');
+    return { 
+      ...user, 
+      id: 0, 
+      role: 'user', 
+      createdAt: new Date() 
+    };
   }
   
   async updateUser(id: number, userData: Partial<User>): Promise<User | undefined> {

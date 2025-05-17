@@ -28,11 +28,8 @@ import {
   insertUserSchema, 
   insertCartItemSchema, 
   insertOrderSchema,
-  insertOrderItemSchema, 
   insertSubscriptionSchema,
-  insertUserPreferencesSchema, 
   insertReviewSchema,
-  insertCustomMealPlanSchema,
   insertAddressSchema,
   Meal,
   CartItem
@@ -40,6 +37,20 @@ import {
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
 import migrateDatabaseCartItems from "./migrate-cart-items";
+
+// Define schema for user preferences and custom meal plans
+const insertUserPreferencesSchema = z.object({
+  userId: z.number(),
+  dietaryPreferences: z.array(z.string()).optional(),
+  spiceLevel: z.string().optional(),
+  allergies: z.array(z.string()).optional()
+});
+
+const insertCustomMealPlanSchema = z.object({
+  subscriptionId: z.number(),
+  dayOfWeek: z.number(),
+  mealId: z.number()
+});
 
 // Augmented CartItem interface for server use that includes meal data
 interface CartItemWithMeal extends CartItem {
