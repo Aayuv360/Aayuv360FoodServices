@@ -36,15 +36,18 @@ export function formatMealCurryOptions(meal: any, globalOptions: any[]) {
     const mealSpecificOptions = globalOptions.filter(option => {
       // Only show curry options that are specifically assigned to this meal through mealIds
       // Or legacy meal ID match
+      
+      // First check the legacy mealId field (direct match only - no more null mealId)
       if (option.mealId === meal.id) {
         return true;
       }
       
-      // Check mealIds array if it exists
+      // Check mealIds array if it exists - strict matching only
       if (Array.isArray(option.mealIds) && option.mealIds.includes(meal.id)) {
         return true;
       }
       
+      // Do not show options with no mealId or mealIds association
       return false;
     });
     
