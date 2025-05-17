@@ -5,7 +5,7 @@ import {
   getNextSequence, CurryOption as CurryOptionType
 } from '../shared/mongoModels';
 import { createSessionStore, SessionStore } from './session-store';
-import { milletMeals } from './mealItems';
+// Sample meals will be loaded from the database
 
 // MongoDB Storage class implementation
 import { IStorage } from './storage';
@@ -18,11 +18,10 @@ export class MongoDBStorage implements IStorage {
     
     // Initialize sample data with a delay to allow connection to establish
     setTimeout(() => {
-      console.log('Attempting to initialize sample meals...');
       this.initializeSampleMeals().catch(err => 
         console.error("Error initializing sample meals:", err)
       );
-    }, 2000); // 2-second delay before initialization
+    }, 2000);
   }
   
   // Initialize sample meal data if needed with better error handling
