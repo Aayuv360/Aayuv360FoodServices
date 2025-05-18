@@ -80,6 +80,9 @@ export async function markAllNotificationsAsRead(
   userId: number,
 ): Promise<number> {
   const { db } = await connectToMongoDB();
+  if (!db) {
+    throw new Error("Database connection failed");
+  }
   const notificationsCollection = db.collection("notifications");
 
   const result = await notificationsCollection.updateMany(
