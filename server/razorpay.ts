@@ -11,7 +11,7 @@ interface RazorpaySubscriptionRequest {
   start_at?: number;
   notes: Record<string, string>;
 }
-
+console.log("tets", process.env.RAZORPAY_KEY_ID);
 if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
   throw new Error(
     "Missing required environment variables: RAZORPAY_KEY_ID and/or RAZORPAY_KEY_SECRET",
