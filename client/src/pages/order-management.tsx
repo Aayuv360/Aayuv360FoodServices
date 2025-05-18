@@ -147,6 +147,14 @@ export default function OrderManagementPage() {
     );
   };
   
+  // Calculate item price from meal and curry option
+  const calculateItemPrice = (item: any) => {
+    const basePrice = item.meal?.price || 0;
+    const curryPrice = item.curryOptionPrice || 0;
+    const quantity = item.quantity || 1;
+    return (basePrice + curryPrice) * quantity;
+  };
+  
   // Format currency
   const formatPrice = (price: number | string | undefined) => {
     if (price === undefined || price === null || isNaN(Number(price))) {
@@ -237,7 +245,6 @@ export default function OrderManagementPage() {
                               <Select
                                 defaultValue={order.status}
                                 onValueChange={(value) => updateOrderStatus(order.id, value)}
-                                onClick={(e) => e.stopPropagation()}
                               >
                                 <SelectTrigger className="w-[130px]">
                                   <SelectValue placeholder="Update status" />
@@ -306,7 +313,7 @@ export default function OrderManagementPage() {
                                             <tr key={index} className="border-t">
                                               <td className="px-4 py-2">
                                                 <div>
-                                                  <div className="font-medium">{item.meal?.name || `Meal #${item.mealId}`}</div>
+                                                  <div className="font-medium">{item.meal?.name || (item.mealId ? `Meal #${item.mealId}` : 'Unknown Meal')}</div>
                                                   {item.curryOptionName && (
                                                     <div className="text-xs text-muted-foreground">Curry: {item.curryOptionName}</div>
                                                   )}
@@ -317,7 +324,7 @@ export default function OrderManagementPage() {
                                               </td>
                                               <td className="px-4 py-2 text-center">{item.quantity}</td>
                                               <td className="px-4 py-2 text-right">
-                                                {formatPrice(item.price)}
+                                                {formatPrice(calculateItemPrice(item))}
                                               </td>
                                             </tr>
                                           ))}
