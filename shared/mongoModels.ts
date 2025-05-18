@@ -6,6 +6,7 @@ export interface UserDocument extends Document {
   username: string;
   email: string;
   password: string;
+  name?: string;
   role?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -154,6 +155,7 @@ const userSchema = new Schema<UserDocument>({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  name: { type: String },
   role: { type: String, default: "user" },
   stripeCustomerId: String,
   stripeSubscriptionId: String,
