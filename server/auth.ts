@@ -26,22 +26,22 @@ export async function hashPassword(password: string) {
 export async function comparePasswords(supplied: string, stored: string) {
   const [hashed, salt] = stored.split(".");
   if (!hashed || !salt) return false;
-  
+
   const hashedBuf = Buffer.from(hashed, "hex");
   const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
   return timingSafeEqual(hashedBuf, suppliedBuf);
 }
 
 export function setupAuth(app: Express) {
-  // Configure session with hardcoded values instead of environment variables
+  // Configure session
   const sessionSettings: session.SessionOptions = {
-    secret: "millet-service-secret-key-for-session-security",
+    secret: process.env.SESSION_SECRET || "millet-meal-service-secret",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      secure: false, // Set to true in production
+      secure: process.env.NODE_ENV === "production",
     },
   };
 
@@ -54,22 +54,22 @@ export function setupAuth(app: Express) {
     new LocalStrategy(async (username, password, done) => {
       try {
         const user = await storage.getUserByUsername(username);
-        
+
         if (!user) {
           return done(null, false, { message: "Incorrect username." });
         }
-        
+
         const isPasswordValid = await comparePasswords(password, user.password);
-        
+
         if (!isPasswordValid) {
           return done(null, false, { message: "Incorrect password." });
         }
-        
+
         return done(null, user);
       } catch (err) {
         return done(err);
       }
-    })
+    }),
   );
 
   passport.serializeUser((user: any, done) => {
@@ -89,21 +89,21 @@ export function setupAuth(app: Express) {
   app.post("/api/auth/register", async (req, res) => {
     try {
       const { username, password, email, name, phone, address } = req.body;
-      
+
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(username);
       if (existingUser) {
         return res.status(400).json({ message: "Username already exists" });
       }
-      
+
       const existingEmail = await storage.getUserByEmail(email);
       if (existingEmail) {
         return res.status(400).json({ message: "Email already exists" });
       }
-      
+
       // Hash password
       const hashedPassword = await hashPassword(password);
-      
+
       // Create user with hashed password
       const user = await storage.createUser({
         username,
@@ -111,15 +111,17 @@ export function setupAuth(app: Express) {
         email,
         name,
         phone,
-        address
+        address,
       });
-      
+
       // Remove password from response
       const { password: _, ...userWithoutPassword } = user;
-      
+
       req.login(user, (err) => {
         if (err) {
-          return res.status(500).json({ message: "Error logging in after registration" });
+          return res
+            .status(500)
+            .json({ message: "Error logging in after registration" });
         }
         res.status(201).json(userWithoutPassword);
       });
@@ -135,7 +137,9 @@ export function setupAuth(app: Express) {
         return next(err);
       }
       if (!user) {
-        return res.status(401).json({ message: info.message || "Authentication failed" });
+        return res
+          .status(401)
+          .json({ message: info.message || "Authentication failed" });
       }
       req.login(user, (err) => {
         if (err) {
@@ -161,7 +165,7 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
     }
-    
+
     // Remove password from response
     const { password, ...userWithoutPassword } = req.user as any;
     res.json(userWithoutPassword);
