@@ -33,20 +33,15 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Configure session
-  if (!process.env.SESSION_SECRET) {
-    console.error("SESSION_SECRET is not set in environment variables");
-    throw new Error("SESSION_SECRET environment variable is required");
-  }
-  
+  // Configure session with hardcoded values instead of environment variables
   const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET,
+    secret: "millet-service-secret-key-for-session-security",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to true in production
     },
   };
 
