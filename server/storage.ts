@@ -1,5 +1,5 @@
 import { mongoStorage } from "./mongoStorage";
-import * as expressSession from "express-session";
+import expressSession from "express-session";
 import createMemoryStore from "memorystore";
 
 export interface IStorage {
@@ -9,9 +9,10 @@ export interface IStorage {
 
 export class MemStorage implements IStorage {
   sessionStore: expressSession.Store;
+  [key: string]: any;
 
   constructor() {
-    const MemoryStore = createMemoryStore(expressSession);
+    const MemoryStore = createMemoryStore(expressSession as any);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });

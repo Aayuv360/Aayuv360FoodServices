@@ -1,6 +1,6 @@
-import * as expressSession from "express-session";
+import expressSession from "express-session";
 import createMemoryStore from "memorystore";
-const MemoryStore = createMemoryStore(expressSession);
+const MemoryStore = createMemoryStore(expressSession as any);
 
 export function createSessionStore(): expressSession.Store {
   return new MemoryStore({
