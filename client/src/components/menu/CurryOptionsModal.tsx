@@ -34,47 +34,44 @@ export function CurryOptionsModal({
   meal,
   onAddToCart,
   lastCurryOption,
-  isInCart = false
+  isInCart = false,
 }: CurryOptionsModalProps) {
-  // Extract curry options from the meal
-  const curryOptions: CurryOption[] = meal.curryOptions ? 
-    meal.curryOptions.map((option: any) => {
-      // Handle both formats: object format {id, name, price} or array format [id, name, price]
-      if (Array.isArray(option)) {
-        return {
-          id: option[0],
-          name: option[1],
-          priceAdjustment: option[2]
-        };
-      } else {
-        return {
-          id: option.id,
-          name: option.name,
-          priceAdjustment: option.price || option.priceAdjustment || 0
-        };
-      }
-    }) : 
-    // Fallback to default options if none are provided in the meal
-    [
-      { id: "regular", name: "Regular Curry", priceAdjustment: 0 },
-      { id: "spicy", name: "Spicy Curry", priceAdjustment: 25 },
-      { id: "extra-spicy", name: "Extra Spicy Curry", priceAdjustment: 35 },
-      { id: "butter", name: "Butter Curry", priceAdjustment: 50 },
-      { id: "garlic", name: "Garlic Curry", priceAdjustment: 40 },
-    ];
+  const curryOptions: CurryOption[] = meal.curryOptions
+    ? meal.curryOptions.map((option: any) => {
+        if (Array.isArray(option)) {
+          return {
+            id: option[0],
+            name: option[1],
+            priceAdjustment: option[2],
+          };
+        } else {
+          return {
+            id: option.id,
+            name: option.name,
+            priceAdjustment: option.price || option.priceAdjustment || 0,
+          };
+        }
+      })
+    : [
+        { id: "regular", name: "Regular Curry", priceAdjustment: 0 },
+        { id: "spicy", name: "Spicy Curry", priceAdjustment: 25 },
+        { id: "extra-spicy", name: "Extra Spicy Curry", priceAdjustment: 35 },
+        { id: "butter", name: "Butter Curry", priceAdjustment: 50 },
+        { id: "garlic", name: "Garlic Curry", priceAdjustment: 40 },
+      ];
 
-  // If the user has a last selected curry option, use that as default; otherwise use the first option
-  // Make sure curryOptions is not empty before accessing the first element
-  const defaultSelectedOption = lastCurryOption ? 
-    lastCurryOption.id : 
-    (curryOptions.length > 0 ? curryOptions[0].id : "regular");
-  const [selectedOption, setSelectedOption] = useState<string>(defaultSelectedOption);
-
-  // Using imported formatPrice function from utils
+  const defaultSelectedOption = lastCurryOption
+    ? lastCurryOption.id
+    : curryOptions.length > 0
+      ? curryOptions[0].id
+      : "regular";
+  const [selectedOption, setSelectedOption] = useState<string>(
+    defaultSelectedOption,
+  );
 
   const handleAddToCart = () => {
     const selectedCurryOption = curryOptions.find(
-      (option) => option.id === selectedOption
+      (option) => option.id === selectedOption,
     );
 
     if (selectedCurryOption) {
@@ -90,7 +87,9 @@ export function CurryOptionsModal({
       <DialogContent className="sm:max-w-[425px] p-4 sm:p-6 max-h-[90vh] overflow-auto">
         <DialogHeader className="pb-2 sm:pb-3">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-base sm:text-lg">{isInCart ? 'Update Your Customization' : 'Customize Your Meal'}</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">
+              {isInCart ? "Update Your Customization" : "Customize Your Meal"}
+            </DialogTitle>
             <Button
               variant="ghost"
               size="icon"
@@ -115,12 +114,21 @@ export function CurryOptionsModal({
               <div
                 key={option.id}
                 className={`flex items-center justify-between space-x-2 rounded-md border p-2 sm:p-3 ${
-                  lastCurryOption && option.id === lastCurryOption.id ? "border-primary bg-primary/5" : ""
+                  lastCurryOption && option.id === lastCurryOption.id
+                    ? "border-primary bg-primary/5"
+                    : ""
                 }`}
               >
                 <div className="flex items-center space-x-2 sm:space-x-3">
-                  <RadioGroupItem value={option.id} id={option.id} className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <Label htmlFor={option.id} className="cursor-pointer text-xs sm:text-sm">
+                  <RadioGroupItem
+                    value={option.id}
+                    id={option.id}
+                    className="h-3.5 w-3.5 sm:h-4 sm:w-4"
+                  />
+                  <Label
+                    htmlFor={option.id}
+                    className="cursor-pointer text-xs sm:text-sm"
+                  >
                     {option.name}
                   </Label>
                 </div>
@@ -137,11 +145,11 @@ export function CurryOptionsModal({
             ))}
           </RadioGroup>
 
-          <Button 
-            onClick={handleAddToCart} 
+          <Button
+            onClick={handleAddToCart}
             className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2 mt-2"
           >
-            {isInCart ? 'Update Selection' : 'Add to Cart'}
+            {isInCart ? "Update Selection" : "Add to Cart"}
           </Button>
         </div>
       </DialogContent>

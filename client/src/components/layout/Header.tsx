@@ -19,16 +19,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { AuthModal } from "@/components/auth/AuthModal";
 
-// Type definition for location
 interface Location {
   id: number;
-  area: string; // Changed from name to area to match the MongoDB schema
+  area: string;
   pincode: string;
   deliveryFee: number;
   available?: boolean;
 }
 
-// Type definition for meal
 interface Meal {
   id: number;
   name: string;
@@ -87,10 +85,9 @@ const Header = () => {
 
       return response.json();
     },
-    enabled: searchQuery.length > 1, // Only fetch when search query is more than 1 character
+    enabled: searchQuery.length > 1,
   });
 
-  // Get locations for dropdown
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ["/api/locations", locationQuery],
     queryFn: async () => {
@@ -108,20 +105,18 @@ const Header = () => {
     },
   });
 
-  // Filter shown meals based on search query
-  const filteredMeals = meals.slice(0, 5); // Limit to 5 results
+  const filteredMeals = meals.slice(0, 5);
 
   const toggleCart = () => {
     setCartOpen(!cartOpen);
   };
 
-  // Fetch locations by coordinates
   const fetchLocationsByCoordinates = async (lat: number, lng: number) => {
     try {
       const params = new URLSearchParams();
       params.append("lat", lat.toString());
       params.append("lng", lng.toString());
-      params.append("radius", "10"); // 10km radius
+      params.append("radius", "10");
 
       const response = await fetch(`/api/locations?${params.toString()}`);
 
@@ -154,8 +149,6 @@ const Header = () => {
 
     navigator.geolocation.getCurrentPosition(
       async (position) => {
-
-
         const { latitude, longitude } = position.coords;
         const nearbyLocations = await fetchLocationsByCoordinates(
           latitude,
@@ -163,7 +156,6 @@ const Header = () => {
         );
 
         if (nearbyLocations.length > 0) {
-          // Use the closest location (first in the returned list)
           const closestLocation = nearbyLocations[0];
           setUserLocation(
             `${closestLocation.area} - ${closestLocation.pincode}`,
@@ -200,16 +192,12 @@ const Header = () => {
     setLocationQuery("");
   };
 
-  // Handle search submission
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim().length > 0) {
-      // Redirect to menu page with search query
       window.location.href = `/menu?search=${encodeURIComponent(searchQuery)}`;
     }
   };
-
-  // Hide search results when clicking outside or navigating
   useEffect(() => {
     setShowSearchResults(false);
 
@@ -222,7 +210,6 @@ const Header = () => {
 
     document.addEventListener("click", handleClickOutside);
 
-    // Close search results when user navigates
     return () => {
       document.removeEventListener("click", handleClickOutside);
       setShowSearchResults(false);
@@ -239,14 +226,18 @@ const Header = () => {
               <div className="h-8 w-8 sm:h-10 sm:w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-base sm:text-lg font-bold">
                 A
               </div>
-              <h1 className="text-xl sm:text-2xl font-bold text-primary">Aayuv</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-primary">
+                Aayuv
+              </h1>
             </Link>
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <div className="cursor-pointer text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
                   <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  <span className="truncate max-w-[120px] sm:max-w-none">{userLocation || "Select Location"}</span>
+                  <span className="truncate max-w-[120px] sm:max-w-none">
+                    {userLocation || "Select Location"}
+                  </span>
                 </div>
               </DropdownMenuTrigger>
 
@@ -274,7 +265,8 @@ const Header = () => {
                           <div>
                             <div className="font-medium">{loc.area}</div>
                             <div className="text-xs text-muted-foreground">
-                              PIN: {loc.pincode} • ₹{(loc.deliveryFee / 100).toFixed(2)} delivery
+                              PIN: {loc.pincode} • ₹
+                              {(loc.deliveryFee / 100).toFixed(2)} delivery
                             </div>
                           </div>
                         </div>
@@ -401,7 +393,7 @@ const Header = () => {
 
           <div className="flex items-center space-x-2 sm:space-x-4">
             {user && <NotificationManager />}
-            
+
             <Button
               variant="outline"
               className="relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm"
@@ -421,15 +413,20 @@ const Header = () => {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2">
+                  <Button
+                    variant="ghost"
+                    className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  >
                     <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
                       <AvatarImage
-                        src={`https://ui-avatars.com/api/?name=${user.name || user.username || 'User'}&background=random`}
+                        src={`https://ui-avatars.com/api/?name=${user.name || user.username || "User"}&background=random`}
                       />
-                      <AvatarFallback>{(user.name || user.username || 'U').charAt(0)}</AvatarFallback>
+                      <AvatarFallback>
+                        {(user.name || user.username || "U").charAt(0)}
+                      </AvatarFallback>
                     </Avatar>
                     <span className="ml-1 sm:ml-2 hidden md:inline text-xs sm:text-sm">
-                      {(user.name || user.username || 'User').split(" ")[0]}
+                      {(user.name || user.username || "User").split(" ")[0]}
                     </span>
                     <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
                   </Button>
@@ -450,16 +447,7 @@ const Header = () => {
                       Order History
                     </Link>
                   </DropdownMenuItem>
-                  {/* <DropdownMenuItem asChild>
-                    <Link href="/subscription" className="w-full">
-                      Subscription
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/meal-planner" className="w-full">
-                      Meal Planner
-                    </Link>
-                  </DropdownMenuItem> */}
+
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>

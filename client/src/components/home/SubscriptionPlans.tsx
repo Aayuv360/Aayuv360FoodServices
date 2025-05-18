@@ -19,8 +19,6 @@ interface Plan {
 
 const SubscriptionPlans = () => {
   const [_, navigate] = useLocation();
-  const { user } = useAuth();
-  const { toast } = useToast();
 
   const plans: Plan[] = [
     {
@@ -65,16 +63,6 @@ const SubscriptionPlans = () => {
   ];
 
   const handleSelectPlan = (plan: Plan) => {
-    // if (!user) {
-    //   toast({
-    //     title: "Please login",
-    //     description: "You need to be logged in to select a subscription plan",
-    //     variant: "destructive",
-    //   });
-    //   navigate("/login");
-    //   return;
-    // }
-
     navigate(`/subscription?plan=${plan.id}`);
   };
 

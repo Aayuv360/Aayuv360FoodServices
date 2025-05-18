@@ -15,7 +15,6 @@ const Footer = () => {
     <footer className="bg-neutral-dark text-white pt-12 pb-6">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* Company Info */}
           <div>
             <div className="flex items-center mb-4">
               <div className="h-10 w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
@@ -59,27 +58,42 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Home
                 </Link>
               </li>
               <li>
-                <Link href="/menu" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/menu"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Menu
                 </Link>
               </li>
               <li>
-                <Link href="/subscription" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/subscription"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Plans & Pricing
                 </Link>
               </li>
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Contact
                 </Link>
               </li>
@@ -93,27 +107,42 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   FAQs
                 </Link>
               </li>
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Delivery Information
                 </Link>
               </li>
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Terms & Conditions
                 </Link>
               </li>
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/" className="text-gray-400 hover:text-white transition duration-200">
+                <Link
+                  href="/"
+                  className="text-gray-400 hover:text-white transition duration-200"
+                >
                   Refund Policy
                 </Link>
               </li>

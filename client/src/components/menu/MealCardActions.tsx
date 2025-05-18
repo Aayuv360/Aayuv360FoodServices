@@ -14,74 +14,70 @@ interface MealCardActionsProps {
 }
 
 export function MealCardActions({ meal }: MealCardActionsProps) {
-  const { isItemInCart, getCartItemsForMeal, getLastCurryOption, addToCart, removeCartItem, updateCartItem } = useCart();
+  const {
+    isItemInCart,
+    getCartItemsForMeal,
+    getLastCurryOption,
+    addToCart,
+    removeCartItem,
+    updateCartItem,
+  } = useCart();
   const { toast } = useToast();
   const { user } = useAuth();
-  
+
   const [showCurryOptionsModal, setShowCurryOptionsModal] = useState(false);
   const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingCurryAction, setPendingCurryAction] = useState<boolean>(false);
-  
+
   const inCart = isItemInCart(meal.id);
   const cartItems = getCartItemsForMeal(meal.id);
   const lastCurryOption = getLastCurryOption(meal.id);
-  
-  // Handle successful authentication
+
   const handleAuthSuccess = () => {
-    // Close the auth modal
     setShowAuthModal(false);
-    
-    // If we have a pending curry selection and meal has curry options, show the curry options modal
     if (pendingCurryAction && hasCurryOptions()) {
       setPendingCurryAction(false);
       setShowCurryOptionsModal(true);
     } else if (!hasCurryOptions()) {
-      // If meal has no curry options, add directly to cart
       addMealDirectlyToCart();
     }
   };
-  
-  // Helper function to check if meal has curry options
+
   const hasCurryOptions = () => {
     if (!meal.curryOptions) return false;
     return meal.curryOptions.length > 0;
   };
-  
-  // Helper function to add meal directly to cart without customization
+
   const addMealDirectlyToCart = async () => {
     try {
-      // Create a default curry option
       const defaultCurryOption = {
         id: "regular",
         name: "Regular Curry",
-        priceAdjustment: 0
+        priceAdjustment: 0,
       };
-      
-      // Create meal with default curry option
+
       const mealWithDefaultCurry = {
         ...meal,
-        curryOption: defaultCurryOption
+        curryOption: defaultCurryOption,
       };
-      
-      // Check if this item already exists in cart
-      const existingItem = cartItems.find(item => 
-        item.meal?.id === meal.id && 
-        (item.meal as any)?.curryOption?.id === defaultCurryOption.id
+
+      const existingItem = cartItems.find(
+        (item) =>
+          item.meal?.id === meal.id &&
+          (item.meal as any)?.curryOption?.id === defaultCurryOption.id,
       );
-      
+
       if (existingItem) {
-        // Increment quantity of existing item
         await updateCartItem(existingItem.id, existingItem.quantity + 1);
-        
+
         toast({
           title: "Quantity increased",
           description: `${meal.name} quantity increased`,
         });
       } else {
-        // Add as new
         await addToCart(mealWithDefaultCurry);
-        
+
         toast({
           title: "Added to cart",
           description: `${meal.name} added to your cart`,
@@ -96,60 +92,51 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
       });
     }
   };
-  
+
   const handleAddClick = () => {
-    // If user is not logged in, show auth modal
     if (!user) {
-      // If meal has no curry options, we'll add directly after login
       if (!hasCurryOptions()) {
-        // After login, we'll add directly instead of showing curry options
         setPendingCurryAction(false);
       } else {
-        // After login, we'll show curry options
         setPendingCurryAction(true);
       }
-      
+
       setShowAuthModal(true);
       return;
     }
-    
-    // If meal has no curry options, add directly to cart
+
     if (!hasCurryOptions()) {
       addMealDirectlyToCart();
       return;
     }
-    
-    // If meal has curry options, show the customization modal
+
     setShowCurryOptionsModal(true);
   };
-  
+
   const handleRemoveClick = async () => {
-    // If user is not logged in, show auth modal
     if (!user) {
       setShowAuthModal(true);
       return;
     }
-    
-    // Check if there are multiple different curry options for this meal
+
     if (cartItems.length > 1) {
-      // Show a message that they need to remove from cart directly
       toast({
         title: "Multiple customizations",
-        description: "This item has multiple customizations added. Please remove the specific item from the cart.",
+        description:
+          "This item has multiple customizations added. Please remove the specific item from the cart.",
         variant: "destructive",
       });
       return;
     }
-    
-    // If only one customization exists
+
     if (cartItems.length === 1) {
       const cartItem = cartItems[0];
-      
+
       try {
         await removeCartItem(cartItem.id);
         toast({
           title: "Removed from cart",
-          description: `${meal.name} removed from your cart`
+          description: `${meal.name} removed from your cart`,
         });
       } catch (error) {
         toast({
@@ -160,101 +147,102 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
       }
     }
   };
-  
+
   const handleChooseNew = () => {
     setShowRepeatModal(false);
     setShowCurryOptionsModal(true);
   };
-  
+
   const handleRepeatLast = async () => {
     if (lastCurryOption) {
       try {
-        // Create a meal object with the curry option
         const mealWithCurry = {
           ...meal,
-          curryOption: lastCurryOption
+          curryOption: lastCurryOption,
         };
-        
-        // Check if an item with this curry option already exists
-        const sameOptionItem = cartItems.find(item => {
-          return item.meal?.id === meal.id && 
-                 (item.meal as any)?.curryOption?.id === lastCurryOption.id;
+
+        const sameOptionItem = cartItems.find((item) => {
+          return (
+            item.meal?.id === meal.id &&
+            (item.meal as any)?.curryOption?.id === lastCurryOption.id
+          );
         });
-        
+
         if (sameOptionItem) {
-          // Item with same curry option exists - increment quantity
           await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
-          
+
           toast({
             title: "Quantity increased",
             description: `${meal.name} with ${lastCurryOption.name} quantity increased`,
           });
         } else {
-          // Add as new
           await addToCart(mealWithCurry);
-          
+
           toast({
             title: "Added to cart",
             description: `${meal.name} with ${lastCurryOption.name} added to your cart`,
           });
         }
-        
+
         setShowRepeatModal(false);
       } catch (error) {
         console.error("Error repeating last selection:", error);
         toast({
           title: "Error",
-          description: "There was an error updating your cart. Please try again.",
+          description:
+            "There was an error updating your cart. Please try again.",
           variant: "destructive",
         });
       }
     }
   };
-  
-  const handleAddToCurry = async (selectedMeal: Meal & { curryOption: any }) => {
+
+  const handleAddToCurry = async (
+    selectedMeal: Meal & { curryOption: any },
+  ) => {
     try {
-      // If user is not logged in, show auth modal and return
       if (!user) {
         setShowCurryOptionsModal(false);
         setShowAuthModal(true);
         return;
       }
-      
-      // Check if an item with the SAME curry option already exists
-      const sameOptionItem = cartItems.find(item => {
-        return item.meal?.id === selectedMeal.id && 
-               (item.meal as any)?.curryOption?.id === selectedMeal.curryOption.id;
+
+      const sameOptionItem = cartItems.find((item) => {
+        return (
+          item.meal?.id === selectedMeal.id &&
+          (item.meal as any)?.curryOption?.id === selectedMeal.curryOption.id
+        );
       });
-      
+
       if (sameOptionItem) {
-        // Item with same curry option exists - increment quantity
         await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
-        
+
         toast({
           title: "Quantity increased",
           description: `${selectedMeal.name} with ${selectedMeal.curryOption.name} quantity increased`,
         });
       } else {
-        // Item with this curry option doesn't exist - add as new
         await addToCart(selectedMeal, 1);
-        
+
         toast({
           title: "Added to cart",
           description: `${selectedMeal.name} with ${selectedMeal.curryOption.name} added to your cart`,
         });
       }
-      
+
       setShowCurryOptionsModal(false);
     } catch (error) {
       console.error("Error adding item to cart:", error);
-      
-      // Check if it's an authentication error
-      if (error instanceof Error && error.message === "authentication_required") {
+
+      if (
+        error instanceof Error &&
+        error.message === "authentication_required"
+      ) {
         setShowCurryOptionsModal(false);
         setShowAuthModal(true);
         return;
       }
-      
+
       toast({
         title: "Error",
         description: "There was an error updating your cart. Please try again.",
@@ -262,7 +250,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
       });
     }
   };
-  
+
   return (
     <>
       {inCart ? (
@@ -275,7 +263,9 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
           >
             <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
           </Button>
-          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1">{cartItems.reduce((sum, item) => sum + item.quantity, 0)}</span>
+          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1">
+            {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
+          </span>
           <Button
             variant="ghost"
             size="icon"
@@ -295,8 +285,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
           Add
         </Button>
       )}
-      
-      {/* Modals */}
+
       <CurryOptionsModal
         open={showCurryOptionsModal}
         onClose={() => setShowCurryOptionsModal(false)}
@@ -305,7 +294,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         lastCurryOption={lastCurryOption}
         isInCart={inCart}
       />
-      
+
       <RepeatCustomizationModal
         open={showRepeatModal}
         onClose={() => setShowRepeatModal(false)}
@@ -315,14 +304,13 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         lastCurryOption={lastCurryOption}
         isInCart={inCart}
       />
-      
-      {/* Auth Modal for login/signup when trying to add to cart while not logged in */}
-      <AuthModal 
+
+      <AuthModal
         isOpen={showAuthModal}
         onOpenChange={setShowAuthModal}
         defaultTab="login"
         mode="normal"
-        redirectUrl="" 
+        redirectUrl=""
         onSuccess={handleAuthSuccess}
       />
     </>

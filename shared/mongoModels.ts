@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose, { Schema, Document } from "mongoose";
 
 // Define interfaces for MongoDB documents
 export interface UserDocument extends Document {
@@ -11,6 +11,14 @@ export interface UserDocument extends Document {
   updatedAt: Date;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  preferences?: {
+    dietaryPreference?: string;
+    favoriteMeals?: number[];
+    allergens?: string[];
+    mealSize?: string;
+    spiceLevel?: number;
+    [key: string]: any;
+  };
 }
 
 export interface CurryOption {
@@ -97,6 +105,12 @@ export interface SubscriptionDocument extends Document {
   razorpaySignature?: string;
   createdAt: Date;
   updatedAt: Date;
+  customMealPlans?: Array<{
+    dayOfWeek: number;
+    mealId: number;
+    date?: Date;
+    [key: string]: any;
+  }>;
 }
 
 export interface AddressDocument extends Document {
@@ -129,19 +143,18 @@ export interface CurryOptionDocument extends Document {
   name: string;
   description?: string;
   priceAdjustment: number;
-  mealId?: number | null; // Kept for backward compatibility
-  mealIds?: number[]; // Array of meal IDs that this curry option applies to
+  mealId?: number | null;
+  mealIds?: number[];
   createdAt: Date;
   updatedAt: Date;
 }
 
-// Define Mongoose schemas
 const userSchema = new Schema<UserDocument>({
   id: { type: Number, required: true, unique: true },
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, default: 'user' },
+  role: { type: String, default: "user" },
   stripeCustomerId: String,
   stripeSubscriptionId: String,
   createdAt: { type: Date, default: Date.now },
@@ -156,7 +169,6 @@ const curryOptionSchema = new Schema({
   mealId: { type: Number, default: null },
 });
 
-// Schema definition to support both object curryOptions and array format
 const mealSchema = new Schema<MealDocument>({
   id: { type: Number, required: true, unique: true },
   name: { type: String, required: true },
@@ -166,7 +178,7 @@ const mealSchema = new Schema<MealDocument>({
   imageUrl: String,
   dietaryPreferences: [String],
   isPopular: { type: Boolean, default: false },
-  isNewItem: { type: Boolean, default: false }, // Renamed from isNew to avoid Mongoose reserved word
+  isNewItem: { type: Boolean, default: false },
   ingredients: [String],
   allergens: [String],
   isAvailable: { type: Boolean, default: true },
@@ -175,22 +187,18 @@ const mealSchema = new Schema<MealDocument>({
   carbs: Number,
   fat: Number,
   fiber: Number,
-  // Support both formats: array of arrays [id, name, price] or curryOptionSchema objects
-  curryOptions: { 
-    type: Schema.Types.Mixed, 
+  curryOptions: {
+    type: Schema.Types.Mixed,
     default: [],
-    get: function(val: any) {
-      // Convert object format to array format if needed
+    get: function (val: any) {
       if (Array.isArray(val) && val.length > 0) {
-        // If already in array format, return as-is
         if (Array.isArray(val[0])) {
           return val;
         }
-        // Convert from object format to array format
         return val.map((opt: any) => [opt.id, opt.name, opt.priceAdjustment]);
       }
       return val;
-    }
+    },
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
@@ -217,14 +225,16 @@ const orderSchema = new Schema<OrderDocument>({
   deliveryTime: Date,
   deliveryAddress: String,
   paymentMethod: String,
-  items: [{
-    mealId: { type: Number, required: true },
-    quantity: { type: Number, required: true },
-    notes: String,
-    curryOptionId: String,
-    curryOptionName: String,
-    curryOptionPrice: Number,
-  }],
+  items: [
+    {
+      mealId: { type: Number, required: true },
+      quantity: { type: Number, required: true },
+      notes: String,
+      curryOptionId: String,
+      curryOptionName: String,
+      curryOptionPrice: Number,
+    },
+  ],
   razorpayOrderId: String,
   razorpayPaymentId: String,
   razorpaySignature: String,
@@ -276,15 +286,26 @@ const locationSchema = new Schema<LocationDocument>({
 });
 
 // Create and export models
-export const User = mongoose.model<UserDocument>('User', userSchema);
-export const Meal = mongoose.model<MealDocument>('Meal', mealSchema);
-export const CartItem = mongoose.model<CartItemDocument>('CartItem', cartItemSchema);
-export const Order = mongoose.model<OrderDocument>('Order', orderSchema);
-export const Subscription = mongoose.model<SubscriptionDocument>('Subscription', subscriptionSchema);
-export const Address = mongoose.model<AddressDocument>('Address', addressSchema);
-export const Location = mongoose.model<LocationDocument>('Location', locationSchema);
+export const User = mongoose.model<UserDocument>("User", userSchema);
+export const Meal = mongoose.model<MealDocument>("Meal", mealSchema);
+export const CartItem = mongoose.model<CartItemDocument>(
+  "CartItem",
+  cartItemSchema,
+);
+export const Order = mongoose.model<OrderDocument>("Order", orderSchema);
+export const Subscription = mongoose.model<SubscriptionDocument>(
+  "Subscription",
+  subscriptionSchema,
+);
+export const Address = mongoose.model<AddressDocument>(
+  "Address",
+  addressSchema,
+);
+export const Location = mongoose.model<LocationDocument>(
+  "Location",
+  locationSchema,
+);
 
-// Define Review schema
 export interface ReviewDocument extends Document {
   id: number;
   userId: number;
@@ -305,35 +326,35 @@ const reviewSchema = new Schema<ReviewDocument>({
   updatedAt: { type: Date, default: Date.now },
 });
 
-// Counter collection for auto-incrementing IDs
 const counterSchema = new Schema({
   _id: { type: String, required: true },
-  seq: { type: Number, default: 0 }
+  seq: { type: Number, default: 0 },
 });
 
-export const Review = mongoose.model<ReviewDocument>('Review', reviewSchema);
-export const Counter = mongoose.model('Counter', counterSchema);
+export const Review = mongoose.model<ReviewDocument>("Review", reviewSchema);
+export const Counter = mongoose.model("Counter", counterSchema);
 
-// Curry Option schema
 const curryOptionDocumentSchema = new Schema<CurryOptionDocument>({
   id: { type: String, required: true, unique: true },
   name: { type: String, required: true },
   description: String,
   priceAdjustment: { type: Number, required: true },
-  mealId: { type: Number, default: null }, // Kept for backward compatibility
-  mealIds: { type: [Number], default: [] }, // Array of meal IDs that this curry option applies to
+  mealId: { type: Number, default: null },
+  mealIds: { type: [Number], default: [] },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
 
-export const CurryOption = mongoose.model<CurryOptionDocument>('CurryOption', curryOptionDocumentSchema);
+export const CurryOption = mongoose.model<CurryOptionDocument>(
+  "CurryOption",
+  curryOptionDocumentSchema,
+);
 
-// Function to get the next sequence value for a given model
 export async function getNextSequence(name: string): Promise<number> {
   const counter = await Counter.findByIdAndUpdate(
     name,
     { $inc: { seq: 1 } },
-    { new: true, upsert: true }
+    { new: true, upsert: true },
   );
   return counter.seq;
 }

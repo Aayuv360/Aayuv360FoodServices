@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import NutritionModal from "./NutritionModal";
 import { MealCardActions } from "./MealCardActions";
 import { Meal } from "@shared/schema";
@@ -16,7 +15,6 @@ interface MenuCardProps {
 const MenuCard = ({ meal }: MenuCardProps) => {
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
 
-  // Map dietary preferences to color schemes
   const dietaryBadgeColor = (preference: string) => {
     switch (preference) {
       case "vegetarian":

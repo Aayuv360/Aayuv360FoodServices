@@ -39,7 +39,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
-// Define Location interface
 interface Location {
   id: number;
   area: string;
@@ -49,11 +48,13 @@ interface Location {
 
 const LocationManagement = () => {
   const { toast } = useToast();
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
+    null,
+  );
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
-  const [isDeleteLocationDialogOpen, setIsDeleteLocationDialogOpen] = useState(false);
+  const [isDeleteLocationDialogOpen, setIsDeleteLocationDialogOpen] =
+    useState(false);
 
-  // Query to fetch locations
   const { data: locations = [], isLoading } = useQuery({
     queryKey: ["/api/locations"],
     queryFn: async () => {
@@ -66,10 +67,13 @@ const LocationManagement = () => {
     },
   });
 
-  // Create location mutation
   const createLocationMutation = useMutation({
     mutationFn: async (locationData: Omit<Location, "id">) => {
-      const res = await apiRequest("POST", "/api/admin/locations", locationData);
+      const res = await apiRequest(
+        "POST",
+        "/api/admin/locations",
+        locationData,
+      );
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to create location");
@@ -93,10 +97,19 @@ const LocationManagement = () => {
     },
   });
 
-  // Update location mutation
   const updateLocationMutation = useMutation({
-    mutationFn: async ({ id, locationData }: { id: number; locationData: Partial<Location> }) => {
-      const res = await apiRequest("PUT", `/api/admin/locations/${id}`, locationData);
+    mutationFn: async ({
+      id,
+      locationData,
+    }: {
+      id: number;
+      locationData: Partial<Location>;
+    }) => {
+      const res = await apiRequest(
+        "PUT",
+        `/api/admin/locations/${id}`,
+        locationData,
+      );
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to update location");
@@ -120,7 +133,6 @@ const LocationManagement = () => {
     },
   });
 
-  // Delete location mutation
   const deleteLocationMutation = useMutation({
     mutationFn: async (id: number) => {
       const res = await apiRequest("DELETE", `/api/admin/locations/${id}`);
@@ -147,46 +159,41 @@ const LocationManagement = () => {
     },
   });
 
-  // Handle location form submission
   const handleLocationFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    
+
     const locationData = {
       area: formData.get("area") as string,
       pincode: formData.get("pincode") as string,
-      deliveryFee: Number(formData.get("deliveryFee"))
+      deliveryFee: Number(formData.get("deliveryFee")),
     };
 
     if (selectedLocation) {
       updateLocationMutation.mutate({
         id: selectedLocation.id,
-        locationData
+        locationData,
       });
     } else {
       createLocationMutation.mutate(locationData);
     }
   };
 
-  // Handle add location button click
   const handleAddLocation = () => {
     setSelectedLocation(null);
     setIsLocationDialogOpen(true);
   };
 
-  // Handle edit location button click
   const handleEditLocation = (location: Location) => {
     setSelectedLocation(location);
     setIsLocationDialogOpen(true);
   };
 
-  // Handle delete location button click
   const handleDeleteLocationClick = (location: Location) => {
     setSelectedLocation(location);
     setIsDeleteLocationDialogOpen(true);
   };
 
-  // Handle delete location confirmation
   const handleDeleteLocationConfirm = () => {
     if (selectedLocation) {
       deleteLocationMutation.mutate(selectedLocation.id);
@@ -230,7 +237,9 @@ const LocationManagement = () => {
                     <TableCell>{location.id}</TableCell>
                     <TableCell>{location.area}</TableCell>
                     <TableCell>{location.pincode}</TableCell>
-                    <TableCell>₹{(location.deliveryFee / 100).toFixed(2)}</TableCell>
+                    <TableCell>
+                      ₹{(location.deliveryFee / 100).toFixed(2)}
+                    </TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
                         variant="outline"
@@ -260,7 +269,10 @@ const LocationManagement = () => {
       </Card>
 
       {/* Location Add/Edit Dialog */}
-      <Dialog open={isLocationDialogOpen} onOpenChange={setIsLocationDialogOpen}>
+      <Dialog
+        open={isLocationDialogOpen}
+        onOpenChange={setIsLocationDialogOpen}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
@@ -319,7 +331,9 @@ const LocationManagement = () => {
                   type="number"
                   min="0"
                   step="1"
-                  defaultValue={selectedLocation ? selectedLocation.deliveryFee / 100 : 30}
+                  defaultValue={
+                    selectedLocation ? selectedLocation.deliveryFee / 100 : 30
+                  }
                   required
                   className="col-span-3"
                 />
@@ -343,8 +357,8 @@ const LocationManagement = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove the delivery location from your system.
-              This action cannot be undone.
+              This will permanently remove the delivery location from your
+              system. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

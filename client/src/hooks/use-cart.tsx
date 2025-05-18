@@ -5,7 +5,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "./use-auth";
 import { useToast } from "./use-toast";
 import { Meal } from "@shared/schema";
@@ -31,7 +31,6 @@ interface CartItem {
   };
 }
 
-// Store the last selected curry option for each meal
 type LastCurryOptionMap = Record<number, CurryOption>;
 
 interface CartContextType {
@@ -58,7 +57,6 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export function CartProvider({ children }: { children: ReactNode }) {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  // Track the last curry option selected for each meal
   const [lastCurryOptions, setLastCurryOptions] = useState<LastCurryOptionMap>(
     {},
   );
@@ -122,7 +120,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
       // Check if meal has a selected curry (from the CurryOptionsModal)
       const hasSelectedCurry = (meal as any).curryOption !== undefined;
-
 
       // Prepare the payload
       const payload = {

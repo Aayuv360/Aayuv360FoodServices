@@ -17,8 +17,8 @@ interface AuthModalProps {
   onOpenChange: (open: boolean) => void;
   defaultTab?: "login" | "register";
   redirectUrl?: string;
-  mode?: "normal" | "subscribe"; // normal or subscribe mode
-  onSuccess?: () => void; // Custom callback for successful authentication
+  mode?: "normal" | "subscribe";
+  onSuccess?: () => void;
 }
 
 export function AuthModal({
@@ -33,14 +33,12 @@ export function AuthModal({
 
   const onSuccess = () => {
     onOpenChange(false);
-    
-    // If there's a custom success callback, call it
+
     if (customOnSuccess) {
       customOnSuccess();
       return;
     }
-    
-    // Otherwise, handle redirects
+
     if (redirectUrl) {
       window.location.href = redirectUrl;
     }
@@ -51,9 +49,7 @@ export function AuthModal({
       <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-4 sm:p-6 overflow-y-auto max-h-[90vh] md:max-h-[80vh]">
         <DialogHeader className="mb-2 sm:mb-4">
           <DialogTitle className="text-center text-xl sm:text-2xl font-bold">
-            {mode === "subscribe"
-              ? "Login to Subscribe"
-              : "Welcome to Aayuv"}
+            {mode === "subscribe" ? "Login to Subscribe" : "Welcome to Aayuv"}
           </DialogTitle>
           <DialogDescription className="text-center text-xs sm:text-sm">
             {mode === "subscribe"
@@ -64,8 +60,18 @@ export function AuthModal({
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login" className="text-xs sm:text-sm py-1.5 sm:py-2">Login</TabsTrigger>
-            <TabsTrigger value="register" className="text-xs sm:text-sm py-1.5 sm:py-2">Register</TabsTrigger>
+            <TabsTrigger
+              value="login"
+              className="text-xs sm:text-sm py-1.5 sm:py-2"
+            >
+              Login
+            </TabsTrigger>
+            <TabsTrigger
+              value="register"
+              className="text-xs sm:text-sm py-1.5 sm:py-2"
+            >
+              Register
+            </TabsTrigger>
           </TabsList>
           <TabsContent value="login" className="mt-3 sm:mt-4">
             <LoginForm onSuccess={onSuccess} />

@@ -21,10 +21,6 @@ export const DefaulMealSheduleModal = ({
         <DialogContent className="sm:max-w-[900px]">
           <DialogHeader>
             <DialogTitle>Default Meal Plan</DialogTitle>
-            {/* <DialogDescription>
-              Search for your location on the map or enter address details
-              manually.
-            </DialogDescription> */}
           </DialogHeader>
           <div className="border-t pt-6 mb-2">
             <h4 className="font-medium text-sm mb-2">

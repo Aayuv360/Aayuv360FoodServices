@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { Edit, Trash2, PlusCircle } from "lucide-react";
+import { Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Meal } from "@shared/schema";
@@ -14,7 +13,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { formatPrice } from "@/lib/utils";
 
 interface AdminMealCardProps {
@@ -25,12 +23,11 @@ interface AdminMealCardProps {
   onDeleteMeal: (mealId: number) => void;
 }
 
-const AdminMealCard = ({ 
-  meal, 
-  onEditMeal, 
-  onDeleteMeal
+const AdminMealCard = ({
+  meal,
+  onEditMeal,
+  onDeleteMeal,
 }: AdminMealCardProps) => {
-  // Map dietary preferences to color schemes
   const dietaryBadgeColor = (preference: string) => {
     switch (preference) {
       case "vegetarian":
@@ -62,22 +59,26 @@ const AdminMealCard = ({
           alt={meal.name}
           className="w-full h-48 object-cover"
         />
-        <Badge 
+        <Badge
           variant={meal.available ? "default" : "secondary"}
           className="absolute top-2 right-2"
         >
           {meal.available ? "Available" : "Unavailable"}
         </Badge>
       </div>
-      
+
       <div className="p-4">
         <div className="flex justify-between items-start mb-3">
           <h3 className="font-semibold text-lg text-gray-900">{meal.name}</h3>
-          <p className="font-bold text-lg text-primary">{formatPrice(meal.price)}</p>
+          <p className="font-bold text-lg text-primary">
+            {formatPrice(meal.price)}
+          </p>
         </div>
-        
-        <p className="text-sm text-gray-600 h-12 overflow-hidden line-clamp-2">{meal.description}</p>
-        
+
+        <p className="text-sm text-gray-600 h-12 overflow-hidden line-clamp-2">
+          {meal.description}
+        </p>
+
         <div className="flex flex-wrap gap-1 mt-3 mb-4">
           {meal.dietaryPreferences?.map((pref, index) => (
             <span
@@ -88,7 +89,7 @@ const AdminMealCard = ({
             </span>
           ))}
         </div>
-        
+
         <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
           <Button
             variant="outline"
@@ -98,7 +99,7 @@ const AdminMealCard = ({
           >
             <Edit className="h-4 w-4 mr-1" /> Edit
           </Button>
-          
+
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
@@ -113,7 +114,8 @@ const AdminMealCard = ({
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Meal</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Are you sure you want to delete {meal.name}? This action cannot be undone.
+                  Are you sure you want to delete {meal.name}? This action
+                  cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

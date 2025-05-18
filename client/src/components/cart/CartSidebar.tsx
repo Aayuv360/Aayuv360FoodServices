@@ -4,22 +4,17 @@ import {
   X,
   Minus,
   Plus,
-  Trash2,
   Check,
   CreditCard,
-  MapPin,
-  Home,
-  Building,
   ChevronRight,
   ChevronLeft,
   MessageSquare,
   ShoppingCart as ShoppingCartIcon,
   PlusCircle,
-  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useRazorpay } from "@/hooks/use-razorpay";
@@ -31,14 +26,6 @@ import { useForm } from "react-hook-form";
 import { formatPrice } from "@/lib/utils";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -49,7 +36,6 @@ import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 
-// Define delivery address form schema
 const addressSchema = z.object({
   name: z.string().min(3, "Full name is required"),
   phoneNumber: z
@@ -70,7 +56,6 @@ interface CartSidebarProps {
   onClose: () => void;
 }
 
-// Define the Address type
 interface Address {
   id: number;
   name: string;
@@ -83,7 +68,6 @@ interface Address {
   isDefault: boolean;
 }
 
-// Define the Location type
 interface Location {
   id: number;
   area: string;
@@ -94,7 +78,6 @@ interface Location {
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
-  // Always start with cart step when component is opened
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("razorpay");
@@ -105,16 +88,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
-  
-  // Add states for address management
+
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
+    null,
+  );
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
 
-  // Get cart data from context
   const {
     cartItems,
     loading,
@@ -129,7 +112,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [, navigate] = useLocation();
   const { initiatePayment } = useRazorpay();
 
-  // Use form hook for address data
   const form = useForm<AddressFormValues>({
     resolver: zodResolver(addressSchema),
     defaultValues: {
@@ -141,27 +123,23 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       zipCode: "",
     },
   });
-  
-  // Reset to cart view whenever the sidebar is opened
+
   useEffect(() => {
     if (open) {
       setCurrentStep("cart");
     }
   }, [open]);
-  
-  // Fetch addresses for the logged-in user
+
   useEffect(() => {
     if (user && open) {
       apiRequest("GET", "/api/addresses")
         .then((res) => res.json())
         .then((data) => {
           setAddresses(data);
-          // Set default address if available
           const defaultAddress = data.find((addr: Address) => addr.isDefault);
           if (defaultAddress) {
             setSelectedAddressId(defaultAddress.id);
           } else if (data.length > 0) {
-            // If no default address, use the first one
             setSelectedAddressId(data[0].id);
           }
         })
@@ -175,10 +153,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         });
     }
   }, [user, open, toast]);
-  
-  // Fetch delivery locations
+
   useEffect(() => {
-    // Fetch locations from API
     apiRequest("GET", "/api/locations")
       .then((res) => res.json())
       .then((data) => {
@@ -188,45 +164,42 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         console.error("Error fetching locations:", error);
       });
   }, []);
-  
-  // Filter locations based on search
+
   useEffect(() => {
     if (locationSearch.trim()) {
       const filtered = locations.filter(
         (loc) =>
           loc.area.toLowerCase().includes(locationSearch.toLowerCase()) ||
-          loc.pincode.includes(locationSearch)
+          loc.pincode.includes(locationSearch),
       );
       setFilteredLocations(filtered);
     } else {
       setFilteredLocations([]);
     }
   }, [locationSearch, locations]);
-  
-  // Handle new address form submission
+
   const handleAddressFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    
+
     const formData = new FormData(e.currentTarget);
     const addressData = {
       name: formData.get("addressName") as string,
       phone: formData.get("phone") as string,
       addressLine1: formData.get("addressLine1") as string,
-      addressLine2: formData.get("addressLine2") as string || undefined,
+      addressLine2: (formData.get("addressLine2") as string) || undefined,
       city: formData.get("city") as string,
       state: formData.get("state") as string,
       pincode: formData.get("pincode") as string,
-      isDefault: Boolean(formData.get("isDefault"))
+      isDefault: Boolean(formData.get("isDefault")),
     };
-    
+
     apiRequest("POST", "/api/addresses", addressData)
       .then((res) => res.json())
       .then((data) => {
-        // Add the new address to the list
         setAddresses((prev) => [...prev, data]);
         setSelectedAddressId(data.id);
         setAddressModalOpen(false);
-        
+
         toast({
           title: "Address added",
           description: "Your new delivery address has been added successfully.",
@@ -241,14 +214,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         });
       });
   };
-  
-  // Handle selecting a location
+
   const selectLocation = (location: Location) => {
     setLocationSearch(location.area);
-    // Optionally, you could populate a hidden field with the location ID
   };
 
-  // Calculate cart total
   const calculateCartTotal = (): number => {
     return cartItems.reduce((total, item) => {
       const itemPrice =
@@ -258,24 +228,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }, 0);
   };
 
-  // Using imported formatPrice function from utils for consistent price formatting without decimals
-  
-  // Handle updating curry option for a cart item
   const handleUpdateCurryOption = async (updatedMeal: any) => {
-    // Find the cart item that contains this meal
-    const cartItem = cartItems.find(item => item.meal?.id === updatedMeal.id);
-    
+    const cartItem = cartItems.find((item) => item.meal?.id === updatedMeal.id);
+
     if (cartItem) {
       try {
-        // Update the cart item with the new curry option
         await updateCartItemWithOptions(cartItem.id, updatedMeal.curryOption);
-        
+
         toast({
           title: "Item updated",
           description: `Your ${updatedMeal.name} has been updated with ${updatedMeal.curryOption.name}`,
         });
-        
-        // Close the curry options modal
+
         setCustomizingMeal(null);
       } catch (error) {
         console.error("Error updating cart item:", error);
@@ -287,37 +251,31 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       }
     }
   };
-  
-  // Helper function to check if a meal is customizable with curry options
+
   const hasCurryOptions = (meal: any) => {
     if (!meal) return false;
-    
-    // Check several possible ways curry options might be stored:
-    
-    // 1. Direct curryOptions array
+
     if (meal.curryOptions && meal.curryOptions.length > 0) {
       return true;
     }
-    
-    // 2. Selected curry option (indicates the meal is customizable)
+
     if (meal.curryOption || meal.selectedCurry) {
       return true;
     }
-    
-      const nameHasCurry = meal.name?.toLowerCase().includes('curry');
-    const categoryHasCurry = meal.category?.toLowerCase().includes('curry');
-    
+
+    const nameHasCurry = meal.name?.toLowerCase().includes("curry");
+    const categoryHasCurry = meal.category?.toLowerCase().includes("curry");
+
     if (nameHasCurry || categoryHasCurry) {
       return true;
     }
-    
+
     return false;
   };
   const handleCustomizeItem = (item: any) => {
     setCustomizingMeal(item.meal);
   };
 
-  // Navigate through checkout steps
   const handleNextStep = async () => {
     if (currentStep === "cart") {
       if (!user) {
@@ -338,30 +296,31 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     } else if (currentStep === "payment") {
       try {
         setIsCreatingOrder(true);
-        // Get the selected address
-        const selectedAddress = addresses.find(addr => addr.id === selectedAddressId);
+        const selectedAddress = addresses.find(
+          (addr) => addr.id === selectedAddressId,
+        );
         if (!selectedAddress) {
           throw new Error("Selected address not found");
         }
-        
-        // Construct the delivery details from the selected address
         const deliveryDetails = {
           name: selectedAddress.name,
           phoneNumber: selectedAddress.phone,
           completeAddress: selectedAddress.addressLine1,
           nearbyLandmark: selectedAddress.addressLine2 || "",
           zipCode: selectedAddress.pincode,
-          addressType: selectedAddress.name.toLowerCase().includes("home") ? "home" : 
-                      selectedAddress.name.toLowerCase().includes("work") ? "work" : "other",
+          addressType: selectedAddress.name.toLowerCase().includes("home")
+            ? "home"
+            : selectedAddress.name.toLowerCase().includes("work")
+              ? "work"
+              : "other",
           deliveryType,
         };
-        
-        // Format the address for the order
-        const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ', ' + selectedAddress.addressLine2 : ''}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
-        
-        // Calculate the total price including delivery and taxes
-        const total = calculateCartTotal() + (deliveryType === "express" ? 40 : 0) + 20; // Cart total + delivery fee + taxes
-        
+
+        const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
+
+        const total =
+          calculateCartTotal() + (deliveryType === "express" ? 40 : 0) + 20;
+
         const orderPayload = {
           items: cartItems.map((item) => ({
             mealId: item.mealId,
@@ -381,50 +340,44 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         const orderData = await res.json();
         setOrderId(orderData.id);
 
-        // Based on the selected payment method, process payment
         if (selectedPaymentMethod === "razorpay") {
-          // Use the Razorpay hook to initiate payment directly
           initiatePayment({
             amount: total,
             orderId: orderData.id,
             description: "Food Order",
             name: "Aayuv Millet Foods",
-            theme: { color: '#9E6D38' },
+            theme: { color: "#9E6D38" },
             onSuccess: async (response) => {
-              // Update order status after successful payment
-              await apiRequest('PATCH', `/api/orders/${orderData.id}`, {
-                status: 'confirmed',
+              await apiRequest("PATCH", `/api/orders/${orderData.id}`, {
+                status: "confirmed",
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature
+                razorpaySignature: response.razorpay_signature,
               });
-              
-              // Clear cart items after successful payment
+
               await clearCart();
-              
+
               toast({
                 title: "Order Placed!",
-                description: "Your order has been placed successfully. You can track your order in your profile.",
+                description:
+                  "Your order has been placed successfully. You can track your order in your profile.",
                 variant: "default",
               });
-              
-              // Navigate to payment success page
+
               navigate(`/payment-success?orderId=${orderData.id}`);
               onClose();
             },
             onFailure: (error) => {
               toast({
                 title: "Payment Failed",
-                description: error.message || "Failed to process your payment. Please try again.",
+                description:
+                  error.message ||
+                  "Failed to process your payment. Please try again.",
                 variant: "destructive",
               });
-              
-              // Stay on the cart page when payment fails or is cancelled
-              // This allows the user to retry or change payment options
-            }
+            },
           });
         } else {
-          // COD or other payment method
           setCurrentStep("success");
         }
       } catch (error) {
@@ -455,12 +408,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     <>
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full overflow-hidden">
-          {/* Header */}
           <SheetHeader className="p-3 sm:p-4 border-b">
             <div className="flex justify-between items-center">
-              <SheetTitle className="text-lg sm:text-xl">
-                Your Cart
-              </SheetTitle>
+              <SheetTitle className="text-lg sm:text-xl">Your Cart</SheetTitle>
               <Button
                 variant="ghost"
                 size="icon"
@@ -472,18 +422,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             </div>
           </SheetHeader>
 
-          {/* Content based on current step */}
           <div className="flex-grow overflow-auto">
             {currentStep === "cart" && (
               <>
-                {/* Cart Items */}
                 <div className="flex-grow overflow-y-auto">
                   {cartItems.length === 0 ? (
                     <div className="text-center py-6 sm:py-8 px-4">
                       <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
                         <ShoppingCartIcon className="w-full h-full" />
                       </div>
-                      <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">Your cart is empty</p>
+                      <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
+                        Your cart is empty
+                      </p>
                       <Button
                         onClick={() => {
                           navigate("/menu");
@@ -496,7 +446,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </div>
                   ) : (
                     <div>
-                      {/* Cart items */}
                       <div className="px-4 py-3">
                         {cartItems.map((item) => {
                           const isEditingNotes = editingItemId === item.id;
@@ -536,22 +485,29 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                 <h4 className="font-medium text-xs sm:text-sm line-clamp-1">
                                   {item.meal?.name}
                                 </h4>
-                                {/* Display curry option if available */}
-                                {((item.meal as any)?.curryOption || (item.meal as any)?.selectedCurry || item.curryOptionName) && (
+                                {((item.meal as any)?.curryOption ||
+                                  (item.meal as any)?.selectedCurry ||
+                                  item.curryOptionName) && (
                                   <p className="text-[10px] sm:text-xs text-gray-600">
                                     with{" "}
-                                    {(item.meal as any)?.curryOption?.name || 
-                                     (item.meal as any)?.selectedCurry?.name || 
-                                     item.curryOptionName}
-                                    {((item.meal as any)?.curryOption?.priceAdjustment > 0 || 
-                                      (item.meal as any)?.selectedCurry?.priceAdjustment > 0 || 
-                                      (item.curryOptionPrice && item.curryOptionPrice > 0)) && (
+                                    {(item.meal as any)?.curryOption?.name ||
+                                      (item.meal as any)?.selectedCurry?.name ||
+                                      item.curryOptionName}
+                                    {((item.meal as any)?.curryOption
+                                      ?.priceAdjustment > 0 ||
+                                      (item.meal as any)?.selectedCurry
+                                        ?.priceAdjustment > 0 ||
+                                      (item.curryOptionPrice &&
+                                        item.curryOptionPrice > 0)) && (
                                       <span className="text-primary ml-1">
                                         (+
                                         {formatPrice(
-                                          (item.meal as any)?.curryOption?.priceAdjustment || 
-                                          (item.meal as any)?.selectedCurry?.priceAdjustment || 
-                                          item.curryOptionPrice || 0
+                                          (item.meal as any)?.curryOption
+                                            ?.priceAdjustment ||
+                                            (item.meal as any)?.selectedCurry
+                                              ?.priceAdjustment ||
+                                            item.curryOptionPrice ||
+                                            0,
                                         )}
                                         )
                                       </span>
@@ -589,15 +545,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   >
                                     <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                   </Button>
-                                  
+
                                   <div className="flex-grow"></div>
-                                  
+
                                   <p className="text-primary text-xs sm:text-sm font-semibold">
                                     {formatPrice(
                                       ((item.meal?.price || 0) +
-                                        ((item.meal as any)?.curryOption?.priceAdjustment || 
-                                         (item.meal as any)?.selectedCurry?.priceAdjustment ||
-                                         item.curryOptionPrice || 0)) *
+                                        ((item.meal as any)?.curryOption
+                                          ?.priceAdjustment ||
+                                          (item.meal as any)?.selectedCurry
+                                            ?.priceAdjustment ||
+                                          item.curryOptionPrice ||
+                                          0)) *
                                         item.quantity,
                                     )}
                                   </p>
@@ -641,13 +600,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                       >
                                         <MessageSquare className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                                         {item.notes ? (
-                                          <span className="line-clamp-1 max-w-[120px] sm:max-w-[180px]">{item.notes}</span>
+                                          <span className="line-clamp-1 max-w-[120px] sm:max-w-[180px]">
+                                            {item.notes}
+                                          </span>
                                         ) : (
                                           <span>Add instructions</span>
                                         )}
                                       </div>
                                       <div>
-                                        {/* Only show Customize button if meal has curry options */}
                                         {hasCurryOptions(item.meal) && (
                                           <Button
                                             variant="link"
@@ -664,7 +624,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                           variant="link"
                                           size="sm"
                                           className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-destructive"
-                                          onClick={() => removeCartItem(item.id)}
+                                          onClick={() =>
+                                            removeCartItem(item.id)
+                                          }
                                         >
                                           Remove
                                         </Button>
@@ -678,16 +640,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         })}
                       </div>
 
-                      {/* Bill Details Section */}
                       <div className="px-4 py-4 border-t">
-                        <h3 className="font-medium text-base mb-3">Bill Details</h3>
+                        <h3 className="font-medium text-base mb-3">
+                          Bill Details
+                        </h3>
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Items Total</span>
                             <span>{formatPrice(calculateCartTotal())}</span>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-gray-600">Delivery Charge</span>
+                            <span className="text-gray-600">
+                              Delivery Charge
+                            </span>
                             <span>{formatPrice(40)}</span>
                           </div>
                           <div className="flex justify-between">
@@ -706,10 +671,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
                       {/* Cancellation Policy */}
                       <div className="px-3 sm:px-4 py-2 sm:py-3 border-t">
-                        <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">Cancellation Policy</h3>
+                        <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">
+                          Cancellation Policy
+                        </h3>
                         <p className="text-[10px] sm:text-xs text-gray-600">
-                          Orders can be cancelled before they are confirmed by the restaurant.
-                          Once confirmed, refunds will be processed as per our policy.
+                          Orders can be cancelled before they are confirmed by
+                          the restaurant. Once confirmed, refunds will be
+                          processed as per our policy.
                         </p>
                       </div>
                     </div>
@@ -721,16 +689,20 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             {currentStep === "delivery" && (
               <div className="p-3 sm:p-4">
                 <div className="space-y-3 sm:space-y-4">
-                  <h3 className="font-medium text-sm sm:text-base">Delivery Address</h3>
-                  
+                  <h3 className="font-medium text-sm sm:text-base">
+                    Delivery Address
+                  </h3>
+
                   {/* Display existing addresses */}
                   {addresses.length > 0 ? (
                     <div className="space-y-2 sm:space-y-3">
                       {addresses.map((address) => (
-                        <div 
+                        <div
                           key={address.id}
                           className={`border rounded-md p-2 sm:p-3 cursor-pointer ${
-                            selectedAddressId === address.id ? "border-primary bg-primary/5" : ""
+                            selectedAddressId === address.id
+                              ? "border-primary bg-primary/5"
+                              : ""
                           }`}
                           onClick={() => setSelectedAddressId(address.id)}
                         >
@@ -771,7 +743,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       No saved addresses found
                     </div>
                   )}
-                  
+
                   {/* Button to add a new address */}
                   <div className="mt-3 sm:mt-4">
                     <Button
@@ -784,7 +756,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       Add New Address
                     </Button>
                   </div>
-                  
+
                   <NewAddressModal
                     addressModalOpen={addressModalOpen}
                     setAddressModalOpen={setAddressModalOpen}
@@ -794,7 +766,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     setLocationSearch={setLocationSearch}
                     selectLocation={selectLocation}
                   />
-                  
+
                   <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
                     <h3 className="font-medium text-xs sm:text-sm mb-1.5 sm:mb-2">
                       Delivery Type
@@ -822,7 +794,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       </Button>
                     </div>
                   </div>
-                  
+
                   <div className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
                     <p>
                       We currently deliver only in Hyderabad, within a 10km
@@ -835,7 +807,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
             {currentStep === "payment" && (
               <div className="p-3 sm:p-4">
-                <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">Choose Payment Method</h3>
+                <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">
+                  Choose Payment Method
+                </h3>
                 <RadioGroup
                   defaultValue={selectedPaymentMethod}
                   onValueChange={setSelectedPaymentMethod}
@@ -848,7 +822,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         checked={selectedPaymentMethod === "razorpay"}
                         className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                       />
-                      <Label htmlFor="razorpay" className="flex-grow text-xs sm:text-sm">
+                      <Label
+                        htmlFor="razorpay"
+                        className="flex-grow text-xs sm:text-sm"
+                      >
                         Razorpay (Credit/Debit Card, UPI, etc.)
                       </Label>
                     </div>
@@ -859,7 +836,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         checked={selectedPaymentMethod === "cod"}
                         className="h-3.5 w-3.5 sm:h-4 sm:w-4"
                       />
-                      <Label htmlFor="cod" className="flex-grow text-xs sm:text-sm">
+                      <Label
+                        htmlFor="cod"
+                        className="flex-grow text-xs sm:text-sm"
+                      >
                         Cash on Delivery
                       </Label>
                     </div>
@@ -867,7 +847,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 </RadioGroup>
 
                 <div className="mt-4 sm:mt-6">
-                  <h3 className="font-medium text-sm sm:text-base mb-1.5 sm:mb-2">Order Summary</h3>
+                  <h3 className="font-medium text-sm sm:text-base mb-1.5 sm:mb-2">
+                    Order Summary
+                  </h3>
                   <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span>Item Total</span>
@@ -875,7 +857,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     </div>
                     <div className="flex justify-between">
                       <span>Delivery Fee</span>
-                      <span>{formatPrice(deliveryType === "express" ? 50 : 40)}</span>
+                      <span>
+                        {formatPrice(deliveryType === "express" ? 50 : 40)}
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Taxes</span>
@@ -886,7 +870,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>
                         {formatPrice(
                           calculateCartTotal() +
-                            (deliveryType === "express" ? 50 : 40) + 20
+                            (deliveryType === "express" ? 50 : 40) +
+                            20,
                         )}
                       </span>
                     </div>
@@ -907,7 +892,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   Your order #{orderId} has been placed successfully.
                 </p>
                 <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
-                  <h3 className="font-medium text-sm sm:text-base text-left mb-1.5 sm:mb-2">Order Details</h3>
+                  <h3 className="font-medium text-sm sm:text-base text-left mb-1.5 sm:mb-2">
+                    Order Details
+                  </h3>
                   <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
                     <div className="flex justify-between">
                       <span>Order Number</span>
@@ -926,14 +913,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>
                         {formatPrice(
                           calculateCartTotal() +
-                            (deliveryType === "express" ? 50 : 40) + 20
+                            (deliveryType === "express" ? 50 : 40) +
+                            20,
                         )}
                       </span>
                     </div>
                   </div>
                 </div>
-                <Button 
-                  className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2" 
+                <Button
+                  className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                   onClick={() => {
                     onClose();
                     setCurrentStep("cart");
@@ -996,7 +984,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             Pay{" "}
                             {formatPrice(
                               calculateCartTotal() +
-                                (deliveryType === "express" ? 50 : 40) + 20
+                                (deliveryType === "express" ? 50 : 40) +
+                                20,
                             )}
                           </>
                         )}
@@ -1013,8 +1002,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         </SheetContent>
       </Sheet>
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
-      
-      {/* Curry Options Modal */}
+
       {customizingMeal && (
         <CurryOptionsModal
           open={!!customizingMeal}

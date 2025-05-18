@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -116,9 +116,7 @@ const TodaysMenu = () => {
             variant="outline"
             className="border-primary text-primary hover:bg-primary hover:text-white"
           >
-            <Link href="/menu">
-              View Full Menu
-            </Link>
+            <Link href="/menu">View Full Menu</Link>
           </Button>
         </div>
       </div>

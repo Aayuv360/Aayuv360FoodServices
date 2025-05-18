@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Plus, Edit, Trash2 } from "lucide-react";
 import {
   Dialog,
@@ -8,14 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -54,8 +46,11 @@ export default function MealCurryOptionsModal({
               // Check if this curry option applies to this meal either through:
               // 1. Legacy mealId field, or
               // 2. New mealIds array containing this meal's ID
-              const legacyMatch = curry.mealId === selectedMeal?.id || curry.mealId === null;
-              const arrayMatch = Array.isArray(curry.mealIds) && curry.mealIds.includes(selectedMeal?.id);
+              const legacyMatch =
+                curry.mealId === selectedMeal?.id || curry.mealId === null;
+              const arrayMatch =
+                Array.isArray(curry.mealIds) &&
+                curry.mealIds.includes(selectedMeal?.id);
               return legacyMatch || arrayMatch;
             })
             .map((curry: any) => (
@@ -93,12 +88,19 @@ export default function MealCurryOptionsModal({
                     </span>
                     <Badge
                       variant="outline"
-                      className={curry.mealId === null && (!curry.mealIds || curry.mealIds.length === 0) ? "bg-blue-50" : ""}
+                      className={
+                        curry.mealId === null &&
+                        (!curry.mealIds || curry.mealIds.length === 0)
+                          ? "bg-blue-50"
+                          : ""
+                      }
                     >
-                      {curry.mealId === null && (!curry.mealIds || curry.mealIds.length === 0)
+                      {curry.mealId === null &&
+                      (!curry.mealIds || curry.mealIds.length === 0)
                         ? "Available for all meals"
-                        : Array.isArray(curry.mealIds) && curry.mealIds.length > 0
-                          ? `Applied to ${curry.mealIds.length} meal${curry.mealIds.length > 1 ? 's' : ''}`
+                        : Array.isArray(curry.mealIds) &&
+                            curry.mealIds.length > 0
+                          ? `Applied to ${curry.mealIds.length} meal${curry.mealIds.length > 1 ? "s" : ""}`
                           : "Meal specific"}
                     </Badge>
                   </div>
@@ -107,8 +109,11 @@ export default function MealCurryOptionsModal({
             ))}
 
           {curryOptions?.filter((curry: any) => {
-            const legacyMatch = curry.mealId === selectedMeal?.id || curry.mealId === null;
-            const arrayMatch = Array.isArray(curry.mealIds) && curry.mealIds.includes(selectedMeal?.id);
+            const legacyMatch =
+              curry.mealId === selectedMeal?.id || curry.mealId === null;
+            const arrayMatch =
+              Array.isArray(curry.mealIds) &&
+              curry.mealIds.includes(selectedMeal?.id);
             return legacyMatch || arrayMatch;
           }).length === 0 && (
             <div className="text-center py-6">

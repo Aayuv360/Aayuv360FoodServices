@@ -8,22 +8,11 @@ import {
   Location,
   Review,
   CurryOption,
-  UserDocument,
-  MealDocument,
-  CartItemDocument,
-  OrderDocument,
-  SubscriptionDocument,
-  AddressDocument,
-  LocationDocument,
-  ReviewDocument,
-  CurryOptionDocument,
   getNextSequence,
-  CurryOption as CurryOptionType,
 } from "../shared/mongoModels";
 import { createSessionStore, SessionStore } from "./session-store";
 import { milletMeals, MealDataItem } from "./mealData";
 
-// MongoDB Storage class implementation
 import { IStorage } from "./storage";
 
 export class MongoDBStorage implements IStorage {
@@ -32,7 +21,6 @@ export class MongoDBStorage implements IStorage {
   constructor() {
     this.sessionStore = createSessionStore();
 
-    // Initialize sample data with a delay to allow connection to establish
     setTimeout(() => {
       this.initializeSampleMeals().catch((err) =>
         console.error("Error initializing sample meals:", err),
@@ -40,28 +28,23 @@ export class MongoDBStorage implements IStorage {
     }, 2000);
   }
 
-  // Initialize sample meal data if needed with better error handling
   private async initializeSampleMeals(): Promise<void> {
     try {
-      // Use a timeout promise to avoid hanging if MongoDB is slow
       const countMeals = async () => {
         try {
           return await Meal.countDocuments();
         } catch (err) {
           console.error("Error counting meals:", err);
-          return -1; // Return -1 to indicate error
+          return -1;
         }
       };
 
-      // Add timeout to prevent hanging
       const timeoutPromise = new Promise<number>((resolve) => {
-        setTimeout(() => resolve(-1), 5000); // 5-second timeout
+        setTimeout(() => resolve(-1), 5000);
       });
 
-      // Race the count operation against the timeout
       const mealsCount = await Promise.race([countMeals(), timeoutPromise]);
 
-      // Only initialize if we got a valid count of 0 (not error or timeout)
       if (mealsCount === 0) {
         console.log("Initializing sample meals...");
 
@@ -129,12 +112,10 @@ export class MongoDBStorage implements IStorage {
         );
       }
     } catch (error) {
-      // Don't let meal initialization failure break the application
       console.error("Error initializing sample meals:", error);
     }
   }
 
-  // User operations
   async getUser(id: number): Promise<any | undefined> {
     try {
       const user = await User.findOne({ id });

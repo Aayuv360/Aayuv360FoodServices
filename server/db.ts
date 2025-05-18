@@ -1,42 +1,34 @@
-import mongoose from 'mongoose';
-import dotenv from 'dotenv';
+import mongoose from "mongoose";
+import dotenv from "dotenv";
 
-// Load environment variables
 dotenv.config();
 
-// Track connection status
 let isConnected = false;
 
-/**
- * Connect to MongoDB
- */
 export async function connectToMongoDB() {
   if (isConnected) {
-    console.log('Using existing MongoDB connection');
+    console.log("Using existing MongoDB connection");
     return mongoose.connection;
   }
 
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
-      throw new Error('MONGODB_URI environment variable is not set');
+      throw new Error("MONGODB_URI environment variable is not set");
     }
 
-    console.log('Connecting to MongoDB...');
+    console.log("Connecting to MongoDB...");
     await mongoose.connect(uri);
-    
+
     isConnected = true;
-    console.log('Successfully connected to MongoDB');
+    console.log("Successfully connected to MongoDB");
     return mongoose.connection;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    console.error("MongoDB connection error:", error);
     throw error;
   }
 }
 
-/**
- * Disconnect from MongoDB
- */
 export async function disconnectFromMongoDB() {
   if (!isConnected) {
     return;
@@ -45,12 +37,11 @@ export async function disconnectFromMongoDB() {
   try {
     await mongoose.disconnect();
     isConnected = false;
-    console.log('Disconnected from MongoDB');
+    console.log("Disconnected from MongoDB");
   } catch (error) {
-    console.error('MongoDB disconnection error:', error);
+    console.error("MongoDB disconnection error:", error);
     throw error;
   }
 }
 
-// Export mongoose for use in models
 export { mongoose };

@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useToast } from './use-toast';
-import { apiRequest } from '@/lib/queryClient';
-import { useMutation } from '@tanstack/react-query';
-import { useAuth } from './use-auth';
+import { useState, useEffect, useCallback } from "react";
+import { useToast } from "./use-toast";
+import { apiRequest } from "@/lib/queryClient";
+import { useMutation } from "@tanstack/react-query";
+import { useAuth } from "./use-auth";
 
-// Declare Razorpay as a global variable
 declare global {
   interface Window {
     Razorpay: any;
@@ -14,7 +13,7 @@ declare global {
 interface CreateOrderOptions {
   amount: number;
   orderId: number;
-  type?: 'order' | 'subscription';
+  type?: "order" | "subscription";
   notes?: Record<string, string>;
 }
 
@@ -23,7 +22,7 @@ interface PaymentVerifyOptions {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   razorpaySignature: string;
-  type?: 'order' | 'subscription';
+  type?: "order" | "subscription";
 }
 
 interface PaymentFailureOptions {
@@ -64,8 +63,8 @@ const useRazorpayScript = () => {
       return;
     }
 
-    const script = document.createElement('script');
-    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
     script.async = true;
     script.onload = () => setLoaded(true);
 
@@ -87,37 +86,43 @@ export const useRazorpay = () => {
   // Create order mutation
   const createOrderMutation = useMutation({
     mutationFn: async (options: CreateOrderOptions) => {
-      const res = await apiRequest('POST', '/api/payments/create-order', options);
+      const res = await apiRequest(
+        "POST",
+        "/api/payments/create-order",
+        options,
+      );
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to create order');
+        throw new Error(errorData.message || "Failed to create order");
       }
       return res.json();
-    }
+    },
   });
 
   // Verify payment mutation
   const verifyPaymentMutation = useMutation({
     mutationFn: async (options: PaymentVerifyOptions) => {
-      const res = await apiRequest('POST', '/api/payments/verify', options);
+      const res = await apiRequest("POST", "/api/payments/verify", options);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to verify payment');
+        throw new Error(errorData.message || "Failed to verify payment");
       }
       return res.json();
-    }
+    },
   });
 
   // Payment failure mutation
   const paymentFailureMutation = useMutation({
     mutationFn: async (options: PaymentFailureOptions) => {
-      const res = await apiRequest('POST', '/api/payments/failed', options);
+      const res = await apiRequest("POST", "/api/payments/failed", options);
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to handle payment failure');
+        throw new Error(
+          errorData.message || "Failed to handle payment failure",
+        );
       }
       return res.json();
-    }
+    },
   });
 
   // Function to initiate payment
@@ -127,24 +132,24 @@ export const useRazorpay = () => {
       orderId: number;
       description: string;
       name: string;
-      type?: 'order' | 'subscription';
+      type?: "order" | "subscription";
       theme?: { color: string };
       onSuccess?: (data: any) => void;
       onFailure?: (error: any) => void;
     }) => {
       if (!razorpayLoaded) {
         toast({
-          title: 'Payment system loading',
-          description: 'Please wait while we initialize the payment system.',
+          title: "Payment system loading",
+          description: "Please wait while we initialize the payment system.",
         });
         return;
       }
 
       if (!user) {
         toast({
-          title: 'Authentication required',
-          description: 'You need to be logged in to make a payment',
-          variant: 'destructive',
+          title: "Authentication required",
+          description: "You need to be logged in to make a payment",
+          variant: "destructive",
         });
         return;
       }
@@ -154,32 +159,30 @@ export const useRazorpay = () => {
         const orderData = await createOrderMutation.mutateAsync({
           amount: options.amount,
           orderId: options.orderId,
-          type: options.type || 'order',
+          type: options.type || "order",
         });
 
-        // Configure Razorpay
         const razorpayOptions: RazorpayOptions = {
           key: orderData.key,
           amount: orderData.amount,
           currency: orderData.currency,
-          name: options.name || 'Aayuv Millet Foods',
-          description: options.description || 'Order Payment',
-          image: '/images/logo.png', // Logo URL
+          name: options.name || "Aayuv Millet Foods",
+          description: options.description || "Order Payment",
+          image: "/images/logo.png", // Logo URL
           order_id: orderData.orderId,
           handler: async (response) => {
-            // Verify payment on success
             try {
               await verifyPaymentMutation.mutateAsync({
                 orderId: options.orderId,
                 razorpayOrderId: response.razorpay_order_id,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpaySignature: response.razorpay_signature,
-                type: options.type || 'order',
+                type: options.type || "order",
               });
 
               toast({
-                title: 'Payment Successful',
-                description: 'Your payment has been processed successfully',
+                title: "Payment Successful",
+                description: "Your payment has been processed successfully",
               });
 
               if (options.onSuccess) {
@@ -187,63 +190,56 @@ export const useRazorpay = () => {
               }
             } catch (error: any) {
               toast({
-                title: 'Payment Verification Failed',
-                description: error.message || 'Failed to verify payment',
-                variant: 'destructive',
+                title: "Payment Verification Failed",
+                description: error.message || "Failed to verify payment",
+                variant: "destructive",
               });
-              
-              // Call onFailure to ensure we stay on the same page if verification fails
-              // This prevents navigation to success page even if payment was made but verification failed
+
               if (options.onFailure) {
                 options.onFailure(error);
               }
             }
           },
           prefill: {
-            name: user.name || '',
-            email: user.email || '',
-            contact: user.phone || '',
+            name: user.name || "",
+            email: user.email || "",
+            contact: user.phone || "",
           },
           notes: {
             orderId: options.orderId.toString(),
           },
           theme: options.theme || {
-            color: '#F37254',
+            color: "#F37254",
           },
           modal: {
             ondismiss: () => {
-              // Handle payment modal dismissal
               toast({
-                title: 'Payment Cancelled',
-                description: 'You cancelled the payment process',
+                title: "Payment Cancelled",
+                description: "You cancelled the payment process",
               });
-              
-              // Call the onFailure callback to ensure we stay on the same page
-              // This ensures we don't navigate to success page when user cancels
+
               if (options.onFailure) {
-                options.onFailure({ message: 'Payment cancelled by user' });
+                options.onFailure({ message: "Payment cancelled by user" });
               }
             },
           },
         };
 
-        // Initialize Razorpay
         const razorpay = new window.Razorpay(razorpayOptions);
         razorpay.open();
-
       } catch (error: any) {
         toast({
-          title: 'Payment Initialization Failed',
-          description: error.message || 'Failed to initialize payment',
-          variant: 'destructive',
+          title: "Payment Initialization Failed",
+          description: error.message || "Failed to initialize payment",
+          variant: "destructive",
         });
-        
+
         if (options.onFailure) {
           options.onFailure(error);
         }
       }
     },
-    [razorpayLoaded, user, createOrderMutation, verifyPaymentMutation, toast]
+    [razorpayLoaded, user, createOrderMutation, verifyPaymentMutation, toast],
   );
 
   return {
