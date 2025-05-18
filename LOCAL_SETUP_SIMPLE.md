@@ -1,4 +1,4 @@
-# Local Setup Guide for Millet Food Service Platform
+# Local Setup Guide for Millet Food Service
 
 ## Prerequisites
 - Node.js (v16 or higher)
@@ -37,15 +37,6 @@ npm run dev
 ```
 
 The server will start on http://localhost:5000
-
-## Step 5: For Production Mode
-```bash
-# First build the project
-node build.js
-
-# Then start in production mode
-npm start
-```
 
 ## Test Accounts
 - Admin: username: admin, password: admin123
