@@ -21,14 +21,17 @@ Create a `.env` file in the root directory with the following variables:
 
 ```env
 # MongoDB Connection (Required)
-MONGODB_URI=your_mongodb_connection_string_here
-
-# Razorpay (for payments)
-RAZORPAY_KEY_ID=your_razorpay_key_id_here
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret_here
+# Use your actual MongoDB connection string from MongoDB Atlas
+# Format: mongodb+srv://<username>:<password>@<cluster-url>/<database-name>
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database
 
 # Session management (Required)
-SESSION_SECRET=any_random_string_for_session_security
+# Generate a random string for securing user sessions
+SESSION_SECRET=random_string_for_security
+
+# Optional payment provider settings - add these when needed
+# RAZORPAY_KEY_ID=
+# RAZORPAY_KEY_SECRET=
 ```
 
 ## Step 4: Start the Development Server

@@ -12,7 +12,7 @@ export class MemStorage implements IStorage {
   [key: string]: any;
 
   constructor() {
-    const MemoryStore = createMemoryStore(expressSession as any);
+    const MemoryStore = createMemoryStore(expressSession);
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
@@ -29,11 +29,12 @@ declare global {
 
 const memStorage = new MemStorage();
 
-export const storage = new Proxy({} as IStorage, {
-  get: (target, prop) => {
-    return global.useMemoryFallback
-      ? memStorage[prop as keyof IStorage]
-      : mongoStorage[prop as keyof IStorage];
+export const storage = new Proxy<IStorage>({} as IStorage, {
+  get: (target, prop: string) => {
+    const storageInstance = global.useMemoryFallback
+      ? memStorage
+      : (mongoStorage as IStorage);
+    return storageInstance[prop as keyof IStorage];
   },
 });
 
