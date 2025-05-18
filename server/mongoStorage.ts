@@ -10,13 +10,14 @@ import {
   CurryOption,
   getNextSequence,
 } from "../shared/mongoModels";
-import { createSessionStore, SessionStore } from "./session-store";
+import { createSessionStore } from "./session-store";
+import expressSession from "express-session";
 import { milletMeals, MealDataItem } from "./mealData";
 
 import { IStorage } from "./storage";
 
 export class MongoDBStorage implements IStorage {
-  sessionStore: SessionStore;
+  sessionStore: expressSession.Store;
 
   constructor() {
     this.sessionStore = createSessionStore();
