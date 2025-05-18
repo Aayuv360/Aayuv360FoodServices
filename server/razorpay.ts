@@ -11,10 +11,16 @@ interface RazorpaySubscriptionRequest {
   start_at?: number;
   notes: Record<string, string>;
 }
-// Using hardcoded values for Razorpay
+console.log("tets", process.env.RAZORPAY_KEY_ID);
+if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+  throw new Error(
+    "Missing required environment variables: RAZORPAY_KEY_ID and/or RAZORPAY_KEY_SECRET",
+  );
+}
+
 const razorpay = new Razorpay({
-  key_id: "rzp_test_UxXBzl98ySixq7",
-  key_secret: "some_test_key_secret_value",
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
 export const orderPaymentMap = new Map<
