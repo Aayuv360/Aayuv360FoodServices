@@ -68,13 +68,30 @@ async function connectToDatabase() {
       serveStatic(app);
     }
     
-    const port = process.env.PORT || 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-    }, () => {
-      log(`Server running on port ${port}`);
-    });
+    const preferredPort = process.env.PORT || 5000;
+    let port = preferredPort;
+    let retries = 0;
+    
+    const startServer = () => {
+      server.listen({
+        port,
+        host: "0.0.0.0",
+      }, () => {
+        log(`Server running on port ${port}`);
+      }).on('error', (e: any) => {
+        if (e.code === 'EADDRINUSE' && retries < 10) {
+          retries++;
+          port = Number(preferredPort) + retries;
+          log(`Port ${Number(preferredPort) + retries - 1} in use, trying ${port}`);
+          startServer();
+        } else {
+          console.error('Failed to start server:', e);
+          process.exit(1);
+        }
+      });
+    };
+    
+    startServer();
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);

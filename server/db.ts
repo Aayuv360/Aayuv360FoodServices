@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-// No need for dotenv since we're using hardcoded values
 
 let isConnected = false;
 
@@ -10,8 +9,12 @@ export async function connectToMongoDB() {
   }
 
   try {
-    // Hardcoded MongoDB connection string instead of using environment variable
-    const uri = "mongodb+srv://username:password@cluster.mongodb.net/database";
+    // Use the environment variable from .env file
+    const uri = process.env.MONGODB_URI;
+    
+    if (!uri) {
+      throw new Error("MONGODB_URI environment variable is not set");
+    }
     
     console.log("Connecting to MongoDB...");
     await mongoose.connect(uri, {
