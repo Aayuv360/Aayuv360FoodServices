@@ -31,20 +31,17 @@ export class MongoDBStorage implements IStorage {
 
   private async initializeSampleMeals(): Promise<void> {
     try {
-      const countMeals = async () => {
-        try {
-          return await Meal.countDocuments();
-        } catch (err) {
-          console.error("Error counting meals:", err);
-          return -1;
-        }
-      };
-
-      const timeoutPromise = new Promise<number>((resolve) => {
-        setTimeout(() => resolve(-1), 5000);
-      });
-
-      const mealsCount = await Promise.race([countMeals(), timeoutPromise]);
+      let mealsCount;
+      
+      try {
+        console.log("Fetching meal count from database...");
+        mealsCount = await Meal.countDocuments();
+        console.log(`Found ${mealsCount} meals in the database`);
+      } catch (err) {
+        console.error("Error counting meals:", err);
+        console.log("Skipping meal initialization due to database connection issues");
+        return; // Exit early if we can't connect to the database
+      }
 
       if (mealsCount === 0) {
         console.log("Initializing sample meals...");
