@@ -8,7 +8,7 @@ let isConnected = false;
 export async function connectToMongoDB() {
   if (isConnected) {
     console.log("Using existing MongoDB connection");
-    return mongoose.connection;
+    return { db: mongoose.connection.db };
   }
 
   try {
@@ -22,7 +22,7 @@ export async function connectToMongoDB() {
 
     isConnected = true;
     console.log("Successfully connected to MongoDB");
-    return mongoose.connection;
+    return { db: mongoose.connection.db };
   } catch (error) {
     console.error("MongoDB connection error:", error);
     throw error;

@@ -16,6 +16,9 @@ export async function createNotification(
   notificationData: Omit<Notification, "id" | "read" | "createdAt">,
 ): Promise<Notification> {
   const { db } = await connectToMongoDB();
+  if (!db) {
+    throw new Error("Database connection failed");
+  }
   const notificationsCollection = db.collection("notifications");
 
   const maxIdDoc = await notificationsCollection
@@ -41,6 +44,9 @@ export async function getUserNotifications(
   userId: number,
 ): Promise<Notification[]> {
   const { db } = await connectToMongoDB();
+  if (!db) {
+    throw new Error("Database connection failed");
+  }
   const notificationsCollection = db.collection("notifications");
 
   const notifications = await notificationsCollection
@@ -55,6 +61,9 @@ export async function markNotificationAsRead(
   notificationId: number,
 ): Promise<Notification | null> {
   const { db } = await connectToMongoDB();
+  if (!db) {
+    throw new Error("Database connection failed");
+  }
   const notificationsCollection = db.collection("notifications");
 
   const result = await notificationsCollection.findOneAndUpdate(
