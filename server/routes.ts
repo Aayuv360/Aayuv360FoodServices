@@ -1088,9 +1088,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
               })
             );
             
+            // Get proper user name - mongodb document may store it differently
+            let userName = "Unknown User";
+            if (user) {
+              // Try different naming conventions that might be in the database
+              userName = user.name || user.fullName || user.displayName || 
+                        (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null) ||
+                        user.username || `Customer #${order.userId}`;
+            }
+            
             return {
               ...order,
-              userName: user?.name || "Unknown User",
+              userName,
               items: enrichedItems
             };
           }),
@@ -1115,9 +1124,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const enrichedSubscriptions = await Promise.all(
           subscriptions.map(async (subscription) => {
             const user = await mongoStorage.getUser(subscription.userId);
+            
+            // Get proper user name - mongodb document may store it differently
+            let userName = "Unknown User";
+            if (user) {
+              // Try different naming conventions that might be in the database
+              userName = user.name || user.fullName || user.displayName || 
+                        (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null) ||
+                        user.username || `Customer #${subscription.userId}`;
+            }
+            
             return {
               ...subscription,
-              userName: user?.name || "Unknown User",
+              userName,
             };
           }),
         );

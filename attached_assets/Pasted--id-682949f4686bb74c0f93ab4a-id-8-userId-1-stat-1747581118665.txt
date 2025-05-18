@@ -1,0 +1,85 @@
+    {
+        "_id": "682949f4686bb74c0f93ab4a",
+        "id": 8,
+        "userId": 1,
+        "status": "delivered",
+        "totalPrice": 195,
+        "deliveryAddress": "2/92test, b-block 308, Hyderabad, Telangana - 515001",
+        "items": [
+            {
+                "mealId": 154,
+                "quantity": 1,
+                "notes": "",
+                "curryOptionId": "curry_1747068708952",
+                "curryOptionName": "tomato curry",
+                "curryOptionPrice": 10,
+                "_id": "682949f4686bb74c0f93ab4b",
+                "meal": {
+                    "_id": "6820e06db19f12f2148711d8",
+                    "id": 154,
+                    "name": "Ragi Mudde",
+                    "description": "Traditional finger millet balls served with flavorful curry, rich in calcium and protein.",
+                    "price": 185,
+                    "category": "Finger Millet",
+                    "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47",
+                    "dietaryPreferences": [
+                        "vegetarian",
+                        "gluten-free"
+                    ],
+                    "isPopular": true,
+                    "isNewItem": false,
+                    "ingredients": [],
+                    "allergens": [],
+                    "isAvailable": true,
+                    "createdAt": "2025-05-11T17:37:49.274Z",
+                    "updatedAt": "2025-05-11T17:37:49.274Z",
+                    "__v": 0,
+                    "calories": 319,
+                    "carbs": 48,
+                    "fat": 7,
+                    "fiber": 10,
+                    "protein": 13,
+                    "curryOptions": []
+                }
+            },
+            {
+                "mealId": 154,
+                "quantity": 1,
+                "curryOptionId": "curry_1747068708952",
+                "curryOptionName": "tomato curry",
+                "curryOptionPrice": 10,
+                "_id": "682949f5686bb74c0f93ab4e",
+                "meal": {
+                    "_id": "6820e06db19f12f2148711d8",
+                    "id": 154,
+                    "name": "Ragi Mudde",
+                    "description": "Traditional finger millet balls served with flavorful curry, rich in calcium and protein.",
+                    "price": 185,
+                    "category": "Finger Millet",
+                    "imageUrl": "https://images.unsplash.com/photo-1565299585323-38d6b0865b47",
+                    "dietaryPreferences": [
+                        "vegetarian",
+                        "gluten-free"
+                    ],
+                    "isPopular": true,
+                    "isNewItem": false,
+                    "ingredients": [],
+                    "allergens": [],
+                    "isAvailable": true,
+                    "createdAt": "2025-05-11T17:37:49.274Z",
+                    "updatedAt": "2025-05-11T17:37:49.274Z",
+                    "__v": 0,
+                    "calories": 319,
+                    "carbs": 48,
+                    "fat": 7,
+                    "fiber": 10,
+                    "protein": 13,
+                    "curryOptions": []
+                }
+            }
+        ],
+        "createdAt": "2025-05-18T02:46:12.658Z",
+        "updatedAt": "2025-05-18T13:55:16.776Z",
+        "__v": 0,
+        "userName": "Unknown User"
+    },
