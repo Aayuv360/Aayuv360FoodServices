@@ -1074,10 +1074,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const enrichedOrders = await Promise.all(
           orders.map(async (order) => {
+            // Get user information
             const user = await mongoStorage.getUser(order.userId);
+            
+            // Enhance each order item with meal data
+            const enrichedItems = await Promise.all(
+              (order.items || []).map(async (item: any) => {
+                const meal = await mongoStorage.getMeal(item.mealId);
+                return {
+                  ...item,
+                  meal: meal || { name: `Meal #${item.mealId}` },
+                };
+              })
+            );
+            
             return {
               ...order,
               userName: user?.name || "Unknown User",
+              items: enrichedItems
             };
           }),
         );

@@ -148,12 +148,15 @@ export default function OrderManagementPage() {
   };
   
   // Format currency
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | string | undefined) => {
+    if (price === undefined || price === null || isNaN(Number(price))) {
+      return '₹0';
+    }
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
       maximumFractionDigits: 0,
-    }).format(price);
+    }).format(Number(price));
   };
 
   return (
