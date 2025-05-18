@@ -890,6 +890,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const deliveryCharge = req.body.deliveryCharge || 0;
 
+      // Create the order with items already included in the order document
+      // This prevents duplication because we don't need to call createOrderItem separately
       const order = await mongoStorage.createOrder({
         userId,
         status: "pending",
@@ -900,26 +902,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         createdAt: new Date(),
       });
 
-      for (const cartItem of cartItems) {
-        const meal = await mongoStorage.getMeal(cartItem.mealId);
-        if (!meal) continue;
-
-        const basePrice = cartItem.quantity * meal.price;
-        const optionPrice = cartItem.curryOptionPrice
-          ? cartItem.quantity * cartItem.curryOptionPrice
-          : 0;
-
-        await mongoStorage.createOrderItem({
-          orderId: order.id,
-          mealId: cartItem.mealId,
-          quantity: cartItem.quantity,
-          price: basePrice + optionPrice,
-          curryOptionId: cartItem.curryOptionId || null,
-          curryOptionName: cartItem.curryOptionName || null,
-          curryOptionPrice: cartItem.curryOptionPrice || 0,
-        });
-      }
-
+      // Clear the cart after order is created
       await mongoStorage.clearCart(userId);
 
       res.status(201).json(order);

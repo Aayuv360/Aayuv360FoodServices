@@ -511,6 +511,13 @@ export class MongoDBStorage implements IStorage {
     status: string,
   ): Promise<any | undefined> {
     try {
+      // Get the existing order first to check if it already has items
+      const existingOrder = await Order.findOne({ id });
+      if (!existingOrder) {
+        return undefined;
+      }
+
+      // Update just the status without modifying the items
       const order = await Order.findOneAndUpdate(
         { id },
         {
@@ -519,6 +526,8 @@ export class MongoDBStorage implements IStorage {
         },
         { new: true },
       );
+      
+      // Return the updated order
       return order ? order.toObject() : undefined;
     } catch (error) {
       console.error("Error updating order status:", error);
