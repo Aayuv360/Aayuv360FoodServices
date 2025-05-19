@@ -160,9 +160,6 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
           item.meal?.selectedCurry?.id === selectedCurryOption?.id
         );
       });
-      console.log(existingItem);
-      console.log(cartItems);
-      console.log(selectedMeal);
 
       if (existingItem) {
         await updateCartItem(existingItem.id, existingItem.quantity + 1);
@@ -173,7 +170,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         });
       } else {
         const mealWithCurry = {
-          ...meal,
+          ...selectedMeal,
           curryOption: selectedCurryOption,
         };
         await addToCart(mealWithCurry, 1);

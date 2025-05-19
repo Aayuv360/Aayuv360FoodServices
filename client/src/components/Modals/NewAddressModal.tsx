@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import { MapPin, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -10,7 +11,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-
+import { Home, Briefcase, Hotel, MoreHorizontal } from "lucide-react";
 import { Label } from "@/components/ui/label";
 interface Location {
   id: number;
@@ -30,6 +31,8 @@ export const NewAddressModal = ({
   setLocationSearch,
   selectLocation,
 }: any) => {
+  const [addressType, setAddressType] = useState("Home");
+
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
       <DialogContent className="sm:max-w-[900px]">
@@ -112,12 +115,31 @@ export const NewAddressModal = ({
               <div className="space-y-4">
                 <div className="grid grid-cols-1 gap-4">
                   <div>
-                    <Label htmlFor="address-name">Address Name</Label>
-                    <Input
-                      id="address-name"
+                    <div className="flex gap-2">
+                      {[
+                        { label: "Home", icon: Home },
+                        { label: "Office", icon: Briefcase },
+                        { label: "Hotel", icon: Hotel },
+                        { label: "Others", icon: MoreHorizontal },
+                      ].map(({ label, icon: Icon }) => (
+                        <Button
+                          key={label}
+                          type="button"
+                          variant={
+                            addressType === label ? "default" : "outline"
+                          }
+                          onClick={() => setAddressType(label)}
+                          className="flex items-center gap-1 px-3 py-2"
+                        >
+                          <Icon className="h-4 w-4" />
+                          {label}
+                        </Button>
+                      ))}
+                    </div>
+                    <input
+                      type="hidden"
                       name="addressName"
-                      placeholder="Home, Office, etc."
-                      required
+                      value={addressType}
                     />
                   </div>
 

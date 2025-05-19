@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
-  X,
   Minus,
   Plus,
   Check,
   CreditCard,
   ChevronRight,
   ChevronLeft,
-  MessageSquare,
   ShoppingCart as ShoppingCartIcon,
   PlusCircle,
 } from "lucide-react";
@@ -18,13 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useRazorpay } from "@/hooks/use-razorpay";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
 import { formatPrice } from "@/lib/utils";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Sheet,
   SheetContent,
@@ -35,21 +27,8 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
-
-const addressSchema = z.object({
-  name: z.string().min(3, "Full name is required"),
-  phoneNumber: z
-    .string()
-    .min(10, "Phone number must be at least 10 digits")
-    .max(15, "Phone number too long"),
-  addressType: z.enum(["home", "work", "other"]),
-  completeAddress: z.string().min(5, "Complete address is required"),
-  nearbyLandmark: z.string().optional(),
-  zipCode: z.string().min(5, "Zip code is required"),
-  locationId: z.number().optional(),
-});
-
-type AddressFormValues = z.infer<typeof addressSchema>;
+import { Meal } from "@shared/schema";
+import { Address } from "./Address";
 
 interface CartSidebarProps {
   open: boolean;
@@ -99,7 +78,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     cartItems,
     loading,
     updateCartItem,
-    updateCartItemWithOptions,
+    addToCart,
     removeCartItem,
     clearCart,
   } = useCart();
@@ -107,12 +86,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { initiatePayment } = useRazorpay();
-
-  useEffect(() => {
-    if (open) {
-      setCurrentStep("cart");
-    }
-  }, [open]);
+  const selectedAddress = addresses.find(
+    (addr) => addr.id === selectedAddressId,
+  );
+  // useEffect(() => {
+  //   if (open) {
+  //     setCurrentStep("cart");
+  //   }
+  // }, [open]);
 
   useEffect(() => {
     if (user && open) {
@@ -216,27 +197,58 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     return total;
   };
 
-  const handleUpdateCurryOption = async (updatedMeal: any) => {
-    const cartItem = cartItems.find((item) => item.meal?.id === updatedMeal.id);
+  const handleUpdateCurryOption = async (
+    selectedMeal: Meal,
+    selectedCurryOption: any,
+  ) => {
+    try {
+      const existingItem = cartItems.find((item) => {
+        console.log(item, selectedCurryOption);
+        return (
+          item.meal?.id === selectedMeal.id &&
+          item.meal?.selectedCurry?.id === selectedCurryOption?.id
+        );
+      });
 
-    if (cartItem) {
-      try {
-        await updateCartItemWithOptions(cartItem.id, updatedMeal.curryOption);
-
-        toast({
-          title: "Item updated",
-          description: `Your ${updatedMeal.name} has been updated with ${updatedMeal.curryOption.name}`,
-        });
-
+      if (existingItem) {
+        await updateCartItem(existingItem.id, existingItem.quantity + 1);
         setCustomizingMeal(null);
-      } catch (error) {
-        console.error("Error updating cart item:", error);
+
         toast({
-          title: "Error",
-          description: "Failed to update your selection",
-          variant: "destructive",
+          title: "Quantity increased",
+          description: `${selectedMeal.name} with ${selectedCurryOption?.name} quantity increased`,
+        });
+      } else {
+        const mealWithCurry = {
+          ...selectedMeal,
+          curryOption: selectedCurryOption,
+        };
+        await addToCart(mealWithCurry, 1);
+        setCustomizingMeal(null);
+
+        toast({
+          title: "Added to cart",
+          description: `${selectedMeal.name} with ${selectedCurryOption?.name} added to your cart`,
         });
       }
+
+      setCustomizingMeal(null);
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+
+      if (
+        error instanceof Error &&
+        error.message === "authentication_required"
+      ) {
+        setCustomizingMeal(null);
+        return;
+      }
+
+      toast({
+        title: "Error",
+        description: "There was an error updating your cart. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -489,9 +501,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         variant="outline"
                         size="icon"
                         className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
-                        onClick={() =>
-                          updateCartItem(item.id, item.quantity + 1)
-                        }
+                        onClick={() => handleCustomizeItem(item)}
                       >
                         <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </Button>
@@ -773,43 +783,48 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   </Button>
                 </div>
               ) : (
-                <div className="p-3 sm:p-4 flex gap-1.5 sm:gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handlePreviousStep}
-                    className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                  >
-                    <ChevronLeft className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                    Back
-                  </Button>
-                  <Button
-                    onClick={handleNextStep}
-                    className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                    disabled={loading || isCreatingOrder}
-                  >
-                    {currentStep === "delivery" && "Continue to Payment"}
-                    {currentStep === "payment" && (
-                      <>
-                        {isCreatingOrder ? (
-                          <>Processing...</>
-                        ) : (
-                          <>
-                            <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                            Pay{" "}
-                            {formatPrice(
-                              calculateCartTotal() +
-                                (deliveryType === "express" ? 60 : 40) +
-                                20,
-                            )}
-                          </>
-                        )}
-                      </>
-                    )}
-                    {currentStep === "delivery" && (
-                      <ChevronRight className="ml-1 h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
+                <>
+                  {currentStep === "payment" && (
+                    <Address selectedAddress={selectedAddress} />
+                  )}
+                  <div className="p-3 sm:p-4 flex gap-1.5 sm:gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handlePreviousStep}
+                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+                    >
+                      <ChevronLeft className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleNextStep}
+                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+                      disabled={loading || isCreatingOrder}
+                    >
+                      {currentStep === "delivery" && "Continue to Payment"}
+                      {currentStep === "payment" && (
+                        <>
+                          {isCreatingOrder ? (
+                            <>Processing...</>
+                          ) : (
+                            <>
+                              <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                              Pay{" "}
+                              {formatPrice(
+                                calculateCartTotal() +
+                                  (deliveryType === "express" ? 60 : 40) +
+                                  20,
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                      {currentStep === "delivery" && (
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </>
               )}
             </div>
           )}
@@ -823,7 +838,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           onClose={() => setCustomizingMeal(null)}
           meal={customizingMeal}
           onAddToCart={handleUpdateCurryOption}
-          lastCurryOption={customizingMeal?.curryOption}
+          lastCurryOption={customizingMeal?.selectedCurry}
           isInCart={true}
         />
       )}

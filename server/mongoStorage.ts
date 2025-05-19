@@ -32,14 +32,16 @@ export class MongoDBStorage implements IStorage {
   private async initializeSampleMeals(): Promise<void> {
     try {
       let mealsCount;
-      
+
       try {
         console.log("Fetching meal count from database...");
         mealsCount = await Meal.countDocuments();
         console.log(`Found ${mealsCount} meals in the database`);
       } catch (err) {
         console.error("Error counting meals:", err);
-        console.log("Skipping meal initialization due to database connection issues");
+        console.log(
+          "Skipping meal initialization due to database connection issues",
+        );
         return; // Exit early if we can't connect to the database
       }
 
@@ -316,7 +318,7 @@ export class MongoDBStorage implements IStorage {
       const populatedItems = await Promise.all(
         items.map(async (item) => {
           const meal = await this.getMeal(item.mealId);
-          
+
           // Add curry option to meal if it exists in cart item
           let enrichedMeal = meal;
           if (item.curryOptionId && item.curryOptionName) {
@@ -325,13 +327,13 @@ export class MongoDBStorage implements IStorage {
               curryOption: {
                 id: item.curryOptionId,
                 name: item.curryOptionName,
-                priceAdjustment: item.curryOptionPrice || 0
+                priceAdjustment: item.curryOptionPrice || 0,
               },
               // Ensure curryOptions from meal are preserved
-              curryOptions: item.curryOptions || meal?.curryOptions || []
+              curryOptions: item.curryOptions || meal?.curryOptions || [],
             };
           }
-          
+
           return {
             ...item,
             meal: enrichedMeal,
@@ -542,7 +544,7 @@ export class MongoDBStorage implements IStorage {
         },
         { new: true },
       );
-      
+
       // Return the updated order
       return order ? order.toObject() : undefined;
     } catch (error) {
@@ -1124,26 +1126,6 @@ export class MongoDBStorage implements IStorage {
     } catch (error) {
       console.error("Error deleting location:", error);
       return false;
-    }
-  }
-
-  // Curry Options CRUD methods
-  async getCurryOptions(): Promise<any[]> {
-    try {
-      return await CurryOption.find().lean();
-    } catch (error) {
-      console.error("Error getting curry options:", error);
-      return [];
-    }
-  }
-
-  async getCurryOption(id: string): Promise<any | undefined> {
-    try {
-      const curryOption = await CurryOption.findOne({ id }).lean();
-      return curryOption || undefined;
-    } catch (error) {
-      console.error("Error getting curry option:", error);
-      return undefined;
     }
   }
 

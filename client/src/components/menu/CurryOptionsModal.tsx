@@ -81,14 +81,6 @@ export function CurryOptionsModal({
             <DialogTitle className="text-base sm:text-lg">
               {isInCart ? "Update Your Customization" : "Customize Your Meal"}
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 sm:h-6 sm:w-6"
-              onClick={onClose}
-            >
-              <X className="h-3 w-3 sm:h-4 sm:w-4" />
-            </Button>
           </div>
           <DialogDescription className="text-xs sm:text-sm mt-1">
             Choose a curry style for {meal.name}
