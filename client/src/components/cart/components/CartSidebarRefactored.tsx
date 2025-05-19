@@ -75,7 +75,7 @@ const CartSidebarRefactored = ({ open, onClose }: CartSidebarProps) => {
   const [deliveryType, setDeliveryType] = useState<string>("default");
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [noteText, setNoteText] = useState<string>("");
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
   const [formattedAddress, setFormattedAddress] = useState<string>("");
@@ -499,11 +499,11 @@ const CartSidebarRefactored = ({ open, onClose }: CartSidebarProps) => {
       </Sheet>
 
       <AuthModal
-        open={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        message="Login or create an account to continue with your order"
+        isOpen={authModalOpen}
+        onOpenChange={setAuthModalOpen}
+        defaultTab="login"
+        mode="normal"
         onSuccess={() => {
-          setAuthModalOpen(false);
           setCurrentStep("delivery");
         }}
       />

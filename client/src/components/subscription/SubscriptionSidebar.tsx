@@ -71,7 +71,7 @@ const SubscriptionSidebar = ({ open, onClose, plan }: SubscriptionSidebarProps) 
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
     useState<string>("razorpay");
   const [subscriptionId, setSubscriptionId] = useState<number | null>(null);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [isCreatingSubscription, setIsCreatingSubscription] = useState(false);
 
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -414,11 +414,11 @@ const SubscriptionSidebar = ({ open, onClose, plan }: SubscriptionSidebarProps) 
       </Sheet>
 
       <AuthModal
-        open={authModalOpen}
+        isOpen={authModalOpen}
         onOpenChange={setAuthModalOpen}
-        message="Login or create an account to continue with your subscription"
+        defaultTab="login"
+        mode="subscribe"
         onSuccess={() => {
-          setAuthModalOpen(false);
           setCurrentStep("delivery");
         }}
       />
