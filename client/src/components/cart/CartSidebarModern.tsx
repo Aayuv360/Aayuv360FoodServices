@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ShoppingCart as ShoppingCartIcon,
   PlusCircle,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -56,7 +57,7 @@ interface Location {
 
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
-const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
+const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
   const selectedPaymentMethod = "razorpay";
   const [orderId, setOrderId] = useState<number | null>(null);
@@ -64,6 +65,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
+  const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [noteText, setNoteText] = useState<string>("");
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
@@ -89,11 +92,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const selectedAddress = addresses.find(
     (addr) => addr.id === selectedAddressId,
   );
-  // useEffect(() => {
-  //   if (open) {
-  //     setCurrentStep("cart");
-  //   }
-  // }, [open]);
 
   useEffect(() => {
     if (user && open) {
@@ -254,16 +252,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   const hasCurryOptions = (meal: any) => {
     if (!meal) return false;
-
-    if (meal.curryOptions.length > 0) {
+    if (meal.curryOptions && meal.curryOptions.length > 0) {
       return true;
     }
-
     return false;
   };
+
   const handleCustomizeItem = (item: any) => {
     setCustomizingMeal(item.meal);
   };
+
   function calculateMealPrice(item: any): number {
     const basePrice = item.meal?.price || 0;
 
@@ -275,6 +273,46 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
     return (basePrice + curryAdjustment) * item.quantity;
   }
+
+  const isEditingNotes = (id: number) => editingItemId === id;
+
+  const handleEditNotes = (item: any) => {
+    setEditingItemId(item.id);
+    setNoteText(item.notes || "");
+  };
+
+  const handleSaveNotes = async (item: any) => {
+    try {
+      await apiRequest("PATCH", `/api/cart/${item.id}`, {
+        notes: noteText,
+      });
+      
+      // Update cart items locally
+      const updatedItems = cartItems.map((cartItem) => {
+        if (cartItem.id === item.id) {
+          return { ...cartItem, notes: noteText };
+        }
+        return cartItem;
+      });
+      
+      // This would normally be handled by the cart context
+      // But for this example, we'll just show a toast
+      
+      toast({
+        title: "Notes updated",
+        description: "Your special instructions have been saved",
+      });
+      
+      setEditingItemId(null);
+    } catch (error) {
+      console.error("Error saving notes:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save your notes. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleNextStep = async () => {
     if (currentStep === "cart") {
@@ -403,10 +441,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       setCurrentStep("cart");
     }
   };
-  const renderCartSummary = () => (
-    <div className="flex-grow overflow-y-auto">
+  
+  // Modern Cart UI rendering
+  const renderModernCart = () => (
+    <div className="flex-grow overflow-y-auto flex flex-col h-full">
       {cartItems.length === 0 ? (
-        <div className="text-center py-8 px-4">
+        <div className="text-center py-8 px-4 flex-grow flex flex-col items-center justify-center">
           <div className="w-20 h-20 mx-auto bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4">
             <ShoppingCartIcon className="w-10 h-10" />
           </div>
@@ -425,8 +465,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           </Button>
         </div>
       ) : (
-        <div>
-          <div className="px-4 py-3 space-y-4">
+        <>
+          <div className="px-4 py-3 space-y-4 flex-grow overflow-y-auto">
             {cartItems.map((item) => (
               <div
                 key={item.id}
@@ -478,9 +518,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     
                     {item.notes && !isEditingNotes(item.id) && (
                       <p className="text-xs text-gray-600 mt-1 flex items-start">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-3 w-3 mr-1 mt-0.5 text-gray-400">
-                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                        </svg>
+                        <MessageSquare className="h-3 w-3 mr-1 mt-0.5 text-gray-400" />
                         {item.notes}
                       </p>
                     )}
@@ -584,13 +622,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 </div>
               </div>
             ))}
-                  </div>
-                </div>
-              );
-            })}
           </div>
 
-          <div className="px-4 py-4 border-t">
+          {/* Bill Details Section */}
+          <div className="px-4 py-4 border-t mt-auto">
             <h3 className="font-medium text-base mb-3">Bill Details</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -604,312 +639,406 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </div>
 
               <div className="flex justify-between">
-                <span className="text-gray-600">Taxes</span>
+                <span className="text-gray-600">Platform Fee</span>
                 <span>{formatPrice(20)}</span>
               </div>
-              <Separator className="my-2" />
-              <div className="flex justify-between font-semibold">
-                <span>Grand Total</span>
-                <span className="text-primary">
-                  {formatPrice(
-                    calculateCartTotal() +
-                      (deliveryType === "express" ? 60 : 40) +
-                      20,
-                  )}
+
+              <div className="flex justify-between font-medium text-base pt-2 border-t">
+                <span>Total Amount</span>
+                <span>
+                  {formatPrice(calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20)}
                 </span>
               </div>
             </div>
-          </div>
 
-          {/* Cancellation Policy */}
-          <div className="px-3 sm:px-4 py-2 sm:py-3 border-t">
-            <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">
-              Cancellation Policy
-            </h3>
-            <p className="text-[10px] sm:text-xs text-gray-600">
-              Orders can be cancelled before they are confirmed by the
-              restaurant. Once confirmed, refunds will be processed as per our
-              policy.
-            </p>
+            <Button
+              className="w-full mt-4 rounded-md py-2 h-auto"
+              onClick={handleNextStep}
+            >
+              Proceed to Checkout
+            </Button>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
-  return (
-    <>
-      <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full overflow-hidden">
-          <SheetHeader className="p-3 sm:p-4 border-b">
-            <div className="flex justify-between items-center">
-              <SheetTitle className="text-lg sm:text-xl">Your Cart</SheetTitle>
+
+  const renderDeliveryDetails = () => (
+    <div className="flex-grow overflow-y-auto">
+      <div className="p-4">
+        <button
+          onClick={handlePreviousStep}
+          className="flex items-center text-primary text-sm mb-4"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Back to Cart
+        </button>
+
+        <h3 className="font-medium text-lg mb-4">Delivery Details</h3>
+
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-2">Delivery Type</h4>
+          <div className="space-y-2">
+            <div
+              className={`border rounded-md p-3 flex items-center cursor-pointer ${
+                deliveryType === "default"
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-200"
+              }`}
+              onClick={() => setDeliveryType("default")}
+            >
+              <div
+                className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
+                  deliveryType === "default"
+                    ? "border-primary"
+                    : "border-gray-300"
+                }`}
+              >
+                {deliveryType === "default" && (
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                )}
+              </div>
+              <div className="flex-grow">
+                <h5 className="font-medium text-sm">Standard Delivery</h5>
+                <p className="text-xs text-gray-500">
+                  Delivered within 45-60 mins
+                </p>
+              </div>
+              <div className="text-right text-sm font-medium">₹40</div>
             </div>
-          </SheetHeader>
 
-          <div className="flex-grow overflow-auto">
-            {currentStep === "cart" && renderCartSummary()}
+            <div
+              className={`border rounded-md p-3 flex items-center cursor-pointer ${
+                deliveryType === "express"
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-200"
+              }`}
+              onClick={() => setDeliveryType("express")}
+            >
+              <div
+                className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
+                  deliveryType === "express"
+                    ? "border-primary"
+                    : "border-gray-300"
+                }`}
+              >
+                {deliveryType === "express" && (
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                )}
+              </div>
+              <div className="flex-grow">
+                <h5 className="font-medium text-sm">Express Delivery</h5>
+                <p className="text-xs text-gray-500">
+                  Delivered within 25-30 mins
+                </p>
+              </div>
+              <div className="text-right text-sm font-medium">₹60</div>
+            </div>
+          </div>
+        </div>
 
-            {currentStep === "delivery" && (
-              <div className="p-3 sm:p-4">
-                <div className="space-y-3 sm:space-y-4">
-                  <h3 className="font-medium text-sm sm:text-base">
-                    Delivery Address
-                  </h3>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-medium text-sm">Delivery Address</h4>
+            <Button
+              variant="link"
+              className="p-0 h-auto text-xs text-primary"
+              onClick={() => setAddressModalOpen(true)}
+            >
+              + Add New
+            </Button>
+          </div>
 
-                  {/* Display existing addresses */}
-                  {addresses.length > 0 ? (
-                    <div className="space-y-2 sm:space-y-3">
-                      {addresses.map((address) => (
-                        <div
-                          key={address.id}
-                          className={`border rounded-md p-2 sm:p-3 cursor-pointer ${
-                            selectedAddressId === address.id
-                              ? "border-primary bg-primary/5"
-                              : ""
-                          }`}
-                          onClick={() => setSelectedAddressId(address.id)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-1 sm:gap-2">
-                              <div className="font-medium text-xs sm:text-sm">
-                                {address.name}
-                              </div>
-                              {address.isDefault && (
-                                <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1.5 sm:px-2 py-0.5 rounded">
-                                  Default
-                                </span>
-                              )}
-                            </div>
-                            {selectedAddressId === address.id && (
-                              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            )}
-                          </div>
-                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-1">
-                            {address.addressLine1}
-                          </p>
-                          {address.addressLine2 && (
-                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
-                              {address.addressLine2}
-                            </p>
-                          )}
-                          <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
-                            {address.city}, {address.state} - {address.pincode}
-                          </p>
-                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
-                            Phone: {address.phone}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-gray-500">
-                      No saved addresses found
-                    </div>
-                  )}
-
-                  {/* Button to add a new address */}
-                  <div className="mt-3 sm:mt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full flex items-center justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
-                      onClick={() => setAddressModalOpen(true)}
-                    >
-                      <PlusCircle className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      Add New Address
-                    </Button>
+          {addresses.length === 0 ? (
+            <div className="border border-gray-200 rounded-md p-4 text-center">
+              <p className="text-sm text-gray-500 mb-2">
+                You don't have any saved addresses
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => setAddressModalOpen(true)}
+              >
+                Add Address
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {addresses.map((address) => (
+                <div
+                  key={address.id}
+                  className={`border rounded-md p-3 flex items-start cursor-pointer ${
+                    selectedAddressId === address.id
+                      ? "border-primary bg-primary/5"
+                      : "border-gray-200"
+                  }`}
+                  onClick={() => setSelectedAddressId(address.id)}
+                >
+                  <div
+                    className={`w-4 h-4 rounded-full border mt-0.5 mr-2 flex items-center justify-center ${
+                      selectedAddressId === address.id
+                        ? "border-primary"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {selectedAddressId === address.id && (
+                      <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    )}
                   </div>
-
-                  <NewAddressModal
-                    addressModalOpen={addressModalOpen}
-                    setAddressModalOpen={setAddressModalOpen}
-                    locationSearch={locationSearch}
-                    filteredLocations={filteredLocations}
-                    handleAddressFormSubmit={handleAddressFormSubmit}
-                    setLocationSearch={setLocationSearch}
-                    selectLocation={selectLocation}
-                  />
-
-                  <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
-                    <h3 className="font-medium text-xs sm:text-sm mb-1.5 sm:mb-2">
-                      Delivery Type
-                    </h3>
-                    <div className="flex gap-1.5 sm:gap-2">
-                      <Button
-                        type="button"
-                        variant={
-                          deliveryType === "default" ? "default" : "outline"
-                        }
-                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                        onClick={() => setDeliveryType("default")}
-                      >
-                        Standard
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={
-                          deliveryType === "express" ? "default" : "outline"
-                        }
-                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                        onClick={() => setDeliveryType("express")}
-                      >
-                        Express (+ �60)
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
-                    <p>
-                      We currently deliver only in Hyderabad, within a 10km
-                      radius of our service locations.
+                  <div>
+                    <h5 className="font-medium text-sm">{address.name}</h5>
+                    <p className="text-xs text-gray-700">
+                      {address.addressLine1}
+                      {address.addressLine2 && `, ${address.addressLine2}`}
+                    </p>
+                    <p className="text-xs text-gray-700">
+                      {address.city}, {address.state} - {address.pincode}
+                    </p>
+                    <p className="text-xs text-gray-700 mt-1">
+                      Phone: {address.phone}
                     </p>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {currentStep === "payment" && renderCartSummary()}
-
-            {currentStep === "success" && (
-              <div className="p-3 sm:p-4 text-center">
-                <div className="bg-primary/10 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Check className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-                </div>
-                <h2 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2">
-                  Order Placed Successfully!
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6">
-                  Your order #{orderId} has been placed successfully.
-                </p>
-                <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
-                  <h3 className="font-medium text-sm sm:text-base text-left mb-1.5 sm:mb-2">
-                    Order Details
-                  </h3>
-                  <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
-                    <div className="flex justify-between">
-                      <span>Order Number</span>
-                      <span>#{orderId}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Payment Method</span>
-                      <span>
-                        {selectedPaymentMethod === "razorpay"
-                          ? "Online Payment"
-                          : "Cash on Delivery"}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Total Amount</span>
-                      <span>
-                        {formatPrice(
-                          calculateCartTotal() +
-                            (deliveryType === "express" ? 60 : 40) +
-                            20,
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                  onClick={() => {
-                    onClose();
-                    setCurrentStep("cart");
-                    navigate("/menu");
-                  }}
-                >
-                  Continue Shopping
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                  onClick={() => {
-                    onClose();
-                    setCurrentStep("cart");
-                    navigate("/profile?tab=orders");
-                  }}
-                >
-                  View Orders
-                </Button>
-              </div>
-            )}
-          </div>
-
-          {/* Footer with proceed button */}
-          {currentStep !== "success" && cartItems.length > 0 && (
-            <div className="border-t">
-              {currentStep === "cart" ? (
-                <div className="p-3 sm:p-4">
-                  <Button
-                    onClick={handleNextStep}
-                    className="w-full bg-primary text-white font-medium text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                    disabled={loading || cartItems.length === 0}
-                  >
-                    Proceed
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {currentStep === "payment" && (
-                    <Address selectedAddress={selectedAddress} />
-                  )}
-                  <div className="p-3 sm:p-4 flex gap-1.5 sm:gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={handlePreviousStep}
-                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                    >
-                      <ChevronLeft className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleNextStep}
-                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                      disabled={loading || isCreatingOrder}
-                    >
-                      {currentStep === "delivery" && "Continue to Payment"}
-                      {currentStep === "payment" && (
-                        <>
-                          {isCreatingOrder ? (
-                            <>Processing...</>
-                          ) : (
-                            <>
-                              <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                              Pay{" "}
-                              {formatPrice(
-                                calculateCartTotal() +
-                                  (deliveryType === "express" ? 60 : 40) +
-                                  20,
-                              )}
-                            </>
-                          )}
-                        </>
-                      )}
-                      {currentStep === "delivery" && (
-                        <ChevronRight className="ml-1 h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </>
-              )}
+              ))}
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="p-4 border-t mt-auto">
+        <Button className="w-full" onClick={handleNextStep}>
+          Proceed to Payment
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderPaymentOptions = () => (
+    <div className="flex-grow overflow-y-auto">
+      <div className="p-4">
+        <button
+          onClick={handlePreviousStep}
+          className="flex items-center text-primary text-sm mb-4"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Back to Delivery
+        </button>
+
+        <h3 className="font-medium text-lg mb-4">Payment</h3>
+
+        <div className="mb-6">
+          <div className="border rounded-md p-3 flex items-center cursor-pointer border-primary bg-primary/5">
+            <div className="w-4 h-4 rounded-full border border-primary mr-2 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-primary"></div>
+            </div>
+            <div className="flex-grow">
+              <h5 className="font-medium text-sm">Razorpay</h5>
+              <p className="text-xs text-gray-500">
+                Pay securely with credit/debit card or UPI
+              </p>
+            </div>
+            <CreditCard className="h-5 w-5 text-gray-500" />
+          </div>
+        </div>
+
+        <div className="p-3 border rounded-md mb-6">
+          <h4 className="font-medium text-sm mb-2">Order Summary</h4>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Items Total</span>
+              <span>{formatPrice(calculateCartTotal())}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Delivery Charge</span>
+              <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Platform Fee</span>
+              <span>{formatPrice(20)}</span>
+            </div>
+            <div className="flex justify-between font-medium pt-1 border-t mt-1">
+              <span>Total Amount</span>
+              <span>
+                {formatPrice(
+                  calculateCartTotal() +
+                    (deliveryType === "express" ? 60 : 40) +
+                    20,
+                )}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-2">Delivery Address</h4>
+          {selectedAddress && (
+            <div className="border rounded-md p-3">
+              <h5 className="font-medium text-sm">{selectedAddress.name}</h5>
+              <p className="text-xs text-gray-700">
+                {selectedAddress.addressLine1}
+                {selectedAddress.addressLine2 &&
+                  `, ${selectedAddress.addressLine2}`}
+              </p>
+              <p className="text-xs text-gray-700">
+                {selectedAddress.city}, {selectedAddress.state} -{" "}
+                {selectedAddress.pincode}
+              </p>
+              <p className="text-xs text-gray-700 mt-1">
+                Phone: {selectedAddress.phone}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="p-4 border-t">
+        <Button
+          className="w-full"
+          onClick={handleNextStep}
+          disabled={isCreatingOrder}
+        >
+          {isCreatingOrder ? (
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
+              Processing...
+            </div>
+          ) : (
+            "Pay Now"
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+
+  const renderSuccessView = () => (
+    <div className="flex-grow overflow-y-auto">
+      <div className="p-4 text-center">
+        <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
+          <Check className="h-8 w-8 text-green-600" />
+        </div>
+        <h3 className="font-medium text-lg mb-2">Order Placed!</h3>
+        <p className="text-gray-600 mb-4">
+          Your order has been placed successfully. You can track your order in
+          your profile.
+        </p>
+        <div className="bg-gray-50 p-3 rounded-md mb-6">
+          <div className="flex justify-between mb-1">
+            <span className="text-sm text-gray-600">Order ID</span>
+            <span className="text-sm font-medium">#{orderId}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-gray-600">Amount Paid</span>
+            <span className="text-sm font-medium">
+              {formatPrice(
+                calculateCartTotal() +
+                  (deliveryType === "express" ? 60 : 40) +
+                  20,
+              )}
+            </span>
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Button
+            className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+            onClick={() => {
+              onClose();
+              setCurrentStep("cart");
+              navigate("/menu");
+            }}
+          >
+            Continue Shopping
+          </Button>
+          <Button
+            variant="outline"
+            className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+            onClick={() => {
+              onClose();
+              setCurrentStep("cart");
+              navigate("/profile?tab=orders");
+            }}
+          >
+            View Orders
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <>
+      <Sheet open={open} onOpenChange={onClose}>
+        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full">
+          <SheetHeader className="px-4 py-3 border-b">
+            <SheetTitle className="text-left flex items-center">
+              {currentStep === "cart" ? (
+                "Your Cart"
+              ) : currentStep === "delivery" ? (
+                "Delivery Details"
+              ) : currentStep === "payment" ? (
+                "Payment"
+              ) : (
+                "Order Confirmation"
+              )}
+              {currentStep !== "cart" && currentStep !== "success" && (
+                <div className="ml-auto">
+                  <button
+                    onClick={handlePreviousStep}
+                    className="text-sm text-gray-500 flex items-center"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Back
+                  </button>
+                </div>
+              )}
+            </SheetTitle>
+          </SheetHeader>
+
+          <div className="flex-grow flex flex-col h-full">
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <>
+                {currentStep === "cart" && renderModernCart()}
+                {currentStep === "delivery" && renderDeliveryDetails()}
+                {currentStep === "payment" && renderPaymentOptions()}
+                {currentStep === "success" && renderSuccessView()}
+              </>
+            )}
+          </div>
         </SheetContent>
       </Sheet>
-      <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
 
-      {customizingMeal && (
-        <CurryOptionsModal
-          open={!!customizingMeal}
-          onClose={() => setCustomizingMeal(null)}
-          meal={customizingMeal}
-          onAddToCart={handleUpdateCurryOption}
-          lastCurryOption={customizingMeal?.selectedCurry}
-          isInCart={true}
-        />
-      )}
+      <CurryOptionsModal
+        isOpen={!!customizingMeal}
+        onClose={() => setCustomizingMeal(null)}
+        meal={customizingMeal}
+        onSelectCurryOption={handleUpdateCurryOption}
+      />
+
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={() => {
+          setAuthModalOpen(false);
+          handleNextStep();
+        }}
+      />
+
+      <NewAddressModal
+        isOpen={addressModalOpen}
+        onClose={() => setAddressModalOpen(false)}
+        onSubmit={handleAddressFormSubmit}
+        locations={locations}
+        locationSearch={locationSearch}
+        setLocationSearch={setLocationSearch}
+        filteredLocations={filteredLocations}
+        onSelectLocation={selectLocation}
+      />
     </>
   );
 };
 
-export default CartSidebar;
+export default CartSidebarModern;
