@@ -222,9 +222,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const calculateCartTotal = (): number => {
     return cartItems.reduce((total, item) => {
       const itemPrice =
-        (item.meal?.price || 0) +
-        ((item.meal as any)?.curryOption?.priceAdjustment || 0);
-      return total + itemPrice * item.quantity;
+        (item?.meal?.price || 0) +
+        (item?.meal?.selectedCurry?.priceAdjustment || 0);
+      return itemPrice * item.quantity;
     }, 0);
   };
 
@@ -275,6 +275,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const handleCustomizeItem = (item: any) => {
     setCustomizingMeal(item.meal);
   };
+  function calculateMealPrice(item: any): number {
+    const basePrice = item.meal?.price || 0;
+
+    const curryAdjustment =
+      (item.meal as any)?.curryOption?.priceAdjustment ??
+      (item.meal as any)?.selectedCurry?.priceAdjustment ??
+      item.curryOptionPrice ??
+      0;
+
+    return (basePrice + curryAdjustment) * item.quantity;
+  }
 
   const handleNextStep = async () => {
     if (currentStep === "cart") {
@@ -319,7 +330,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
 
         const total =
-          calculateCartTotal() + (deliveryType === "express" ? 40 : 0) + 20;
+          calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;
 
         const orderPayload = {
           items: cartItems.map((item) => ({
@@ -403,7 +414,247 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       setCurrentStep("cart");
     }
   };
+  const renderCartSummary = () => (
+    <div className="flex-grow overflow-y-auto">
+      {cartItems.length === 0 ? (
+        <div className="text-center py-6 sm:py-8 px-4">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
+            <ShoppingCartIcon className="w-full h-full" />
+          </div>
+          <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
+            Your cart is empty
+          </p>
+          <Button
+            onClick={() => {
+              navigate("/menu");
+              onClose();
+            }}
+            className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+          >
+            Browse Menu
+          </Button>
+        </div>
+      ) : (
+        <div>
+          <div className="px-4 py-3">
+            {cartItems.map((item) => {
+              const isEditingNotes = editingItemId === item.id;
 
+              const handleEditNotes = () => {
+                setEditingItemId(isEditingNotes ? null : item.id);
+                setNoteText(item.notes || "");
+              };
+
+              const handleSaveNotes = () => {
+                updateCartItemNotes(item.id, noteText || null);
+                setEditingItemId(null);
+                toast({
+                  title: "Notes saved",
+                  description: noteText
+                    ? "Your special instructions were saved"
+                    : "Notes removed",
+                });
+              };
+
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-start border-b py-2 sm:py-3"
+                >
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
+                    <img
+                      src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
+                      alt={item.meal?.name || "Meal item"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-grow px-2 sm:px-3">
+                    <h4 className="font-medium text-xs sm:text-sm line-clamp-1">
+                      {item.meal?.name}
+                    </h4>
+                    {((item.meal as any)?.curryOption ||
+                      (item.meal as any)?.selectedCurry ||
+                      item.curryOptionName) && (
+                      <p className="text-[10px] sm:text-xs text-gray-600">
+                        with{" "}
+                        {(item.meal as any)?.curryOption?.name ||
+                          (item.meal as any)?.selectedCurry?.name ||
+                          item.curryOptionName}
+                        {((item.meal as any)?.curryOption?.priceAdjustment >
+                          0 ||
+                          (item.meal as any)?.selectedCurry?.priceAdjustment >
+                            0 ||
+                          (item.curryOptionPrice &&
+                            item.curryOptionPrice > 0)) && (
+                          <span className="text-primary ml-1">
+                            (+
+                            {formatPrice(
+                              (item.meal as any)?.curryOption
+                                ?.priceAdjustment ||
+                                (item.meal as any)?.selectedCurry
+                                  ?.priceAdjustment ||
+                                item.curryOptionPrice ||
+                                0,
+                            )}
+                            )
+                          </span>
+                        )}
+                      </p>
+                    )}
+                    <div className="flex items-center mt-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            updateCartItem(item.id, item.quantity - 1);
+                          } else {
+                            removeCartItem(item.id);
+                          }
+                        }}
+                      >
+                        <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      </Button>
+                      <span className="mx-1.5 sm:mx-2 text-xs sm:text-sm font-medium">
+                        {item.quantity}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
+                        onClick={() =>
+                          updateCartItem(item.id, item.quantity + 1)
+                        }
+                      >
+                        <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      </Button>
+
+                      <div className="flex-grow"></div>
+
+                      <p className="text-primary text-xs sm:text-sm font-semibold">
+                        {formatPrice(calculateMealPrice(item))}
+                      </p>
+                    </div>
+                    {/* Special instructions */}
+                    <div className="mt-1.5 sm:mt-2">
+                      {isEditingNotes ? (
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <Input
+                            value={noteText}
+                            onChange={(e) => setNoteText(e.target.value)}
+                            placeholder="Add special instructions"
+                            className="h-7 sm:h-8 text-[10px] sm:text-xs"
+                          />
+                          <div className="flex justify-end gap-1.5 sm:gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
+                              onClick={() => setEditingItemId(null)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
+                              onClick={handleSaveNotes}
+                            >
+                              Save
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex justify-between">
+                          <div
+                            className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1 cursor-pointer hover:text-primary transition-colors"
+                            onClick={handleEditNotes}
+                          >
+                            <MessageSquare className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                            {item.notes ? (
+                              <span className="line-clamp-1 max-w-[120px] sm:max-w-[180px]">
+                                {item.notes}
+                              </span>
+                            ) : (
+                              <span>Add instructions</span>
+                            )}
+                          </div>
+                          <div>
+                            {hasCurryOptions(item.meal) && (
+                              <Button
+                                variant="link"
+                                size="sm"
+                                className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary mr-1.5 sm:mr-2"
+                                onClick={() => handleCustomizeItem(item)}
+                              >
+                                Customize
+                              </Button>
+                            )}
+                            <Button
+                              variant="link"
+                              size="sm"
+                              className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-destructive"
+                              onClick={() => removeCartItem(item.id)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="px-4 py-4 border-t">
+            <h3 className="font-medium text-base mb-3">Bill Details</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Items Total</span>
+                <span>{formatPrice(calculateCartTotal())}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-600">Delivery Charge</span>
+                <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
+              </div>
+
+              <div className="flex justify-between">
+                <span className="text-gray-600">Taxes</span>
+                <span>{formatPrice(20)}</span>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between font-semibold">
+                <span>Grand Total</span>
+                <span className="text-primary">
+                  {formatPrice(
+                    calculateCartTotal() +
+                      (deliveryType === "express" ? 60 : 40) +
+                      20,
+                  )}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Cancellation Policy */}
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-t">
+            <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">
+              Cancellation Policy
+            </h3>
+            <p className="text-[10px] sm:text-xs text-gray-600">
+              Orders can be cancelled before they are confirmed by the
+              restaurant. Once confirmed, refunds will be processed as per our
+              policy.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
@@ -411,280 +662,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           <SheetHeader className="p-3 sm:p-4 border-b">
             <div className="flex justify-between items-center">
               <SheetTitle className="text-lg sm:text-xl">Your Cart</SheetTitle>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 sm:h-8 sm:w-8"
-                onClick={onClose}
-              >
-                <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-              </Button>
             </div>
           </SheetHeader>
 
           <div className="flex-grow overflow-auto">
-            {currentStep === "cart" && (
-              <>
-                <div className="flex-grow overflow-y-auto">
-                  {cartItems.length === 0 ? (
-                    <div className="text-center py-6 sm:py-8 px-4">
-                      <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
-                        <ShoppingCartIcon className="w-full h-full" />
-                      </div>
-                      <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
-                        Your cart is empty
-                      </p>
-                      <Button
-                        onClick={() => {
-                          navigate("/menu");
-                          onClose();
-                        }}
-                        className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                      >
-                        Browse Menu
-                      </Button>
-                    </div>
-                  ) : (
-                    <div>
-                      <div className="px-4 py-3">
-                        {cartItems.map((item) => {
-                          const isEditingNotes = editingItemId === item.id;
-
-                          const handleEditNotes = () => {
-                            setEditingItemId(isEditingNotes ? null : item.id);
-                            setNoteText(item.notes || "");
-                          };
-
-                          const handleSaveNotes = () => {
-                            updateCartItemNotes(item.id, noteText || null);
-                            setEditingItemId(null);
-                            toast({
-                              title: "Notes saved",
-                              description: noteText
-                                ? "Your special instructions were saved"
-                                : "Notes removed",
-                            });
-                          };
-
-                          return (
-                            <div
-                              key={item.id}
-                              className="flex items-start border-b py-2 sm:py-3"
-                            >
-                              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
-                                <img
-                                  src={
-                                    item.meal?.imageUrl ||
-                                    "/placeholder-meal.jpg"
-                                  }
-                                  alt={item.meal?.name || "Meal item"}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                              <div className="flex-grow px-2 sm:px-3">
-                                <h4 className="font-medium text-xs sm:text-sm line-clamp-1">
-                                  {item.meal?.name}
-                                </h4>
-                                {((item.meal as any)?.curryOption ||
-                                  (item.meal as any)?.selectedCurry ||
-                                  item.curryOptionName) && (
-                                  <p className="text-[10px] sm:text-xs text-gray-600">
-                                    with{" "}
-                                    {(item.meal as any)?.curryOption?.name ||
-                                      (item.meal as any)?.selectedCurry?.name ||
-                                      item.curryOptionName}
-                                    {((item.meal as any)?.curryOption
-                                      ?.priceAdjustment > 0 ||
-                                      (item.meal as any)?.selectedCurry
-                                        ?.priceAdjustment > 0 ||
-                                      (item.curryOptionPrice &&
-                                        item.curryOptionPrice > 0)) && (
-                                      <span className="text-primary ml-1">
-                                        (+
-                                        {formatPrice(
-                                          (item.meal as any)?.curryOption
-                                            ?.priceAdjustment ||
-                                            (item.meal as any)?.selectedCurry
-                                              ?.priceAdjustment ||
-                                            item.curryOptionPrice ||
-                                            0,
-                                        )}
-                                        )
-                                      </span>
-                                    )}
-                                  </p>
-                                )}
-                                <div className="flex items-center mt-1">
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
-                                    onClick={() => {
-                                      if (item.quantity > 1) {
-                                        updateCartItem(
-                                          item.id,
-                                          item.quantity - 1,
-                                        );
-                                      } else {
-                                        removeCartItem(item.id);
-                                      }
-                                    }}
-                                  >
-                                    <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                  </Button>
-                                  <span className="mx-1.5 sm:mx-2 text-xs sm:text-sm font-medium">
-                                    {item.quantity}
-                                  </span>
-                                  <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
-                                    onClick={() =>
-                                      updateCartItem(item.id, item.quantity + 1)
-                                    }
-                                  >
-                                    <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                  </Button>
-
-                                  <div className="flex-grow"></div>
-
-                                  <p className="text-primary text-xs sm:text-sm font-semibold">
-                                    {formatPrice(
-                                      ((item.meal?.price || 0) +
-                                        ((item.meal as any)?.curryOption
-                                          ?.priceAdjustment ||
-                                          (item.meal as any)?.selectedCurry
-                                            ?.priceAdjustment ||
-                                          item.curryOptionPrice ||
-                                          0)) *
-                                        item.quantity,
-                                    )}
-                                  </p>
-                                </div>
-                                {/* Special instructions */}
-                                <div className="mt-1.5 sm:mt-2">
-                                  {isEditingNotes ? (
-                                    <div className="space-y-1.5 sm:space-y-2">
-                                      <Input
-                                        value={noteText}
-                                        onChange={(e) =>
-                                          setNoteText(e.target.value)
-                                        }
-                                        placeholder="Add special instructions"
-                                        className="h-7 sm:h-8 text-[10px] sm:text-xs"
-                                      />
-                                      <div className="flex justify-end gap-1.5 sm:gap-2">
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
-                                          onClick={() => setEditingItemId(null)}
-                                        >
-                                          Cancel
-                                        </Button>
-                                        <Button
-                                          variant="default"
-                                          size="sm"
-                                          className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
-                                          onClick={handleSaveNotes}
-                                        >
-                                          Save
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex justify-between">
-                                      <div
-                                        className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1 cursor-pointer hover:text-primary transition-colors"
-                                        onClick={handleEditNotes}
-                                      >
-                                        <MessageSquare className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                                        {item.notes ? (
-                                          <span className="line-clamp-1 max-w-[120px] sm:max-w-[180px]">
-                                            {item.notes}
-                                          </span>
-                                        ) : (
-                                          <span>Add instructions</span>
-                                        )}
-                                      </div>
-                                      <div>
-                                        {hasCurryOptions(item.meal) && (
-                                          <Button
-                                            variant="link"
-                                            size="sm"
-                                            className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary mr-1.5 sm:mr-2"
-                                            onClick={() =>
-                                              handleCustomizeItem(item)
-                                            }
-                                          >
-                                            Customize
-                                          </Button>
-                                        )}
-                                        <Button
-                                          variant="link"
-                                          size="sm"
-                                          className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-destructive"
-                                          onClick={() =>
-                                            removeCartItem(item.id)
-                                          }
-                                        >
-                                          Remove
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div className="px-4 py-4 border-t">
-                        <h3 className="font-medium text-base mb-3">
-                          Bill Details
-                        </h3>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Items Total</span>
-                            <span>{formatPrice(calculateCartTotal())}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">
-                              Delivery Charge
-                            </span>
-                            <span>{formatPrice(40)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Taxes</span>
-                            <span>{formatPrice(20)}</span>
-                          </div>
-                          <Separator className="my-2" />
-                          <div className="flex justify-between font-semibold">
-                            <span>Grand Total</span>
-                            <span className="text-primary">
-                              {formatPrice(calculateCartTotal() + 40 + 20)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Cancellation Policy */}
-                      <div className="px-3 sm:px-4 py-2 sm:py-3 border-t">
-                        <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">
-                          Cancellation Policy
-                        </h3>
-                        <p className="text-[10px] sm:text-xs text-gray-600">
-                          Orders can be cancelled before they are confirmed by
-                          the restaurant. Once confirmed, refunds will be
-                          processed as per our policy.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
+            {currentStep === "cart" && renderCartSummary()}
 
             {currentStep === "delivery" && (
               <div className="p-3 sm:p-4">
@@ -790,7 +772,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                         onClick={() => setDeliveryType("express")}
                       >
-                        Express (+₹40)
+                        Express (+ �60)
                       </Button>
                     </div>
                   </div>
@@ -805,80 +787,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </div>
             )}
 
-            {currentStep === "payment" && (
-              <div className="p-3 sm:p-4">
-                <h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">
-                  Choose Payment Method
-                </h3>
-                <RadioGroup
-                  defaultValue={selectedPaymentMethod}
-                  onValueChange={setSelectedPaymentMethod}
-                >
-                  <div className="space-y-1.5 sm:space-y-2">
-                    <div className="flex items-center space-x-1.5 sm:space-x-2 border p-2 sm:p-3 rounded-md">
-                      <RadioGroupItem
-                        value="razorpay"
-                        id="razorpay"
-                        checked={selectedPaymentMethod === "razorpay"}
-                        className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                      />
-                      <Label
-                        htmlFor="razorpay"
-                        className="flex-grow text-xs sm:text-sm"
-                      >
-                        Razorpay (Credit/Debit Card, UPI, etc.)
-                      </Label>
-                    </div>
-                    <div className="flex items-center space-x-1.5 sm:space-x-2 border p-2 sm:p-3 rounded-md">
-                      <RadioGroupItem
-                        value="cod"
-                        id="cod"
-                        checked={selectedPaymentMethod === "cod"}
-                        className="h-3.5 w-3.5 sm:h-4 sm:w-4"
-                      />
-                      <Label
-                        htmlFor="cod"
-                        className="flex-grow text-xs sm:text-sm"
-                      >
-                        Cash on Delivery
-                      </Label>
-                    </div>
-                  </div>
-                </RadioGroup>
-
-                <div className="mt-4 sm:mt-6">
-                  <h3 className="font-medium text-sm sm:text-base mb-1.5 sm:mb-2">
-                    Order Summary
-                  </h3>
-                  <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
-                    <div className="flex justify-between">
-                      <span>Item Total</span>
-                      <span>{formatPrice(calculateCartTotal())}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Delivery Fee</span>
-                      <span>
-                        {formatPrice(deliveryType === "express" ? 50 : 40)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Taxes</span>
-                      <span>{formatPrice(20)}</span>
-                    </div>
-                    <div className="flex justify-between pt-1.5 sm:pt-2 border-t font-medium">
-                      <span>Total</span>
-                      <span>
-                        {formatPrice(
-                          calculateCartTotal() +
-                            (deliveryType === "express" ? 50 : 40) +
-                            20,
-                        )}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {currentStep === "payment" && renderCartSummary()}
 
             {currentStep === "success" && (
               <div className="p-3 sm:p-4 text-center">
@@ -913,7 +822,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>
                         {formatPrice(
                           calculateCartTotal() +
-                            (deliveryType === "express" ? 50 : 40) +
+                            (deliveryType === "express" ? 60 : 40) +
                             20,
                         )}
                       </span>
@@ -984,7 +893,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             Pay{" "}
                             {formatPrice(
                               calculateCartTotal() +
-                                (deliveryType === "express" ? 50 : 40) +
+                                (deliveryType === "express" ? 60 : 40) +
                                 20,
                             )}
                           </>

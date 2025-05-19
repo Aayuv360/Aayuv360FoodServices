@@ -28,6 +28,7 @@ interface CartItem {
   curryOptionPrice?: number;
   meal?: Meal & {
     curryOption?: CurryOption;
+    selectedCurry: CurryOption;
   };
 }
 
