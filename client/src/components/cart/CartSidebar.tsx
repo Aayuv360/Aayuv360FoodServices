@@ -406,84 +406,85 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const renderCartSummary = () => (
     <div className="flex-grow overflow-y-auto">
       {cartItems.length === 0 ? (
-        <div className="text-center py-6 sm:py-8 px-4">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
-            <ShoppingCartIcon className="w-full h-full" />
+        <div className="text-center py-8 px-4">
+          <div className="w-20 h-20 mx-auto bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4">
+            <ShoppingCartIcon className="w-10 h-10" />
           </div>
-          <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
-            Your cart is empty
+          <h3 className="text-lg font-medium mb-2">Your cart is empty</h3>
+          <p className="text-gray-500 mb-6 text-sm">
+            Add some delicious millet meals to get started
           </p>
           <Button
             onClick={() => {
               navigate("/menu");
               onClose();
             }}
-            className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+            className="text-sm py-2 h-auto rounded-full px-6"
           >
             Browse Menu
           </Button>
         </div>
       ) : (
         <div>
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 space-y-4">
             {cartItems.map((item) => {
               return (
                 <div
                   key={item.id}
-                  className="flex items-start border-b py-2 sm:py-3"
+                  className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
                 >
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
-                    <img
-                      src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
-                      alt={item.meal?.name || "Meal item"}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-grow px-2 sm:px-3">
-                    <h4 className="font-medium text-xs sm:text-sm line-clamp-1">
-                      {item.meal?.name}
-                    </h4>
-                    {((item.meal as any)?.curryOption ||
-                      (item.meal as any)?.selectedCurry ||
-                      item.curryOptionName) && (
-                      <p className="text-[10px] sm:text-xs text-gray-600">
-                        with{" "}
-                        {(item.meal as any)?.curryOption?.name ||
-                          (item.meal as any)?.selectedCurry?.name ||
-                          item.curryOptionName}
-                        {((item.meal as any)?.curryOption?.priceAdjustment >
-                          0 ||
-                          (item.meal as any)?.selectedCurry?.priceAdjustment >
-                            0 ||
-                          (item.curryOptionPrice &&
-                            item.curryOptionPrice > 0)) && (
-                          <span className="text-primary ml-1">
-                            (+
-                            {formatPrice(
-                              (item.meal as any)?.curryOption
-                                ?.priceAdjustment ||
-                                (item.meal as any)?.selectedCurry
-                                  ?.priceAdjustment ||
-                                item.curryOptionPrice ||
-                                0,
+                  <div className="flex p-3">
+                    <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0">
+                      <img
+                        src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
+                        alt={item.meal?.name || "Meal item"}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="flex-grow px-3">
+                      <div className="flex justify-between">
+                        <h4 className="font-medium text-sm">
+                          {item.meal?.name}
+                        </h4>
+                        <p className="font-semibold text-sm text-primary">
+                          {formatPrice(calculateMealPrice(item))}
+                        </p>
+                      </div>
+                      
+                      {((item.meal as any)?.curryOption ||
+                        (item.meal as any)?.selectedCurry ||
+                        item.curryOptionName) && (
+                        <div className="mt-1">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-800 border border-amber-200">
+                            {(item.meal as any)?.curryOption?.name ||
+                              (item.meal as any)?.selectedCurry?.name ||
+                              item.curryOptionName}
+                            {((item.meal as any)?.curryOption?.priceAdjustment > 0 ||
+                              (item.meal as any)?.selectedCurry?.priceAdjustment > 0 ||
+                              (item.curryOptionPrice && item.curryOptionPrice > 0)) && (
+                              <span className="ml-1 font-medium">
+                                (+
+                                {formatPrice(
+                                  (item.meal as any)?.curryOption?.priceAdjustment ||
+                                    (item.meal as any)?.selectedCurry?.priceAdjustment ||
+                                    item.curryOptionPrice ||
+                                    0
+                                )}
+                                )
+                              </span>
                             )}
-                            )
                           </span>
-                        )}
-                      </p>
-                    )}
-                    <p className="text-primary text-xs sm:text-sm font-semibold">
-                      {formatPrice(calculateMealPrice(item))}
-                    </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex flex-col items-start space-y-1 sm:space-y-1.5">
-                    {/* Quantity Controls */}
+                  <div className="flex justify-between items-center p-3 bg-gray-50 border-t border-gray-100">
                     <div className="flex items-center">
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
+                        className="h-8 w-8 rounded-md"
                         onClick={() => {
                           if (item.quantity > 1) {
                             updateCartItem(item.id, item.quantity - 1);
@@ -492,22 +493,35 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           }
                         }}
                       >
-                        <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        <Minus className="h-3 w-3" />
                       </Button>
-                      <span className="mx-1.5 sm:mx-2 text-xs sm:text-sm font-medium">
+
+                      <span className="text-sm font-medium w-8 text-center">
                         {item.quantity}
                       </span>
+
                       <Button
                         variant="outline"
                         size="icon"
-                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
-                        onClick={() => handleCustomizeItem(item)}
+                        className="h-8 w-8 rounded-md"
+                        onClick={() => updateCartItem(item.id, item.quantity + 1)}
                       >
-                        <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                        <Plus className="h-3 w-3" />
                       </Button>
                     </div>
 
-                    {/* Customize Button */}
+                    <div className="flex space-x-1">
+                      {hasCurryOptions(item.meal) && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs h-8"
+                          onClick={() => handleCustomizeItem(item)}
+                        >
+                          <PlusCircle className="mr-1 h-3 w-3" />
+                          Customize
+                        </Button>
+                      )}
                     {hasCurryOptions(item.meal) && (
                       <Button
                         variant="link"
