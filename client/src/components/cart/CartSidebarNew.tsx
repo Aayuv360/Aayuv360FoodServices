@@ -10,7 +10,6 @@ import {
   ShoppingCart as ShoppingCartIcon,
   PlusCircle,
   MessageSquare,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -57,7 +56,7 @@ interface Location {
 
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
-const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
+const CartSidebarNew = ({ open, onClose }: CartSidebarProps) => {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
   const selectedPaymentMethod = "razorpay";
   const [orderId, setOrderId] = useState<number | null>(null);
@@ -69,9 +68,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [noteText, setNoteText] = useState<string>("");
 
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
-    null,
-  );
+  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
@@ -283,6 +280,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         notes: noteText,
       });
       
+      // Update cart items locally
+      const updatedItems = cartItems.map((cartItem) => {
+        if (cartItem.id === item.id) {
+          return { ...cartItem, notes: noteText };
+        }
+        return cartItem;
+      });
+      
       // This would normally be handled by the cart context
       // But for this example, we'll just show a toast
       
@@ -431,7 +436,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   };
 
   // Modern Cart UI rendering
-  const renderCartItems = () => {
+  const renderCart = () => {
     if (loading) {
       return (
         <div className="flex items-center justify-center h-64">
@@ -464,8 +469,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
 
     return (
-      <div className="px-4 py-3">
-        <div className="space-y-4">
+      <>
+        <div className="px-4 py-3 space-y-4 flex-grow overflow-y-auto">
           {cartItems.map((item) => (
             <div
               key={item.id}
@@ -615,7 +620,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     className="text-xs h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
                     onClick={() => removeCartItem(item.id)}
                   >
-                    <X className="h-3 w-3 mr-1" />
                     Remove
                   </Button>
                 </div>
@@ -625,7 +629,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         </div>
 
         {/* Bill Details Section */}
-        <div className="mt-6 p-4 border border-gray-100 rounded-lg bg-gray-50">
+        <div className="px-4 py-4 border-t mt-auto">
           <h3 className="font-medium text-base mb-3">Bill Details</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -643,7 +647,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               <span>{formatPrice(20)}</span>
             </div>
 
-            <div className="flex justify-between font-medium text-base pt-2 border-t border-gray-200 mt-2">
+            <div className="flex justify-between font-medium text-base pt-2 border-t">
               <span>Total Amount</span>
               <span>
                 {formatPrice(calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20)}
@@ -652,158 +656,160 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           </div>
 
           <Button
-            className="w-full mt-4 rounded-md py-2.5 h-auto"
+            className="w-full mt-4 rounded-md py-2 h-auto"
             onClick={handleNextStep}
           >
             Proceed to Checkout
           </Button>
         </div>
-      </div>
+      </>
     );
   };
 
   const renderDeliveryDetails = () => (
-    <div className="flex-grow overflow-y-auto p-4">
-      <button
-        onClick={handlePreviousStep}
-        className="flex items-center text-primary text-sm mb-4"
-      >
-        <ChevronLeft className="h-4 w-4 mr-1" />
-        Back to Cart
-      </button>
+    <div className="flex-grow overflow-y-auto">
+      <div className="p-4">
+        <button
+          onClick={handlePreviousStep}
+          className="flex items-center text-primary text-sm mb-4"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Back to Cart
+        </button>
 
-      <h3 className="font-medium text-lg mb-4">Delivery Details</h3>
+        <h3 className="font-medium text-lg mb-4">Delivery Details</h3>
 
-      <div className="mb-6">
-        <h4 className="font-medium text-sm mb-2">Delivery Type</h4>
-        <div className="space-y-2">
-          <div
-            className={`border rounded-md p-3 flex items-center cursor-pointer ${
-              deliveryType === "default"
-                ? "border-primary bg-primary/5"
-                : "border-gray-200"
-            }`}
-            onClick={() => setDeliveryType("default")}
-          >
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-2">Delivery Type</h4>
+          <div className="space-y-2">
             <div
-              className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
+              className={`border rounded-md p-3 flex items-center cursor-pointer ${
                 deliveryType === "default"
-                  ? "border-primary"
-                  : "border-gray-300"
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-200"
               }`}
+              onClick={() => setDeliveryType("default")}
             >
-              {deliveryType === "default" && (
-                <div className="w-2 h-2 rounded-full bg-primary"></div>
-              )}
+              <div
+                className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
+                  deliveryType === "default"
+                    ? "border-primary"
+                    : "border-gray-300"
+                }`}
+              >
+                {deliveryType === "default" && (
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                )}
+              </div>
+              <div className="flex-grow">
+                <h5 className="font-medium text-sm">Standard Delivery</h5>
+                <p className="text-xs text-gray-500">
+                  Delivered within 45-60 mins
+                </p>
+              </div>
+              <div className="text-right text-sm font-medium">₹40</div>
             </div>
-            <div className="flex-grow">
-              <h5 className="font-medium text-sm">Standard Delivery</h5>
-              <p className="text-xs text-gray-500">
-                Delivered within 45-60 mins
-              </p>
-            </div>
-            <div className="text-right text-sm font-medium">₹40</div>
-          </div>
 
-          <div
-            className={`border rounded-md p-3 flex items-center cursor-pointer ${
-              deliveryType === "express"
-                ? "border-primary bg-primary/5"
-                : "border-gray-200"
-            }`}
-            onClick={() => setDeliveryType("express")}
-          >
             <div
-              className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
+              className={`border rounded-md p-3 flex items-center cursor-pointer ${
                 deliveryType === "express"
-                  ? "border-primary"
-                  : "border-gray-300"
+                  ? "border-primary bg-primary/5"
+                  : "border-gray-200"
               }`}
+              onClick={() => setDeliveryType("express")}
             >
-              {deliveryType === "express" && (
-                <div className="w-2 h-2 rounded-full bg-primary"></div>
-              )}
+              <div
+                className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
+                  deliveryType === "express"
+                    ? "border-primary"
+                    : "border-gray-300"
+                }`}
+              >
+                {deliveryType === "express" && (
+                  <div className="w-2 h-2 rounded-full bg-primary"></div>
+                )}
+              </div>
+              <div className="flex-grow">
+                <h5 className="font-medium text-sm">Express Delivery</h5>
+                <p className="text-xs text-gray-500">
+                  Delivered within 25-30 mins
+                </p>
+              </div>
+              <div className="text-right text-sm font-medium">₹60</div>
             </div>
-            <div className="flex-grow">
-              <h5 className="font-medium text-sm">Express Delivery</h5>
-              <p className="text-xs text-gray-500">
-                Delivered within 25-30 mins
-              </p>
-            </div>
-            <div className="text-right text-sm font-medium">₹60</div>
           </div>
         </div>
-      </div>
 
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <h4 className="font-medium text-sm">Delivery Address</h4>
-          <Button
-            variant="link"
-            className="p-0 h-auto text-xs text-primary"
-            onClick={() => setAddressModalOpen(true)}
-          >
-            + Add New
-          </Button>
-        </div>
-
-        {addresses.length === 0 ? (
-          <div className="border border-gray-200 rounded-md p-4 text-center">
-            <p className="text-sm text-gray-500 mb-2">
-              You don't have any saved addresses
-            </p>
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-medium text-sm">Delivery Address</h4>
             <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
+              variant="link"
+              className="p-0 h-auto text-xs text-primary"
               onClick={() => setAddressModalOpen(true)}
             >
-              Add Address
+              + Add New
             </Button>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {addresses.map((address) => (
-              <div
-                key={address.id}
-                className={`border rounded-md p-3 flex items-start cursor-pointer ${
-                  selectedAddressId === address.id
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200"
-                }`}
-                onClick={() => setSelectedAddressId(address.id)}
+
+          {addresses.length === 0 ? (
+            <div className="border border-gray-200 rounded-md p-4 text-center">
+              <p className="text-sm text-gray-500 mb-2">
+                You don't have any saved addresses
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs"
+                onClick={() => setAddressModalOpen(true)}
               >
+                Add Address
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {addresses.map((address) => (
                 <div
-                  className={`w-4 h-4 rounded-full border mt-0.5 mr-2 flex items-center justify-center ${
+                  key={address.id}
+                  className={`border rounded-md p-3 flex items-start cursor-pointer ${
                     selectedAddressId === address.id
-                      ? "border-primary"
-                      : "border-gray-300"
+                      ? "border-primary bg-primary/5"
+                      : "border-gray-200"
                   }`}
+                  onClick={() => setSelectedAddressId(address.id)}
                 >
-                  {selectedAddressId === address.id && (
-                    <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  )}
+                  <div
+                    className={`w-4 h-4 rounded-full border mt-0.5 mr-2 flex items-center justify-center ${
+                      selectedAddressId === address.id
+                        ? "border-primary"
+                        : "border-gray-300"
+                    }`}
+                  >
+                    {selectedAddressId === address.id && (
+                      <div className="w-2 h-2 rounded-full bg-primary"></div>
+                    )}
+                  </div>
+                  <div>
+                    <h5 className="font-medium text-sm">{address.name}</h5>
+                    <p className="text-xs text-gray-700">
+                      {address.addressLine1}
+                      {address.addressLine2 && `, ${address.addressLine2}`}
+                    </p>
+                    <p className="text-xs text-gray-700">
+                      {address.city}, {address.state} - {address.pincode}
+                    </p>
+                    <p className="text-xs text-gray-700 mt-1">
+                      Phone: {address.phone}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h5 className="font-medium text-sm">{address.name}</h5>
-                  <p className="text-xs text-gray-700">
-                    {address.addressLine1}
-                    {address.addressLine2 && `, ${address.addressLine2}`}
-                  </p>
-                  <p className="text-xs text-gray-700">
-                    {address.city}, {address.state} - {address.pincode}
-                  </p>
-                  <p className="text-xs text-gray-700 mt-1">
-                    Phone: {address.phone}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="p-4 border-t mt-auto -mx-4">
+      <div className="p-4 border-t mt-auto">
         <Button className="w-full" onClick={handleNextStep}>
           Proceed to Payment
         </Button>
@@ -812,82 +818,84 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   );
 
   const renderPaymentOptions = () => (
-    <div className="flex-grow overflow-y-auto p-4">
-      <button
-        onClick={handlePreviousStep}
-        className="flex items-center text-primary text-sm mb-4"
-      >
-        <ChevronLeft className="h-4 w-4 mr-1" />
-        Back to Delivery
-      </button>
+    <div className="flex-grow overflow-y-auto">
+      <div className="p-4">
+        <button
+          onClick={handlePreviousStep}
+          className="flex items-center text-primary text-sm mb-4"
+        >
+          <ChevronLeft className="h-4 w-4 mr-1" />
+          Back to Delivery
+        </button>
 
-      <h3 className="font-medium text-lg mb-4">Payment</h3>
+        <h3 className="font-medium text-lg mb-4">Payment</h3>
 
-      <div className="mb-6">
-        <div className="border rounded-md p-3 flex items-center cursor-pointer border-primary bg-primary/5">
-          <div className="w-4 h-4 rounded-full border border-primary mr-2 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-primary"></div>
+        <div className="mb-6">
+          <div className="border rounded-md p-3 flex items-center cursor-pointer border-primary bg-primary/5">
+            <div className="w-4 h-4 rounded-full border border-primary mr-2 flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-primary"></div>
+            </div>
+            <div className="flex-grow">
+              <h5 className="font-medium text-sm">Razorpay</h5>
+              <p className="text-xs text-gray-500">
+                Pay securely with credit/debit card or UPI
+              </p>
+            </div>
+            <CreditCard className="h-5 w-5 text-gray-500" />
           </div>
-          <div className="flex-grow">
-            <h5 className="font-medium text-sm">Razorpay</h5>
-            <p className="text-xs text-gray-500">
-              Pay securely with credit/debit card or UPI
-            </p>
+        </div>
+
+        <div className="p-3 border rounded-md mb-6">
+          <h4 className="font-medium text-sm mb-2">Order Summary</h4>
+          <div className="space-y-1 text-sm">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Items Total</span>
+              <span>{formatPrice(calculateCartTotal())}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Delivery Charge</span>
+              <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Platform Fee</span>
+              <span>{formatPrice(20)}</span>
+            </div>
+            <div className="flex justify-between font-medium pt-1 border-t mt-1">
+              <span>Total Amount</span>
+              <span>
+                {formatPrice(
+                  calculateCartTotal() +
+                    (deliveryType === "express" ? 60 : 40) +
+                    20,
+                )}
+              </span>
+            </div>
           </div>
-          <CreditCard className="h-5 w-5 text-gray-500" />
+        </div>
+
+        <div className="mb-6">
+          <h4 className="font-medium text-sm mb-2">Delivery Address</h4>
+          {selectedAddress && (
+            <div className="border rounded-md p-3">
+              <h5 className="font-medium text-sm">{selectedAddress.name}</h5>
+              <p className="text-xs text-gray-700">
+                {selectedAddress.addressLine1}
+                {selectedAddress.addressLine2 &&
+                  `, ${selectedAddress.addressLine2}`}
+              </p>
+              <p className="text-xs text-gray-700">
+                {selectedAddress.city}, {selectedAddress.state} -{" "}
+                {selectedAddress.pincode}
+              </p>
+              <p className="text-xs text-gray-700 mt-1">
+                Phone: {selectedAddress.phone}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="p-3 border rounded-md mb-6">
-        <h4 className="font-medium text-sm mb-2">Order Summary</h4>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Items Total</span>
-            <span>{formatPrice(calculateCartTotal())}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Delivery Charge</span>
-            <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Platform Fee</span>
-            <span>{formatPrice(20)}</span>
-          </div>
-          <div className="flex justify-between font-medium pt-1 border-t mt-1">
-            <span>Total Amount</span>
-            <span>
-              {formatPrice(
-                calculateCartTotal() +
-                  (deliveryType === "express" ? 60 : 40) +
-                  20,
-              )}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <h4 className="font-medium text-sm mb-2">Delivery Address</h4>
-        {selectedAddress && (
-          <div className="border rounded-md p-3">
-            <h5 className="font-medium text-sm">{selectedAddress.name}</h5>
-            <p className="text-xs text-gray-700">
-              {selectedAddress.addressLine1}
-              {selectedAddress.addressLine2 &&
-                `, ${selectedAddress.addressLine2}`}
-            </p>
-            <p className="text-xs text-gray-700">
-              {selectedAddress.city}, {selectedAddress.state} -{" "}
-              {selectedAddress.pincode}
-            </p>
-            <p className="text-xs text-gray-700 mt-1">
-              Phone: {selectedAddress.phone}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="p-4 border-t mt-auto -mx-4">
+      <div className="p-4 border-t">
         <Button
           className="w-full"
           onClick={handleNextStep}
@@ -907,8 +915,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   );
 
   const renderSuccessView = () => (
-    <div className="flex-grow overflow-y-auto p-4">
-      <div className="text-center py-4">
+    <div className="flex-grow overflow-y-auto">
+      <div className="p-4 text-center">
         <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
           <Check className="h-8 w-8 text-green-600" />
         </div>
@@ -935,7 +943,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         </div>
         <div className="space-y-2">
           <Button
-            className="w-full mb-2 text-sm h-auto py-2"
+            className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
             onClick={() => {
               onClose();
               setCurrentStep("cart");
@@ -946,7 +954,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           </Button>
           <Button
             variant="outline"
-            className="w-full text-sm h-auto py-2"
+            className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
             onClick={() => {
               onClose();
               setCurrentStep("cart");
@@ -989,35 +997,26 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             </SheetTitle>
           </SheetHeader>
 
-          <div className="flex-grow flex flex-col overflow-auto">
-            {currentStep === "cart" && cartItems.length > 0 ? (
-              <div className="flex-grow overflow-y-auto">
-                {renderCartItems()}
-              </div>
-            ) : currentStep === "cart" ? (
-              renderCartItems()
-            ) : currentStep === "delivery" ? (
-              renderDeliveryDetails()
-            ) : currentStep === "payment" ? (
-              renderPaymentOptions()
-            ) : (
-              renderSuccessView()
-            )}
+          <div className="flex-grow flex flex-col h-full">
+            {currentStep === "cart" && renderCart()}
+            {currentStep === "delivery" && renderDeliveryDetails()}
+            {currentStep === "payment" && renderPaymentOptions()}
+            {currentStep === "success" && renderSuccessView()}
           </div>
         </SheetContent>
       </Sheet>
 
       <CurryOptionsModal
         open={!!customizingMeal}
-        onClose={() => setCustomizingMeal(null)}
+        onOpenChange={() => setCustomizingMeal(null)} 
         meal={customizingMeal}
-        onAddToCart={handleUpdateCurryOption}
+        onSelect={handleUpdateCurryOption}
       />
 
       <AuthModal
-        isOpen={authModalOpen}
-        onOpenChange={(open) => setAuthModalOpen(open)}
-        onSuccess={() => {
+        open={authModalOpen}
+        onOpenChange={() => setAuthModalOpen(false)}
+        afterLogin={() => {
           setAuthModalOpen(false);
           handleNextStep();
         }}
@@ -1037,4 +1036,4 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   );
 };
 
-export default CartSidebar;
+export default CartSidebarNew;
