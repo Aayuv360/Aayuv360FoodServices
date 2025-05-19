@@ -316,9 +316,25 @@ export class MongoDBStorage implements IStorage {
       const populatedItems = await Promise.all(
         items.map(async (item) => {
           const meal = await this.getMeal(item.mealId);
+          
+          // Add curry option to meal if it exists in cart item
+          let enrichedMeal = meal;
+          if (item.curryOptionId && item.curryOptionName) {
+            enrichedMeal = {
+              ...meal,
+              curryOption: {
+                id: item.curryOptionId,
+                name: item.curryOptionName,
+                priceAdjustment: item.curryOptionPrice || 0
+              },
+              // Ensure curryOptions from meal are preserved
+              curryOptions: item.curryOptions || meal?.curryOptions || []
+            };
+          }
+          
           return {
             ...item,
-            meal,
+            meal: enrichedMeal,
           };
         }),
       );

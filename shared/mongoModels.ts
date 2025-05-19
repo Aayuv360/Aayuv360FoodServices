@@ -62,6 +62,7 @@ export interface CartItemDocument extends Document {
   curryOptionId?: string;
   curryOptionName?: string;
   curryOptionPrice?: number;
+  curryOptions?: any[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -215,6 +216,7 @@ const cartItemSchema = new Schema<CartItemDocument>({
   curryOptionId: String,
   curryOptionName: String,
   curryOptionPrice: Number,
+  curryOptions: { type: Schema.Types.Mixed, default: [] },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
