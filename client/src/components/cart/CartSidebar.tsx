@@ -79,12 +79,9 @@ type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
-  const [selectedPaymentMethod, setSelectedPaymentMethod] =
-    useState<string>("razorpay");
+  const selectedPaymentMethod = "razorpay";
   const [orderId, setOrderId] = useState<number | null>(null);
   const [deliveryType, setDeliveryType] = useState<string>("default");
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [noteText, setNoteText] = useState<string>("");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
@@ -101,7 +98,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const {
     cartItems,
     loading,
-    updateCartItemNotes,
     updateCartItem,
     updateCartItemWithOptions,
     removeCartItem,
@@ -111,18 +107,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const { initiatePayment } = useRazorpay();
-
-  const form = useForm<AddressFormValues>({
-    resolver: zodResolver(addressSchema),
-    defaultValues: {
-      name: "",
-      phoneNumber: "",
-      addressType: "home",
-      completeAddress: "",
-      nearbyLandmark: "",
-      zipCode: "",
-    },
-  });
 
   useEffect(() => {
     if (open) {
@@ -220,12 +204,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   };
 
   const calculateCartTotal = (): number => {
-    return cartItems.reduce((total, item) => {
+    let total = 0;
+
+    for (const item of cartItems) {
       const itemPrice =
         (item?.meal?.price || 0) +
         (item?.meal?.selectedCurry?.priceAdjustment || 0);
-      return itemPrice * item.quantity;
-    }, 0);
+      total += itemPrice * item.quantity;
+    }
+
+    return total;
   };
 
   const handleUpdateCurryOption = async (updatedMeal: any) => {
@@ -255,18 +243,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const hasCurryOptions = (meal: any) => {
     if (!meal) return false;
 
-    if (meal.curryOptions && meal.curryOptions.length > 0) {
-      return true;
-    }
-
-    if (meal.curryOption || meal.selectedCurry) {
-      return true;
-    }
-
-    const nameHasCurry = meal.name?.toLowerCase().includes("curry");
-    const categoryHasCurry = meal.category?.toLowerCase().includes("curry");
-
-    if (nameHasCurry || categoryHasCurry) {
+    if (meal.curryOptions.length > 0) {
       return true;
     }
 
@@ -438,24 +415,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         <div>
           <div className="px-4 py-3">
             {cartItems.map((item) => {
-              const isEditingNotes = editingItemId === item.id;
-
-              const handleEditNotes = () => {
-                setEditingItemId(isEditingNotes ? null : item.id);
-                setNoteText(item.notes || "");
-              };
-
-              const handleSaveNotes = () => {
-                updateCartItemNotes(item.id, noteText || null);
-                setEditingItemId(null);
-                toast({
-                  title: "Notes saved",
-                  description: noteText
-                    ? "Your special instructions were saved"
-                    : "Notes removed",
-                });
-              };
-
               return (
                 <div
                   key={item.id}
@@ -501,7 +460,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         )}
                       </p>
                     )}
-                    <div className="flex items-center mt-1">
+                    <p className="text-primary text-xs sm:text-sm font-semibold">
+                      {formatPrice(calculateMealPrice(item))}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-start space-y-1 sm:space-y-1.5">
+                    {/* Quantity Controls */}
+                    <div className="flex items-center">
                       <Button
                         variant="outline"
                         size="icon"
@@ -529,80 +495,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       >
                         <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </Button>
-
-                      <div className="flex-grow"></div>
-
-                      <p className="text-primary text-xs sm:text-sm font-semibold">
-                        {formatPrice(calculateMealPrice(item))}
-                      </p>
                     </div>
-                    {/* Special instructions */}
-                    <div className="mt-1.5 sm:mt-2">
-                      {isEditingNotes ? (
-                        <div className="space-y-1.5 sm:space-y-2">
-                          <Input
-                            value={noteText}
-                            onChange={(e) => setNoteText(e.target.value)}
-                            placeholder="Add special instructions"
-                            className="h-7 sm:h-8 text-[10px] sm:text-xs"
-                          />
-                          <div className="flex justify-end gap-1.5 sm:gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
-                              onClick={() => setEditingItemId(null)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              className="h-6 sm:h-7 text-[10px] sm:text-xs py-0.5 px-2"
-                              onClick={handleSaveNotes}
-                            >
-                              Save
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="flex justify-between">
-                          <div
-                            className="text-[10px] sm:text-xs text-gray-500 flex items-center gap-0.5 sm:gap-1 cursor-pointer hover:text-primary transition-colors"
-                            onClick={handleEditNotes}
-                          >
-                            <MessageSquare className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
-                            {item.notes ? (
-                              <span className="line-clamp-1 max-w-[120px] sm:max-w-[180px]">
-                                {item.notes}
-                              </span>
-                            ) : (
-                              <span>Add instructions</span>
-                            )}
-                          </div>
-                          <div>
-                            {hasCurryOptions(item.meal) && (
-                              <Button
-                                variant="link"
-                                size="sm"
-                                className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary mr-1.5 sm:mr-2"
-                                onClick={() => handleCustomizeItem(item)}
-                              >
-                                Customize
-                              </Button>
-                            )}
-                            <Button
-                              variant="link"
-                              size="sm"
-                              className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-destructive"
-                              onClick={() => removeCartItem(item.id)}
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+
+                    {/* Customize Button */}
+                    {hasCurryOptions(item.meal) && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary"
+                        onClick={() => handleCustomizeItem(item)}
+                      >
+                        Customize
+                      </Button>
+                    )}
                   </div>
                 </div>
               );

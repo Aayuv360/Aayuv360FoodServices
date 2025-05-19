@@ -23,7 +23,7 @@ interface CurryOptionsModalProps {
   open: boolean;
   onClose: () => void;
   meal: Meal;
-  onAddToCart: (meal: Meal & { curryOption: CurryOption }) => void;
+  onAddToCart: (meal: Meal, selectedCurryOption: any) => void;
   lastCurryOption?: CurryOption;
   isInCart?: boolean;
 }
@@ -52,13 +52,7 @@ export function CurryOptionsModal({
           };
         }
       })
-    : [
-        { id: "regular", name: "Regular Curry", priceAdjustment: 0 },
-        { id: "spicy", name: "Spicy Curry", priceAdjustment: 25 },
-        { id: "extra-spicy", name: "Extra Spicy Curry", priceAdjustment: 35 },
-        { id: "butter", name: "Butter Curry", priceAdjustment: 50 },
-        { id: "garlic", name: "Garlic Curry", priceAdjustment: 40 },
-      ];
+    : [];
 
   const defaultSelectedOption = lastCurryOption
     ? lastCurryOption.id
@@ -75,10 +69,7 @@ export function CurryOptionsModal({
     );
 
     if (selectedCurryOption) {
-      onAddToCart({
-        ...meal,
-        curryOption: selectedCurryOption,
-      });
+      onAddToCart(meal, selectedCurryOption);
     }
   };
 

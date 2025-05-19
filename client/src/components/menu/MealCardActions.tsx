@@ -3,7 +3,6 @@ import { Minus, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { CurryOptionsModal } from "./CurryOptionsModal";
-import { RepeatCustomizationModal } from "./RepeatCustomizationModal";
 import { Meal } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -26,7 +25,6 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
   const { user } = useAuth();
 
   const [showCurryOptionsModal, setShowCurryOptionsModal] = useState(false);
-  const [showRepeatModal, setShowRepeatModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingCurryAction, setPendingCurryAction] = useState<boolean>(false);
 
@@ -62,11 +60,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         curryOption: defaultCurryOption,
       };
 
-      const existingItem = cartItems.find(
-        (item) =>
-          item.meal?.id === meal.id &&
-          (item.meal as any)?.curryOption?.id === defaultCurryOption.id,
-      );
+      const existingItem = cartItems.find((item) => item.meal?.id === meal.id);
 
       if (existingItem) {
         await updateCartItem(existingItem.id, existingItem.quantity + 1);
@@ -148,57 +142,9 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     }
   };
 
-  const handleChooseNew = () => {
-    setShowRepeatModal(false);
-    setShowCurryOptionsModal(true);
-  };
-
-  const handleRepeatLast = async () => {
-    if (lastCurryOption) {
-      try {
-        const mealWithCurry = {
-          ...meal,
-          curryOption: lastCurryOption,
-        };
-
-        const sameOptionItem = cartItems.find((item) => {
-          return (
-            item.meal?.id === meal.id &&
-            (item.meal as any)?.curryOption?.id === lastCurryOption.id
-          );
-        });
-
-        if (sameOptionItem) {
-          await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
-
-          toast({
-            title: "Quantity increased",
-            description: `${meal.name} with ${lastCurryOption.name} quantity increased`,
-          });
-        } else {
-          await addToCart(mealWithCurry);
-
-          toast({
-            title: "Added to cart",
-            description: `${meal.name} with ${lastCurryOption.name} added to your cart`,
-          });
-        }
-
-        setShowRepeatModal(false);
-      } catch (error) {
-        console.error("Error repeating last selection:", error);
-        toast({
-          title: "Error",
-          description:
-            "There was an error updating your cart. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
   const handleAddToCurry = async (
-    selectedMeal: Meal & { curryOption: any },
+    selectedMeal: Meal,
+    selectedCurryOption: any,
   ) => {
     try {
       if (!user) {
@@ -207,26 +153,34 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         return;
       }
 
-      const sameOptionItem = cartItems.find((item) => {
+      const existingItem = cartItems.find((item) => {
+        console.log(item, selectedCurryOption);
         return (
           item.meal?.id === selectedMeal.id &&
-          (item.meal as any)?.curryOption?.id === selectedMeal.curryOption.id
+          item.meal?.selectedCurry?.id === selectedCurryOption?.id
         );
       });
+      console.log(existingItem);
+      console.log(cartItems);
+      console.log(selectedMeal);
 
-      if (sameOptionItem) {
-        await updateCartItem(sameOptionItem.id, sameOptionItem.quantity + 1);
+      if (existingItem) {
+        await updateCartItem(existingItem.id, existingItem.quantity + 1);
 
         toast({
           title: "Quantity increased",
-          description: `${selectedMeal.name} with ${selectedMeal.curryOption.name} quantity increased`,
+          description: `${selectedMeal.name} with ${selectedCurryOption?.name} quantity increased`,
         });
       } else {
-        await addToCart(selectedMeal, 1);
+        const mealWithCurry = {
+          ...meal,
+          curryOption: selectedCurryOption,
+        };
+        await addToCart(mealWithCurry, 1);
 
         toast({
           title: "Added to cart",
-          description: `${selectedMeal.name} with ${selectedMeal.curryOption.name} added to your cart`,
+          description: `${selectedMeal.name} with ${selectedCurryOption?.name} added to your cart`,
         });
       }
 
@@ -291,16 +245,6 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         onClose={() => setShowCurryOptionsModal(false)}
         meal={meal}
         onAddToCart={handleAddToCurry}
-        lastCurryOption={lastCurryOption}
-        isInCart={inCart}
-      />
-
-      <RepeatCustomizationModal
-        open={showRepeatModal}
-        onClose={() => setShowRepeatModal(false)}
-        meal={meal}
-        onChooseNew={handleChooseNew}
-        onRepeatLast={handleRepeatLast}
         lastCurryOption={lastCurryOption}
         isInCart={inCart}
       />

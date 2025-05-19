@@ -111,52 +111,37 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Add item to cart
   const addToCart = async (meal: Meal, quantity: number = 1) => {
     if (!user) {
-      // Instead of just showing a toast, throw an error with a specific message
-      // This will allow components to handle authentication needs more specifically
       throw new Error("authentication_required");
     }
 
     try {
       setLoading(true);
 
-      // Check if meal has a selected curry (from the CurryOptionsModal)
       const hasSelectedCurry = (meal as any).curryOption !== undefined;
-
-      // Prepare the payload
       const payload = {
         mealId: meal.id,
         quantity,
-        // Include the complete curryOptions array from the meal
         curryOptions: meal.curryOptions || [],
-        // If meal has selected curry, include it in the request with the new key
         ...(hasSelectedCurry && {
           selectedCurry: (meal as any).curryOption,
         }),
       };
 
-      // For meals with the same ID but different curry options, we need to check
-      // if the same exact meal (ID + curry option) already exists
       const existingItem = cartItems.find((item) => {
-        // Basic check for meal ID
         if (item.mealId !== meal.id) return false;
 
-        // If this meal has a curry option, we need to match that too
         if (hasSelectedCurry) {
           const itemCurryId = item.meal && (item.meal as any).curryOption?.id;
           const mealCurryId = (meal as any).curryOption?.id;
           return itemCurryId === mealCurryId;
         }
 
-        // If no curry option, just match by meal ID
         return true;
       });
 
       let newCartItem: CartItem;
 
       if (existingItem) {
-        // If the exact same item exists, update the quantity - either:
-        // - Use the specified quantity directly (for customization updates)
-        // - Or increment the existing quantity by 1 (for standard add operations)
         const updatedQuantity =
           quantity === 1 ? existingItem.quantity + 1 : quantity;
         const res = await apiRequest("PUT", `/api/cart/${existingItem.id}`, {
@@ -164,22 +149,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
         });
         newCartItem = await res.json();
 
-        // Update the cart items array with the updated item
         setCartItems(
           cartItems.map((item) =>
             item.id === existingItem.id ? newCartItem : item,
           ),
         );
       } else {
-        // Otherwise, add a new item
         const res = await apiRequest("POST", "/api/cart", payload);
         newCartItem = await res.json();
 
-        // Add the new item to the cart items array
         setCartItems([...cartItems, newCartItem]);
       }
 
-      // Store the last curry option used for this meal
       if (hasSelectedCurry && (meal as any).curryOption) {
         setLastCurryOptions((prev) => ({
           ...prev,
@@ -187,7 +168,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }));
       }
 
-      return newCartItem; // Return the cart item for reference
+      return newCartItem;
     } catch (error) {
       console.error("Error adding to cart:", error);
       toast({
@@ -195,7 +176,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         description: "Failed to add item to cart",
         variant: "destructive",
       });
-      throw error; // Re-throw for error handling in the calling function
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -208,9 +189,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       const res = await apiRequest("PUT", `/api/cart/${id}`, { quantity });
       const updatedItem = await res.json();
-
-      setCartItems(
-        cartItems.map((item) => (item.id === id ? updatedItem : item)),
+      setCartItems((prev) =>
+        prev.map((item) => (item.id === id ? updatedItem : item)),
       );
     } catch (error) {
       console.error("Error updating cart item:", error);
