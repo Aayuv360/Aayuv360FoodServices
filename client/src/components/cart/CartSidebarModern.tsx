@@ -286,7 +286,7 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
       await apiRequest("PATCH", `/api/cart/${item.id}`, {
         notes: noteText,
       });
-      
+
       // Update cart items locally
       const updatedItems = cartItems.map((cartItem) => {
         if (cartItem.id === item.id) {
@@ -294,15 +294,15 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
         }
         return cartItem;
       });
-      
+
       // This would normally be handled by the cart context
       // But for this example, we'll just show a toast
-      
+
       toast({
         title: "Notes updated",
         description: "Your special instructions have been saved",
       });
-      
+
       setEditingItemId(null);
     } catch (error) {
       console.error("Error saving notes:", error);
@@ -441,7 +441,7 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
       setCurrentStep("cart");
     }
   };
-  
+
   // Modern Cart UI rendering
   const renderModernCart = () => (
     <div className="flex-grow overflow-y-auto flex flex-col h-full">
@@ -482,14 +482,12 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
                   </div>
                   <div className="flex-grow px-3">
                     <div className="flex justify-between">
-                      <h4 className="font-medium text-sm">
-                        {item.meal?.name}
-                      </h4>
+                      <h4 className="font-medium text-sm">{item.meal?.name}</h4>
                       <p className="font-semibold text-sm text-primary">
                         {formatPrice(calculateMealPrice(item))}
                       </p>
                     </div>
-                    
+
                     {((item.meal as any)?.curryOption ||
                       (item.meal as any)?.selectedCurry ||
                       item.curryOptionName) && (
@@ -498,16 +496,21 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
                           {(item.meal as any)?.curryOption?.name ||
                             (item.meal as any)?.selectedCurry?.name ||
                             item.curryOptionName}
-                          {((item.meal as any)?.curryOption?.priceAdjustment > 0 ||
-                            (item.meal as any)?.selectedCurry?.priceAdjustment > 0 ||
-                            (item.curryOptionPrice && item.curryOptionPrice > 0)) && (
+                          {((item.meal as any)?.curryOption?.priceAdjustment >
+                            0 ||
+                            (item.meal as any)?.selectedCurry?.priceAdjustment >
+                              0 ||
+                            (item.curryOptionPrice &&
+                              item.curryOptionPrice > 0)) && (
                             <span className="ml-1 font-medium">
                               (+
                               {formatPrice(
-                                (item.meal as any)?.curryOption?.priceAdjustment ||
-                                  (item.meal as any)?.selectedCurry?.priceAdjustment ||
+                                (item.meal as any)?.curryOption
+                                  ?.priceAdjustment ||
+                                  (item.meal as any)?.selectedCurry
+                                    ?.priceAdjustment ||
                                   item.curryOptionPrice ||
-                                  0
+                                  0,
                               )}
                               )
                             </span>
@@ -515,7 +518,7 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
                         </span>
                       </div>
                     )}
-                    
+
                     {item.notes && !isEditingNotes(item.id) && (
                       <p className="text-xs text-gray-600 mt-1 flex items-start">
                         <MessageSquare className="h-3 w-3 mr-1 mt-0.5 text-gray-400" />
@@ -598,7 +601,7 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
                         Customize
                       </Button>
                     )}
-                    
+
                     {!isEditingNotes(item.id) && (
                       <Button
                         variant="ghost"
@@ -609,7 +612,7 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
                         {item.notes ? "Edit Note" : "Add Note"}
                       </Button>
                     )}
-                    
+
                     <Button
                       variant="ghost"
                       size="sm"
@@ -646,7 +649,11 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
               <div className="flex justify-between font-medium text-base pt-2 border-t">
                 <span>Total Amount</span>
                 <span>
-                  {formatPrice(calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20)}
+                  {formatPrice(
+                    calculateCartTotal() +
+                      (deliveryType === "express" ? 60 : 40) +
+                      20,
+                  )}
                 </span>
               </div>
             </div>
@@ -971,15 +978,13 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
         <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full">
           <SheetHeader className="px-4 py-3 border-b">
             <SheetTitle className="text-left flex items-center">
-              {currentStep === "cart" ? (
-                "Your Cart"
-              ) : currentStep === "delivery" ? (
-                "Delivery Details"
-              ) : currentStep === "payment" ? (
-                "Payment"
-              ) : (
-                "Order Confirmation"
-              )}
+              {currentStep === "cart"
+                ? "Your Cart"
+                : currentStep === "delivery"
+                  ? "Delivery Details"
+                  : currentStep === "payment"
+                    ? "Payment"
+                    : "Order Confirmation"}
               {currentStep !== "cart" && currentStep !== "success" && (
                 <div className="ml-auto">
                   <button
@@ -1012,15 +1017,15 @@ const CartSidebarModern = ({ open, onClose }: CartSidebarProps) => {
       </Sheet>
 
       <CurryOptionsModal
-        isOpen={!!customizingMeal}
+        open={!!customizingMeal}
         onClose={() => setCustomizingMeal(null)}
         meal={customizingMeal}
-        onSelectCurryOption={handleUpdateCurryOption}
+        onAddToCart={handleUpdateCurryOption}
       />
 
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        onOpenChange={(open) => setAuthModalOpen(open)}
         onSuccess={() => {
           setAuthModalOpen(false);
           handleNextStep();
