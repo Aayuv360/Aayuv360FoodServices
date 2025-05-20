@@ -9,8 +9,6 @@ import {
   ChevronLeft,
   ShoppingCart as ShoppingCartIcon,
   PlusCircle,
-  MessageSquare,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -30,6 +28,7 @@ import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 import { Meal } from "@shared/schema";
+import { Address } from "./Address";
 
 interface CartSidebarProps {
   open: boolean;
@@ -65,8 +64,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
-  const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [noteText, setNoteText] = useState<string>("");
 
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
@@ -92,6 +89,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const selectedAddress = addresses.find(
     (addr) => addr.id === selectedAddressId,
   );
+  // useEffect(() => {
+  //   if (open) {
+  //     setCurrentStep("cart");
+  //   }
+  // }, [open]);
 
   useEffect(() => {
     if (user && open) {
@@ -186,7 +188,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     let total = 0;
 
     for (const item of cartItems) {
-      total += calculateMealPrice(item);
+      const itemPrice =
+        (item?.meal?.price || 0) +
+        (item?.meal?.selectedCurry?.priceAdjustment || 0);
+      total += itemPrice * item.quantity;
     }
 
     return total;
@@ -198,6 +203,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   ) => {
     try {
       const existingItem = cartItems.find((item) => {
+        console.log(item, selectedCurryOption);
         return (
           item.meal?.id === selectedMeal.id &&
           item.meal?.selectedCurry?.id === selectedCurryOption?.id
@@ -248,16 +254,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   const hasCurryOptions = (meal: any) => {
     if (!meal) return false;
-    if (meal.curryOptions && meal.curryOptions.length > 0) {
+
+    if (meal.curryOptions.length > 0) {
       return true;
     }
+
     return false;
   };
-
   const handleCustomizeItem = (item: any) => {
     setCustomizingMeal(item.meal);
   };
-
   function calculateMealPrice(item: any): number {
     const basePrice = item.meal?.price || 0;
 
@@ -269,38 +275,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
     return (basePrice + curryAdjustment) * item.quantity;
   }
-
-  const isEditingNotes = (id: number) => editingItemId === id;
-
-  const handleEditNotes = (item: any) => {
-    setEditingItemId(item.id);
-    setNoteText(item.notes || "");
-  };
-
-  const handleSaveNotes = async (item: any) => {
-    try {
-      await apiRequest("PATCH", `/api/cart/${item.id}`, {
-        notes: noteText,
-      });
-      
-      // This would normally be handled by the cart context
-      // But for this example, we'll just show a toast
-      
-      toast({
-        title: "Notes updated",
-        description: "Your special instructions have been saved",
-      });
-      
-      setEditingItemId(null);
-    } catch (error) {
-      console.error("Error saving notes:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save your notes. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleNextStep = async () => {
     if (currentStep === "cart") {
@@ -429,610 +403,445 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       setCurrentStep("cart");
     }
   };
-
-  // Modern Cart UI rendering
-  const renderCartItems = () => {
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      );
-    }
-
-    if (cartItems.length === 0) {
-      return (
-        <div className="text-center py-8 px-4 flex-grow flex flex-col items-center justify-center">
-          <div className="w-20 h-20 mx-auto bg-amber-50 text-amber-500 rounded-full flex items-center justify-center mb-4">
-            <ShoppingCartIcon className="w-10 h-10" />
+  const renderCartSummary = () => (
+    <div className="flex-grow overflow-y-auto">
+      {cartItems.length === 0 ? (
+        <div className="text-center py-6 sm:py-8 px-4">
+          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
+            <ShoppingCartIcon className="w-full h-full" />
           </div>
-          <h3 className="text-lg font-medium mb-2">Your cart is empty</h3>
-          <p className="text-gray-500 mb-6 text-sm">
-            Add some delicious millet meals to get started
+          <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
+            Your cart is empty
           </p>
           <Button
             onClick={() => {
               navigate("/menu");
               onClose();
             }}
-            className="text-sm py-2 h-auto rounded-full px-6"
+            className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
           >
             Browse Menu
           </Button>
         </div>
-      );
-    }
-
-    return (
-      <div className="px-4 py-3">
-        <div className="space-y-4">
-          {cartItems.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-100"
-            >
-              <div className="flex p-3">
-                <div className="w-20 h-20 rounded-md overflow-hidden flex-shrink-0">
-                  <img
-                    src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
-                    alt={item.meal?.name || "Meal item"}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex-grow px-3">
-                  <div className="flex justify-between">
-                    <h4 className="font-medium text-sm">
+      ) : (
+        <div>
+          <div className="px-4 py-3">
+            {cartItems.map((item) => {
+              return (
+                <div
+                  key={item.id}
+                  className="flex items-start border-b py-2 sm:py-3"
+                >
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
+                    <img
+                      src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
+                      alt={item.meal?.name || "Meal item"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex-grow px-2 sm:px-3">
+                    <h4 className="font-medium text-xs sm:text-sm line-clamp-1">
                       {item.meal?.name}
                     </h4>
-                    <p className="font-semibold text-sm text-primary">
-                      {formatPrice(calculateMealPrice(item))}
-                    </p>
-                  </div>
-                  
-                  {((item.meal as any)?.curryOption ||
-                    (item.meal as any)?.selectedCurry ||
-                    item.curryOptionName) && (
-                    <div className="mt-1">
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs bg-amber-50 text-amber-800 border border-amber-200">
+                    {((item.meal as any)?.curryOption ||
+                      (item.meal as any)?.selectedCurry ||
+                      item.curryOptionName) && (
+                      <p className="text-[10px] sm:text-xs text-gray-600">
+                        with{" "}
                         {(item.meal as any)?.curryOption?.name ||
                           (item.meal as any)?.selectedCurry?.name ||
                           item.curryOptionName}
-                        {((item.meal as any)?.curryOption?.priceAdjustment > 0 ||
-                          (item.meal as any)?.selectedCurry?.priceAdjustment > 0 ||
-                          (item.curryOptionPrice && item.curryOptionPrice > 0)) && (
-                          <span className="ml-1 font-medium">
+                        {((item.meal as any)?.curryOption?.priceAdjustment >
+                          0 ||
+                          (item.meal as any)?.selectedCurry?.priceAdjustment >
+                            0 ||
+                          (item.curryOptionPrice &&
+                            item.curryOptionPrice > 0)) && (
+                          <span className="text-primary ml-1">
                             (+
                             {formatPrice(
-                              (item.meal as any)?.curryOption?.priceAdjustment ||
-                                (item.meal as any)?.selectedCurry?.priceAdjustment ||
+                              (item.meal as any)?.curryOption
+                                ?.priceAdjustment ||
+                                (item.meal as any)?.selectedCurry
+                                  ?.priceAdjustment ||
                                 item.curryOptionPrice ||
-                                0
+                                0,
                             )}
                             )
                           </span>
                         )}
-                      </span>
-                    </div>
-                  )}
-                  
-                  {item.notes && !isEditingNotes(item.id) && (
-                    <p className="text-xs text-gray-600 mt-1 flex items-start">
-                      <MessageSquare className="h-3 w-3 mr-1 mt-0.5 text-gray-400" />
-                      {item.notes}
+                      </p>
+                    )}
+                    <p className="text-primary text-xs sm:text-sm font-semibold">
+                      {formatPrice(calculateMealPrice(item))}
                     </p>
-                  )}
+                  </div>
 
-                  {isEditingNotes(item.id) && (
-                    <div className="mt-2">
-                      <textarea
-                        className="w-full text-xs p-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
-                        placeholder="Add special instructions..."
-                        rows={2}
-                        value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
-                      />
-                      <div className="flex space-x-2 mt-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-xs h-8"
-                          onClick={() => setEditingItemId(null)}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="text-xs h-8"
-                          onClick={() => handleSaveNotes(item)}
-                        >
-                          Save
-                        </Button>
-                      </div>
+                  <div className="flex flex-col items-start space-y-1 sm:space-y-1.5">
+                    {/* Quantity Controls */}
+                    <div className="flex items-center">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
+                        onClick={() => {
+                          if (item.quantity > 1) {
+                            updateCartItem(item.id, item.quantity - 1);
+                          } else {
+                            removeCartItem(item.id);
+                          }
+                        }}
+                      >
+                        <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      </Button>
+                      <span className="mx-1.5 sm:mx-2 text-xs sm:text-sm font-medium">
+                        {item.quantity}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-5 w-5 sm:h-6 sm:w-6 rounded-full"
+                        onClick={() => handleCustomizeItem(item)}
+                      >
+                        <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                      </Button>
                     </div>
-                  )}
+
+                    {/* Customize Button */}
+                    {hasCurryOptions(item.meal) && (
+                      <Button
+                        variant="link"
+                        size="sm"
+                        className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary"
+                        onClick={() => handleCustomizeItem(item)}
+                      >
+                        Customize
+                      </Button>
+                    )}
+                  </div>
                 </div>
+              );
+            })}
+          </div>
+
+          <div className="px-4 py-4 border-t">
+            <h3 className="font-medium text-base mb-3">Bill Details</h3>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Items Total</span>
+                <span>{formatPrice(calculateCartTotal())}</span>
               </div>
 
-              <div className="flex justify-between items-center p-3 bg-gray-50 border-t border-gray-100">
-                <div className="flex items-center">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-md"
-                    onClick={() => {
-                      if (item.quantity > 1) {
-                        updateCartItem(item.id, item.quantity - 1);
-                      } else {
-                        removeCartItem(item.id);
-                      }
-                    }}
-                    disabled={item.quantity <= 1}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Delivery Charge</span>
+                <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
+              </div>
 
-                  <span className="text-sm font-medium w-8 text-center">
-                    {item.quantity}
-                  </span>
-
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-md"
-                    onClick={() => updateCartItem(item.id, item.quantity + 1)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-
-                <div className="flex space-x-1">
-                  {hasCurryOptions(item.meal) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-8"
-                      onClick={() => handleCustomizeItem(item)}
-                    >
-                      <PlusCircle className="mr-1 h-3 w-3" />
-                      Customize
-                    </Button>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Taxes</span>
+                <span>{formatPrice(20)}</span>
+              </div>
+              <Separator className="my-2" />
+              <div className="flex justify-between font-semibold">
+                <span>Grand Total</span>
+                <span className="text-primary">
+                  {formatPrice(
+                    calculateCartTotal() +
+                      (deliveryType === "express" ? 60 : 40) +
+                      20,
                   )}
-                  
-                  {!isEditingNotes(item.id) && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-8"
-                      onClick={() => handleEditNotes(item)}
-                    >
-                      {item.notes ? "Edit Note" : "Add Note"}
-                    </Button>
-                  )}
-                  
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs h-8 text-red-500 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => removeCartItem(item.id)}
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Remove
-                  </Button>
-                </div>
+                </span>
               </div>
             </div>
-          ))}
-        </div>
-
-        {/* Bill Details Section */}
-        <div className="mt-6 p-4 border border-gray-100 rounded-lg bg-gray-50">
-          <h3 className="font-medium text-base mb-3">Bill Details</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Items Total</span>
-              <span>{formatPrice(calculateCartTotal())}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-gray-600">Delivery Charge</span>
-              <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span className="text-gray-600">Platform Fee</span>
-              <span>{formatPrice(20)}</span>
-            </div>
-
-            <div className="flex justify-between font-medium text-base pt-2 border-t border-gray-200 mt-2">
-              <span>Total Amount</span>
-              <span>
-                {formatPrice(calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20)}
-              </span>
-            </div>
           </div>
 
-          <Button
-            className="w-full mt-4 rounded-md py-2.5 h-auto"
-            onClick={handleNextStep}
-          >
-            Proceed to Checkout
-          </Button>
-        </div>
-      </div>
-    );
-  };
-
-  const renderDeliveryDetails = () => (
-    <div className="flex-grow overflow-y-auto p-4">
-      <button
-        onClick={handlePreviousStep}
-        className="flex items-center text-primary text-sm mb-4"
-      >
-        <ChevronLeft className="h-4 w-4 mr-1" />
-        Back to Cart
-      </button>
-
-      <h3 className="font-medium text-lg mb-4">Delivery Details</h3>
-
-      <div className="mb-6">
-        <h4 className="font-medium text-sm mb-2">Delivery Type</h4>
-        <div className="space-y-2">
-          <div
-            className={`border rounded-md p-3 flex items-center cursor-pointer ${
-              deliveryType === "default"
-                ? "border-primary bg-primary/5"
-                : "border-gray-200"
-            }`}
-            onClick={() => setDeliveryType("default")}
-          >
-            <div
-              className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
-                deliveryType === "default"
-                  ? "border-primary"
-                  : "border-gray-300"
-              }`}
-            >
-              {deliveryType === "default" && (
-                <div className="w-2 h-2 rounded-full bg-primary"></div>
-              )}
-            </div>
-            <div className="flex-grow">
-              <h5 className="font-medium text-sm">Standard Delivery</h5>
-              <p className="text-xs text-gray-500">
-                Delivered within 45-60 mins
-              </p>
-            </div>
-            <div className="text-right text-sm font-medium">₹40</div>
-          </div>
-
-          <div
-            className={`border rounded-md p-3 flex items-center cursor-pointer ${
-              deliveryType === "express"
-                ? "border-primary bg-primary/5"
-                : "border-gray-200"
-            }`}
-            onClick={() => setDeliveryType("express")}
-          >
-            <div
-              className={`w-4 h-4 rounded-full border mr-2 flex items-center justify-center ${
-                deliveryType === "express"
-                  ? "border-primary"
-                  : "border-gray-300"
-              }`}
-            >
-              {deliveryType === "express" && (
-                <div className="w-2 h-2 rounded-full bg-primary"></div>
-              )}
-            </div>
-            <div className="flex-grow">
-              <h5 className="font-medium text-sm">Express Delivery</h5>
-              <p className="text-xs text-gray-500">
-                Delivered within 25-30 mins
-              </p>
-            </div>
-            <div className="text-right text-sm font-medium">₹60</div>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <h4 className="font-medium text-sm">Delivery Address</h4>
-          <Button
-            variant="link"
-            className="p-0 h-auto text-xs text-primary"
-            onClick={() => setAddressModalOpen(true)}
-          >
-            + Add New
-          </Button>
-        </div>
-
-        {addresses.length === 0 ? (
-          <div className="border border-gray-200 rounded-md p-4 text-center">
-            <p className="text-sm text-gray-500 mb-2">
-              You don't have any saved addresses
+          {/* Cancellation Policy */}
+          <div className="px-3 sm:px-4 py-2 sm:py-3 border-t">
+            <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">
+              Cancellation Policy
+            </h3>
+            <p className="text-[10px] sm:text-xs text-gray-600">
+              Orders can be cancelled before they are confirmed by the
+              restaurant. Once confirmed, refunds will be processed as per our
+              policy.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs"
-              onClick={() => setAddressModalOpen(true)}
-            >
-              Add Address
-            </Button>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {addresses.map((address) => (
-              <div
-                key={address.id}
-                className={`border rounded-md p-3 flex items-start cursor-pointer ${
-                  selectedAddressId === address.id
-                    ? "border-primary bg-primary/5"
-                    : "border-gray-200"
-                }`}
-                onClick={() => setSelectedAddressId(address.id)}
-              >
-                <div
-                  className={`w-4 h-4 rounded-full border mt-0.5 mr-2 flex items-center justify-center ${
-                    selectedAddressId === address.id
-                      ? "border-primary"
-                      : "border-gray-300"
-                  }`}
-                >
-                  {selectedAddressId === address.id && (
-                    <div className="w-2 h-2 rounded-full bg-primary"></div>
-                  )}
-                </div>
-                <div>
-                  <h5 className="font-medium text-sm">{address.name}</h5>
-                  <p className="text-xs text-gray-700">
-                    {address.addressLine1}
-                    {address.addressLine2 && `, ${address.addressLine2}`}
-                  </p>
-                  <p className="text-xs text-gray-700">
-                    {address.city}, {address.state} - {address.pincode}
-                  </p>
-                  <p className="text-xs text-gray-700 mt-1">
-                    Phone: {address.phone}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="p-4 border-t mt-auto -mx-4">
-        <Button className="w-full" onClick={handleNextStep}>
-          Proceed to Payment
-        </Button>
-      </div>
+        </div>
+      )}
     </div>
   );
-
-  const renderPaymentOptions = () => (
-    <div className="flex-grow overflow-y-auto p-4">
-      <button
-        onClick={handlePreviousStep}
-        className="flex items-center text-primary text-sm mb-4"
-      >
-        <ChevronLeft className="h-4 w-4 mr-1" />
-        Back to Delivery
-      </button>
-
-      <h3 className="font-medium text-lg mb-4">Payment</h3>
-
-      <div className="mb-6">
-        <div className="border rounded-md p-3 flex items-center cursor-pointer border-primary bg-primary/5">
-          <div className="w-4 h-4 rounded-full border border-primary mr-2 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-primary"></div>
-          </div>
-          <div className="flex-grow">
-            <h5 className="font-medium text-sm">Razorpay</h5>
-            <p className="text-xs text-gray-500">
-              Pay securely with credit/debit card or UPI
-            </p>
-          </div>
-          <CreditCard className="h-5 w-5 text-gray-500" />
-        </div>
-      </div>
-
-      <div className="p-3 border rounded-md mb-6">
-        <h4 className="font-medium text-sm mb-2">Order Summary</h4>
-        <div className="space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-gray-600">Items Total</span>
-            <span>{formatPrice(calculateCartTotal())}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Delivery Charge</span>
-            <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-gray-600">Platform Fee</span>
-            <span>{formatPrice(20)}</span>
-          </div>
-          <div className="flex justify-between font-medium pt-1 border-t mt-1">
-            <span>Total Amount</span>
-            <span>
-              {formatPrice(
-                calculateCartTotal() +
-                  (deliveryType === "express" ? 60 : 40) +
-                  20,
-              )}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mb-6">
-        <h4 className="font-medium text-sm mb-2">Delivery Address</h4>
-        {selectedAddress && (
-          <div className="border rounded-md p-3">
-            <h5 className="font-medium text-sm">{selectedAddress.name}</h5>
-            <p className="text-xs text-gray-700">
-              {selectedAddress.addressLine1}
-              {selectedAddress.addressLine2 &&
-                `, ${selectedAddress.addressLine2}`}
-            </p>
-            <p className="text-xs text-gray-700">
-              {selectedAddress.city}, {selectedAddress.state} -{" "}
-              {selectedAddress.pincode}
-            </p>
-            <p className="text-xs text-gray-700 mt-1">
-              Phone: {selectedAddress.phone}
-            </p>
-          </div>
-        )}
-      </div>
-
-      <div className="p-4 border-t mt-auto -mx-4">
-        <Button
-          className="w-full"
-          onClick={handleNextStep}
-          disabled={isCreatingOrder}
-        >
-          {isCreatingOrder ? (
-            <div className="flex items-center">
-              <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></div>
-              Processing...
-            </div>
-          ) : (
-            "Pay Now"
-          )}
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderSuccessView = () => (
-    <div className="flex-grow overflow-y-auto p-4">
-      <div className="text-center py-4">
-        <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center mb-4">
-          <Check className="h-8 w-8 text-green-600" />
-        </div>
-        <h3 className="font-medium text-lg mb-2">Order Placed!</h3>
-        <p className="text-gray-600 mb-4">
-          Your order has been placed successfully. You can track your order in
-          your profile.
-        </p>
-        <div className="bg-gray-50 p-3 rounded-md mb-6">
-          <div className="flex justify-between mb-1">
-            <span className="text-sm text-gray-600">Order ID</span>
-            <span className="text-sm font-medium">#{orderId}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm text-gray-600">Amount Paid</span>
-            <span className="text-sm font-medium">
-              {formatPrice(
-                calculateCartTotal() +
-                  (deliveryType === "express" ? 60 : 40) +
-                  20,
-              )}
-            </span>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Button
-            className="w-full mb-2 text-sm h-auto py-2"
-            onClick={() => {
-              onClose();
-              setCurrentStep("cart");
-              navigate("/menu");
-            }}
-          >
-            Continue Shopping
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full text-sm h-auto py-2"
-            onClick={() => {
-              onClose();
-              setCurrentStep("cart");
-              navigate("/profile?tab=orders");
-            }}
-          >
-            View Orders
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full">
-          <SheetHeader className="px-4 py-3 border-b">
-            <SheetTitle className="text-left flex items-center">
-              {currentStep === "cart" ? (
-                "Your Cart"
-              ) : currentStep === "delivery" ? (
-                "Delivery Details"
-              ) : currentStep === "payment" ? (
-                "Payment"
-              ) : (
-                "Order Confirmation"
-              )}
-              {currentStep !== "cart" && currentStep !== "success" && (
-                <div className="ml-auto">
-                  <button
-                    onClick={handlePreviousStep}
-                    className="text-sm text-gray-500 flex items-center"
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Back
-                  </button>
-                </div>
-              )}
-            </SheetTitle>
+        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full overflow-hidden">
+          <SheetHeader className="p-3 sm:p-4 border-b">
+            <div className="flex justify-between items-center">
+              <SheetTitle className="text-lg sm:text-xl">Your Cart</SheetTitle>
+            </div>
           </SheetHeader>
 
-          <div className="flex-grow flex flex-col overflow-auto">
-            {currentStep === "cart" && cartItems.length > 0 ? (
-              <div className="flex-grow overflow-y-auto">
-                {renderCartItems()}
+          <div className="flex-grow overflow-auto">
+            {currentStep === "cart" && renderCartSummary()}
+
+            {currentStep === "delivery" && (
+              <div className="p-3 sm:p-4">
+                <div className="space-y-3 sm:space-y-4">
+                  <h3 className="font-medium text-sm sm:text-base">
+                    Delivery Address
+                  </h3>
+
+                  {/* Display existing addresses */}
+                  {addresses.length > 0 ? (
+                    <div className="space-y-2 sm:space-y-3">
+                      {addresses.map((address) => (
+                        <div
+                          key={address.id}
+                          className={`border rounded-md p-2 sm:p-3 cursor-pointer ${
+                            selectedAddressId === address.id
+                              ? "border-primary bg-primary/5"
+                              : ""
+                          }`}
+                          onClick={() => setSelectedAddressId(address.id)}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div className="flex items-center gap-1 sm:gap-2">
+                              <div className="font-medium text-xs sm:text-sm">
+                                {address.name}
+                              </div>
+                              {address.isDefault && (
+                                <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1.5 sm:px-2 py-0.5 rounded">
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                            {selectedAddressId === address.id && (
+                              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                            )}
+                          </div>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-1">
+                            {address.addressLine1}
+                          </p>
+                          {address.addressLine2 && (
+                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
+                              {address.addressLine2}
+                            </p>
+                          )}
+                          <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
+                            {address.city}, {address.state} - {address.pincode}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
+                            Phone: {address.phone}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-4 text-gray-500">
+                      No saved addresses found
+                    </div>
+                  )}
+
+                  {/* Button to add a new address */}
+                  <div className="mt-3 sm:mt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full flex items-center justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
+                      onClick={() => setAddressModalOpen(true)}
+                    >
+                      <PlusCircle className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      Add New Address
+                    </Button>
+                  </div>
+
+                  <NewAddressModal
+                    addressModalOpen={addressModalOpen}
+                    setAddressModalOpen={setAddressModalOpen}
+                    locationSearch={locationSearch}
+                    filteredLocations={filteredLocations}
+                    handleAddressFormSubmit={handleAddressFormSubmit}
+                    setLocationSearch={setLocationSearch}
+                    selectLocation={selectLocation}
+                  />
+
+                  <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
+                    <h3 className="font-medium text-xs sm:text-sm mb-1.5 sm:mb-2">
+                      Delivery Type
+                    </h3>
+                    <div className="flex gap-1.5 sm:gap-2">
+                      <Button
+                        type="button"
+                        variant={
+                          deliveryType === "default" ? "default" : "outline"
+                        }
+                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+                        onClick={() => setDeliveryType("default")}
+                      >
+                        Standard
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={
+                          deliveryType === "express" ? "default" : "outline"
+                        }
+                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+                        onClick={() => setDeliveryType("express")}
+                      >
+                        Express (+ �60)
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
+                    <p>
+                      We currently deliver only in Hyderabad, within a 10km
+                      radius of our service locations.
+                    </p>
+                  </div>
+                </div>
               </div>
-            ) : currentStep === "cart" ? (
-              renderCartItems()
-            ) : currentStep === "delivery" ? (
-              renderDeliveryDetails()
-            ) : currentStep === "payment" ? (
-              renderPaymentOptions()
-            ) : (
-              renderSuccessView()
+            )}
+
+            {currentStep === "payment" && renderCartSummary()}
+
+            {currentStep === "success" && (
+              <div className="p-3 sm:p-4 text-center">
+                <div className="bg-primary/10 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                  <Check className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2">
+                  Order Placed Successfully!
+                </h2>
+                <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6">
+                  Your order #{orderId} has been placed successfully.
+                </p>
+                <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
+                  <h3 className="font-medium text-sm sm:text-base text-left mb-1.5 sm:mb-2">
+                    Order Details
+                  </h3>
+                  <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
+                    <div className="flex justify-between">
+                      <span>Order Number</span>
+                      <span>#{orderId}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Payment Method</span>
+                      <span>
+                        {selectedPaymentMethod === "razorpay"
+                          ? "Online Payment"
+                          : "Cash on Delivery"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Total Amount</span>
+                      <span>
+                        {formatPrice(
+                          calculateCartTotal() +
+                            (deliveryType === "express" ? 60 : 40) +
+                            20,
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <Button
+                  className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+                  onClick={() => {
+                    onClose();
+                    setCurrentStep("cart");
+                    navigate("/menu");
+                  }}
+                >
+                  Continue Shopping
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+                  onClick={() => {
+                    onClose();
+                    setCurrentStep("cart");
+                    navigate("/profile?tab=orders");
+                  }}
+                >
+                  View Orders
+                </Button>
+              </div>
             )}
           </div>
+
+          {/* Footer with proceed button */}
+          {currentStep !== "success" && cartItems.length > 0 && (
+            <div className="border-t">
+              {currentStep === "cart" ? (
+                <div className="p-3 sm:p-4">
+                  <Button
+                    onClick={handleNextStep}
+                    className="w-full bg-primary text-white font-medium text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+                    disabled={loading || cartItems.length === 0}
+                  >
+                    Proceed
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  {currentStep === "payment" && (
+                    <Address selectedAddress={selectedAddress} />
+                  )}
+                  <div className="p-3 sm:p-4 flex gap-1.5 sm:gap-2">
+                    <Button
+                      variant="outline"
+                      onClick={handlePreviousStep}
+                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+                    >
+                      <ChevronLeft className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                      Back
+                    </Button>
+                    <Button
+                      onClick={handleNextStep}
+                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+                      disabled={loading || isCreatingOrder}
+                    >
+                      {currentStep === "delivery" && "Continue to Payment"}
+                      {currentStep === "payment" && (
+                        <>
+                          {isCreatingOrder ? (
+                            <>Processing...</>
+                          ) : (
+                            <>
+                              <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
+                              Pay{" "}
+                              {formatPrice(
+                                calculateCartTotal() +
+                                  (deliveryType === "express" ? 60 : 40) +
+                                  20,
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                      {currentStep === "delivery" && (
+                        <ChevronRight className="ml-1 h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </SheetContent>
       </Sheet>
+      <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
 
-      <CurryOptionsModal
-        open={!!customizingMeal}
-        onClose={() => setCustomizingMeal(null)}
-        meal={customizingMeal}
-        onAddToCart={handleUpdateCurryOption}
-      />
-
-      <AuthModal
-        isOpen={authModalOpen}
-        onOpenChange={(open) => setAuthModalOpen(open)}
-        onSuccess={() => {
-          setAuthModalOpen(false);
-          handleNextStep();
-        }}
-      />
-
-      <NewAddressModal
-        isOpen={addressModalOpen}
-        onClose={() => setAddressModalOpen(false)}
-        onSubmit={handleAddressFormSubmit}
-        locations={locations}
-        locationSearch={locationSearch}
-        setLocationSearch={setLocationSearch}
-        filteredLocations={filteredLocations}
-        onSelectLocation={selectLocation}
-      />
+      {customizingMeal && (
+        <CurryOptionsModal
+          open={!!customizingMeal}
+          onClose={() => setCustomizingMeal(null)}
+          meal={customizingMeal}
+          onAddToCart={handleUpdateCurryOption}
+          lastCurryOption={customizingMeal?.selectedCurry}
+          isInCart={true}
+        />
+      )}
     </>
   );
 };

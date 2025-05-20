@@ -36,7 +36,7 @@ export function CurryOptionsModal({
   lastCurryOption,
   isInCart = false,
 }: CurryOptionsModalProps) {
-  const curryOptions: CurryOption[] = meal?.curryOptions
+  const curryOptions: CurryOption[] = meal.curryOptions
     ? meal.curryOptions.map((option: any) => {
         if (Array.isArray(option)) {
           return {
@@ -83,7 +83,7 @@ export function CurryOptionsModal({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs sm:text-sm mt-1">
-            Choose a curry style for {meal?.name}
+            Choose a curry style for {meal.name}
           </DialogDescription>
         </DialogHeader>
 
