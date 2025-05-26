@@ -80,7 +80,7 @@ const subscriptionSchema = z.object({
     .min(1, "At least 1 person required")
     .max(10, "Maximum 10 persons allowed")
     .default(1),
-  subscriptionType: z.enum(["default", "customized"]).default("default"),
+  subscriptionType: z.enum(["default"]).default("default"),
   startDate: z.date({
     required_error: "Please select a start date",
   }),

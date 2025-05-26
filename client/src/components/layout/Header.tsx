@@ -27,17 +27,6 @@ interface Location {
   available?: boolean;
 }
 
-interface Meal {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  image: string;
-  mealType: string;
-  dietaryPreferences: string[];
-  available: boolean;
-}
-
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -51,12 +40,10 @@ const Header = () => {
   const [userLocation, setUserLocation] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const [location] = useLocation();
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
-
+  const [, navigate] = useLocation();
   // Function to open auth modal
   const openAuthModal = (
     mode: "normal" | "subscribe" = "normal",
@@ -68,25 +55,6 @@ const Header = () => {
     setAuthModalTab(tab);
     setAuthModalOpen(true);
   };
-
-  // Get all meals for search
-  const { data: meals = [] } = useQuery<Meal[]>({
-    queryKey: ["/api/meals", searchQuery],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (searchQuery) {
-        params.append("query", searchQuery);
-      }
-      const response = await fetch(`/api/meals?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch meals");
-      }
-
-      return response.json();
-    },
-    enabled: searchQuery.length > 1,
-  });
 
   const { data: locations = [] } = useQuery<Location[]>({
     queryKey: ["/api/locations", locationQuery],
@@ -104,8 +72,6 @@ const Header = () => {
       return response.json();
     },
   });
-
-  const filteredMeals = meals.slice(0, 5);
 
   const toggleCart = () => {
     setCartOpen(!cartOpen);
@@ -191,31 +157,11 @@ const Header = () => {
     setUserLocation(`${location.area} - ${location.pincode}`);
     setLocationQuery("");
   };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim().length > 0) {
-      window.location.href = `/menu?search=${encodeURIComponent(searchQuery)}`;
-    }
-  };
   useEffect(() => {
-    setShowSearchResults(false);
-
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("form")) {
-        setShowSearchResults(false);
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("click", handleClickOutside);
-      setShowSearchResults(false);
-    };
-  }, [location]);
-
+    if (searchQuery) {
+      navigate(`/menu?search=${encodeURIComponent(searchQuery)}`);
+    }
+  }, [searchQuery]);
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-40">
@@ -293,10 +239,7 @@ const Header = () => {
             </DropdownMenu>
           </div>
 
-          <form
-            onSubmit={handleSearchSubmit}
-            className="flex-grow max-w-xl relative order-last md:order-none my-2 md:my-0"
-          >
+          <form className="flex-grow max-w-xl relative order-last md:order-none my-2 md:my-0">
             <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
 
             <input
@@ -304,11 +247,6 @@ const Header = () => {
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
-                if (e.target.value.length > 1) {
-                  setShowSearchResults(true);
-                } else {
-                  setShowSearchResults(false);
-                }
               }}
               placeholder="Search meals..."
               className="w-full py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
@@ -319,75 +257,11 @@ const Header = () => {
                 type="button"
                 onClick={() => {
                   setSearchQuery("");
-                  setShowSearchResults(false);
                 }}
                 className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-            )}
-
-            {/* Search Results */}
-            {showSearchResults && searchQuery.length > 1 && (
-              <div className="absolute top-full left-0 right-0 bg-white shadow-lg rounded-lg mt-1 max-h-60 sm:max-h-80 overflow-auto z-50">
-                {filteredMeals.length > 0 ? (
-                  <>
-                    <div className="p-3 border-b">
-                      <p className="text-sm font-medium">Search Results</p>
-                    </div>
-                    <ul>
-                      {filteredMeals.map((meal) => (
-                        <li key={meal.id} className="border-b last:border-0">
-                          <Link
-                            href={`/menu?id=${meal.id}`}
-                            className="flex items-start p-3 hover:bg-gray-50"
-                          >
-                            <div className="h-12 w-12 rounded-md flex-shrink-0 bg-gray-100 mr-3 overflow-hidden">
-                              {meal.image && (
-                                <img
-                                  src={meal.image}
-                                  alt={meal.name}
-                                  className="h-full w-full object-cover"
-                                />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="text-sm font-medium">
-                                {meal.name}
-                              </h4>
-                              <p className="text-xs text-gray-500 line-clamp-1">
-                                {meal.description}
-                              </p>
-                              <p className="text-xs font-medium text-primary mt-1">
-                                ₹{meal.price.toFixed(2)}
-                              </p>
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                    {meals.length > 5 && (
-                      <div className="p-3 border-t text-center">
-                        <Link
-                          href={`/menu?search=${encodeURIComponent(searchQuery)}`}
-                          className="text-sm text-primary font-medium"
-                        >
-                          View all {meals.length} results
-                        </Link>
-                      </div>
-                    )}
-                  </>
-                ) : searchQuery.length > 1 ? (
-                  <div className="p-6 text-center">
-                    <p className="text-sm text-gray-500">
-                      No results found for "{searchQuery}"
-                    </p>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Try a different search term
-                    </p>
-                  </div>
-                ) : null}
-              </div>
             )}
           </form>
 

@@ -16,14 +16,16 @@ const Menu = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+    console.log(params);
     const searchParam = params.get("search");
+    console.log(searchParam);
+
     if (searchParam) {
       setSearchQuery(searchParam);
     }
 
     const mealId = params.get("id");
     if (mealId) {
-
     }
 
     const filterParam = params.get("filter");
@@ -82,7 +84,9 @@ const Menu = () => {
       <div className="container mx-auto px-3 sm:px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Our Menu</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+              Our Menu
+            </h1>
             <p className="text-sm sm:text-base text-gray-600">
               Explore our delicious millet-based dishes for {today}
             </p>
@@ -159,7 +163,9 @@ const Menu = () => {
           </div>
         ) : filteredMeals.length === 0 ? (
           <div className="text-center py-8 sm:py-12 bg-white rounded-lg shadow p-6 sm:p-8">
-            <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">No meals found</h3>
+            <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">
+              No meals found
+            </h3>
             <p className="text-sm sm:text-base text-gray-600">
               No meals match your current filters. Try adjusting your search or
               filters.
