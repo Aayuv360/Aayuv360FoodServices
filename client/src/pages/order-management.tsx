@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
+import { SubscriptionManagement } from "@/components/admin/SubscriptionManagement";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Accordion,
