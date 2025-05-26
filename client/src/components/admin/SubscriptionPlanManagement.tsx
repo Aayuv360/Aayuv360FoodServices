@@ -27,17 +27,27 @@ export function SubscriptionPlanManagement() {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Query to fetch subscription plans from MongoDB
-  const { data: subscriptionPlans, isLoading: isLoadingPlans } = useQuery({
+  // Query to fetch subscription plans from MongoDB with cache busting
+  const { data: subscriptionPlans, isLoading: isLoadingPlans, refetch } = useQuery({
     queryKey: ["/api/admin/subscription-plans"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/admin/subscription-plans");
+      // Add timestamp to prevent caching
+      const timestamp = Date.now();
+      const res = await fetch(`/api/admin/subscription-plans?t=${timestamp}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        },
+        credentials: 'include'
+      });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to fetch subscription plans");
       }
       return await res.json();
     },
+    staleTime: 0, // Data is immediately stale
   });
 
   // Mutation for updating plan using MongoDB
@@ -51,10 +61,9 @@ export function SubscriptionPlanManagement() {
       return await res.json();
     },
     onSuccess: () => {
-      // Force refresh both admin and public subscription plan queries
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/subscription-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription-plans"] });
-      queryClient.refetchQueries({ queryKey: ["/api/admin/subscription-plans"] });
+      // Force refetch to get fresh data from MongoDB
+      refetch();
+      
       setIsEditDialogOpen(false);
       setEditingPlan(null);
       toast({
