@@ -137,6 +137,7 @@ const Subscription = () => {
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedDietaryFilter, setSelectedDietaryFilter] = useState<'veg' | 'veg_with_egg' | 'nonveg'>('veg');
   
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
@@ -153,6 +154,18 @@ const Subscription = () => {
       return res.json();
     },
   });
+
+  // Filter plans based on selected dietary preference
+  const filteredPlans = subscriptionPlans ? subscriptionPlans.filter((plan: any) => 
+    plan.dietaryPreference === selectedDietaryFilter
+  ) : [];
+
+  // Dietary preference options
+  const dietaryOptions = [
+    { key: 'veg', label: 'Vegetarian', description: 'Plant-based meals only' },
+    { key: 'veg_with_egg', label: 'Vegetarian + Egg', description: 'Vegetarian meals with egg options' },
+    { key: 'nonveg', label: 'Non-Vegetarian', description: 'Includes chicken, fish and meat' }
+  ];
 
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as any) || "basic",
