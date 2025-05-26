@@ -632,6 +632,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update subscription plan (admin endpoint)
+  app.put("/api/admin/subscription-plans/:id", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const planId = req.params.id;
+      const planData = req.body;
+
+      console.log("Updating subscription plan:", planId, planData);
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.status(200).json({
+        success: true,
+        id: planId,
+        ...planData,
+        updatedAt: new Date()
+      });
+    } catch (err: any) {
+      console.error("Error updating subscription plan:", err);
+      res.setHeader('Content-Type', 'application/json');
+      res.status(500).json({ 
+        success: false,
+        message: "Error updating subscription plan",
+        error: err.message || "Unknown error"
+      });
+    }
+  });
+
   // API endpoint for subscription plans
   app.get("/api/subscription-plans", async (req, res) => {
     try {
@@ -1270,40 +1296,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (err) {
         console.error("Error extending subscription:", err);
         res.status(500).json({ message: "Error extending subscription" });
-      }
-    },
-  );
-
-  // Update subscription plan
-  app.put(
-    "/api/admin/subscription-plans/:id",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const planId = req.params.id;
-        const planData = req.body;
-
-        console.log("Updating subscription plan:", planId, planData);
-        
-        // Set proper headers for JSON response
-        res.setHeader('Content-Type', 'application/json');
-        
-        // Return the updated plan data
-        res.status(200).json({
-          success: true,
-          id: planId,
-          ...planData,
-          updatedAt: new Date()
-        });
-      } catch (err: any) {
-        console.error("Error updating subscription plan:", err);
-        res.setHeader('Content-Type', 'application/json');
-        res.status(500).json({ 
-          success: false,
-          message: "Error updating subscription plan",
-          error: err.message || "Unknown error"
-        });
       }
     },
   );
