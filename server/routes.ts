@@ -646,9 +646,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // API endpoint for subscription plans
+  // Admin API endpoints for subscription plans
+  app.get("/api/admin/subscription-plans", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const plans = await mongoStorage.getAllSubscriptionPlans();
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Error fetching subscription plans" });
+    }
+  });
+
+  app.put("/api/admin/subscription-plans/:id", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const planId = req.params.id;
+      const planData = req.body;
+      
+      console.log("🚀 Updating subscription plan:", planId, planData);
+      
+      const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, planData);
+      
+      res.json({
+        success: true,
+        message: "Plan updated successfully!",
+        plan: updatedPlan
+      });
+    } catch (error) {
+      console.error("Error updating subscription plan:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Error updating subscription plan" 
+      });
+    }
+  });
+
+  // API endpoint for subscription plans (public)
   app.get("/api/subscription-plans", async (req, res) => {
     try {
+      // First try to get from MongoDB
+      const dbPlans = await mongoStorage.getAllSubscriptionPlans();
+      
+      if (dbPlans.length > 0) {
+        return res.json(dbPlans);
+      }
+      
+      // Fallback to static plans if no DB plans exist
       const plans = [
         {
           id: "basic",

@@ -27,11 +27,11 @@ export function SubscriptionPlanManagement() {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Query to fetch subscription plans
+  // Query to fetch subscription plans from MongoDB
   const { data: subscriptionPlans, isLoading: isLoadingPlans } = useQuery({
-    queryKey: ["/api/subscription-plans"],
+    queryKey: ["/api/admin/subscription-plans"],
     queryFn: async () => {
-      const res = await apiRequest("GET", "/api/subscription-plans");
+      const res = await apiRequest("GET", "/api/admin/subscription-plans");
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to fetch subscription plans");
@@ -40,40 +40,18 @@ export function SubscriptionPlanManagement() {
     },
   });
 
-  // Mutation for updating plan
+  // Mutation for updating plan using MongoDB
   const updatePlanMutation = useMutation({
     mutationFn: async (planData: Partial<Plan>) => {
-      try {
-        const res = await fetch(`/api/admin/subscription-plans/${planData.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify(planData)
-        });
-        
-        if (!res.ok) {
-          // Check if response is HTML (authentication redirect)
-          const contentType = res.headers.get('content-type');
-          if (contentType && contentType.includes('text/html')) {
-            throw new Error("Authentication required. Please log in as admin.");
-          }
-          
-          const errorData = await res.json();
-          throw new Error(errorData.message || "Failed to update subscription plan");
-        }
-        
-        return await res.json();
-      } catch (error) {
-        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-          throw new Error("Network error. Please check your connection.");
-        }
-        throw error;
+      const res = await apiRequest("PUT", `/api/admin/subscription-plans/${planData.id}`, planData);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to update subscription plan");
       }
+      return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/subscription-plans"] });
       setIsEditDialogOpen(false);
       setEditingPlan(null);
       toast({
