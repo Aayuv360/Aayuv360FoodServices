@@ -649,6 +649,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             { text: "Basic customization options", included: true },
             { text: "Nutrition consultation", included: false },
           ],
+          weeklyMeals: {
+            monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Tomato Chutney"] },
+            tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+            wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
+            thursday: { main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
+            friday: { main: "Little Millet Pongal", sides: ["Coconut Chutney", "Sambar"] },
+            saturday: { main: "Pearl Millet Khichdi", sides: ["Kadhi", "Papad"] },
+            sunday: { main: "Kodo Millet Bisibelebath", sides: ["Raita", "Pickle"] },
+          },
         },
         {
           id: "premium", 
@@ -663,6 +672,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             { text: "Full customization options", included: true },
             { text: "Monthly nutrition consultation", included: true },
           ],
+          weeklyMeals: {
+            monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Tomato Chutney"] },
+            tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+            wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
+            thursday: { main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
+            friday: { main: "Little Millet Pongal", sides: ["Coconut Chutney", "Sambar"] },
+            saturday: { main: "Pearl Millet Khichdi", sides: ["Kadhi", "Papad"] },
+            sunday: { main: "Kodo Millet Bisibelebath", sides: ["Raita", "Pickle"] },
+          },
         },
         {
           id: "family",
@@ -677,6 +695,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             { text: "Full customization options", included: true },
             { text: "Family nutrition consultation", included: true },
           ],
+          weeklyMeals: {
+            monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Tomato Chutney"] },
+            tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+            wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
+            thursday: { main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
+            friday: { main: "Little Millet Pongal", sides: ["Coconut Chutney", "Sambar"] },
+            saturday: { main: "Pearl Millet Khichdi", sides: ["Kadhi", "Papad"] },
+            sunday: { main: "Kodo Millet Bisibelebath", sides: ["Raita", "Pickle"] },
+          },
         }
       ];
       res.json(plans);

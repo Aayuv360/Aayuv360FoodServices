@@ -390,13 +390,13 @@ export default function OrderManagementPage() {
                         <TableCell>{subscription.userName}</TableCell>
                         <TableCell>{subscription.plan}</TableCell>
                         <TableCell>
-                          <Badge className={subscription.subscriptionType === 'default' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'}>
-                            {subscription.subscriptionType}
+                          <Badge className="bg-blue-100 text-blue-800">
+                            {subscription.subscriptionType || 'default'}
                           </Badge>
                         </TableCell>
                         <TableCell>{formatDate(subscription.startDate)}</TableCell>
                         <TableCell>
-                          {subscription.endDate ? formatDate(subscription.endDate) : 'Active'}
+                          {subscription.endDate ? formatDate(subscription.endDate) : formatDate(new Date(new Date(subscription.startDate).getTime() + (subscription.duration || 30) * 24 * 60 * 60 * 1000))}
                         </TableCell>
                         <TableCell>₹{subscription.price.toLocaleString()}</TableCell>
                         <TableCell>
