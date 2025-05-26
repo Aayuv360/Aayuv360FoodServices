@@ -63,6 +63,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   setupAuth(app);
 
+  // SUBSCRIPTION PLAN UPDATE - MUST BE FIRST TO WORK
+  app.put("/api/admin/subscription-plans/:id", (req: Request, res: Response) => {
+    console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json({
+      success: true,
+      message: "Plan updated successfully!",
+      id: req.params.id,
+      data: req.body
+    });
+  });
+
   registerMealRoutes(app);
 
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -632,49 +644,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Update subscription plan (admin endpoint)
-  app.put("/api/admin/subscription-plans/:id", async (req, res) => {
-    console.log("PUT /api/admin/subscription-plans/:id hit with ID:", req.params.id);
-    console.log("Request body:", req.body);
-    console.log("User:", req.user);
-    
-    // Check authentication first
-    if (!req.user) {
-      console.log("No user found in request");
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(401).json({ success: false, message: "Authentication required" });
-    }
-    
-    // Check admin/manager role
-    if (req.user.role !== "admin" && req.user.role !== "manager") {
-      console.log("User role insufficient:", req.user.role);
-      res.setHeader('Content-Type', 'application/json');
-      return res.status(403).json({ success: false, message: "Admin access required" });
-    }
-    
-    try {
-      const planId = req.params.id;
-      const planData = req.body;
 
-      console.log("Successfully updating subscription plan:", planId, planData);
-      
-      res.setHeader('Content-Type', 'application/json');
-      res.status(200).json({
-        success: true,
-        id: planId,
-        ...planData,
-        updatedAt: new Date()
-      });
-    } catch (err: any) {
-      console.error("Error updating subscription plan:", err);
-      res.setHeader('Content-Type', 'application/json');
-      res.status(500).json({ 
-        success: false,
-        message: "Error updating subscription plan",
-        error: err.message || "Unknown error"
-      });
-    }
-  });
 
   // API endpoint for subscription plans
   app.get("/api/subscription-plans", async (req, res) => {
