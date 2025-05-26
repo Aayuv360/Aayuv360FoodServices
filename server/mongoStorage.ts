@@ -1215,8 +1215,9 @@ export class MongoDBStorage implements IStorage {
   // Subscription Plan operations
   async getAllSubscriptionPlans(): Promise<any[]> {
     try {
-      const plans = await SubscriptionPlan.find({}).sort({ dietaryPreference: 1, planType: 1 });
-      return plans.map(plan => plan.toObject());
+      const plans = await SubscriptionPlan.find({}).sort({ dietaryPreference: 1, planType: 1 }).lean();
+      console.log(`📋 Retrieved ${plans.length} subscription plans from MongoDB`);
+      return plans;
     } catch (error) {
       console.error("Error getting subscription plans:", error);
       return [];
@@ -1235,6 +1236,7 @@ export class MongoDBStorage implements IStorage {
 
   async updateSubscriptionPlan(id: string, updateData: any): Promise<any | undefined> {
     try {
+      console.log(`🔄 Updating subscription plan ${id} with data:`, updateData);
       const updatedPlan = await SubscriptionPlan.findOneAndUpdate(
         { id },
         {
@@ -1242,8 +1244,9 @@ export class MongoDBStorage implements IStorage {
           updatedAt: new Date(),
         },
         { new: true, upsert: true }
-      );
-      return updatedPlan ? updatedPlan.toObject() : undefined;
+      ).lean();
+      console.log(`✅ Successfully updated plan ${id}:`, updatedPlan);
+      return updatedPlan;
     } catch (error) {
       console.error("Error updating subscription plan:", error);
       throw error;

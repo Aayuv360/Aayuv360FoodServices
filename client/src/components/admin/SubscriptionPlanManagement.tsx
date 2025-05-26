@@ -51,7 +51,10 @@ export function SubscriptionPlanManagement() {
       return await res.json();
     },
     onSuccess: () => {
+      // Force refresh both admin and public subscription plan queries
       queryClient.invalidateQueries({ queryKey: ["/api/admin/subscription-plans"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/subscription-plans"] });
+      queryClient.refetchQueries({ queryKey: ["/api/admin/subscription-plans"] });
       setIsEditDialogOpen(false);
       setEditingPlan(null);
       toast({
