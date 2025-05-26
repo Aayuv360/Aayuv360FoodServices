@@ -138,6 +138,7 @@ const Subscription = () => {
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedDietaryFilter, setSelectedDietaryFilter] = useState<'veg' | 'veg_with_egg' | 'nonveg'>('veg');
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
   
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
@@ -215,7 +216,6 @@ const Subscription = () => {
   }, [user, toast, form]);
 
   const paymentMethod = form.watch("paymentMethod");
-  const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
 
   const [isSuccess, setIsSuccess] = useState(false);
@@ -582,72 +582,111 @@ const Subscription = () => {
       case "plan":
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="flex space-x-2 mb-4">
-                  {subscriptionPlans?.map((plan: any) => (
-                    <Button
-                      key={plan.id}
-                      type="button"
-                      variant={
-                        form.watch("plan") === plan.id ? "default" : "outline"
-                      }
-                      className={`flex-1 ${
-                        form.watch("plan") === plan.id ? "bg-primary" : ""
-                      }`}
-                      onClick={() =>
-                        form.setValue(
-                          "plan",
-                          plan.id as "basic" | "premium" | "family",
-                        )
-                      }
-                    >
-                      {plan.name}
-                    </Button>
-                  ))}
-                </div>
+            {/* Dietary Preference Selection */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Dietary Preference</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <Button
+                  type="button"
+                  variant={selectedDietaryFilter === "veg" ? "default" : "outline"}
+                  className={`p-4 h-auto flex flex-col items-center gap-2 ${
+                    selectedDietaryFilter === "veg" ? "bg-green-600 hover:bg-green-700" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedDietaryFilter("veg");
+                    setSelectedPlan(null);
+                  }}
+                >
+                  <span className="font-medium">Vegetarian</span>
+                  <span className="text-xs text-center opacity-80">
+                    Pure vegetarian meals with no eggs or meat
+                  </span>
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant={selectedDietaryFilter === "veg_with_egg" ? "default" : "outline"}
+                  className={`p-4 h-auto flex flex-col items-center gap-2 ${
+                    selectedDietaryFilter === "veg_with_egg" ? "bg-orange-600 hover:bg-orange-700" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedDietaryFilter("veg_with_egg");
+                    setSelectedPlan(null);
+                  }}
+                >
+                  <span className="font-medium">Veg with Egg</span>
+                  <span className="text-xs text-center opacity-80">
+                    Vegetarian meals with egg options
+                  </span>
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant={selectedDietaryFilter === "nonveg" ? "default" : "outline"}
+                  className={`p-4 h-auto flex flex-col items-center gap-2 ${
+                    selectedDietaryFilter === "nonveg" ? "bg-red-600 hover:bg-red-700" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedDietaryFilter("nonveg");
+                    setSelectedPlan(null);
+                  }}
+                >
+                  <span className="font-medium">Non-Vegetarian</span>
+                  <span className="text-xs text-center opacity-80">
+                    Complete non-vegetarian meal experience
+                  </span>
+                </Button>
+              </div>
+            </div>
 
-                <div className="mt-4">
-                  <FormLabel className="text-base font-medium">
-                    Subscription Type
-                  </FormLabel>
-                  <div className="mt-3">
-                    <div className="flex items-center bg-neutral-50 border rounded-lg overflow-hidden">
-                      <div
-                        className={`flex-1 p-4 cursor-pointer transition-all ${
-                          form.watch("subscriptionType") === "default"
-                            ? "bg-primary text-white"
-                            : "hover:bg-neutral-100"
-                        }`}
-                        onClick={() => {
-                          form.setValue("subscriptionType", "default");
-                        }}
-                      >
-                        <div className="flex items-center mb-1">
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
-                              form.watch("subscriptionType") === "default"
-                                ? "bg-white"
-                                : "border border-primary"
-                            }`}
-                          >
-                            {form.watch("subscriptionType") === "default" && (
-                              <Check className="h-3 w-3 text-primary" />
-                            )}
-                          </div>
-                          <h3 className="font-medium">Default Plan</h3>
+            {/* Plan Selection based on Dietary Preference */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Choose Your Plan</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {filteredPlans.map((plan: any) => (
+                  <Card
+                    key={plan.id}
+                    className={`cursor-pointer transition-all border-2 ${
+                      selectedPlan?.id === plan.id
+                        ? "border-primary bg-primary/5"
+                        : "border-gray-200 hover:border-primary/50"
+                    }`}
+                    onClick={() => {
+                      setSelectedPlan(plan);
+                      form.setValue("plan", plan.planType as "basic" | "premium" | "family");
+                    }}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">{plan.name}</CardTitle>
+                        {selectedPlan?.id === plan.id && (
+                          <Check className="h-5 w-5 text-primary" />
+                        )}
+                      </div>
+                      <CardDescription>{plan.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="text-2xl font-bold text-primary">
+                          {formatPrice(plan.price)}
+                          <span className="text-sm font-normal text-gray-600">/month</span>
                         </div>
-                        <p
-                          className={`text-sm ${form.watch("subscriptionType") === "default" ? "text-white/80" : "text-gray-600"}`}
-                        >
-                          Pre-selected meals based on your preferences
-                        </p>
+                        
+                        <div className="space-y-2">
+                          {plan.features.map((feature: string, idx: number) => (
+                            <div key={idx} className="flex items-center gap-2 text-sm">
+                              <Check className="h-4 w-4 text-green-600" />
+                              <span>{feature}</span>
+                            </div>
+                          ))}
+                        </div>
 
-                        {form.watch("subscriptionType") === "default" && (
+                        {selectedPlan?.id === plan.id && plan.weeklyMeals && (
                           <Button
                             type="button"
                             size="sm"
-                            className="mt-2 bg-white text-primary hover:bg-white/90"
+                            variant="outline"
+                            className="w-full mt-3"
                             onClick={(e) => {
                               e.stopPropagation();
                               setDefaulMealModalOpen(true);
@@ -657,57 +696,14 @@ const Subscription = () => {
                           </Button>
                         )}
                       </div>
-
-                      <div
-                        className={`flex-1 p-4 cursor-pointer transition-all ${
-                          form.watch("subscriptionType") === "customized"
-                            ? "bg-primary text-white"
-                            : "hover:bg-neutral-100"
-                        }`}
-                        onClick={() => {
-                          form.setValue("subscriptionType", "customized");
-                          setCustomMealModalOpen(true);
-                        }}
-                      >
-                        <div className="flex items-center mb-1">
-                          <div
-                            className={`w-5 h-5 rounded-full flex items-center justify-center mr-2 ${
-                              form.watch("subscriptionType") === "customized"
-                                ? "bg-white"
-                                : "border border-primary"
-                            }`}
-                          >
-                            {form.watch("subscriptionType") ===
-                              "customized" && (
-                              <Check className="h-3 w-3 text-primary" />
-                            )}
-                          </div>
-                          <h3 className="font-medium">Customized Plan</h3>
-                        </div>
-                        <p
-                          className={`text-sm ${form.watch("subscriptionType") === "customized" ? "text-white/80" : "text-gray-600"}`}
-                        >
-                          Select your own meals for each day
-                        </p>
-
-                        {form.watch("subscriptionType") === "customized" &&
-                          Object.keys(selectedMealsByDay).length === 0 && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              className="mt-2 bg-white text-primary hover:bg-white/90"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setCustomMealModalOpen(true);
-                              }}
-                            >
-                              Select Meals
-                            </Button>
-                          )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
 
                 <FormField
                   control={form.control}
