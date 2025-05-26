@@ -434,6 +434,26 @@ export default function OrderManagementPage() {
         <TabsContent value="subscription-management" className="space-y-6">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Subscription Management</h2>
+            <div className="flex items-center gap-2">
+              <Select
+                defaultValue="all"
+                onValueChange={(value) => {
+                  // Filter subscriptions by status
+                  console.log("Filter by:", value);
+                }}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Enhanced Subscriptions Table with Status Logic */}
@@ -505,12 +525,26 @@ export default function OrderManagementPage() {
                             <div className="flex space-x-2">
                               <Select
                                 defaultValue={status}
-                                onValueChange={(value) => {
-                                  // Handle status update if needed
-                                  toast({
-                                    title: "Status Updated",
-                                    description: `Subscription status updated to ${value}`,
-                                  });
+                                onValueChange={async (value) => {
+                                  try {
+                                    await fetch(`/api/admin/subscriptions/${subscription.id}/status`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ status: value })
+                                    });
+                                    toast({
+                                      title: "Status Updated",
+                                      description: `Subscription status updated to ${value}`,
+                                    });
+                                    // Refresh the data
+                                    window.location.reload();
+                                  } catch (error) {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to update subscription status",
+                                      variant: "destructive",
+                                    });
+                                  }
                                 }}
                               >
                                 <SelectTrigger className="w-[120px]">
@@ -523,6 +557,42 @@ export default function OrderManagementPage() {
                                   <SelectItem value="cancelled">Cancelled</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // Extend subscription by 30 days
+                                  fetch(`/api/admin/subscriptions/${subscription.id}/extend`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ days: 30 })
+                                  }).then(() => {
+                                    toast({
+                                      title: "Subscription Extended",
+                                      description: "Subscription extended by 30 days",
+                                    });
+                                    window.location.reload();
+                                  }).catch(() => {
+                                    toast({
+                                      title: "Error",
+                                      description: "Failed to extend subscription",
+                                      variant: "destructive",
+                                    });
+                                  });
+                                }}
+                              >
+                                Extend
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  // View subscription details
+                                  alert(`Subscription Details:\nID: ${subscription.id}\nCustomer: ${subscription.userName}\nPlan: ${subscription.plan}\nStatus: ${status}\nStart: ${formatDate(subscription.startDate)}\nEnd: ${formatDate(endDate)}`);
+                                }}
+                              >
+                                View
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>

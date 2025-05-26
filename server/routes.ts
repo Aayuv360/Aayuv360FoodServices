@@ -1213,6 +1213,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
+  // Update subscription status
+  app.patch(
+    "/api/admin/subscriptions/:id/status",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const subscriptionId = parseInt(req.params.id);
+        const { status } = req.body;
+
+        const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, {
+          status,
+          updatedAt: new Date(),
+        });
+
+        if (!updatedSubscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        res.json(updatedSubscription);
+      } catch (err) {
+        console.error("Error updating subscription status:", err);
+        res.status(500).json({ message: "Error updating subscription status" });
+      }
+    },
+  );
+
+  // Extend subscription
+  app.patch(
+    "/api/admin/subscriptions/:id/extend",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const subscriptionId = parseInt(req.params.id);
+        const { days } = req.body;
+
+        const subscription = await mongoStorage.getSubscription(subscriptionId);
+        if (!subscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        // Calculate new end date
+        const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : new Date(subscription.startDate);
+        currentEndDate.setDate(currentEndDate.getDate() + (subscription.duration || 30));
+        const newEndDate = new Date(currentEndDate);
+        newEndDate.setDate(newEndDate.getDate() + days);
+
+        const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, {
+          endDate: newEndDate,
+          updatedAt: new Date(),
+        });
+
+        res.json(updatedSubscription);
+      } catch (err) {
+        console.error("Error extending subscription:", err);
+        res.status(500).json({ message: "Error extending subscription" });
+      }
+    },
+  );
+
   app.patch(
     "/api/admin/orders/:id/status",
     isAuthenticated,
