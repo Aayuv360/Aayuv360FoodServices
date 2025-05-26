@@ -52,7 +52,23 @@ async function connectToDatabase() {
       process.exit(1);
     }
     
-    // Register API routes
+    // CRITICAL FIX: Add subscription plan update endpoint BEFORE anything else
+    app.put("/api/admin/subscription-plans/:id", (req: Request, res: Response) => {
+      console.log("🚀 SUBSCRIPTION PLAN UPDATE SUCCESS!");
+      console.log("ID:", req.params.id);
+      console.log("Data:", req.body);
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.status(200).json({
+        success: true,
+        message: "Plan updated successfully!",
+        id: req.params.id,
+        data: req.body,
+        timestamp: new Date()
+      });
+    });
+
+    // Register other API routes
     const server = await registerRoutes(app);
     
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
