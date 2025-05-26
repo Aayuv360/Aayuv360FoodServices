@@ -633,12 +633,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update subscription plan (admin endpoint)
-  app.put("/api/admin/subscription-plans/:id", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+  app.put("/api/admin/subscription-plans/:id", async (req, res) => {
+    console.log("PUT /api/admin/subscription-plans/:id hit with ID:", req.params.id);
+    console.log("Request body:", req.body);
+    console.log("User:", req.user);
+    
+    // Check authentication first
+    if (!req.user) {
+      console.log("No user found in request");
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(401).json({ success: false, message: "Authentication required" });
+    }
+    
+    // Check admin/manager role
+    if (req.user.role !== "admin" && req.user.role !== "manager") {
+      console.log("User role insufficient:", req.user.role);
+      res.setHeader('Content-Type', 'application/json');
+      return res.status(403).json({ success: false, message: "Admin access required" });
+    }
+    
     try {
       const planId = req.params.id;
       const planData = req.body;
 
-      console.log("Updating subscription plan:", planId, planData);
+      console.log("Successfully updating subscription plan:", planId, planData);
       
       res.setHeader('Content-Type', 'application/json');
       res.status(200).json({
