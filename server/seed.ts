@@ -225,6 +225,15 @@ export async function seedDatabase() {
           features: ["45 meals per month", "Family portions", "Protein variety", "Free delivery", "Nutrition consultation"],
           dietaryPreference: "veg_with_egg",
           planType: "family",
+          weeklyMeals: {
+            monday: { main: "Family Egg Millet Thali", sides: ["Dal", "Egg Curry", "Roti", "Rice"] },
+            tuesday: { main: "Millet Egg Biryani (Family)", sides: ["Raita", "Pickle", "Papad"] },
+            wednesday: { main: "Egg Millet Paratha Platter", sides: ["Curd", "Multiple Chutneys"] },
+            thursday: { main: "Family Egg Fried Rice", sides: ["Soup", "Manchurian"] },
+            friday: { main: "Millet Egg Pancake Stack", sides: ["Honey", "Fresh Fruits"] },
+            saturday: { main: "Traditional Egg Millet Feast", sides: ["Variety of Accompaniments"] },
+            sunday: { main: "Sunday Special Egg Platter", sides: ["Family Portions"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -239,6 +248,15 @@ export async function seedDatabase() {
           features: ["15 meals per month", "Chicken & fish options", "Standard delivery"],
           dietaryPreference: "nonveg",
           planType: "basic",
+          weeklyMeals: {
+            monday: { main: "Chicken Millet Biryani", sides: ["Raita", "Pickle"] },
+            tuesday: { main: "Fish Curry with Millet Rice", sides: ["Coconut Chutney"] },
+            wednesday: { main: "Mutton Millet Pulao", sides: ["Yogurt", "Papad"] },
+            thursday: { main: "Chicken Millet Fried Rice", sides: ["Soup"] },
+            friday: { main: "Fish Fry with Millet Roti", sides: ["Dal", "Vegetables"] },
+            saturday: { main: "Chicken Curry with Millet", sides: ["Pickle", "Curd"] },
+            sunday: { main: "Mixed Non-Veg Millet Platter", sides: ["Assorted Sides"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -252,6 +270,15 @@ export async function seedDatabase() {
           features: ["25 meals per month", "Premium meat options", "Priority delivery", "Chef specials"],
           dietaryPreference: "nonveg",
           planType: "premium",
+          weeklyMeals: {
+            monday: { main: "Gourmet Chicken Millet Bowl", sides: ["Truffle Sauce", "Grilled Vegetables"] },
+            tuesday: { main: "Premium Fish Millet Risotto", sides: ["White Wine Reduction"] },
+            wednesday: { main: "Lamb Millet Biryani", sides: ["Saffron Raita", "Shorba"] },
+            thursday: { main: "Chicken Tikka Millet Platter", sides: ["Mint Chutney", "Salad"] },
+            friday: { main: "Seafood Millet Pasta", sides: ["Garlic Bread", "Caesar Salad"] },
+            saturday: { main: "Tandoori Millet Special", sides: ["Multiple Premium Sides"] },
+            sunday: { main: "Chef's Special Non-Veg", sides: ["Gourmet Accompaniments"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -265,6 +292,15 @@ export async function seedDatabase() {
           features: ["45 meals per month", "Family portions", "Meat variety", "Free delivery", "Nutrition consultation"],
           dietaryPreference: "nonveg",
           planType: "family",
+          weeklyMeals: {
+            monday: { main: "Family Non-Veg Millet Thali", sides: ["Chicken", "Fish", "Rice", "Roti", "Dal"] },
+            tuesday: { main: "Mixed Meat Millet Biryani", sides: ["Family Raita", "Pickle"] },
+            wednesday: { main: "Chicken Millet Curry (Family)", sides: ["Multiple Vegetables", "Bread"] },
+            thursday: { main: "Fish Millet Platter", sides: ["Coconut Curry", "Rice"] },
+            friday: { main: "Mutton Millet Special", sides: ["Family Portions", "Accompaniments"] },
+            saturday: { main: "Weekend Non-Veg Feast", sides: ["Variety of Dishes"] },
+            sunday: { main: "Sunday Family Special", sides: ["Complete Non-Veg Spread"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
