@@ -700,14 +700,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-  // API endpoint for subscription plans (public)
+  // API endpoint for subscription plans (public - no auth required)
   app.get("/api/subscription-plans", async (req, res) => {
     try {
-      // First try to get from MongoDB
+      // Always get from MongoDB first
       const dbPlans = await mongoStorage.getAllSubscriptionPlans();
       
       if (dbPlans.length > 0) {
-        return res.json(dbPlans);
+        // Only return active plans for public endpoint
+        const activePlans = dbPlans.filter(plan => plan.isActive !== false);
+        return res.json(activePlans);
       }
       
       // Fallback to static plans if no DB plans exist
