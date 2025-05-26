@@ -59,7 +59,6 @@ import { CustomMealSheduleModal } from "@/components/Modals/CustomMealSheduleMod
 import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { AnimatedPlanSlider } from "@/components/subscription/AnimatedPlanSlider";
 import { Address } from "@shared/schema";
 
 const addressSchema = z.object({
@@ -232,7 +231,20 @@ const Subscription = () => {
       const response = await apiRequest("POST", "/api/subscriptions", payload);
       const subscription = await response.json();
 
-      // Only default plans are supported for now
+      // Add custom meal plans if needed
+      if (
+        data.subscriptionType === "customized" &&
+        data.customMealSelections &&
+        data.customMealSelections.length > 0
+      ) {
+        for (const mealSelection of data.customMealSelections) {
+          await apiRequest("POST", "/api/custom-meal-plans", {
+            subscriptionId: subscription.id,
+            dayOfWeek: mealSelection.dayOfWeek,
+            mealId: mealSelection.mealId,
+          });
+        }
+      }
 
       // Save subscription details for success page
       setSubscribedDetails({
@@ -424,6 +436,19 @@ const Subscription = () => {
 
   const onSubmit = (values: SubscriptionFormValues) => {
     if (formStep === "plan") {
+      if (
+        values.subscriptionType === "customized" &&
+        Object.keys(selectedMealsByDay).length === 0
+      ) {
+        toast({
+          title: "Meal selection required",
+          description:
+            "Please select at least one meal for your customized plan",
+          variant: "destructive",
+        });
+        return;
+      }
+
       goToNextStep();
       return;
     }
@@ -451,7 +476,19 @@ const Subscription = () => {
       return;
     }
 
-    // Only default plans are supported
+    if (
+      values.subscriptionType === "customized" &&
+      Object.keys(selectedMealsByDay).length > 0
+    ) {
+      const mealSelections = Object.entries(selectedMealsByDay).map(
+        ([day, mealId]) => ({
+          dayOfWeek: parseInt(day),
+          mealId: mealId as number,
+        }),
+      );
+
+      values.customMealSelections = mealSelections;
+    }
 
     toast({
       title: "Processing subscription...",
@@ -562,20 +599,30 @@ const Subscription = () => {
       case "plan":
         return (
           <div className="space-y-6">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-center mb-2">Choose Your Perfect Plan</h2>
-              <p className="text-gray-600 text-center mb-6">Select the subscription plan that best fits your lifestyle</p>
-              
-              <AnimatedPlanSlider
-                onSelectPlan={(planId) => {
-                  form.setValue("plan", planId as "basic" | "premium" | "family");
-                }}
-                selectedPlan={selectedPlan}
-              />
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
+                <div className="flex space-x-2 mb-4">
+                  {SUBSCRIPTION_PLANS.map((plan) => (
+                    <Button
+                      key={plan.id}
+                      type="button"
+                      variant={
+                        form.watch("plan") === plan.id ? "default" : "outline"
+                      }
+                      className={`flex-1 ${
+                        form.watch("plan") === plan.id ? "bg-primary" : ""
+                      }`}
+                      onClick={() =>
+                        form.setValue(
+                          "plan",
+                          plan.id as "basic" | "premium" | "family",
+                        )
+                      }
+                    >
+                      {plan.name}
+                    </Button>
+                  ))}
+                </div>
 
                 <div className="mt-4">
                   <FormLabel className="text-base font-medium">

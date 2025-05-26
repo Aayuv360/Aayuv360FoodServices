@@ -1096,158 +1096,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Unified Subscription API endpoint
-  app.route("/api/subscriptions")
-    .get(isAuthenticated, async (req, res) => {
-      try {
-        const { userId } = req.query;
-        let subscriptions;
-        
-        if (userId) {
-          subscriptions = await mongoStorage.getUserSubscriptions(parseInt(userId as string));
-        } else {
-          subscriptions = await mongoStorage.getAllSubscriptions();
-        }
-
-        // Calculate status for each subscription
-        const enrichedSubscriptions = await Promise.all(
-          subscriptions.map(async (subscription) => {
-            const user = await mongoStorage.getUser(subscription.userId);
-            const currentDate = new Date();
-            const startDate = new Date(subscription.startDate);
-            const endDate = new Date(subscription.endDate || startDate);
-            
-            // Calculate end date based on plan duration if not set
-            if (!subscription.endDate) {
-              endDate.setDate(startDate.getDate() + (subscription.duration || 30));
-            }
-
-            // Determine subscription status
-            let status = subscription.status;
-            if (subscription.status === 'active') {
-              if (currentDate < startDate) {
-                status = 'inactive'; // Not started yet
-              } else if (currentDate > endDate) {
-                status = 'completed'; // Ended
-              } else {
-                status = 'active'; // Currently active
-              }
-            }
-            
-            let userName = "Unknown User";
-            if (user) {
-              userName = user.name || user.fullName || user.displayName || 
-                        (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null) ||
-                        user.username || `Customer #${subscription.userId}`;
-            }
-            
-            return {
-              ...subscription,
-              userName,
-              status,
-              endDate: endDate.toISOString(),
-              daysRemaining: Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)))
-            };
-          }),
-        );
-
-        res.json(enrichedSubscriptions);
-      } catch (err) {
-        console.error("Error fetching subscriptions:", err);
-        res.status(500).json({ message: "Error fetching subscriptions" });
-      }
-    })
-    .post(isAuthenticated, async (req, res) => {
-      try {
-        const subscriptionData = {
-          ...req.body,
-          userId: req.user.id,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-
-        const subscription = await mongoStorage.createSubscription(subscriptionData);
-        res.json(subscription);
-      } catch (err) {
-        console.error("Error creating subscription:", err);
-        res.status(500).json({ message: "Error creating subscription" });
-      }
-    });
-
-  app.route("/api/subscriptions/:id")
-    .get(isAuthenticated, async (req, res) => {
-      try {
-        const subscriptionId = parseInt(req.params.id);
-        const subscription = await mongoStorage.getSubscription(subscriptionId);
-        
-        if (!subscription) {
-          return res.status(404).json({ message: "Subscription not found" });
-        }
-
-        // Calculate status
-        const currentDate = new Date();
-        const startDate = new Date(subscription.startDate);
-        const endDate = new Date(subscription.endDate || startDate);
-        
-        if (!subscription.endDate) {
-          endDate.setDate(startDate.getDate() + (subscription.duration || 30));
-        }
-
-        let status = subscription.status;
-        if (subscription.status === 'active') {
-          if (currentDate < startDate) {
-            status = 'inactive';
-          } else if (currentDate > endDate) {
-            status = 'completed';
-          } else {
-            status = 'active';
-          }
-        }
-
-        const enrichedSubscription = {
-          ...subscription,
-          status,
-          endDate: endDate.toISOString(),
-          daysRemaining: Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)))
-        };
-
-        res.json(enrichedSubscription);
-      } catch (err) {
-        console.error("Error fetching subscription:", err);
-        res.status(500).json({ message: "Error fetching subscription" });
-      }
-    })
-    .patch(isAuthenticated, async (req, res) => {
-      try {
-        const subscriptionId = parseInt(req.params.id);
-        const updateData = {
-          ...req.body,
-          updatedAt: new Date()
-        };
-
-        const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, updateData);
-        res.json(updatedSubscription);
-      } catch (err) {
-        console.error("Error updating subscription:", err);
-        res.status(500).json({ message: "Error updating subscription" });
-      }
-    })
-    .delete(isAuthenticated, async (req, res) => {
-      try {
-        const subscriptionId = parseInt(req.params.id);
-        // Instead of deleting, mark as cancelled
-        const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, {
-          status: 'cancelled',
-          updatedAt: new Date()
-        });
-        res.json({ message: "Subscription cancelled successfully" });
-      } catch (err) {
-        console.error("Error cancelling subscription:", err);
-        res.status(500).json({ message: "Error cancelling subscription" });
-      }
-    });
-
-  // Admin endpoint for subscription management
   app.get(
     "/api/admin/subscriptions",
     isAuthenticated,
@@ -1259,27 +1107,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const enrichedSubscriptions = await Promise.all(
           subscriptions.map(async (subscription) => {
             const user = await mongoStorage.getUser(subscription.userId);
-            const currentDate = new Date();
-            const startDate = new Date(subscription.startDate);
-            const endDate = new Date(subscription.endDate || startDate);
             
-            if (!subscription.endDate) {
-              endDate.setDate(startDate.getDate() + (subscription.duration || 30));
-            }
-
-            let status = subscription.status;
-            if (subscription.status === 'active') {
-              if (currentDate < startDate) {
-                status = 'inactive';
-              } else if (currentDate > endDate) {
-                status = 'completed';
-              } else {
-                status = 'active';
-              }
-            }
-            
+            // Get proper user name - mongodb document may store it differently
             let userName = "Unknown User";
             if (user) {
+              // Try different naming conventions that might be in the database
               userName = user.name || user.fullName || user.displayName || 
                         (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null) ||
                         user.username || `Customer #${subscription.userId}`;
@@ -1288,9 +1120,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return {
               ...subscription,
               userName,
-              status,
-              endDate: endDate.toISOString(),
-              daysRemaining: Math.max(0, Math.ceil((endDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)))
             };
           }),
         );
