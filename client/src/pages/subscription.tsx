@@ -489,7 +489,7 @@ const Subscription = () => {
   const priceAdjustment = getPriceAdjustment(dietaryPreference);
 
   // Calculate price based on plan, dietary preference, and person count
-  const basePrice = basePlan.price;
+  const basePrice = basePlan?.price || 0;
   const dietaryAddOn = priceAdjustment;
   const totalPricePerPerson = basePrice + dietaryAddOn;
   const totalPrice = totalPricePerPerson * personCount;
