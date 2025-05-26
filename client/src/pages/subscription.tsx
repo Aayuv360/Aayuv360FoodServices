@@ -54,7 +54,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useRazorpay } from "@/hooks/use-razorpay";
-import { SUBSCRIPTION_PLANS } from "@/lib/constants";
+// Removed static import - now using API data
 import { CustomMealSheduleModal } from "@/components/Modals/CustomMealSheduleModal";
 import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
@@ -146,6 +146,14 @@ const Subscription = () => {
     },
   });
 
+  const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
+    queryKey: ["/api/subscription-plans"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/subscription-plans");
+      return res.json();
+    },
+  });
+
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as any) || "basic",
     dietaryPreference: "vegetarian",
@@ -208,7 +216,7 @@ const Subscription = () => {
 
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
-      const plan = SUBSCRIPTION_PLANS.find((p) => p.id === data.plan);
+      const plan = subscriptionPlans?.find((p: any) => p.id === data.plan);
 
       if (!plan) {
         throw new Error("Invalid plan selected");
@@ -474,8 +482,8 @@ const Subscription = () => {
   };
 
   const basePlan =
-    SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlan) ||
-    SUBSCRIPTION_PLANS[0];
+    subscriptionPlans?.find((p: any) => p.id === selectedPlan) ||
+    subscriptionPlans?.[0];
   const dietaryPreference = form.watch("dietaryPreference");
   const personCount = form.watch("personCount") || 1;
   const priceAdjustment = getPriceAdjustment(dietaryPreference);

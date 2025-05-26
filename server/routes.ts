@@ -632,6 +632,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API endpoint for subscription plans
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      const plans = [
+        {
+          id: "basic",
+          name: "Basic Plan",
+          price: 2999,
+          description: "Perfect for individuals looking to try our millet meals for a week.",
+          mealsPerMonth: 7,
+          duration: 7,
+          features: [
+            { text: "7 meals for one week", included: true },
+            { text: "Flexible delivery schedule", included: true },
+            { text: "Basic customization options", included: true },
+            { text: "Nutrition consultation", included: false },
+          ],
+        },
+        {
+          id: "premium", 
+          name: "Premium Plan",
+          price: 4999,
+          description: "Experience more variety with our premium millet meal plan for two weeks.",
+          mealsPerMonth: 14,
+          duration: 14,
+          features: [
+            { text: "14 meals for two weeks", included: true },
+            { text: "Priority delivery slots", included: true },
+            { text: "Full customization options", included: true },
+            { text: "Monthly nutrition consultation", included: true },
+          ],
+        },
+        {
+          id: "family",
+          name: "Family Plan", 
+          price: 8999,
+          description: "Feed the whole family with our millet meals for a full month.",
+          mealsPerMonth: 30,
+          duration: 30,
+          features: [
+            { text: "30 meals for one month", included: true },
+            { text: "Preferred delivery window", included: true },
+            { text: "Full customization options", included: true },
+            { text: "Family nutrition consultation", included: true },
+          ],
+        }
+      ];
+      res.json(plans);
+    } catch (error) {
+      console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Failed to fetch subscription plans" });
+    }
+  });
+
   app.get("/api/subscriptions", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
