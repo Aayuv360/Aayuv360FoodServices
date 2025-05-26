@@ -649,13 +649,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Admin API endpoints for subscription plans
   app.get("/api/admin/subscription-plans", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {
-      // Disable caching for admin endpoints to ensure fresh data
-      res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.set('Pragma', 'no-cache');
-      res.set('Expires', '0');
-      
       const plans = await mongoStorage.getAllSubscriptionPlans();
-      console.log(`🔍 Admin fetching ${plans.length} plans from MongoDB`);
       res.json(plans);
     } catch (error) {
       console.error("Error fetching subscription plans:", error);

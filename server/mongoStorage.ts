@@ -1215,9 +1215,8 @@ export class MongoDBStorage implements IStorage {
   // Subscription Plan operations
   async getAllSubscriptionPlans(): Promise<any[]> {
     try {
-      // Fresh query to bypass any potential MongoDB caching
-      const plans = await SubscriptionPlan.find({}).sort({ dietaryPreference: 1, planType: 1 }).lean().exec();
-      console.log(`📋 Retrieved ${plans.length} subscription plans from MongoDB at ${new Date().toISOString()}`);
+      const plans = await SubscriptionPlan.find({}).sort({ dietaryPreference: 1, planType: 1 }).lean();
+      console.log(`📋 Retrieved ${plans.length} subscription plans from MongoDB`);
       return plans;
     } catch (error) {
       console.error("Error getting subscription plans:", error);
