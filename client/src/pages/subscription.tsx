@@ -572,7 +572,7 @@ const Subscription = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <div className="flex space-x-2 mb-4">
-                  {SUBSCRIPTION_PLANS.map((plan) => (
+                  {subscriptionPlans?.map((plan: any) => (
                     <Button
                       key={plan.id}
                       type="button"
@@ -1405,6 +1405,19 @@ const Subscription = () => {
   //
   // The actual success page navigation happens ONLY in the onSuccess callback of the
   // Razorpay payment flow, after payment verification completes successfully.
+  if (plansLoading) {
+    return (
+      <div className="container mx-auto p-4 md:p-6 max-w-4xl">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="text-muted-foreground">Loading subscription plans...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isSuccess && subscribedDetails) {
     return (
       <div className="min-h-screen bg-neutral-light py-12">
