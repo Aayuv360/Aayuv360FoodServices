@@ -1200,6 +1200,16 @@ export class MongoDBStorage implements IStorage {
       return false;
     }
   }
+
+  async getCurryOptions(): Promise<any[]> {
+    try {
+      const curryOptions = await CurryOption.find({});
+      return curryOptions.map(option => option.toObject());
+    } catch (error) {
+      console.error("Error getting curry options:", error);
+      return [];
+    }
+  }
 }
 
 // Export a singleton instance

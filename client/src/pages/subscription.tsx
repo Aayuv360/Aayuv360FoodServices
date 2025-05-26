@@ -231,20 +231,7 @@ const Subscription = () => {
       const response = await apiRequest("POST", "/api/subscriptions", payload);
       const subscription = await response.json();
 
-      // Add custom meal plans if needed
-      if (
-        data.subscriptionType === "customized" &&
-        data.customMealSelections &&
-        data.customMealSelections.length > 0
-      ) {
-        for (const mealSelection of data.customMealSelections) {
-          await apiRequest("POST", "/api/custom-meal-plans", {
-            subscriptionId: subscription.id,
-            dayOfWeek: mealSelection.dayOfWeek,
-            mealId: mealSelection.mealId,
-          });
-        }
-      }
+      // Custom meal plans are disabled for now - only default plans available
 
       // Save subscription details for success page
       setSubscribedDetails({
@@ -436,19 +423,6 @@ const Subscription = () => {
 
   const onSubmit = (values: SubscriptionFormValues) => {
     if (formStep === "plan") {
-      if (
-        values.subscriptionType === "customized" &&
-        Object.keys(selectedMealsByDay).length === 0
-      ) {
-        toast({
-          title: "Meal selection required",
-          description:
-            "Please select at least one meal for your customized plan",
-          variant: "destructive",
-        });
-        return;
-      }
-
       goToNextStep();
       return;
     }
@@ -476,19 +450,7 @@ const Subscription = () => {
       return;
     }
 
-    if (
-      values.subscriptionType === "customized" &&
-      Object.keys(selectedMealsByDay).length > 0
-    ) {
-      const mealSelections = Object.entries(selectedMealsByDay).map(
-        ([day, mealId]) => ({
-          dayOfWeek: parseInt(day),
-          mealId: mealId as number,
-        }),
-      );
-
-      values.customMealSelections = mealSelections;
-    }
+    // Custom meal plans disabled for now - using default plans only
 
     toast({
       title: "Processing subscription...",
