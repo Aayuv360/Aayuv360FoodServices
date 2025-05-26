@@ -700,6 +700,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
+  // Test endpoint to verify MongoDB data (temporary)
+  app.get("/api/test/subscription-plans", async (req, res) => {
+    try {
+      const plans = await mongoStorage.getAllSubscriptionPlans();
+      res.json({
+        success: true,
+        count: plans.length,
+        plans: plans
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // API endpoint for subscription plans (public - no auth required)
   app.get("/api/subscription-plans", async (req, res) => {
     try {
