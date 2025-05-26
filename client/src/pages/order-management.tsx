@@ -186,6 +186,7 @@ export default function OrderManagementPage() {
         <TabsList>
           <TabsTrigger value="cart-orders">Cart Orders</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+          <TabsTrigger value="subscription-management">Subscription Management</TabsTrigger>
         </TabsList>
 
         {/* Cart Orders Tab */}
@@ -419,6 +420,117 @@ export default function OrderManagementPage() {
                   ) : (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center py-6 text-muted-foreground">
+                        No subscriptions found
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Subscription Management Tab */}
+        <TabsContent value="subscription-management" className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Subscription Management</h2>
+          </div>
+
+          {/* Enhanced Subscriptions Table with Status Logic */}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Subscription ID</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Start Date</TableHead>
+                    <TableHead>End Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Price</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {subscriptions && subscriptions.length > 0 ? (
+                    subscriptions.map((subscription: any) => {
+                      const today = new Date();
+                      const startDate = new Date(subscription.startDate);
+                      const duration = subscription.duration || 30; // Default to 30 days if no duration
+                      const endDate = new Date(startDate);
+                      endDate.setDate(startDate.getDate() + duration);
+
+                      let status = 'inactive';
+                      let statusColor = 'bg-gray-100 text-gray-800';
+
+                      // Implement status logic as requested:
+                      // if start date === current date status is active
+                      // if start date in b/w end date status is active  
+                      // if end date === current date done status is completed
+                      // if not started - inactive
+
+                      if (today.toDateString() === startDate.toDateString()) {
+                        status = 'active';
+                        statusColor = 'bg-green-100 text-green-800';
+                      } else if (today >= startDate && today <= endDate) {
+                        status = 'active';
+                        statusColor = 'bg-green-100 text-green-800';
+                      } else if (today.toDateString() === endDate.toDateString() || today > endDate) {
+                        status = 'completed';
+                        statusColor = 'bg-blue-100 text-blue-800';
+                      } else if (today < startDate) {
+                        status = 'inactive';
+                        statusColor = 'bg-gray-100 text-gray-800';
+                      }
+
+                      return (
+                        <TableRow key={subscription.id}>
+                          <TableCell className="font-medium">#{subscription.id}</TableCell>
+                          <TableCell>{subscription.userName}</TableCell>
+                          <TableCell>
+                            <Badge className="bg-purple-100 text-purple-800">
+                              {subscription.plan}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatDate(subscription.startDate)}</TableCell>
+                          <TableCell>{formatDate(endDate)}</TableCell>
+                          <TableCell>
+                            <Badge className={statusColor}>
+                              {status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{formatPrice(subscription.price)}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Select
+                                defaultValue={status}
+                                onValueChange={(value) => {
+                                  // Handle status update if needed
+                                  toast({
+                                    title: "Status Updated",
+                                    description: `Subscription status updated to ${value}`,
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="w-[120px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="active">Active</SelectItem>
+                                  <SelectItem value="inactive">Inactive</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-6 text-muted-foreground">
                         No subscriptions found
                       </TableCell>
                     </TableRow>
