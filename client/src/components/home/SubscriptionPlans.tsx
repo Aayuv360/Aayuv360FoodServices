@@ -4,6 +4,7 @@ import { CheckIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
 interface Plan {
   id: string;
@@ -20,51 +21,49 @@ interface Plan {
 const SubscriptionPlans = () => {
   const [_, navigate] = useLocation();
 
-  const plans: Plan[] = [
-    {
-      id: "basic",
-      name: "Basic Plan",
-      price: 2999,
-      featured: false,
-      mealsPerMonth: 12,
-      features: [
-        { text: "12 meals per month", included: true },
-        { text: "Flexible delivery schedule", included: true },
-        { text: "Basic customization options", included: true },
-        { text: "Nutrition consultation", included: false },
-      ],
+  // Fetch subscription plans from API
+  const { data: apiPlans, isLoading } = useQuery({
+    queryKey: ["/api/subscription-plans"],
+    queryFn: async () => {
+      const res = await fetch("/api/subscription-plans");
+      if (!res.ok) {
+        throw new Error("Failed to fetch subscription plans");
+      }
+      return await res.json();
     },
-    {
-      id: "premium",
-      name: "Premium Plan",
-      price: 4999,
-      featured: true,
-      mealsPerMonth: 20,
-      features: [
-        { text: "20 meals per month", included: true },
-        { text: "Priority delivery slots", included: true },
-        { text: "Full customization options", included: true },
-        { text: "Monthly nutrition consultation", included: true },
-      ],
-    },
-    {
-      id: "family",
-      name: "Family Plan",
-      price: 8999,
-      featured: false,
-      mealsPerMonth: 40,
-      features: [
-        { text: "40 meals per month", included: true },
-        { text: "Preferred delivery window", included: true },
-        { text: "Full customization with family portions", included: true },
-        { text: "Bi-weekly nutrition consultation", included: true },
-      ],
-    },
-  ];
+  });
+
+  // Transform API data to match component interface
+  const plans: Plan[] = apiPlans ? apiPlans
+    .filter((plan: any) => plan.dietaryPreference === 'veg') // Show vegetarian plans by default
+    .map((plan: any) => ({
+      id: plan.id,
+      name: plan.name,
+      price: plan.price,
+      featured: plan.planType === 'premium',
+      mealsPerMonth: plan.features.length > 0 ? parseInt(plan.features[0].split(' ')[0]) || 15 : 15,
+      features: plan.features.map((feature: string) => ({
+        text: feature,
+        included: true
+      }))
+    })) : [];
 
   const handleSelectPlan = (plan: Plan) => {
     navigate(`/subscription?plan=${plan.id}`);
   };
+
+  if (isLoading) {
+    return (
+      <section id="plans" className="bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold mb-4">Subscription Plans</h2>
+            <p className="text-lg text-gray-600">Loading subscription plans...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section id="plans" className="bg-white">
