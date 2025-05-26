@@ -509,14 +509,14 @@ const Subscription = () => {
 
   useEffect(() => {
     if (selectedPlanFromParams) {
-      const validPlan = SUBSCRIPTION_PLANS.find(
-        (p) => p.id === selectedPlanFromParams,
+      const validPlan = subscriptionPlans?.find(
+        (p: any) => p.id === selectedPlanFromParams,
       );
       if (validPlan) {
         form.setValue("plan", validPlan.id as any);
       }
     }
-  }, [selectedPlanFromParams, form]);
+  }, [selectedPlanFromParams, form, subscriptionPlans]);
 
   const { data: locations } = useQuery({
     queryKey: ["/api/locations", locationSearch],
