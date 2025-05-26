@@ -562,30 +562,20 @@ const Subscription = () => {
       case "plan":
         return (
           <div className="space-y-6">
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-center mb-2">Choose Your Perfect Plan</h2>
+              <p className="text-gray-600 text-center mb-6">Select the subscription plan that best fits your lifestyle</p>
+              
+              <AnimatedPlanSlider
+                onSelectPlan={(planId) => {
+                  form.setValue("plan", planId as "basic" | "premium" | "family");
+                }}
+                selectedPlan={selectedPlan}
+              />
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <div className="flex space-x-2 mb-4">
-                  {SUBSCRIPTION_PLANS.map((plan) => (
-                    <Button
-                      key={plan.id}
-                      type="button"
-                      variant={
-                        form.watch("plan") === plan.id ? "default" : "outline"
-                      }
-                      className={`flex-1 ${
-                        form.watch("plan") === plan.id ? "bg-primary" : ""
-                      }`}
-                      onClick={() =>
-                        form.setValue(
-                          "plan",
-                          plan.id as "basic" | "premium" | "family",
-                        )
-                      }
-                    >
-                      {plan.name}
-                    </Button>
-                  ))}
-                </div>
 
                 <div className="mt-4">
                   <FormLabel className="text-base font-medium">
