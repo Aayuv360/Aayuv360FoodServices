@@ -43,12 +43,34 @@ export function SubscriptionPlanManagement() {
   // Mutation for updating plan
   const updatePlanMutation = useMutation({
     mutationFn: async (planData: Partial<Plan>) => {
-      const res = await apiRequest("PUT", `/api/admin/subscription-plans/${planData.id}`, planData);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to update subscription plan");
+      try {
+        const res = await fetch(`/api/admin/subscription-plans/${planData.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify(planData)
+        });
+        
+        if (!res.ok) {
+          // Check if response is HTML (authentication redirect)
+          const contentType = res.headers.get('content-type');
+          if (contentType && contentType.includes('text/html')) {
+            throw new Error("Authentication required. Please log in as admin.");
+          }
+          
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Failed to update subscription plan");
+        }
+        
+        return await res.json();
+      } catch (error) {
+        if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+          throw new Error("Network error. Please check your connection.");
+        }
+        throw error;
       }
-      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscription-plans"] });

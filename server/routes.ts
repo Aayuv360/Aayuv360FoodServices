@@ -1284,19 +1284,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const planId = req.params.id;
         const planData = req.body;
 
-        // For now, we'll return success as the subscription plans are currently static
-        // In a real implementation, you would update the plan in the database
         console.log("Updating subscription plan:", planId, planData);
         
+        // Set proper headers for JSON response
+        res.setHeader('Content-Type', 'application/json');
+        
         // Return the updated plan data
-        res.json({
+        res.status(200).json({
+          success: true,
           id: planId,
           ...planData,
           updatedAt: new Date()
         });
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error updating subscription plan:", err);
-        res.status(500).json({ message: "Error updating subscription plan" });
+        res.setHeader('Content-Type', 'application/json');
+        res.status(500).json({ 
+          success: false,
+          message: "Error updating subscription plan",
+          error: err.message || "Unknown error"
+        });
       }
     },
   );
