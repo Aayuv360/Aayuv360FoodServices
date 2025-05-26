@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { Loader2, PlusCircle, Edit, Trash2, Plus, Pencil, Trash, ArrowUpCircle, Bell } from "lucide-react";
 import LocationManagement from "@/components/admin/LocationManagement";
+import { SubscriptionPlanManagement } from "@/components/admin/SubscriptionPlanManagement";
 import {
   Card,
   CardContent,
@@ -1337,6 +1338,10 @@ export default function AdminPortalPage() {
 
         <TabsContent value="locations" className="space-y-4">
           <LocationManagement />
+        </TabsContent>
+
+        <TabsContent value="subscription-plans" className="space-y-4">
+          <SubscriptionPlanManagement />
         </TabsContent>
       </Tabs>
     </div>
