@@ -94,10 +94,13 @@ export async function seedDatabase() {
       );
     }
 
-    // Seed subscription plans
-    const existingPlans = await SubscriptionPlan.find().lean();
+    // Seed subscription plans - Force refresh with weeklyMeals data
+    console.log("Updating subscription plans with weeklyMeals data...");
     
-    if (existingPlans.length === 0) {
+    // Clear existing plans to add weeklyMeals data
+    await SubscriptionPlan.deleteMany({});
+    
+    {
       console.log("Adding initial subscription plans to MongoDB...");
       
       const initialPlans = [
@@ -111,6 +114,15 @@ export async function seedDatabase() {
           features: ["15 meals per month", "Basic meal variety", "Standard delivery"],
           dietaryPreference: "veg",
           planType: "basic",
+          weeklyMeals: {
+            monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
+            tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+            wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
+            thursday: { main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
+            friday: { main: "Little Millet Pongal", sides: ["Coconut Chutney"] },
+            saturday: { main: "Barnyard Millet Khichdi", sides: ["Pickle", "Curd"] },
+            sunday: { main: "Pearl Millet Roti", sides: ["Dal", "Vegetable Curry"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -124,6 +136,15 @@ export async function seedDatabase() {
           features: ["25 meals per month", "Premium meal variety", "Priority delivery", "Customization options"],
           dietaryPreference: "veg",
           planType: "premium",
+          weeklyMeals: {
+            monday: { main: "Quinoa Millet Bowl", sides: ["Hummus", "Roasted Vegetables"] },
+            tuesday: { main: "Stuffed Millet Paratha", sides: ["Yogurt", "Pickle"] },
+            wednesday: { main: "Millet Biryani", sides: ["Raita", "Shorba"] },
+            thursday: { main: "Ragi Pancakes", sides: ["Honey", "Fresh Fruits"] },
+            friday: { main: "Jowar Thalipeeth", sides: ["Curd", "Chutney"] },
+            saturday: { main: "Millet Pasta", sides: ["Garlic Bread", "Salad"] },
+            sunday: { main: "Barnyard Millet Risotto", sides: ["Grilled Vegetables"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -137,6 +158,15 @@ export async function seedDatabase() {
           features: ["45 meals per month", "Family portions", "Meal customization", "Free delivery", "Nutrition consultation"],
           dietaryPreference: "veg",
           planType: "family",
+          weeklyMeals: {
+            monday: { main: "Family Millet Thali", sides: ["Dal", "Sabzi", "Roti", "Rice"] },
+            tuesday: { main: "Millet Pizza (Family Size)", sides: ["Salad", "Garlic Bread"] },
+            wednesday: { main: "Jowar Bhakri Platter", sides: ["Multiple Curries", "Curd"] },
+            thursday: { main: "Millet Noodles", sides: ["Soup", "Spring Rolls"] },
+            friday: { main: "Ragi Dosa Combo", sides: ["3 Chutneys", "Sambar"] },
+            saturday: { main: "Millet Pulao Family Pack", sides: ["Raita", "Pickle", "Papad"] },
+            sunday: { main: "Traditional Millet Feast", sides: ["Variety of Dishes"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -151,6 +181,15 @@ export async function seedDatabase() {
           features: ["15 meals per month", "Egg-based options", "Standard delivery"],
           dietaryPreference: "veg_with_egg",
           planType: "basic",
+          weeklyMeals: {
+            monday: { main: "Ragi Dosa with Egg", sides: ["Coconut Chutney", "Sambar"] },
+            tuesday: { main: "Millet Upma with Boiled Egg", sides: ["Mixed Vegetable Curry"] },
+            wednesday: { main: "Egg Millet Fried Rice", sides: ["Raita", "Papad"] },
+            thursday: { main: "Millet Pancakes with Scrambled Egg", sides: ["Fresh Fruits"] },
+            friday: { main: "Jowar Roti with Egg Curry", sides: ["Dal", "Pickle"] },
+            saturday: { main: "Millet Khichdi with Egg", sides: ["Curd", "Pickle"] },
+            sunday: { main: "Egg Millet Paratha", sides: ["Yogurt", "Chutney"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -164,6 +203,15 @@ export async function seedDatabase() {
           features: ["25 meals per month", "Enhanced protein options", "Priority delivery", "Meal customization"],
           dietaryPreference: "veg_with_egg",
           planType: "premium",
+          weeklyMeals: {
+            monday: { main: "Protein Millet Bowl with Egg", sides: ["Avocado", "Quinoa Salad"] },
+            tuesday: { main: "Egg Benedict on Millet Bread", sides: ["Fresh Greens"] },
+            wednesday: { main: "Millet Biryani with Egg", sides: ["Raita", "Shorba"] },
+            thursday: { main: "Stuffed Egg Millet Crepes", sides: ["Berry Compote"] },
+            friday: { main: "Millet Pasta with Egg", sides: ["Garlic Bread", "Caesar Salad"] },
+            saturday: { main: "Egg Millet Stir Fry", sides: ["Soup", "Pickled Vegetables"] },
+            sunday: { main: "Gourmet Egg Millet Platter", sides: ["Multiple Accompaniments"] }
+          },
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
