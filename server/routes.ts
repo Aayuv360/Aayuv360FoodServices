@@ -646,39 +646,82 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
-  // Admin API endpoints for subscription plans
-  app.get("/api/admin/subscription-plans", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const plans = await mongoStorage.getAllSubscriptionPlans();
-      res.json(plans);
-    } catch (error) {
-      console.error("Error fetching subscription plans:", error);
-      res.status(500).json({ message: "Error fetching subscription plans" });
-    }
-  });
+  // Admin API endpoints for subscription plans - unified CRUD
+  app.route("/api/admin/subscription-plans")
+    .get(isAuthenticated, isManagerOrAdmin, async (req, res) => {
+      try {
+        const plans = await mongoStorage.getAllSubscriptionPlans();
+        res.json(plans);
+      } catch (error) {
+        console.error("Error fetching subscription plans:", error);
+        res.status(500).json({ message: "Error fetching subscription plans" });
+      }
+    })
+    .post(isAuthenticated, isManagerOrAdmin, async (req, res) => {
+      try {
+        const planData = req.body;
+        console.log("🚀 Creating subscription plan:", planData);
+        
+        const newPlan = await mongoStorage.createSubscriptionPlan(planData);
+        
+        res.json({
+          success: true,
+          message: "Plan created successfully!",
+          plan: newPlan
+        });
+      } catch (error) {
+        console.error("Error creating subscription plan:", error);
+        res.status(500).json({ 
+          success: false, 
+          message: "Error creating subscription plan" 
+        });
+      }
+    });
 
-  app.put("/api/admin/subscription-plans/:id", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const planId = req.params.id;
-      const planData = req.body;
-      
-      console.log("🚀 Updating subscription plan:", planId, planData);
-      
-      const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, planData);
-      
-      res.json({
-        success: true,
-        message: "Plan updated successfully!",
-        plan: updatedPlan
-      });
-    } catch (error) {
-      console.error("Error updating subscription plan:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Error updating subscription plan" 
-      });
-    }
-  });
+  app.route("/api/admin/subscription-plans/:id")
+    .put(isAuthenticated, isManagerOrAdmin, async (req, res) => {
+      try {
+        const planId = req.params.id;
+        const planData = req.body;
+        
+        console.log("🚀 Updating subscription plan:", planId, planData);
+        
+        const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, planData);
+        
+        res.json({
+          success: true,
+          message: "Plan updated successfully!",
+          plan: updatedPlan
+        });
+      } catch (error) {
+        console.error("Error updating subscription plan:", error);
+        res.status(500).json({ 
+          success: false, 
+          message: "Error updating subscription plan" 
+        });
+      }
+    })
+    .delete(isAuthenticated, isManagerOrAdmin, async (req, res) => {
+      try {
+        const planId = req.params.id;
+        console.log("🚀 Deleting subscription plan:", planId);
+        
+        // For now, we'll just mark as inactive instead of deleting
+        const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, { isActive: false });
+        
+        res.json({
+          success: true,
+          message: "Plan deactivated successfully!",
+          plan: updatedPlan
+        });
+      } catch (error) {
+        console.error("Error deleting subscription plan:", error);
+        res.status(500).json({ 
+          success: false, 
+          message: "Error deleting subscription plan" 
+        });
+      }
+    });
 
   // API endpoint for subscription plans (public)
   app.get("/api/subscription-plans", async (req, res) => {

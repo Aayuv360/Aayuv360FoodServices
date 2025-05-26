@@ -40,7 +40,7 @@ export function SubscriptionPlanManagement() {
     },
   });
 
-  // Mutation for updating plan using MongoDB
+  // Mutation for updating plan using unified endpoint
   const updatePlanMutation = useMutation({
     mutationFn: async (planData: Partial<Plan>) => {
       const res = await apiRequest("PUT", `/api/admin/subscription-plans/${planData.id}`, planData);
