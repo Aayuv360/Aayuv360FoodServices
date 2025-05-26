@@ -40,10 +40,14 @@ export function SubscriptionPlanManagement() {
     },
   });
 
-  // Mutation for updating plan using unified endpoint
+  // Mutation for updating plan using single unified endpoint
   const updatePlanMutation = useMutation({
     mutationFn: async (planData: Partial<Plan>) => {
-      const res = await apiRequest("PUT", `/api/admin/subscription-plans/${planData.id}`, planData);
+      const res = await apiRequest("POST", "/api/admin/subscription-plans", {
+        action: "update",
+        planId: planData.id,
+        planData: planData
+      });
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to update subscription plan");
