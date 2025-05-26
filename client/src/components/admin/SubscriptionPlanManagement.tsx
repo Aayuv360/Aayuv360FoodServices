@@ -54,15 +54,25 @@ export function SubscriptionPlanManagement() {
       }
       return await res.json();
     },
-    onSuccess: () => {
-      // Force refresh both admin and public subscription plan queries
-      queryClient.invalidateQueries({ queryKey: ["/api/admin/subscription-plans"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/subscription-plans"] });
-      queryClient.refetchQueries({ queryKey: ["/api/admin/subscription-plans"] });
+    onSuccess: async (data) => {
+      console.log("✅ Plan update successful:", data);
+      
+      // Clear cache and refresh data
+      queryClient.removeQueries({ queryKey: ["/api/admin/subscription-plans"] });
+      queryClient.removeQueries({ queryKey: ["/api/subscription-plans"] });
+      
+      // Wait a moment for database to sync then refetch
+      setTimeout(() => {
+        queryClient.refetchQueries({ queryKey: ["/api/admin/subscription-plans"] });
+      }, 100);
+      
+      // Clear the form and close dialog
       setIsEditDialogOpen(false);
       setEditingPlan(null);
+      
+      // Show success message
       toast({
-        title: "Success",
+        title: "Success", 
         description: "Subscription plan updated successfully",
       });
     },
