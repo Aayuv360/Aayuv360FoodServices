@@ -30,6 +30,26 @@ export interface CurryOption {
   mealId?: number | null;
 }
 
+export interface SubscriptionPlanDocument extends Document {
+  id: string;
+  name: string;
+  price: number;
+  duration: number;
+  description: string;
+  features: string[];
+  dietaryPreference: 'veg' | 'veg_with_egg' | 'nonveg';
+  planType: 'basic' | 'premium' | 'family';
+  weeklyMeals?: {
+    [key: string]: {
+      main: string;
+      sides: string[];
+    };
+  };
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface MealDocument extends Document {
   id: number;
   name: string;
@@ -289,8 +309,35 @@ const locationSchema = new Schema<LocationDocument>({
   updatedAt: { type: Date, default: Date.now },
 });
 
+const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
+  id: { type: String, required: true, unique: true },
+  name: { type: String, required: true },
+  price: { type: Number, required: true },
+  duration: { type: Number, required: true },
+  description: { type: String, required: true },
+  features: { type: [String], default: [] },
+  dietaryPreference: { 
+    type: String, 
+    required: true,
+    enum: ['veg', 'veg_with_egg', 'nonveg']
+  },
+  planType: { 
+    type: String, 
+    required: true,
+    enum: ['basic', 'premium', 'family']
+  },
+  weeklyMeals: {
+    type: Schema.Types.Mixed,
+    default: {}
+  },
+  isActive: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
+});
+
 // Create and export models
 export const User = mongoose.model<UserDocument>("User", userSchema);
+export const SubscriptionPlan = mongoose.model<SubscriptionPlanDocument>("SubscriptionPlan", subscriptionPlanSchema);
 export const Meal = mongoose.model<MealDocument>("Meal", mealSchema);
 export const CartItem = mongoose.model<CartItemDocument>(
   "CartItem",

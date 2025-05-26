@@ -8,6 +8,7 @@ import {
   Location,
   Review,
   CurryOption,
+  SubscriptionPlan,
   getNextSequence,
 } from "../shared/mongoModels";
 import { createSessionStore } from "./session-store";
@@ -1208,6 +1209,59 @@ export class MongoDBStorage implements IStorage {
     } catch (error) {
       console.error("Error getting curry options:", error);
       return [];
+    }
+  }
+
+  // Subscription Plan operations
+  async getAllSubscriptionPlans(): Promise<any[]> {
+    try {
+      const plans = await SubscriptionPlan.find({}).sort({ dietaryPreference: 1, planType: 1 });
+      return plans.map(plan => plan.toObject());
+    } catch (error) {
+      console.error("Error getting subscription plans:", error);
+      return [];
+    }
+  }
+
+  async getSubscriptionPlan(id: string): Promise<any | undefined> {
+    try {
+      const plan = await SubscriptionPlan.findOne({ id });
+      return plan ? plan.toObject() : undefined;
+    } catch (error) {
+      console.error("Error getting subscription plan:", error);
+      return undefined;
+    }
+  }
+
+  async updateSubscriptionPlan(id: string, updateData: any): Promise<any | undefined> {
+    try {
+      const updatedPlan = await SubscriptionPlan.findOneAndUpdate(
+        { id },
+        {
+          ...updateData,
+          updatedAt: new Date(),
+        },
+        { new: true, upsert: true }
+      );
+      return updatedPlan ? updatedPlan.toObject() : undefined;
+    } catch (error) {
+      console.error("Error updating subscription plan:", error);
+      throw error;
+    }
+  }
+
+  async createSubscriptionPlan(planData: any): Promise<any> {
+    try {
+      const newPlan = new SubscriptionPlan({
+        ...planData,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      await newPlan.save();
+      return newPlan.toObject();
+    } catch (error) {
+      console.error("Error creating subscription plan:", error);
+      throw error;
     }
   }
 }
