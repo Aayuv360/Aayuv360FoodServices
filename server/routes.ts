@@ -57,21 +57,18 @@ interface CartItemWithMeal extends CartItem {
 // Utility function to calculate subscription status
 function calculateSubscriptionStatus(subscription: any) {
   try {
-    // Handle various startDate formats
+    // Handle various startDate formats from different storage systems
     let startDate;
     if (subscription.startDate) {
       startDate = new Date(subscription.startDate);
+    } else if (subscription.start_date) {
+      startDate = new Date(subscription.start_date);
     } else if (subscription.createdAt) {
       startDate = new Date(subscription.createdAt);
+    } else if (subscription.created_at) {
+      startDate = new Date(subscription.created_at);
     } else {
-      startDate = new Date(); // Default to current date
-    }
-    
-    const currentDate = new Date();
-    
-    // Validate the start date
-    if (isNaN(startDate.getTime())) {
-      console.log("Invalid start date for subscription:", subscription.id);
+      console.log("No valid date found for subscription:", subscription.id);
       return {
         ...subscription,
         status: "inactive",
@@ -80,7 +77,26 @@ function calculateSubscriptionStatus(subscription: any) {
       };
     }
     
-    const planDuration = subscription.plan?.duration || subscription.duration || 30;
+    const currentDate = new Date();
+    
+    // Validate the start date
+    if (isNaN(startDate.getTime())) {
+      console.log("Invalid start date for subscription:", subscription.id, "Date value:", subscription.startDate || subscription.start_date);
+      return {
+        ...subscription,
+        status: "inactive",
+        endDate: null,
+        daysRemaining: 0
+      };
+    }
+    
+    // Get duration from various possible sources
+    const planDuration = subscription.plan?.duration || 
+                        subscription.duration || 
+                        subscription.meals_per_month || 
+                        subscription.mealsPerMonth || 
+                        30;
+    
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + planDuration);
     
@@ -870,17 +886,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const subscriptions = await mongoStorage.getSubscriptionsByUserId(userId);
       
-      console.log("Raw subscriptions from DB:", JSON.stringify(subscriptions, null, 2));
-      
-      // Calculate status for each subscription
-      const subscriptionsWithStatus = subscriptions.map((subscription: any, index: number) => {
-        console.log(`Processing subscription ${index}:`, {
-          id: subscription.id,
-          startDate: subscription.startDate,
-          plan: subscription.plan,
-          duration: subscription.duration
-        });
-        return calculateSubscriptionStatus(subscription);
+      // Calculate status for each subscription with enhanced error handling
+      const subscriptionsWithStatus = subscriptions.map((subscription: any) => {
+        try {
+          return calculateSubscriptionStatus(subscription);
+        } catch (statusError) {
+          console.error("Failed to calculate status for subscription:", subscription.id, statusError);
+          // Return subscription with default status to prevent complete failure
+          return {
+            ...subscription,
+            status: "inactive",
+            endDate: null,
+            daysRemaining: 0
+          };
+        }
       });
       
       res.json(subscriptionsWithStatus);
