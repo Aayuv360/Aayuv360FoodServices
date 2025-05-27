@@ -717,13 +717,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API endpoint for subscription plans (public - no auth required)
   app.get("/api/subscription-plans", async (req, res) => {
     try {
+      console.log("📋 Retrieved subscription plans from MongoDB - returning grouped format");
+      
       // Always get from MongoDB first
       const dbPlans = await mongoStorage.getAllSubscriptionPlans();
       
       if (dbPlans.length > 0) {
         // Only return active plans for public endpoint
         const activePlans = dbPlans.filter(plan => plan.isActive !== false);
-        return res.json(activePlans);
+        
+        // Group plans by dietary preference
+        const groupedPlans = [
+          {
+            dietaryPreference: 'veg',
+            plans: activePlans.filter(plan => plan.dietaryPreference === 'veg'),
+            extraPrice: 0,
+            id: 1
+          },
+          {
+            dietaryPreference: 'veg_with_egg',
+            plans: activePlans.filter(plan => plan.dietaryPreference === 'veg_with_egg'),
+            extraPrice: 0,
+            id: 2
+          },
+          {
+            dietaryPreference: 'nonveg',
+            plans: activePlans.filter(plan => plan.dietaryPreference === 'nonveg'),
+            extraPrice: 0,
+            id: 3
+          }
+        ].filter(group => group.plans.length > 0); // Only include groups that have plans
+        
+        return res.json(groupedPlans);
       }
       
       // Fallback to static plans if no DB plans exist
