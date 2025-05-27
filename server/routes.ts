@@ -64,16 +64,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   // SUBSCRIPTION PLAN UPDATE - MUST BE FIRST TO WORK
-  app.put("/api/admin/subscription-plans/:id", (req: Request, res: Response) => {
-    console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
-    res.setHeader('Content-Type', 'application/json');
-    res.status(200).json({
-      success: true,
-      message: "Plan updated successfully!",
-      id: req.params.id,
-      data: req.body
-    });
-  });
+  app.put(
+    "/api/admin/subscription-plans/:id",
+    (req: Request, res: Response) => {
+      console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
+      res.setHeader("Content-Type", "application/json");
+      res.status(200).json({
+        success: true,
+        message: "Plan updated successfully!",
+        id: req.params.id,
+        data: req.body,
+      });
+    },
+  );
 
   registerMealRoutes(app);
 
@@ -644,37 +647,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-
-
   // Admin API endpoints for subscription plans - unified CRUD endpoint
-  app.route("/api/admin/subscription-plans")
+  app
+    .route("/api/admin/subscription-plans")
     .get(isAuthenticated, isManagerOrAdmin, async (req, res) => {
       try {
         const plans = await mongoStorage.getAllSubscriptionPlans();
-        
-        // Group plans by dietary preference for admin portal
-        const groupedPlans = [
-          {
-            dietaryPreference: 'veg',
-            plans: plans.filter(plan => plan.dietaryPreference === 'veg'),
-            extraPrice: 0,
-            id: 1
-          },
-          {
-            dietaryPreference: 'veg_with_egg',
-            plans: plans.filter(plan => plan.dietaryPreference === 'veg_with_egg'),
-            extraPrice: 0,
-            id: 2
-          },
-          {
-            dietaryPreference: 'nonveg',
-            plans: plans.filter(plan => plan.dietaryPreference === 'nonveg'),
-            extraPrice: 0,
-            id: 3
-          }
-        ].filter(group => group.plans.length > 0); // Only include groups that have plans
-        
-        res.json(groupedPlans);
+
+        res.json(plans);
       } catch (error) {
         console.error("Error fetching subscription plans:", error);
         res.status(500).json({ message: "Error fetching subscription plans" });
@@ -683,170 +663,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     .post(isAuthenticated, isManagerOrAdmin, async (req, res) => {
       try {
         const { action, planData, planId } = req.body;
-        
+
         if (action === "create") {
           console.log("🚀 Creating subscription plan:", planData);
           const newPlan = await mongoStorage.createSubscriptionPlan(planData);
-          
+
           res.json({
             success: true,
             message: "Plan created successfully!",
-            plan: newPlan
+            plan: newPlan,
           });
         } else if (action === "update") {
           console.log("🚀 Updating subscription plan:", planId, planData);
-          const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, planData);
-          
+          const updatedPlan = await mongoStorage.updateSubscriptionPlan(
+            planId,
+            planData,
+          );
+
           res.json({
             success: true,
             message: "Plan updated successfully!",
-            plan: updatedPlan
+            plan: updatedPlan,
           });
         } else if (action === "delete") {
           console.log("🚀 Deleting subscription plan:", planId);
-          const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, { isActive: false });
-          
+          const updatedPlan = await mongoStorage.updateSubscriptionPlan(
+            planId,
+            { isActive: false },
+          );
+
           res.json({
             success: true,
             message: "Plan deactivated successfully!",
-            plan: updatedPlan
+            plan: updatedPlan,
           });
         } else {
           res.status(400).json({ success: false, message: "Invalid action" });
         }
       } catch (error) {
         console.error("Error with subscription plan operation:", error);
-        res.status(500).json({ 
-          success: false, 
-          message: "Error processing subscription plan operation" 
+        res.status(500).json({
+          success: false,
+          message: "Error processing subscription plan operation",
         });
       }
     });
 
-  // Test endpoint to verify MongoDB data (temporary)
-  app.get("/api/test/subscription-plans", async (req, res) => {
-    try {
-      const plans = await mongoStorage.getAllSubscriptionPlans();
-      res.json({
-        success: true,
-        count: plans.length,
-        plans: plans
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
-  // API endpoint for subscription plans (public - no auth required)
   app.get("/api/subscription-plans", async (req, res) => {
     try {
-      console.log("📋 Retrieved subscription plans from MongoDB - returning grouped format");
-      
-      // Always get from MongoDB first
+      console.log(
+        "📋 Retrieved subscription plans from MongoDB - returning grouped format",
+      );
+
       const dbPlans = await mongoStorage.getAllSubscriptionPlans();
-      
-      if (dbPlans.length > 0) {
-        // Only return active plans for public endpoint
-        const activePlans = dbPlans.filter(plan => plan.isActive !== false);
-        
-        // Group plans by dietary preference
-        const groupedPlans = [
-          {
-            dietaryPreference: 'veg',
-            plans: activePlans.filter(plan => plan.dietaryPreference === 'veg'),
-            extraPrice: 0,
-            id: 1
-          },
-          {
-            dietaryPreference: 'veg_with_egg',
-            plans: activePlans.filter(plan => plan.dietaryPreference === 'veg_with_egg'),
-            extraPrice: 0,
-            id: 2
-          },
-          {
-            dietaryPreference: 'nonveg',
-            plans: activePlans.filter(plan => plan.dietaryPreference === 'nonveg'),
-            extraPrice: 0,
-            id: 3
-          }
-        ].filter(group => group.plans.length > 0); // Only include groups that have plans
-        
-        return res.json(groupedPlans);
-      }
-      
-      // Fallback to static plans if no DB plans exist
-      const plans = [
-        {
-          id: "basic",
-          name: "Basic Plan",
-          price: 2999,
-          description: "Perfect for individuals looking to try our millet meals for a week.",
-          mealsPerMonth: 7,
-          duration: 7,
-          features: [
-            { text: "7 meals for one week", included: true },
-            { text: "Flexible delivery schedule", included: true },
-            { text: "Basic customization options", included: true },
-            { text: "Nutrition consultation", included: false },
-          ],
-          weeklyMeals: {
-            monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Tomato Chutney"] },
-            tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
-            wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
-            thursday: { main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
-            friday: { main: "Little Millet Pongal", sides: ["Coconut Chutney", "Sambar"] },
-            saturday: { main: "Pearl Millet Khichdi", sides: ["Kadhi", "Papad"] },
-            sunday: { main: "Kodo Millet Bisibelebath", sides: ["Raita", "Pickle"] },
-          },
-        },
-        {
-          id: "premium", 
-          name: "Premium Plan",
-          price: 4999,
-          description: "Experience more variety with our premium millet meal plan for two weeks.",
-          mealsPerMonth: 14,
-          duration: 14,
-          features: [
-            { text: "14 meals for two weeks", included: true },
-            { text: "Priority delivery slots", included: true },
-            { text: "Full customization options", included: true },
-            { text: "Monthly nutrition consultation", included: true },
-          ],
-          weeklyMeals: {
-            monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Tomato Chutney"] },
-            tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
-            wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
-            thursday: { main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
-            friday: { main: "Little Millet Pongal", sides: ["Coconut Chutney", "Sambar"] },
-            saturday: { main: "Pearl Millet Khichdi", sides: ["Kadhi", "Papad"] },
-            sunday: { main: "Kodo Millet Bisibelebath", sides: ["Raita", "Pickle"] },
-          },
-        },
-        {
-          id: "family",
-          name: "Family Plan", 
-          price: 8999,
-          description: "Feed the whole family with our millet meals for a full month.",
-          mealsPerMonth: 30,
-          duration: 30,
-          features: [
-            { text: "30 meals for one month", included: true },
-            { text: "Preferred delivery window", included: true },
-            { text: "Full customization options", included: true },
-            { text: "Family nutrition consultation", included: true },
-          ],
-          weeklyMeals: {
-            monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Tomato Chutney"] },
-            tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
-            wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
-            thursday: { main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
-            friday: { main: "Little Millet Pongal", sides: ["Coconut Chutney", "Sambar"] },
-            saturday: { main: "Pearl Millet Khichdi", sides: ["Kadhi", "Papad"] },
-            sunday: { main: "Kodo Millet Bisibelebath", sides: ["Raita", "Pickle"] },
-          },
-        }
-      ];
-      res.json(plans);
+
+      res.json(dbPlans);
     } catch (error) {
       console.error("Error fetching subscription plans:", error);
       res.status(500).json({ message: "Failed to fetch subscription plans" });
@@ -1280,7 +1151,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           orders.map(async (order) => {
             // Get user information
             const user = await mongoStorage.getUser(order.userId);
-            
+
             // Enhance each order item with meal data
             const enrichedItems = await Promise.all(
               (order.items || []).map(async (item: any) => {
@@ -1289,22 +1160,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   ...item,
                   meal: meal || { name: `Meal #${item.mealId}` },
                 };
-              })
+              }),
             );
-            
+
             // Get proper user name - mongodb document may store it differently
             let userName = "Unknown User";
             if (user) {
               // Try different naming conventions that might be in the database
-              userName = user.name || user.fullName || user.displayName || 
-                        (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null) ||
-                        user.username || `Customer #${order.userId}`;
+              userName =
+                user.name ||
+                user.fullName ||
+                user.displayName ||
+                (user.firstName && user.lastName
+                  ? `${user.firstName} ${user.lastName}`
+                  : null) ||
+                user.username ||
+                `Customer #${order.userId}`;
             }
-            
+
             return {
               ...order,
               userName,
-              items: enrichedItems
+              items: enrichedItems,
             };
           }),
         );
@@ -1328,16 +1205,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const enrichedSubscriptions = await Promise.all(
           subscriptions.map(async (subscription) => {
             const user = await mongoStorage.getUser(subscription.userId);
-            
+
             // Get proper user name - mongodb document may store it differently
             let userName = "Unknown User";
             if (user) {
               // Try different naming conventions that might be in the database
-              userName = user.name || user.fullName || user.displayName || 
-                        (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : null) ||
-                        user.username || `Customer #${subscription.userId}`;
+              userName =
+                user.name ||
+                user.fullName ||
+                user.displayName ||
+                (user.firstName && user.lastName
+                  ? `${user.firstName} ${user.lastName}`
+                  : null) ||
+                user.username ||
+                `Customer #${subscription.userId}`;
             }
-            
+
             return {
               ...subscription,
               userName,
@@ -1363,10 +1246,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const subscriptionId = parseInt(req.params.id);
         const { status } = req.body;
 
-        const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, {
-          status,
-          updatedAt: new Date(),
-        });
+        const updatedSubscription = await mongoStorage.updateSubscription(
+          subscriptionId,
+          {
+            status,
+            updatedAt: new Date(),
+          },
+        );
 
         if (!updatedSubscription) {
           return res.status(404).json({ message: "Subscription not found" });
@@ -1396,15 +1282,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Calculate new end date
-        const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : new Date(subscription.startDate);
-        currentEndDate.setDate(currentEndDate.getDate() + (subscription.duration || 30));
+        const currentEndDate = subscription.endDate
+          ? new Date(subscription.endDate)
+          : new Date(subscription.startDate);
+        currentEndDate.setDate(
+          currentEndDate.getDate() + (subscription.duration || 30),
+        );
         const newEndDate = new Date(currentEndDate);
         newEndDate.setDate(newEndDate.getDate() + days);
 
-        const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, {
-          endDate: newEndDate,
-          updatedAt: new Date(),
-        });
+        const updatedSubscription = await mongoStorage.updateSubscription(
+          subscriptionId,
+          {
+            endDate: newEndDate,
+            updatedAt: new Date(),
+          },
+        );
 
         res.json(updatedSubscription);
       } catch (err) {

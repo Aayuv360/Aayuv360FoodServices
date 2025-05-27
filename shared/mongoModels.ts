@@ -30,6 +30,21 @@ export interface CurryOption {
   mealId?: number | null;
 }
 
+export interface WeeklyMeal {
+  main: string;
+  sides: string[];
+}
+
+export interface WeeklyMeals {
+  monday: WeeklyMeal;
+  tuesday: WeeklyMeal;
+  wednesday: WeeklyMeal;
+  thursday: WeeklyMeal;
+  friday: WeeklyMeal;
+  saturday: WeeklyMeal;
+  sunday: WeeklyMeal;
+}
+
 export interface SubscriptionPlanDocument extends Document {
   id: string;
   name: string;
@@ -37,19 +52,13 @@ export interface SubscriptionPlanDocument extends Document {
   duration: number;
   description: string;
   features: string[];
-  dietaryPreference: 'veg' | 'veg_with_egg' | 'nonveg';
-  planType: 'basic' | 'premium' | 'family';
-  weeklyMeals?: {
-    [key: string]: {
-      main: string;
-      sides: string[];
-    };
-  };
+  dietaryPreference: "veg" | "veg_with_egg" | "nonveg";
+  planType: "basic" | "premium" | "family";
+  weeklyMeals: WeeklyMeals;
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
-
 export interface MealDocument extends Document {
   id: number;
   name: string;
@@ -316,19 +325,19 @@ const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
   duration: { type: Number, required: true },
   description: { type: String, required: true },
   features: { type: [String], default: [] },
-  dietaryPreference: { 
-    type: String, 
+  dietaryPreference: {
+    type: String,
     required: true,
-    enum: ['veg', 'veg_with_egg', 'nonveg']
+    enum: ["veg", "veg_with_egg", "nonveg"],
   },
-  planType: { 
-    type: String, 
+  planType: {
+    type: String,
     required: true,
-    enum: ['basic', 'premium', 'family']
+    enum: ["basic", "premium", "family"],
   },
   weeklyMeals: {
     type: Schema.Types.Mixed,
-    default: {}
+    default: {},
   },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
@@ -337,7 +346,10 @@ const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
 
 // Create and export models
 export const User = mongoose.model<UserDocument>("User", userSchema);
-export const SubscriptionPlan = mongoose.model<SubscriptionPlanDocument>("SubscriptionPlan", subscriptionPlanSchema);
+export const SubscriptionPlan = mongoose.model<SubscriptionPlanDocument>(
+  "SubscriptionPlan",
+  subscriptionPlanSchema,
+);
 export const Meal = mongoose.model<MealDocument>("Meal", mealSchema);
 export const CartItem = mongoose.model<CartItemDocument>(
   "CartItem",

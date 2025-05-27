@@ -235,19 +235,17 @@ const Subscription = () => {
 
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
-      console.log(data);
-
       const payload = {
         userId: user?.id,
         plan: data.plan.planType,
         subscriptionType: data.subscriptionType,
         startDate: data.startDate.toISOString(),
-        mealsPerMonth: 0,
+        mealsPerMonth: data.plan.duration,
         price: data.plan.price || 0,
         status: "pending",
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
-        paymentMethod: "razorpay", // Add required paymentMethod field
+        paymentMethod: "razorpay",
       };
 
       const response = await apiRequest("POST", "/api/subscriptions", payload);
@@ -1065,98 +1063,6 @@ const Subscription = () => {
         );
     }
   };
-
-  if (isSuccess && subscribedDetails) {
-    return (
-      <div className="min-h-screen bg-neutral-light py-12">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <Card className="border-primary border-2">
-              <CardHeader className="bg-neutral-light">
-                <div className="flex items-center justify-center mb-4">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                    <CreditCard className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-                <CardTitle className="text-center text-2xl">
-                  Complete Payment
-                </CardTitle>
-                <CardDescription className="text-center">
-                  Your subscription has been created. Please complete the
-                  payment to activate it. If you closed the payment window, you
-                  can try again.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="bg-neutral-light p-6 rounded-lg mb-6">
-                  <h3 className="font-semibold text-lg mb-4">
-                    Subscription Summary
-                  </h3>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Plan:</span>
-                      <span className="font-medium">
-                        {subscribedDetails.planName}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Start Date:</span>
-                      <span className="font-medium">
-                        {format(subscribedDetails.startDate, "PPP")}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Dietary Preference:</span>
-                      <span className="font-medium capitalize">
-                        {subscribedDetails.dietaryPreference === "vegetarian"
-                          ? "Vegetarian"
-                          : subscribedDetails.dietaryPreference ===
-                              "veg-with-egg"
-                            ? "Vegetarian with Egg"
-                            : "Non-Vegetarian"}
-                      </span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Number of Persons:</span>
-                      <span className="font-medium">
-                        {subscribedDetails.personCount}
-                      </span>
-                    </div>
-
-                    <div className="border-t my-2 pt-2">
-                      <div className="flex justify-between font-semibold">
-                        <span className="text-gray-600">Total:</span>
-                        <span className="text-primary">
-                          {formatPrice(subscribedDetails.totalPrice)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-center gap-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setIsSuccess(false);
-                      form.reset(defaultValues);
-                      setFormStep("plan");
-                    }}
-                  >
-                    Cancel Subscription
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-neutral-light py-12">
