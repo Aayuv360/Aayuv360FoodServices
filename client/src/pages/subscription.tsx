@@ -307,7 +307,7 @@ const Subscription = () => {
     };
 
     const isEditing = editingAddress !== null;
-    const method = isEditing ? "PUT" : "POST";
+    const method = isEditing ? "PATCH" : "POST";
     const url = isEditing ? `/api/addresses/${editingAddress.id}` : "/api/addresses";
 
     apiRequest(method, url, addressData)
