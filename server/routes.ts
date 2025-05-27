@@ -828,37 +828,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const subscriptions = await mongoStorage.getSubscriptionsByUserId(userId);
       
       // Calculate status for each subscription
-      const subscriptionsWithStatus = subscriptions.map((subscription: any) => {
-        const startDate = new Date(subscription.startDate);
-        const currentDate = new Date();
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + subscription.plan.duration);
-        
-        // Reset time components for accurate date comparison
-        const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-        const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-        const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-        
-        let status = "inactive";
-        if (current < start) {
-          status = "inactive";
-        } else if (current.getTime() === end.getTime()) {
-          status = "completed";
-        } else if (current >= start && current < end) {
-          status = "active";
-        } else {
-          status = "completed";
-        }
-        
-        const daysRemaining = status === "active" ? Math.ceil((end.getTime() - current.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-        
-        return {
-          ...subscription,
-          status,
-          endDate: endDate.toISOString(),
-          daysRemaining
-        };
-      });
+      const subscriptionsWithStatus = subscriptions.map((subscription: any) => 
+        calculateSubscriptionStatus(subscription)
+      );
       
       res.json(subscriptionsWithStatus);
     } catch (err) {
@@ -886,35 +858,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Calculate status for the subscription
-      const startDate = new Date(subscription.startDate);
-      const currentDate = new Date();
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + subscription.plan.duration);
-      
-      // Reset time components for accurate date comparison
-      const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-      const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-      
-      let status = "inactive";
-      if (current < start) {
-        status = "inactive";
-      } else if (current.getTime() === end.getTime()) {
-        status = "completed";
-      } else if (current >= start && current < end) {
-        status = "active";
-      } else {
-        status = "completed";
-      }
-      
-      const daysRemaining = status === "active" ? Math.ceil((end.getTime() - current.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-      
-      const subscriptionWithStatus = {
-        ...subscription,
-        status,
-        endDate: endDate.toISOString(),
-        daysRemaining
-      };
+      const subscriptionWithStatus = calculateSubscriptionStatus(subscription);
 
       res.json(subscriptionWithStatus);
     } catch (err) {
@@ -1384,8 +1328,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 `Customer #${subscription.userId}`;
             }
 
+            // Calculate subscription status
+            const subscriptionWithStatus = calculateSubscriptionStatus(subscription);
+
             return {
-              ...subscription,
+              ...subscriptionWithStatus,
               userName,
             };
           }),
