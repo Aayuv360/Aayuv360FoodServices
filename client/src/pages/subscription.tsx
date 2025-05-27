@@ -137,6 +137,7 @@ const Subscription = () => {
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedDietaryFilter, setSelectedDietaryFilter] = useState<'veg' | 'veg_with_egg' | 'nonveg'>('veg');
 
   const { data: meals, isLoading: mealsLoading } = useQuery({
     queryKey: ["/api/meals"],
@@ -153,6 +154,13 @@ const Subscription = () => {
       return res.json();
     },
   });
+
+  // Filter plans based on selected dietary preference
+  const filteredPlans = subscriptionPlans
+    ? subscriptionPlans.filter(
+        (plan: any) => plan.dietaryPreference === selectedDietaryFilter,
+      )
+    : [];
 
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as any) || "basic",
@@ -614,10 +622,59 @@ const Subscription = () => {
       case "plan":
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  {subscriptionPlans?.map((plan: any) => (
+            {/* Dietary Preference Selection */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Dietary Preference</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <Button
+                  type="button"
+                  variant={selectedDietaryFilter === "veg" ? "default" : "outline"}
+                  className={`p-4 h-auto flex flex-col items-center gap-2 ${
+                    selectedDietaryFilter === "veg" ? "bg-green-600 hover:bg-green-700" : ""
+                  }`}
+                  onClick={() => setSelectedDietaryFilter("veg")}
+                >
+                  <span className="font-medium">Vegetarian</span>
+                  <span className="text-xs text-center opacity-80">
+                    Pure vegetarian meals with no eggs or meat
+                  </span>
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant={selectedDietaryFilter === "veg_with_egg" ? "default" : "outline"}
+                  className={`p-4 h-auto flex flex-col items-center gap-2 ${
+                    selectedDietaryFilter === "veg_with_egg" ? "bg-orange-600 hover:bg-orange-700" : ""
+                  }`}
+                  onClick={() => setSelectedDietaryFilter("veg_with_egg")}
+                >
+                  <span className="font-medium">Veg with Egg</span>
+                  <span className="text-xs text-center opacity-80">
+                    Vegetarian meals with egg options
+                  </span>
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant={selectedDietaryFilter === "nonveg" ? "default" : "outline"}
+                  className={`p-4 h-auto flex flex-col items-center gap-2 ${
+                    selectedDietaryFilter === "nonveg" ? "bg-red-600 hover:bg-red-700" : ""
+                  }`}
+                  onClick={() => setSelectedDietaryFilter("nonveg")}
+                >
+                  <span className="font-medium">Non-Vegetarian</span>
+                  <span className="text-xs text-center opacity-80">
+                    Complete non-vegetarian meal experience
+                  </span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Plan Selection based on Dietary Preference */}
+            <div>
+              <h3 className="text-lg font-medium mb-4">Choose Your Plan</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                {filteredPlans?.map((plan: any) => (
                     <Card
                       key={plan.id}
                       className={`cursor-pointer transition-all border-2 ${
@@ -661,9 +718,9 @@ const Subscription = () => {
                     </Card>
                   ))}
                 </div>
+              </div>
 
-
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="startDate"
