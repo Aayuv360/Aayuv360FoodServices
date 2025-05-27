@@ -57,11 +57,21 @@ interface CartItemWithMeal extends CartItem {
 // Utility function to calculate subscription status
 function calculateSubscriptionStatus(subscription: any) {
   try {
-    const startDate = new Date(subscription.startDate);
+    // Handle various startDate formats
+    let startDate;
+    if (subscription.startDate) {
+      startDate = new Date(subscription.startDate);
+    } else if (subscription.createdAt) {
+      startDate = new Date(subscription.createdAt);
+    } else {
+      startDate = new Date(); // Default to current date
+    }
+    
     const currentDate = new Date();
     
     // Validate the start date
     if (isNaN(startDate.getTime())) {
+      console.log("Invalid start date for subscription:", subscription.id);
       return {
         ...subscription,
         status: "inactive",
@@ -73,6 +83,17 @@ function calculateSubscriptionStatus(subscription: any) {
     const planDuration = subscription.plan?.duration || subscription.duration || 30;
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + planDuration);
+    
+    // Validate the end date
+    if (isNaN(endDate.getTime())) {
+      console.log("Invalid end date calculation for subscription:", subscription.id);
+      return {
+        ...subscription,
+        status: "inactive",
+        endDate: null,
+        daysRemaining: 0
+      };
+    }
     
     // Reset time components for accurate date comparison
     const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
@@ -99,7 +120,7 @@ function calculateSubscriptionStatus(subscription: any) {
       daysRemaining
     };
   } catch (error) {
-    console.error("Error calculating subscription status:", error);
+    console.error("Error calculating subscription status for subscription:", subscription.id, error);
     return {
       ...subscription,
       status: "inactive",
