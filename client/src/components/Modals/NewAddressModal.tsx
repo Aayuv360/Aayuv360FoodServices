@@ -30,14 +30,15 @@ export const NewAddressModal = ({
   handleAddressFormSubmit,
   setLocationSearch,
   selectLocation,
+  editingAddress,
 }: any) => {
-  const [addressType, setAddressType] = useState("Home");
+  const [addressType, setAddressType] = useState(editingAddress?.name || "Home");
 
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
       <DialogContent className="sm:max-w-[900px]">
         <DialogHeader>
-          <DialogTitle>Add New Delivery Address</DialogTitle>
+          <DialogTitle>{editingAddress ? "Edit Delivery Address" : "Add New Delivery Address"}</DialogTitle>
           <DialogDescription>
             Search for your location on the map or enter address details
             manually.
@@ -149,6 +150,7 @@ export const NewAddressModal = ({
                       id="address-phone"
                       name="phone"
                       placeholder="10-digit mobile number"
+                      defaultValue={editingAddress?.phone || ""}
                       required
                     />
                   </div>
@@ -160,6 +162,7 @@ export const NewAddressModal = ({
                     id="address-line1"
                     name="addressLine1"
                     placeholder="House/Flat No., Street, Locality"
+                    defaultValue={editingAddress?.addressLine1 || ""}
                     required
                   />
                 </div>
@@ -172,6 +175,7 @@ export const NewAddressModal = ({
                     id="address-line2"
                     name="addressLine2"
                     placeholder="Landmark, Area, etc."
+                    defaultValue={editingAddress?.addressLine2 || ""}
                   />
                 </div>
 
@@ -182,7 +186,7 @@ export const NewAddressModal = ({
                       id="address-city"
                       name="city"
                       placeholder="City"
-                      defaultValue="Hyderabad"
+                      defaultValue={editingAddress?.city || "Hyderabad"}
                       required
                     />
                   </div>
@@ -193,7 +197,7 @@ export const NewAddressModal = ({
                       id="address-state"
                       name="state"
                       placeholder="State"
-                      defaultValue="Telangana"
+                      defaultValue={editingAddress?.state || "Telangana"}
                       required
                     />
                   </div>
