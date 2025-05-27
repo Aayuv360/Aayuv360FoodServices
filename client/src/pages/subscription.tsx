@@ -63,6 +63,35 @@ import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Address } from "@shared/schema";
 
+// Utility function to calculate subscription status
+const calculateSubscriptionStatus = (startDate: Date, duration: number): "inactive" | "active" | "completed" => {
+  const currentDate = new Date();
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + duration);
+  
+  // Reset time components for accurate date comparison
+  const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+  
+  if (current < start) {
+    return "inactive";
+  } else if (current.getTime() === end.getTime()) {
+    return "completed";
+  } else if (current >= start && current < end) {
+    return "active";
+  } else {
+    return "completed";
+  }
+};
+
+// Utility function to calculate end date
+const calculateEndDate = (startDate: Date, duration: number): Date => {
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + duration);
+  return endDate;
+};
+
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
   phone: z.string().min(10, "Valid phone number is required"),
