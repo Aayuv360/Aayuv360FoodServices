@@ -4,7 +4,14 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Loader2, UserCircle, ClockIcon, History, LogOut, ChevronRight } from "lucide-react";
+import {
+  Loader2,
+  UserCircle,
+  ClockIcon,
+  History,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -29,7 +36,6 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
 
-
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
@@ -44,13 +50,15 @@ const Profile = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
-  const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<number | null>(null);
-  
+  const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
+    number | null
+  >(null);
+
   // Parse the URL search params to get the active tab
   const urlParams = new URLSearchParams(window.location.search);
-  const tabParam = urlParams.get('tab');
+  const tabParam = urlParams.get("tab");
   const [currentTab, setCurrentTab] = useState(tabParam || "profile");
-  
+
   const toggleOrderDetails = (orderId: number) => {
     if (expandedOrderId === orderId) {
       setExpandedOrderId(null);
@@ -58,7 +66,7 @@ const Profile = () => {
       setExpandedOrderId(orderId);
     }
   };
-  
+
   const toggleSubscriptionDetails = (subscriptionId: number) => {
     if (expandedSubscriptionId === subscriptionId) {
       setExpandedSubscriptionId(null);
@@ -66,11 +74,11 @@ const Profile = () => {
       setExpandedSubscriptionId(subscriptionId);
     }
   };
-  
+
   // Update tab when URL changes
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get('tab');
+    const tabParam = urlParams.get("tab");
     if (tabParam) {
       setCurrentTab(tabParam);
     }
@@ -136,6 +144,40 @@ const Profile = () => {
     return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
+  // Helper function to check if subscription needs renewal (within 2 days)
+  const needsRenewal = (subscription: any) => {
+    if (!subscription.endDate || subscription.status !== "active") return false;
+    
+    const endDate = new Date(subscription.endDate);
+    const currentDate = new Date();
+    const twoDaysFromNow = new Date();
+    twoDaysFromNow.setDate(currentDate.getDate() + 2);
+    
+    return endDate <= twoDaysFromNow;
+  };
+
+  // Mutation for renewing subscription
+  const renewSubscriptionMutation = useMutation({
+    mutationFn: async (subscriptionId: number) => {
+      const res = await apiRequest("POST", `/api/subscriptions/${subscriptionId}/renew`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      toast({
+        title: "Subscription renewed",
+        description: "Your subscription has been renewed successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Renewal failed",
+        description: error.message || "There was an error renewing your subscription",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getOrderStatusClass = (status: string) => {
     switch (status) {
       case "pending":
@@ -162,8 +204,12 @@ const Profile = () => {
                 <div className="flex flex-col items-center space-y-3 sm:space-y-4 py-4 sm:py-6">
                   <UserCircle className="h-16 w-16 sm:h-20 sm:w-20 text-primary" />
                   <div className="text-center">
-                    <h2 className="text-lg sm:text-xl font-bold">{user.name}</h2>
-                    <p className="text-gray-500 text-xs sm:text-sm">{user.email}</p>
+                    <h2 className="text-lg sm:text-xl font-bold">
+                      {user.name}
+                    </h2>
+                    <p className="text-gray-500 text-xs sm:text-sm">
+                      {user.email}
+                    </p>
                   </div>
                 </div>
                 <div className="space-y-1.5 sm:space-y-2 mt-4 sm:mt-6">
@@ -184,7 +230,7 @@ const Profile = () => {
                     }
                     className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                     onClick={() => {
-                      setCurrentTab("subscriptions"); 
+                      setCurrentTab("subscriptions");
                       navigate("/profile?tab=subscriptions", { replace: true });
                     }}
                   >
@@ -219,7 +265,9 @@ const Profile = () => {
             {currentTab === "profile" && (
               <Card>
                 <CardHeader className="py-4 sm:py-6">
-                  <CardTitle className="text-lg sm:text-xl">Your Profile</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">
+                    Your Profile
+                  </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
                     Manage your account information and delivery address
                   </CardDescription>
@@ -235,11 +283,13 @@ const Profile = () => {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">Full Name</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">
+                              Full Name
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                className="text-xs sm:text-sm h-8 sm:h-10" 
-                                {...field} 
+                              <Input
+                                className="text-xs sm:text-sm h-8 sm:h-10"
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -252,11 +302,13 @@ const Profile = () => {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">Email</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">
+                              Email
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                className="text-xs sm:text-sm h-8 sm:h-10" 
-                                {...field} 
+                              <Input
+                                className="text-xs sm:text-sm h-8 sm:h-10"
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -269,11 +321,13 @@ const Profile = () => {
                         name="phone"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">Phone Number</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">
+                              Phone Number
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                className="text-xs sm:text-sm h-8 sm:h-10" 
-                                {...field} 
+                              <Input
+                                className="text-xs sm:text-sm h-8 sm:h-10"
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -286,11 +340,13 @@ const Profile = () => {
                         name="address"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">Delivery Address</FormLabel>
+                            <FormLabel className="text-xs sm:text-sm">
+                              Delivery Address
+                            </FormLabel>
                             <FormControl>
-                              <Input 
-                                className="text-xs sm:text-sm h-8 sm:h-10" 
-                                {...field} 
+                              <Input
+                                className="text-xs sm:text-sm h-8 sm:h-10"
+                                {...field}
                               />
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -319,7 +375,9 @@ const Profile = () => {
             {currentTab === "subscriptions" && (
               <Card>
                 <CardHeader className="py-4 sm:py-6">
-                  <CardTitle className="text-lg sm:text-xl">Your Subscriptions</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">
+                    Your Subscriptions
+                  </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
                     Manage your active meal plans and subscriptions
                   </CardDescription>
@@ -352,9 +410,11 @@ const Profile = () => {
                           className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
                         >
                           {/* Subscription Header - Always Visible */}
-                          <div 
+                          <div
                             className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-4 cursor-pointer"
-                            onClick={() => toggleSubscriptionDetails(subscription.id)}
+                            onClick={() =>
+                              toggleSubscriptionDetails(subscription.id)
+                            }
                           >
                             <div>
                               <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
@@ -366,7 +426,7 @@ const Profile = () => {
                                     subscription.isActive,
                                   )}`}
                                 >
-                                  {subscription.isActive ? "Active" : "Inactive"}
+                                  {subscription.status.toUpperCase()}
                                 </span>
                               </div>
                               <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
@@ -399,14 +459,57 @@ const Profile = () => {
                                 </span>
                               </p>
                               <div className="flex items-center gap-1.5 sm:gap-2">
-
-                                <ChevronRight 
-                                  className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedSubscriptionId === subscription.id ? 'rotate-90' : ''}`} 
+                                <ChevronRight
+                                  className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedSubscriptionId === subscription.id ? "rotate-90" : ""}`}
                                 />
                               </div>
                             </div>
                           </div>
-                          
+
+                          {/* Renewal Prompt for subscriptions ending within 2 days */}
+                          {needsRenewal(subscription) && (
+                            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                              <div className="flex items-start gap-3">
+                                <ClockIcon className="h-5 w-5 text-orange-600 mt-0.5" />
+                                <div className="flex-1">
+                                  <h4 className="text-sm font-semibold text-orange-800 mb-1">
+                                    Subscription Ending Soon!
+                                  </h4>
+                                  <p className="text-xs text-orange-700 mb-3">
+                                    Your subscription ends on{" "}
+                                    {format(new Date(subscription.endDate), "MMM d, yyyy")}. 
+                                    Renew now to continue enjoying your meals.
+                                  </p>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => renewSubscriptionMutation.mutate(subscription.id)}
+                                      disabled={renewSubscriptionMutation.isPending}
+                                      className="text-xs h-8"
+                                    >
+                                      {renewSubscriptionMutation.isPending ? (
+                                        <>
+                                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                          Renewing...
+                                        </>
+                                      ) : (
+                                        "Continue Existing Plan"
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => navigate("/subscription")}
+                                      className="text-xs h-8"
+                                    >
+                                      Change Plan
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Expanded Subscription Details */}
                           {expandedSubscriptionId === subscription.id && (
                             <div className="border-t mt-3 sm:mt-4 pt-3 sm:pt-4">
@@ -414,53 +517,110 @@ const Profile = () => {
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                                 {/* Left Column */}
                                 <div>
-                                  <h4 className="font-medium mb-3">Subscription Details</h4>
+                                  <h4 className="font-medium mb-3">
+                                    Subscription Details
+                                  </h4>
                                   <div className="bg-neutral-50 p-4 rounded-md space-y-3">
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Subscription ID:</span>
-                                      <span className="font-medium">{subscription.id}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">Status:</span>
-                                      <span className={`font-medium ${subscription.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                                        {subscription.isActive ? 'Active' : 'Inactive'}
+                                      <span className="text-gray-600">
+                                        Subscription ID:
+                                      </span>
+                                      <span className="font-medium">
+                                        {subscription.id}
                                       </span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Plan Type:</span>
-                                      <span className="font-medium capitalize">{subscription.plan}</span>
+                                      <span className="text-gray-600">
+                                        Status:
+                                      </span>
+                                      <span
+                                        className={`font-medium ${subscription.isActive ? "text-green-600" : "text-red-600"}`}
+                                      >
+                                        {subscription.status.toUpperCase()}
+                                      </span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Next Billing:</span>
+                                      <span className="text-gray-600">
+                                        Plan Type:
+                                      </span>
+                                      <span className="font-medium capitalize">
+                                        {subscription.plan}
+                                      </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-600">
+                                        Next Billing:
+                                      </span>
                                       <span className="font-medium">
                                         {format(
-                                          new Date(subscription.nextBillingDate || new Date(subscription.startDate).setMonth(new Date(subscription.startDate).getMonth() + 1)),
-                                          "MMMM d, yyyy"
+                                          new Date(
+                                            subscription.nextBillingDate ||
+                                              new Date(
+                                                subscription.startDate,
+                                              ).setMonth(
+                                                new Date(
+                                                  subscription.startDate,
+                                                ).getMonth() + 1,
+                                              ),
+                                          ),
+                                          "MMMM d, yyyy",
                                         )}
                                       </span>
                                     </div>
                                     <div className="flex justify-between">
-                                      <span className="text-gray-600">Payment Method:</span>
-                                      <span className="font-medium capitalize">{subscription.paymentMethod || 'Credit Card'}</span>
+                                      <span className="text-gray-600">
+                                        Payment Method:
+                                      </span>
+                                      <span className="font-medium capitalize">
+                                        {subscription.paymentMethod ||
+                                          "Credit Card"}
+                                      </span>
                                     </div>
                                   </div>
                                 </div>
-                                
+
                                 {/* Right Column */}
                                 <div>
-                                  <h4 className="font-medium mb-3">Plan Benefits</h4>
+                                  <h4 className="font-medium mb-3">
+                                    Plan Benefits
+                                  </h4>
                                   <div className="bg-neutral-50 p-4 rounded-md space-y-3">
                                     <div className="flex items-center gap-2">
                                       <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          className="text-green-600"
+                                        >
                                           <polyline points="20 6 9 17 4 12" />
                                         </svg>
                                       </span>
-                                      <span>{subscription.mealsPerMonth} meals per month</span>
+                                      <span>
+                                        {subscription.mealsPerMonth} meals per
+                                        month
+                                      </span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          className="text-green-600"
+                                        >
                                           <polyline points="20 6 9 17 4 12" />
                                         </svg>
                                       </span>
@@ -468,7 +628,18 @@ const Profile = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          className="text-green-600"
+                                        >
                                           <polyline points="20 6 9 17 4 12" />
                                         </svg>
                                       </span>
@@ -476,7 +647,18 @@ const Profile = () => {
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          className="text-green-600"
+                                        >
                                           <polyline points="20 6 9 17 4 12" />
                                         </svg>
                                       </span>
@@ -485,14 +667,15 @@ const Profile = () => {
                                   </div>
                                 </div>
                               </div>
-                              
+
                               {/* Action Buttons for Subscription */}
 
-                              
                               {/* Upcoming Deliveries */}
                               {subscription.isActive && (
                                 <div className="mt-6">
-                                  <h4 className="font-medium mb-3">Upcoming Deliveries</h4>
+                                  <h4 className="font-medium mb-3">
+                                    Upcoming Deliveries
+                                  </h4>
                                   <div className="border rounded-md overflow-hidden">
                                     <div className="bg-gray-50 p-3 border-b">
                                       <div className="grid grid-cols-3 font-medium">
@@ -505,18 +688,33 @@ const Profile = () => {
                                       {/* Generate next 2 upcoming deliveries */}
                                       {[...Array(2)].map((_, index) => {
                                         const deliveryDate = new Date();
-                                        deliveryDate.setDate(deliveryDate.getDate() + (index + 1) * 7);
-                                        
+                                        deliveryDate.setDate(
+                                          deliveryDate.getDate() +
+                                            (index + 1) * 7,
+                                        );
+
                                         return (
-                                          <div key={index} className="p-3 grid grid-cols-3 items-center">
-                                            <div>{format(deliveryDate, "MMMM d, yyyy")}</div>
+                                          <div
+                                            key={index}
+                                            className="p-3 grid grid-cols-3 items-center"
+                                          >
+                                            <div>
+                                              {format(
+                                                deliveryDate,
+                                                "MMMM d, yyyy",
+                                              )}
+                                            </div>
                                             <div>
                                               <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
                                                 Scheduled
                                               </span>
                                             </div>
                                             <div>
-                                              <Button variant="ghost" size="sm" className="h-8 px-2 text-primary">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 px-2 text-primary"
+                                              >
                                                 Customize
                                               </Button>
                                             </div>
@@ -540,7 +738,9 @@ const Profile = () => {
             {currentTab === "orders" && (
               <Card>
                 <CardHeader className="py-4 sm:py-6">
-                  <CardTitle className="text-lg sm:text-xl">Order History</CardTitle>
+                  <CardTitle className="text-lg sm:text-xl">
+                    Order History
+                  </CardTitle>
                   <CardDescription className="text-xs sm:text-sm">
                     View your past orders and delivery status
                   </CardDescription>
@@ -568,11 +768,11 @@ const Profile = () => {
                   ) : (
                     <div className="space-y-3 sm:space-y-4">
                       {orders.map((order: any) => (
-                        <div 
-                          key={order.id} 
+                        <div
+                          key={order.id}
                           className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
                         >
-                          <div 
+                          <div
                             className="flex flex-col sm:flex-row justify-between mb-3 sm:mb-4 gap-2 cursor-pointer"
                             onClick={() => toggleOrderDetails(order.id)}
                           >
@@ -598,8 +798,8 @@ const Profile = () => {
                               <p className="text-sm sm:text-base font-bold text-primary">
                                 {formatPrice(order.totalPrice)}
                               </p>
-                              <ChevronRight 
-                                className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? 'rotate-90' : ''}`} 
+                              <ChevronRight
+                                className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedOrderId === order.id ? "rotate-90" : ""}`}
                               />
                             </div>
                           </div>
@@ -607,49 +807,71 @@ const Profile = () => {
                             /* Expanded Order Summary */
                             <div className="border-t pt-3 sm:pt-4">
                               {/* Order Summary Header */}
-                              <h4 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">Order Summary</h4>
-                              
+                              <h4 className="text-base sm:text-lg font-medium mb-3 sm:mb-4">
+                                Order Summary
+                              </h4>
+
                               {/* Item Details Section */}
                               <div className="mb-4 sm:mb-6">
-                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">Item Details</h5>
+                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">
+                                  Item Details
+                                </h5>
                                 <div className="space-y-2 sm:space-y-3">
                                   {order.items?.map((item: any) => (
-                                    <div key={item.id} className="flex justify-between bg-neutral-50 p-2 sm:p-3 rounded-md">
+                                    <div
+                                      key={item.id}
+                                      className="flex justify-between bg-neutral-50 p-2 sm:p-3 rounded-md"
+                                    >
                                       <div className="flex gap-2 sm:gap-3">
                                         <div className="w-12 h-12 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
                                           <img
-                                            src={item.meal?.imageUrl || "https://via.placeholder.com/64?text=Meal"}
+                                            src={
+                                              item.meal?.imageUrl ||
+                                              "https://via.placeholder.com/64?text=Meal"
+                                            }
                                             alt={item.meal?.name}
                                             className="w-full h-full object-cover"
                                           />
                                         </div>
                                         <div>
-                                          <p className="font-medium text-sm sm:text-base">{item.meal?.name}</p>
-                                          <p className="text-xs sm:text-sm text-gray-600">Qty: {item.quantity}</p>
+                                          <p className="font-medium text-sm sm:text-base">
+                                            {item.meal?.name}
+                                          </p>
+                                          <p className="text-xs sm:text-sm text-gray-600">
+                                            Qty: {item.quantity}
+                                          </p>
                                           {item.curryOptionName && (
                                             <p className="text-xs sm:text-sm text-gray-600">
                                               Curry: {item.curryOptionName}
-                                              {item.curryOptionPrice > 0 && ` (+${formatPrice(item.curryOptionPrice)})`}
+                                              {item.curryOptionPrice > 0 &&
+                                                ` (+${formatPrice(item.curryOptionPrice)})`}
                                             </p>
                                           )}
                                           {item.notes && (
-                                            <p className="text-xs sm:text-sm text-gray-600">Notes: {item.notes}</p>
+                                            <p className="text-xs sm:text-sm text-gray-600">
+                                              Notes: {item.notes}
+                                            </p>
                                           )}
                                         </div>
                                       </div>
                                       <p className="font-medium text-xs sm:text-sm self-center">
                                         {formatPrice(
-                                          (item.price || (item.meal?.price + (item.curryOptionPrice || 0))) * item.quantity
+                                          (item.price ||
+                                            item.meal?.price +
+                                              (item.curryOptionPrice || 0)) *
+                                            item.quantity,
                                         )}
                                       </p>
                                     </div>
                                   ))}
                                 </div>
                               </div>
-                              
+
                               {/* Bill Details Section */}
                               <div className="mb-4 sm:mb-6 bg-gray-50 p-3 sm:p-4 rounded-md">
-                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">Bill Details</h5>
+                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">
+                                  Bill Details
+                                </h5>
                                 <div className="space-y-1.5 sm:space-y-2">
                                   <div className="flex justify-between text-xs sm:text-sm">
                                     <span>Item Total</span>
@@ -658,57 +880,94 @@ const Profile = () => {
                                   {order.deliveryFee > 0 && (
                                     <div className="flex justify-between text-xs sm:text-sm">
                                       <span>Delivery Fee</span>
-                                      <span>{formatPrice(order.deliveryFee)}</span>
+                                      <span>
+                                        {formatPrice(order.deliveryFee)}
+                                      </span>
                                     </div>
                                   )}
                                   {order.discount > 0 && (
                                     <div className="flex justify-between text-xs sm:text-sm text-green-600">
                                       <span>Discount</span>
-                                      <span>-{formatPrice(order.discount)}</span>
+                                      <span>
+                                        -{formatPrice(order.discount)}
+                                      </span>
                                     </div>
                                   )}
                                   <div className="border-t border-gray-200 mt-2 sm:mt-3 pt-2 sm:pt-3"></div>
                                   <div className="flex justify-between font-bold text-xs sm:text-sm">
                                     <span>Total</span>
-                                    <span>{formatPrice(order.finalAmount || order.totalPrice)}</span>
+                                    <span>
+                                      {formatPrice(
+                                        order.finalAmount || order.totalPrice,
+                                      )}
+                                    </span>
                                   </div>
                                 </div>
                               </div>
-                              
+
                               {/* Order Details Section */}
                               <div className="mb-4 sm:mb-6">
-                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">Order Details</h5>
+                                <h5 className="font-medium mb-2 sm:mb-3 text-sm sm:text-md">
+                                  Order Details
+                                </h5>
                                 <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                                   <div className="flex items-start gap-1.5 sm:gap-2">
-                                    <span className="font-medium w-24 sm:w-32">Payment Method:</span>
-                                    <span className="capitalize">{order.paymentMethod || 'Online payment'}</span>
+                                    <span className="font-medium w-24 sm:w-32">
+                                      Payment Method:
+                                    </span>
+                                    <span className="capitalize">
+                                      {order.paymentMethod || "Online payment"}
+                                    </span>
                                   </div>
                                   {order.razorpayOrderId && (
                                     <div className="flex items-start gap-1.5 sm:gap-2">
-                                      <span className="font-medium w-24 sm:w-32">Transaction ID:</span>
-                                      <span className="text-[9px] sm:text-xs font-mono bg-gray-100 p-0.5 sm:p-1 rounded truncate max-w-[150px] sm:max-w-none">{order.razorpayOrderId}</span>
+                                      <span className="font-medium w-24 sm:w-32">
+                                        Transaction ID:
+                                      </span>
+                                      <span className="text-[9px] sm:text-xs font-mono bg-gray-100 p-0.5 sm:p-1 rounded truncate max-w-[150px] sm:max-w-none">
+                                        {order.razorpayOrderId}
+                                      </span>
                                     </div>
                                   )}
                                   {order.deliveryAddress && (
                                     <div className="flex items-start gap-1.5 sm:gap-2">
-                                      <span className="font-medium w-24 sm:w-32">Delivery Address:</span>
-                                      <span className="break-words">{order.deliveryAddress}</span>
+                                      <span className="font-medium w-24 sm:w-32">
+                                        Delivery Address:
+                                      </span>
+                                      <span className="break-words">
+                                        {order.deliveryAddress}
+                                      </span>
                                     </div>
                                   )}
                                   {order.deliveryTime && (
                                     <div className="flex items-start gap-1.5 sm:gap-2">
-                                      <span className="font-medium w-24 sm:w-32">Delivery Time:</span>
-                                      <span>{format(new Date(order.deliveryTime), "MMM d, yyyy 'at' h:mm a")}</span>
+                                      <span className="font-medium w-24 sm:w-32">
+                                        Delivery Time:
+                                      </span>
+                                      <span>
+                                        {format(
+                                          new Date(order.deliveryTime),
+                                          "MMM d, yyyy 'at' h:mm a",
+                                        )}
+                                      </span>
                                     </div>
                                   )}
                                 </div>
                               </div>
-                              
+
                               {/* Support Section */}
                               <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
-                                <h5 className="font-medium mb-1.5 sm:mb-2 text-sm sm:text-base">Need Help?</h5>
-                                <p className="text-xs sm:text-sm mb-2 sm:mb-3">If you have any questions about your order, please contact our support team.</p>
-                                <Button variant="outline" className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 sm:h-9 text-xs sm:text-sm px-2.5 sm:px-4">
+                                <h5 className="font-medium mb-1.5 sm:mb-2 text-sm sm:text-base">
+                                  Need Help?
+                                </h5>
+                                <p className="text-xs sm:text-sm mb-2 sm:mb-3">
+                                  If you have any questions about your order,
+                                  please contact our support team.
+                                </p>
+                                <Button
+                                  variant="outline"
+                                  className="text-blue-600 border-blue-600 hover:bg-blue-50 h-8 sm:h-9 text-xs sm:text-sm px-2.5 sm:px-4"
+                                >
                                   Contact Support
                                 </Button>
                               </div>
@@ -716,7 +975,9 @@ const Profile = () => {
                           ) : (
                             /* Collapsed Order Summary (just show a few items) */
                             <div className="border-t pt-3 sm:pt-4">
-                              <h4 className="font-medium mb-1.5 sm:mb-2 text-sm sm:text-base">Order Items</h4>
+                              <h4 className="font-medium mb-1.5 sm:mb-2 text-sm sm:text-base">
+                                Order Items
+                              </h4>
                               <div className="space-y-1.5 sm:space-y-2">
                                 {order.items?.slice(0, 2).map((item: any) => (
                                   <div
@@ -726,7 +987,10 @@ const Profile = () => {
                                     <div className="flex items-center gap-1.5 sm:gap-2">
                                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded overflow-hidden">
                                         <img
-                                          src={item.meal?.imageUrl || "https://via.placeholder.com/40?text=Meal"}
+                                          src={
+                                            item.meal?.imageUrl ||
+                                            "https://via.placeholder.com/40?text=Meal"
+                                          }
                                           alt={item.meal?.name}
                                           className="w-full h-full object-cover"
                                         />
@@ -737,25 +1001,29 @@ const Profile = () => {
                                         </p>
                                         <p className="text-[10px] sm:text-sm text-gray-500">
                                           Qty: {item.quantity}
-                                          {item.curryOptionName && ` • ${item.curryOptionName}`}
+                                          {item.curryOptionName &&
+                                            ` • ${item.curryOptionName}`}
                                         </p>
                                       </div>
                                     </div>
                                     <p className="font-medium text-xs sm:text-sm">
                                       {formatPrice(
-                                        (item.price || (item.meal?.price + (item.curryOptionPrice || 0))) * item.quantity
+                                        (item.price ||
+                                          item.meal?.price +
+                                            (item.curryOptionPrice || 0)) *
+                                          item.quantity,
                                       )}
                                     </p>
                                   </div>
                                 ))}
-                                
+
                                 {order.items?.length > 2 && (
                                   <p className="text-[10px] sm:text-sm text-gray-500 mt-1.5 sm:mt-2">
                                     +{order.items.length - 2} more items
                                   </p>
                                 )}
                               </div>
-                              
+
                               {order.deliveryTime && (
                                 <div className="mt-3 sm:mt-4 text-xs sm:text-sm text-gray-600">
                                   <p>
@@ -765,7 +1033,9 @@ const Profile = () => {
                                       "MMM d, yyyy 'at' h:mm a",
                                     )}
                                   </p>
-                                  <p className="break-words">Delivery Address: {order.deliveryAddress}</p>
+                                  <p className="break-words">
+                                    Delivery Address: {order.deliveryAddress}
+                                  </p>
                                 </div>
                               )}
                             </div>

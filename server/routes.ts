@@ -999,6 +999,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Renew subscription endpoint
+  app.post("/api/subscriptions/:id/renew", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const subscriptionId = parseInt(req.params.id);
+      
+      const subscription = await mongoStorage.getSubscription(subscriptionId);
+      
+      if (!subscription) {
+        return res.status(404).json({ message: "Subscription not found" });
+      }
+      
+      if (subscription.userId !== userId) {
+        return res.status(403).json({ message: "You do not have permission to renew this subscription" });
+      }
+      
+      // Calculate new start and end dates for renewal
+      const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : new Date();
+      const newStartDate = new Date(currentEndDate);
+      newStartDate.setDate(currentEndDate.getDate() + 1); // Start the day after current subscription ends
+      
+      const planDuration = subscription.plan?.duration || subscription.duration || 30;
+      const newEndDate = new Date(newStartDate);
+      newEndDate.setDate(newStartDate.getDate() + planDuration);
+      
+      // Update subscription with new dates and active status
+      const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, {
+        startDate: newStartDate.toISOString(),
+        endDate: newEndDate.toISOString(),
+        status: "active",
+        updatedAt: new Date(),
+      });
+      
+      if (!updatedSubscription) {
+        return res.status(404).json({ message: "Failed to renew subscription" });
+      }
+      
+      // Calculate status for the renewed subscription
+      const renewedSubscriptionWithStatus = calculateSubscriptionStatus(updatedSubscription);
+      
+      res.json(renewedSubscriptionWithStatus);
+    } catch (err) {
+      console.error("Error renewing subscription:", err);
+      res.status(500).json({ message: "Error renewing subscription" });
+    }
+  });
+
   app.patch("/api/subscriptions/:id", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
