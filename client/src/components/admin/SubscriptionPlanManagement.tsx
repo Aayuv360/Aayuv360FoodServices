@@ -17,6 +17,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Edit, Save, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
+interface WeeklyMeals {
+  monday: { main: string; sides: string[] };
+  tuesday: { main: string; sides: string[] };
+  wednesday: { main: string; sides: string[] };
+  thursday: { main: string; sides: string[] };
+  friday: { main: string; sides: string[] };
+  saturday: { main: string; sides: string[] };
+  sunday: { main: string; sides: string[] };
+}
+
 interface Plan {
   id: string;
   type: "basic" | "premium" | "family";
@@ -26,6 +36,7 @@ interface Plan {
   description: string;
   features: string[];
   dietaryPreference: "veg" | "veg_with_egg" | "nonveg";
+  weeklyMeals?: WeeklyMeals;
 }
 
 export function SubscriptionPlanManagement() {
@@ -153,6 +164,15 @@ export function SubscriptionPlanManagement() {
         description: plan.description || "",
         features: plan.features || [],
         dietaryPreference: dietary as "veg" | "veg_with_egg" | "nonveg",
+        weeklyMeals: plan.weeklyMeals || {
+          monday: { main: "", sides: [""] },
+          tuesday: { main: "", sides: [""] },
+          wednesday: { main: "", sides: [""] },
+          thursday: { main: "", sides: [""] },
+          friday: { main: "", sides: [""] },
+          saturday: { main: "", sides: [""] },
+          sunday: { main: "", sides: [""] },
+        },
       });
       setIsEditDialogOpen(true);
     } else {
@@ -166,6 +186,15 @@ export function SubscriptionPlanManagement() {
         description: "",
         features: [],
         dietaryPreference: dietary as "veg" | "veg_with_egg" | "nonveg",
+        weeklyMeals: {
+          monday: { main: "", sides: [""] },
+          tuesday: { main: "", sides: [""] },
+          wednesday: { main: "", sides: [""] },
+          thursday: { main: "", sides: [""] },
+          friday: { main: "", sides: [""] },
+          saturday: { main: "", sides: [""] },
+          sunday: { main: "", sides: [""] },
+        },
       });
       setIsEditDialogOpen(true);
     }
@@ -213,6 +242,43 @@ export function SubscriptionPlanManagement() {
         ...editingPlan,
         features: newFeatures,
       });
+    }
+  };
+
+  const updateWeeklyMeal = (day: keyof WeeklyMeals, field: 'main' | 'sides', value: string | string[]) => {
+    if (editingPlan && editingPlan.weeklyMeals) {
+      setEditingPlan({
+        ...editingPlan,
+        weeklyMeals: {
+          ...editingPlan.weeklyMeals,
+          [day]: {
+            ...editingPlan.weeklyMeals[day],
+            [field]: value,
+          },
+        },
+      });
+    }
+  };
+
+  const addSideDish = (day: keyof WeeklyMeals) => {
+    if (editingPlan && editingPlan.weeklyMeals) {
+      const currentSides = editingPlan.weeklyMeals[day].sides;
+      updateWeeklyMeal(day, 'sides', [...currentSides, '']);
+    }
+  };
+
+  const removeSideDish = (day: keyof WeeklyMeals, index: number) => {
+    if (editingPlan && editingPlan.weeklyMeals) {
+      const currentSides = editingPlan.weeklyMeals[day].sides;
+      updateWeeklyMeal(day, 'sides', currentSides.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateSideDish = (day: keyof WeeklyMeals, index: number, value: string) => {
+    if (editingPlan && editingPlan.weeklyMeals) {
+      const currentSides = [...editingPlan.weeklyMeals[day].sides];
+      currentSides[index] = value;
+      updateWeeklyMeal(day, 'sides', currentSides);
     }
   };
 
@@ -441,6 +507,62 @@ export function SubscriptionPlanManagement() {
                       >
                         <X className="h-4 w-4" />
                       </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Weekly Meals Section */}
+              <div>
+                <label className="text-sm font-medium mb-4 block">Weekly Meals</label>
+                <div className="space-y-4">
+                  {editingPlan.weeklyMeals && Object.entries(editingPlan.weeklyMeals).map(([day, meals]) => (
+                    <div key={day} className="border rounded-lg p-4">
+                      <h4 className="font-medium capitalize mb-3">{day}</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-xs font-medium text-gray-600">Main Dish</label>
+                          <Input
+                            value={meals.main}
+                            onChange={(e) => updateWeeklyMeal(day as keyof WeeklyMeals, 'main', e.target.value)}
+                            placeholder={`Enter main dish for ${day}`}
+                            className="mt-1"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="text-xs font-medium text-gray-600">Side Dishes</label>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => addSideDish(day as keyof WeeklyMeals)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              Add Side
+                            </Button>
+                          </div>
+                          <div className="space-y-2">
+                            {meals.sides.map((side, index) => (
+                              <div key={index} className="flex gap-2">
+                                <Input
+                                  value={side}
+                                  onChange={(e) => updateSideDish(day as keyof WeeklyMeals, index, e.target.value)}
+                                  placeholder={`Enter side dish ${index + 1}`}
+                                  className="text-sm"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeSideDish(day as keyof WeeklyMeals, index)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
