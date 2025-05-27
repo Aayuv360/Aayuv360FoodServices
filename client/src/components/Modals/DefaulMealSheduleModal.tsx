@@ -24,12 +24,12 @@ export const DefaulMealSheduleModal = ({
           </DialogHeader>
           <div className="border-t pt-6 mb-2">
             <h4 className="font-medium text-sm mb-2">
-              Meal Schedule ({currentPlan.duration} days)
+              Meal Schedule ({currentPlan?.duration} days)
             </h4>
             <div className="flex flex-wrap gap-3 max-h-72 overflow-y-auto pr-2">
-              {currentPlan.weeklyMeals &&
+              {currentPlan?.weeklyMeals &&
                 Array.from({
-                  length: Math.min(currentPlan.duration, 30),
+                  length: Math.min(currentPlan?.duration, 30),
                 }).map((_, index) => {
                   const startDate = new Date(form.watch("startDate"));
                   const mealDate = new Date(startDate);
@@ -47,10 +47,7 @@ export const DefaulMealSheduleModal = ({
                   const dayName = dayNames[dayOfWeek];
 
                   const formattedDate = format(mealDate, "MMM d");
-                  const meals =
-                    currentPlan.weeklyMeals[
-                      dayName as keyof typeof currentPlan.weeklyMeals
-                    ];
+                  const meals = currentPlan?.weeklyMeals[dayName as any];
 
                   const curryType =
                     form.watch("dietaryPreference") === "vegetarian"

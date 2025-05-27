@@ -71,9 +71,55 @@ const addressSchema = z.object({
   pincode: z.string().min(6, "Valid pincode is required"),
   isDefault: z.boolean().default(false),
 });
+const weeklyMealsSchema = z.object({
+  monday: z.object({
+    main: z.string(),
+    sides: z.array(z.string()),
+  }),
+  tuesday: z.object({
+    main: z.string(),
+    sides: z.array(z.string()),
+  }),
+  wednesday: z.object({
+    main: z.string(),
+    sides: z.array(z.string()),
+  }),
+  thursday: z.object({
+    main: z.string(),
+    sides: z.array(z.string()),
+  }),
+  friday: z.object({
+    main: z.string(),
+    sides: z.array(z.string()),
+  }),
+  saturday: z.object({
+    main: z.string(),
+    sides: z.array(z.string()),
+  }),
+  sunday: z.object({
+    main: z.string(),
+    sides: z.array(z.string()),
+  }),
+});
 
+const planSchema = z.object({
+  _id: z.string(),
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+  duration: z.number(),
+  description: z.string(),
+  features: z.array(z.string()),
+  dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
+  planType: z.string(),
+  weeklyMeals: weeklyMealsSchema,
+  isActive: z.boolean(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+  __v: z.number(),
+});
 const subscriptionSchema = z.object({
-  plan: z.enum(["basic", "premium", "family"]),
+  plan: planSchema,
   dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
   personCount: z
     .number()
@@ -87,19 +133,6 @@ const subscriptionSchema = z.object({
   selectedAddressId: z.number().optional(),
   useNewAddress: z.boolean().default(false),
   newAddress: addressSchema.optional(),
-  paymentMethod: z.enum(["card", "upi", "bank"]),
-  cardNumber: z.string().optional(),
-  cardExpiry: z.string().optional(),
-  cardCvv: z.string().optional(),
-  upiId: z.string().optional(),
-  customMealSelections: z
-    .array(
-      z.object({
-        dayOfWeek: z.number(),
-        mealId: z.number(),
-      }),
-    )
-    .optional(),
 });
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
@@ -120,34 +153,14 @@ const Subscription = () => {
   const { user } = useAuth();
   const { initiatePayment } = useRazorpay();
   const [formStep, setFormStep] = useState<FormStep>("plan");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
-  const [selectedMealsByDay, setSelectedMealsByDay] = useState<{
-    [key: number]: number;
-  }>({});
-  const [mealOptionsByDay, setMealOptionsByDay] = useState<{
-    [key: number]: any[];
-  }>({});
   const [defaulMealModalOpen, setDefaulMealModalOpen] =
-    useState<boolean>(false);
-  const [customMealModalOpen, setCustomMealModalOpen] =
     useState<boolean>(false);
   const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedDietaryFilter, setSelectedDietaryFilter] = useState<
-    "veg" | "veg_with_egg" | "nonveg"
-  >("veg");
-
-  const { data: meals, isLoading: mealsLoading } = useQuery({
-    queryKey: ["/api/meals"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/meals");
-      return res.json();
-    },
-  });
+  const [filteredPlans, setFilteredPlans] = useState([]);
 
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
@@ -157,64 +170,57 @@ const Subscription = () => {
     },
   });
 
-  // Filter plans based on selected dietary preference
-  // Handle both grouped and flat API responses
-  const filteredPlans = subscriptionPlans
-    ? Array.isArray(subscriptionPlans) && subscriptionPlans[0]?.plans
-      ? // New grouped format
-        subscriptionPlans.find(group => group.dietaryPreference === selectedDietaryFilter)?.plans || []
-      : // Old flat format (fallback)
-        subscriptionPlans.filter((plan: any) => plan.dietaryPreference === selectedDietaryFilter)
-    : [];
-
   const defaultValues: SubscriptionFormValues = {
-    plan: (selectedPlanFromParams as any) || "basic",
+    plan: {
+      id: "veg-basic",
+      name: "Basic",
+      price: 2999,
+      duration: 30,
+      description: "Essential vegetarian millet meals for daily nutrition",
+      features: [
+        "15 meals per month",
+        "Basic meal variety",
+        "Standard delivery",
+      ],
+      dietaryPreference: "veg",
+      planType: "basic",
+      weeklyMeals: {
+        monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
+        tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+        wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
+        thursday: {
+          main: "Foxtail Millet Lemon Rice",
+          sides: ["Boondi Raita"],
+        },
+        friday: {
+          main: "Little Millet Pongal",
+          sides: ["Coconut Chutney"],
+        },
+        saturday: {
+          main: "Barnyard Millet Khichdi",
+          sides: ["Pickle", "Curd"],
+        },
+        sunday: {
+          main: "Pearl Millet Roti",
+          sides: ["Dal", "Vegetable Curry"],
+        },
+      },
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
     dietaryPreference: "veg",
     personCount: 1,
     subscriptionType: "default",
     startDate: new Date(),
     useNewAddress: false,
-    paymentMethod: "card",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCvv: "",
-    upiId: "",
-    customMealSelections: [],
   };
 
   const form = useForm<SubscriptionFormValues>({
     resolver: zodResolver(subscriptionSchema),
     defaultValues,
   });
-
-  // Fetch user's addresses
-  useEffect(() => {
-    if (user) {
-      apiRequest("GET", "/api/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          setAddresses(data);
-
-          // Set default address in form if available
-          const defaultAddress = data.find((addr: Address) => addr.isDefault);
-          if (defaultAddress) {
-            form.setValue("selectedAddressId", defaultAddress.id);
-          } else if (data.length > 0) {
-            form.setValue("selectedAddressId", data[0].id);
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching addresses:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load addresses",
-            variant: "destructive",
-          });
-        });
-    }
-  }, [user, toast, form]);
-
-  const paymentMethod = form.watch("paymentMethod");
+  const diet = form.watch("dietaryPreference");
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
 
@@ -229,50 +235,40 @@ const Subscription = () => {
 
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
-      const plan = subscriptionPlans?.find(
-        (p: any) => p.planType === data.plan,
-      );
-
-      if (!plan) {
-        throw new Error("Invalid plan selected");
-      }
+      console.log(data);
 
       const payload = {
         userId: user?.id,
-        plan: data.plan,
+        plan: data.plan.planType,
         subscriptionType: data.subscriptionType,
         startDate: data.startDate.toISOString(),
-        mealsPerMonth: plan.mealsPerMonth || 0,
-        price: plan.price || 0,
-        status: "pending", // Set as pending until payment is complete
-        paymentMethod: data.paymentMethod,
+        mealsPerMonth: 0,
+        price: data.plan.price || 0,
+        status: "pending",
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
+        paymentMethod: "razorpay", // Add required paymentMethod field
       };
 
-      // Create subscription in pending state
       const response = await apiRequest("POST", "/api/subscriptions", payload);
       const subscription = await response.json();
 
-      // Save subscription details for success page
       setSubscribedDetails({
-        planName: plan.name,
+        planName: data.plan.name,
         startDate: data.startDate,
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
         totalPrice: totalPrice,
       });
 
-      // Initiate Razorpay payment
       initiatePayment({
-        amount: plan.price || 0,
+        amount: data.plan.price || 0,
         orderId: subscription.id,
         type: "subscription",
-        description: `${plan.name} Millet Meal Subscription`,
+        description: `${data.plan.name} Millet Meal Subscription`,
         name: "Aayuv Millet Foods",
         theme: { color: "#9E6D38" },
         onSuccess: async (paymentData: RazorpayPaymentData) => {
-          // Update subscription status to active after successful payment
           await apiRequest("PATCH", `/api/subscriptions/${subscription.id}`, {
             status: "active",
             razorpayPaymentId: paymentData.razorpay_payment_id,
@@ -282,7 +278,7 @@ const Subscription = () => {
 
           toast({
             title: "Subscription Successful!",
-            description: `You have successfully subscribed to the ${plan.name} plan. Your millet meals will be delivered according to your schedule.`,
+            description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
             variant: "default",
           });
 
@@ -305,23 +301,14 @@ const Subscription = () => {
               "Failed to process your payment. Please try again.",
             variant: "destructive",
           });
-
-          // Stay on the current page - don't navigate anywhere on failure
-          // User can retry the payment or change options
         },
       });
 
       return subscription;
     },
     onSuccess: (data) => {
-      // Invalidate queries to refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-
-      // Save the subscription ID for the success screen
       localStorage.setItem("lastSubscriptionId", data.id.toString());
-
-      // Only update UI to show the success state
-      // We'll navigate to success page only after Razorpay payment is completed
       setIsSuccess(true);
     },
     onError: (error: any) => {
@@ -333,35 +320,6 @@ const Subscription = () => {
       });
     },
   });
-
-  const updateMealSelection = (dayOfWeek: number, mealId: number) => {
-    setSelectedMealsByDay((prev) => ({
-      ...prev,
-      [dayOfWeek]: mealId,
-    }));
-
-    const mealSelections = Object.entries(selectedMealsByDay).map(
-      ([day, mealId]) => ({
-        dayOfWeek: parseInt(day),
-        mealId: mealId as number,
-      }),
-    );
-
-    form.setValue("customMealSelections", mealSelections);
-  };
-
-  const getDayName = (dayNumber: number): string => {
-    const days = [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday",
-    ];
-    return days[dayNumber];
-  };
 
   const goToNextStep = () => {
     if (formStep === "plan") {
@@ -382,17 +340,6 @@ const Subscription = () => {
   const selectAddress = (addressId: number) => {
     form.setValue("selectedAddressId", addressId);
     form.setValue("useNewAddress", false);
-  };
-
-  const toggleNewAddressForm = () => {
-    form.setValue("useNewAddress", !form.watch("useNewAddress"));
-    if (form.watch("useNewAddress")) {
-      form.setValue("selectedAddressId", undefined);
-    }
-  };
-
-  const openNewAddressModal = () => {
-    setAddressModalOpen(true);
   };
 
   const selectLocation = (location: any) => {
@@ -473,20 +420,6 @@ const Subscription = () => {
       return;
     }
 
-    if (
-      values.subscriptionType === "customized" &&
-      Object.keys(selectedMealsByDay).length > 0
-    ) {
-      const mealSelections = Object.entries(selectedMealsByDay).map(
-        ([day, mealId]) => ({
-          dayOfWeek: parseInt(day),
-          mealId: mealId as number,
-        }),
-      );
-
-      values.customMealSelections = mealSelections;
-    }
-
     toast({
       title: "Processing subscription...",
       description: "Your subscription request is being processed.",
@@ -508,42 +441,50 @@ const Subscription = () => {
     }
   };
 
-  const basePlan =
-    SUBSCRIPTION_PLANS.find((p) => p.id === selectedPlan) ||
-    SUBSCRIPTION_PLANS[0];
   const dietaryPreference = form.watch("dietaryPreference");
   const personCount = form.watch("personCount") || 1;
   const priceAdjustment = getPriceAdjustment(dietaryPreference);
-
-  // Calculate price based on plan, dietary preference, and person count
-  const basePrice = basePlan.price;
+  const basePrice = selectedPlan?.price;
   const dietaryAddOn = priceAdjustment;
   const totalPricePerPerson = basePrice + dietaryAddOn;
   const totalPrice = totalPricePerPerson * personCount;
+  useEffect(() => {
+    const plans =
+      subscriptionPlans?.find((group: any) => group.dietaryPreference === diet)
+        ?.plans || [];
 
-  const currentPlan = {
-    ...basePlan,
-    price: totalPrice,
-    adjustedPrice: true,
-    basePrice: basePrice,
-    dietaryAddOn: dietaryAddOn,
-    personCount: personCount,
-    pricePerPerson: totalPricePerPerson,
-    basePriceText: `${formatPrice(basePrice)}${
-      dietaryAddOn > 0 ? ` + ${formatPrice(dietaryAddOn)}` : ""
-    }${personCount > 1 ? ` × ${personCount} persons` : ""}`,
-  };
+    setFilteredPlans(plans);
+    const defaultPlan = plans?.find((plan: any) => plan.planType === "basic");
+    if (defaultPlan) {
+      form.setValue("plan", defaultPlan);
+    }
+  }, [subscriptionPlans, diet]);
 
   useEffect(() => {
-    if (selectedPlanFromParams) {
-      const validPlan = SUBSCRIPTION_PLANS.find(
-        (p) => p.id === selectedPlanFromParams,
-      );
-      if (validPlan) {
-        form.setValue("plan", validPlan.id as any);
-      }
+    if (user) {
+      apiRequest("GET", "/api/addresses")
+        .then((res) => res.json())
+        .then((data) => {
+          setAddresses(data);
+
+          // Set default address in form if available
+          const defaultAddress = data.find((addr: Address) => addr.isDefault);
+          if (defaultAddress) {
+            form.setValue("selectedAddressId", defaultAddress.id);
+          } else if (data.length > 0) {
+            form.setValue("selectedAddressId", data[0].id);
+          }
+        })
+        .catch((error) => {
+          console.error("Error fetching addresses:", error);
+          toast({
+            title: "Error",
+            description: "Failed to load addresses",
+            variant: "destructive",
+          });
+        });
     }
-  }, [selectedPlanFromParams, form]);
+  }, [user, toast, form]);
 
   const { data: locations } = useQuery({
     queryKey: ["/api/locations", locationSearch],
@@ -558,7 +499,7 @@ const Subscription = () => {
       }
       return response.json();
     },
-    enabled: locationSearch.length > 1, // Only fetch when search query is more than 1 character
+    enabled: locationSearch.length > 1,
   });
 
   useEffect(() => {
@@ -567,93 +508,75 @@ const Subscription = () => {
     }
   }, [locations]);
 
-  useEffect(() => {
-    if (meals && meals.length > 0) {
-      const shuffledMeals = [...meals].sort(() => Math.random() - 0.5);
-      const mealCount = shuffledMeals.length;
-      const mealsPerDay = 7;
-
-      const mealsByDay: { [key: number]: any[] } = {};
-
-      for (let day = 0; day < 7; day++) {
-        const startIndex = (day * mealsPerDay) % mealCount;
-        let dayMeals = [];
-
-        for (let i = 0; i < mealsPerDay; i++) {
-          const index = (startIndex + i) % mealCount;
-          dayMeals.push(shuffledMeals[index]);
-        }
-
-        mealsByDay[day] = dayMeals;
-      }
-
-      setMealOptionsByDay(mealsByDay);
-    }
-  }, [meals]);
-
   const renderStepContent = () => {
     switch (formStep) {
       case "plan":
         return (
           <div className="space-y-6">
-            {/* Dietary Preference Selection */}
-            <div>
-              <h3 className="text-lg font-medium mb-4">Dietary Preference</h3>
+            <div className="flex justify-end">
               <div className="grid grid-cols-3 gap-3">
                 {[
                   {
                     value: "veg",
                     label: "Vegetarian",
+                    bg: "bg-green-100",
+                    text: "text-green-800",
+                    border: "border-green-300",
                   },
                   {
                     value: "veg_with_egg",
                     label: "Veg with Egg",
+                    bg: "bg-amber-100",
+                    text: "text-amber-800",
+                    border: "border-amber-300",
                   },
                   {
                     value: "nonveg",
                     label: "Non-Vegetarian",
+                    bg: "bg-red-100",
+                    text: "text-red-800",
+                    border: "border-red-300",
                   },
-                ].map(({ value, label }) => (
-                  <Button
-                    key={value}
-                    type="button"
-                    variant={
-                      form.watch("dietaryPreference") === value
-                        ? "default"
-                        : "outline"
-                    }
-                    className={`p-4 h-auto flex flex-col items-center gap-2`}
-                    onClick={() => form.setValue("dietaryPreference", value as "veg" | "veg_with_egg" | "nonveg")}
-                  >
-                    <span className="font-medium">{label}</span>
-                  </Button>
-                ))}
+                ].map(({ value, label, bg, text, border }) => {
+                  const isSelected = form.watch("dietaryPreference") === value;
+                  return (
+                    <Button
+                      key={value}
+                      type="button"
+                      variant="outline"
+                      className={`${
+                        isSelected ? `${bg} ${text} ${border}` : ""
+                      }`}
+                      onClick={() =>
+                        form.setValue(
+                          "dietaryPreference",
+                          value as "veg" | "veg_with_egg" | "nonveg",
+                        )
+                      }
+                    >
+                      <span className="font-medium">{label}</span>
+                    </Button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Plan Selection */}
             <div>
-              <h3 className="text-lg font-medium mb-4">Choose Your Plan</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 {filteredPlans?.map((plan: any) => (
                   <Card
                     key={plan.id}
                     className={`cursor-pointer transition-all border-2 ${
-                      form.watch("plan") === plan.planType
+                      selectedPlan?.planType === plan.planType
                         ? "border-primary bg-primary/5"
                         : "border-gray-200 hover:border-primary/50"
                     }`}
-                    onClick={() =>
-                      form.setValue(
-                        "plan",
-                        plan.planType as "basic" | "premium" | "family",
-                      )
-                    }
+                    onClick={() => form.setValue("plan", plan)}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg">{plan.name}</CardTitle>
-                        {form.watch("plan") === plan.planType && (
+                        {selectedPlan?.planType === plan.planType && (
                           <Check className="h-5 w-5 text-primary" />
                         )}
                       </div>
@@ -833,7 +756,7 @@ const Subscription = () => {
             <div className="bg-neutral-light rounded-lg p-4 border">
               <div className="flex items-center justify-between">
                 <p className="text-xl font-semibold text-primary">
-                  {currentPlan.name}
+                  {selectedPlan?.name}
                 </p>
                 <Badge
                   variant="outline"
@@ -853,7 +776,7 @@ const Subscription = () => {
                 </Badge>
               </div>
               <p className="text-sm text-gray-600 mt-1">
-                {currentPlan.description}
+                {selectedPlan?.description}
               </p>
               <div className="mt-3 bg-white p-3 rounded-md border border-gray-100">
                 <div className="flex justify-between items-center">
@@ -879,24 +802,12 @@ const Subscription = () => {
                   </span>
                 </div>
               </div>
-              <ul className="mt-3 space-y-2">
-                {currentPlan.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-start text-sm">
-                    {feature.included ? (
-                      <Check className="h-4 w-4 text-green-500 mt-0.5 mr-2" />
-                    ) : (
-                      <X className="h-4 w-4 text-gray-400 mt-0.5 mr-2" />
-                    )}
-                    <span>{feature.text}</span>
-                  </li>
-                ))}
-              </ul>
             </div>
 
             {/* Default Meal Schedule Modal */}
             {subscriptionType === "default" && (
               <DefaulMealSheduleModal
-                currentPlan={currentPlan}
+                currentPlan={selectedPlan}
                 form={form}
                 defaulMealModalOpen={defaulMealModalOpen}
                 setDefaulMealModalOpen={setDefaulMealModalOpen}
@@ -1061,115 +972,6 @@ const Subscription = () => {
                     )}
                   </div>
                 </div>
-
-                <FormField
-                  control={form.control}
-                  name="paymentMethod"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Payment Method</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select payment method" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="card">
-                            Credit/Debit Card
-                          </SelectItem>
-                          <SelectItem value="upi">UPI</SelectItem>
-                          <SelectItem value="bank">Bank Transfer</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {paymentMethod === "card" && (
-                  <div className="space-y-4 mt-4">
-                    <FormField
-                      control={form.control}
-                      name="cardNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Card Number</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="1234 5678 9012 3456"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="cardExpiry"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Expiry Date</FormLabel>
-                            <FormControl>
-                              <Input placeholder="MM/YY" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="cardCvv"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>CVV</FormLabel>
-                            <FormControl>
-                              <Input placeholder="123" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {paymentMethod === "upi" && (
-                  <FormField
-                    control={form.control}
-                    name="upiId"
-                    render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel>UPI ID</FormLabel>
-                        <FormControl>
-                          <Input placeholder="name@upi" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-
-                {paymentMethod === "bank" && (
-                  <div className="bg-neutral-light p-4 rounded-lg mt-4">
-                    <h3 className="font-medium mb-2">Bank Transfer Details</h3>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Account Name: Aayuv Services
-                    </p>
-                    <p className="text-sm text-gray-600 mb-1">
-                      Account Number: 1234567890
-                    </p>
-                    <p className="text-sm text-gray-600 mb-1">
-                      IFSC Code: MEAL0001234
-                    </p>
-                    <p className="text-sm text-gray-600">Bank: Millet Bank</p>
-                  </div>
-                )}
               </div>
 
               <div>
@@ -1177,7 +979,7 @@ const Subscription = () => {
                   <h3 className="font-medium mb-2">Order Summary</h3>
                   <p className="text-sm text-gray-600 mb-1">
                     <span className="font-medium">Plan:</span>{" "}
-                    {currentPlan.name}
+                    {selectedPlan.name}
                   </p>
                   <p className="text-sm text-gray-600 mb-1">
                     <span className="font-medium">Type:</span>{" "}
@@ -1196,7 +998,7 @@ const Subscription = () => {
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Base Plan Price</span>
                     <span className="text-sm">
-                      {formatPrice(basePlan.price)}/month
+                      {formatPrice(selectedPlan.price)}/month
                     </span>
                   </div>
                   {priceAdjustment > 0 && (
@@ -1264,12 +1066,6 @@ const Subscription = () => {
     }
   };
 
-  // Important: We're NOT using the isSuccess state for immediate navigation anymore.
-  // We will ONLY show this if the subscription is created but we're waiting for Razorpay payment
-  // completion. This is a temporary state while the Razorpay popup is open.
-  //
-  // The actual success page navigation happens ONLY in the onSuccess callback of the
-  // Razorpay payment flow, after payment verification completes successfully.
   if (isSuccess && subscribedDetails) {
     return (
       <div className="min-h-screen bg-neutral-light py-12">
@@ -1384,13 +1180,13 @@ const Subscription = () => {
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-center">
                     <CardTitle className="text-lg">
-                      {currentPlan.name}
+                      {selectedPlan.name}
                     </CardTitle>
                     <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                       <Check className="h-4 w-4 text-white" />
                     </div>
                   </div>
-                  <CardDescription>{currentPlan.description}</CardDescription>
+                  <CardDescription>{selectedPlan.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div>
@@ -1552,18 +1348,6 @@ const Subscription = () => {
                           if (!user) {
                             setAuthModalOpen(true);
                           } else {
-                            if (
-                              form.watch("subscriptionType") === "customized" &&
-                              Object.keys(selectedMealsByDay).length === 0
-                            ) {
-                              toast({
-                                title: "Meal selection required",
-                                description:
-                                  "Please select at least one meal for your customized plan",
-                                variant: "destructive",
-                              });
-                              return;
-                            }
                             goToNextStep();
                           }
                         }}
@@ -1623,7 +1407,7 @@ const Subscription = () => {
       <AuthModal
         isOpen={authModalOpen}
         onOpenChange={setAuthModalOpen}
-        redirectUrl={`/subscription?plan=${form.watch("plan")}`}
+        redirectUrl={`/subscription?plan=${selectedPlan?.planType}`}
       />
     </div>
   );
