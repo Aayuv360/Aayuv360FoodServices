@@ -347,6 +347,33 @@ const Subscription = () => {
       });
   };
 
+  const handleDeleteAddress = async (addressId: number) => {
+    try {
+      await apiRequest("DELETE", `/api/addresses/${addressId}`);
+      
+      // Remove the address from the list
+      setAddresses((prev) => prev.filter(addr => addr.id !== addressId));
+      
+      // If the deleted address was selected, clear the selection
+      if (form.watch("selectedAddressId") === addressId) {
+        form.setValue("selectedAddressId", undefined);
+      }
+      
+      toast({
+        title: "Address deleted",
+        description: "Your delivery address has been deleted successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete address. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const onSubmit = (values: SubscriptionFormValues) => {
     if (formStep === "address") {
       if (!values.selectedAddressId && !values.useNewAddress) {
@@ -800,6 +827,20 @@ const Subscription = () => {
                               }}
                             >
                               <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (confirm("Are you sure you want to delete this address?")) {
+                                  handleDeleteAddress(address.id);
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                             {form.watch("selectedAddressId") === address.id && (
                               <Check className="h-5 w-5 text-primary" />
