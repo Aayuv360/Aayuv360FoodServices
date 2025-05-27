@@ -152,6 +152,7 @@ const Subscription = () => {
     useState<boolean>(false);
   const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [deletingAddress, setDeletingAddress] = useState<Address | null>(null);
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -835,9 +836,7 @@ const Subscription = () => {
                               className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (confirm("Are you sure you want to delete this address?")) {
-                                  handleDeleteAddress(address.id);
-                                }
+                                setDeletingAddress(address);
                               }}
                             >
                               <Trash2 className="h-4 w-4" />
@@ -1278,6 +1277,57 @@ const Subscription = () => {
         onOpenChange={setAuthModalOpen}
         redirectUrl={`/subscription?plan=${selectedPlan?.planType}`}
       />
+
+      {/* Delete Address Confirmation Dialog */}
+      <Dialog open={!!deletingAddress} onOpenChange={() => setDeletingAddress(null)}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Address</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this address? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          {deletingAddress && (
+            <div className="py-4">
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="font-medium">{deletingAddress.name}</p>
+                <p className="text-sm text-gray-600 mt-1">
+                  {deletingAddress.addressLine1}
+                </p>
+                {deletingAddress.addressLine2 && (
+                  <p className="text-sm text-gray-600">
+                    {deletingAddress.addressLine2}
+                  </p>
+                )}
+                <p className="text-sm text-gray-600">
+                  {deletingAddress.city}, {deletingAddress.state} - {deletingAddress.pincode}
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeletingAddress(null)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => {
+                if (deletingAddress) {
+                  handleDeleteAddress(deletingAddress.id);
+                  setDeletingAddress(null);
+                }
+              }}
+            >
+              Delete Address
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
