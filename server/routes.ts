@@ -870,10 +870,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = (req.user as any).id;
       const subscriptions = await mongoStorage.getSubscriptionsByUserId(userId);
       
+      console.log("Raw subscriptions from DB:", JSON.stringify(subscriptions, null, 2));
+      
       // Calculate status for each subscription
-      const subscriptionsWithStatus = subscriptions.map((subscription: any) => 
-        calculateSubscriptionStatus(subscription)
-      );
+      const subscriptionsWithStatus = subscriptions.map((subscription: any, index: number) => {
+        console.log(`Processing subscription ${index}:`, {
+          id: subscription.id,
+          startDate: subscription.startDate,
+          plan: subscription.plan,
+          duration: subscription.duration
+        });
+        return calculateSubscriptionStatus(subscription);
+      });
       
       res.json(subscriptionsWithStatus);
     } catch (err) {
