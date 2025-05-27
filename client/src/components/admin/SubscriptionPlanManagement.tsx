@@ -5,25 +5,34 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Edit, Save, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface Plan {
   id: string;
-  type: 'basic' | 'premium' | 'family';
+  type: "basic" | "premium" | "family";
   name: string;
   price: number;
   duration: number;
   description: string;
   features: string[];
-  dietaryPreference: 'veg' | 'veg_with_egg' | 'nonveg';
+  dietaryPreference: "veg" | "veg_with_egg" | "nonveg";
 }
 
 export function SubscriptionPlanManagement() {
   const { toast } = useToast();
-  const [selectedDietary, setSelectedDietary] = useState<'veg' | 'veg_with_egg' | 'nonveg'>('veg');
+  const [selectedDietary, setSelectedDietary] = useState<
+    "veg" | "veg_with_egg" | "nonveg"
+  >("veg");
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -34,7 +43,9 @@ export function SubscriptionPlanManagement() {
       const res = await apiRequest("GET", "/api/admin/subscription-plans");
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to fetch subscription plans");
+        throw new Error(
+          errorData.message || "Failed to fetch subscription plans",
+        );
       }
       return await res.json();
     },
@@ -46,33 +57,39 @@ export function SubscriptionPlanManagement() {
       const res = await apiRequest("POST", "/api/admin/subscription-plans", {
         action: "update",
         planId: planData.id,
-        planData: planData
+        planData: planData,
       });
       if (!res.ok) {
         const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to update subscription plan");
+        throw new Error(
+          errorData.message || "Failed to update subscription plan",
+        );
       }
       return await res.json();
     },
     onSuccess: async (data) => {
       console.log("✅ Plan update successful:", data);
-      
+
       // Clear cache and refresh data
-      queryClient.removeQueries({ queryKey: ["/api/admin/subscription-plans"] });
+      queryClient.removeQueries({
+        queryKey: ["/api/admin/subscription-plans"],
+      });
       queryClient.removeQueries({ queryKey: ["/api/subscription-plans"] });
-      
+
       // Wait a moment for database to sync then refetch
       setTimeout(() => {
-        queryClient.refetchQueries({ queryKey: ["/api/admin/subscription-plans"] });
+        queryClient.refetchQueries({
+          queryKey: ["/api/admin/subscription-plans"],
+        });
       }, 100);
-      
+
       // Clear the form and close dialog
       setIsEditDialogOpen(false);
       setEditingPlan(null);
-      
+
       // Show success message
       toast({
-        title: "Success", 
+        title: "Success",
         description: "Subscription plan updated successfully",
       });
     },
@@ -86,34 +103,38 @@ export function SubscriptionPlanManagement() {
   });
 
   const dietaryPreferences = [
-    { key: 'veg', label: 'Veg', color: 'bg-green-100 text-green-800' },
-    { key: 'veg_with_egg', label: 'Veg with Egg', color: 'bg-yellow-100 text-yellow-800' },
-    { key: 'nonveg', label: 'Non-Veg', color: 'bg-red-100 text-red-800' }
+    { key: "veg", label: "Veg", color: "bg-green-100 text-green-800" },
+    {
+      key: "veg_with_egg",
+      label: "Veg with Egg",
+      color: "bg-yellow-100 text-yellow-800",
+    },
+    { key: "nonveg", label: "Non-Veg", color: "bg-red-100 text-red-800" },
   ];
 
   const planTypes = [
-    { key: 'basic', label: 'Basic', icon: '🥗' },
-    { key: 'premium', label: 'Premium', icon: '⭐' },
-    { key: 'family', label: 'Family', icon: '👨‍👩‍👧‍👦' }
+    { key: "basic", label: "Basic", icon: "🥗" },
+    { key: "premium", label: "Premium", icon: "⭐" },
+    { key: "family", label: "Family", icon: "👨‍👩‍👧‍👦" },
   ];
 
   const getPlansForDietary = (dietary: string) => {
     if (!subscriptionPlans) return [];
-    return subscriptionPlans.filter((plan: any) => {
-      // Map dietary preferences to match API data
-      const dietaryMap: Record<string, string> = {
-        'veg': 'veg',
-        'veg_with_egg': 'veg with egg',
-        'nonveg': 'nonveg'
-      };
-      return plan.dietaryPreference === dietaryMap[dietary] || 
-             plan.dietaryPreference === dietary;
-    });
+    
+    // Handle grouped API response structure
+    const group = subscriptionPlans.find((group: any) => 
+      group.dietaryPreference === dietary
+    );
+    
+    return group ? group.plans : [];
   };
 
   const getPlanByType = (dietary: string, type: string) => {
     const plans = getPlansForDietary(dietary);
-    return plans.find((plan: any) => plan.type === type || plan.name.toLowerCase().includes(type));
+    return plans.find(
+      (plan: any) =>
+        plan.planType === type || plan?.name?.toLowerCase() === type.toLowerCase(),
+    );
   };
 
   const formatPrice = (price: number) => {
@@ -124,27 +145,27 @@ export function SubscriptionPlanManagement() {
     const plan = getPlanByType(dietary, type);
     if (plan) {
       setEditingPlan({
-        id: plan.id || `${dietary}_${type}`,
-        type: type as 'basic' | 'premium' | 'family',
+        id: plan.id || plan._id || `${dietary}_${type}`,
+        type: (plan.planType || type) as "basic" | "premium" | "family",
         name: plan.name,
         price: plan.price,
         duration: plan.duration,
-        description: plan.description || '',
+        description: plan.description || "",
         features: plan.features || [],
-        dietaryPreference: dietary as 'veg' | 'veg_with_egg' | 'nonveg'
+        dietaryPreference: dietary as "veg" | "veg_with_egg" | "nonveg",
       });
       setIsEditDialogOpen(true);
     } else {
       // Create new plan
       setEditingPlan({
         id: `${dietary}_${type}`,
-        type: type as 'basic' | 'premium' | 'family',
+        type: type as "basic" | "premium" | "family",
         name: `${type.charAt(0).toUpperCase() + type.slice(1)} Plan`,
         price: 0,
         duration: 30,
-        description: '',
+        description: "",
         features: [],
-        dietaryPreference: dietary as 'veg' | 'veg_with_egg' | 'nonveg'
+        dietaryPreference: dietary as "veg" | "veg_with_egg" | "nonveg",
       });
       setIsEditDialogOpen(true);
     }
@@ -160,7 +181,7 @@ export function SubscriptionPlanManagement() {
     if (editingPlan) {
       setEditingPlan({
         ...editingPlan,
-        [field]: value
+        [field]: value,
       });
     }
   };
@@ -169,7 +190,7 @@ export function SubscriptionPlanManagement() {
     if (editingPlan) {
       setEditingPlan({
         ...editingPlan,
-        features: [...editingPlan.features, '']
+        features: [...editingPlan.features, ""],
       });
     }
   };
@@ -180,7 +201,7 @@ export function SubscriptionPlanManagement() {
       newFeatures[index] = value;
       setEditingPlan({
         ...editingPlan,
-        features: newFeatures
+        features: newFeatures,
       });
     }
   };
@@ -190,7 +211,7 @@ export function SubscriptionPlanManagement() {
       const newFeatures = editingPlan.features.filter((_, i) => i !== index);
       setEditingPlan({
         ...editingPlan,
-        features: newFeatures
+        features: newFeatures,
       });
     }
   };
@@ -225,7 +246,7 @@ export function SubscriptionPlanManagement() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {planTypes.map((planType) => {
             const plan = getPlanByType(selectedDietary, planType.key);
-            
+
             return (
               <Card key={planType.key} className="relative">
                 <CardHeader>
@@ -237,7 +258,9 @@ export function SubscriptionPlanManagement() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => openEditDialog(selectedDietary, planType.key)}
+                      onClick={() =>
+                        openEditDialog(selectedDietary, planType.key)
+                      }
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
@@ -249,48 +272,73 @@ export function SubscriptionPlanManagement() {
                     <>
                       <div>
                         <h3 className="font-semibold text-lg">{plan.name}</h3>
-                        <p className="text-2xl font-bold text-primary">{formatPrice(plan.price)}</p>
-                        <p className="text-sm text-muted-foreground">{plan.duration} days</p>
+                        <p className="text-2xl font-bold text-primary">
+                          {formatPrice(plan.price)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {plan.duration} days
+                        </p>
                       </div>
-                      
+
                       {plan.description && (
-                        <p className="text-sm text-muted-foreground">{plan.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {plan.description}
+                        </p>
                       )}
-                      
+
                       {plan.features && plan.features.length > 0 && (
                         <div>
-                          <h4 className="font-medium text-sm mb-2">Features:</h4>
+                          <h4 className="font-medium text-sm mb-2">
+                            Features:
+                          </h4>
                           <ul className="text-sm space-y-1">
-                            {plan.features.map((feature: string, index: number) => (
-                              <li key={index} className="flex items-start gap-2">
-                                <span className="text-green-500 mt-0.5">✓</span>
-                                {feature}
-                              </li>
-                            ))}
+                            {plan.features.map(
+                              (feature: string, index: number) => (
+                                <li
+                                  key={index}
+                                  className="flex items-start gap-2"
+                                >
+                                  <span className="text-green-500 mt-0.5">
+                                    ✓
+                                  </span>
+                                  {feature}
+                                </li>
+                              ),
+                            )}
                           </ul>
                         </div>
                       )}
-                      
+
                       {plan.weeklyMeals && (
                         <div>
-                          <h4 className="font-medium text-sm mb-2">Weekly Meals:</h4>
+                          <h4 className="font-medium text-sm mb-2">
+                            Weekly Meals:
+                          </h4>
                           <div className="text-xs space-y-1">
-                            {Object.entries(plan.weeklyMeals).map(([day, meals]: [string, any]) => (
-                              <div key={day}>
-                                <span className="font-medium">{day}:</span> {meals.mainDish}
-                                {meals.sides && ` + ${meals.sides.join(', ')}`}
-                              </div>
-                            ))}
+                            {Object.entries(plan.weeklyMeals).map(
+                              ([day, meals]: [string, any]) => (
+                                <div key={day}>
+                                  <span className="font-medium">{day}:</span>{" "}
+                                  {meals.mainDish}
+                                  {meals.sides &&
+                                    ` + ${meals.sides.join(", ")}`}
+                                </div>
+                              ),
+                            )}
                           </div>
                         </div>
                       )}
                     </>
                   ) : (
                     <div className="text-center py-6">
-                      <p className="text-muted-foreground mb-4">No plan configured</p>
+                      <p className="text-muted-foreground mb-4">
+                        No plan configured
+                      </p>
                       <Button
                         variant="outline"
-                        onClick={() => openEditDialog(selectedDietary, planType.key)}
+                        onClick={() =>
+                          openEditDialog(selectedDietary, planType.key)
+                        }
                       >
                         Create Plan
                       </Button>
@@ -308,13 +356,15 @@ export function SubscriptionPlanManagement() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Edit {editingPlan?.type?.charAt(0).toUpperCase()}{editingPlan?.type?.slice(1)} Plan
+              Edit {editingPlan?.type?.charAt(0).toUpperCase()}
+              {editingPlan?.type?.slice(1)} Plan
             </DialogTitle>
             <DialogDescription>
-              Configure the plan details for {selectedDietary} dietary preference
+              Configure the plan details for {selectedDietary} dietary
+              preference
             </DialogDescription>
           </DialogHeader>
-          
+
           {editingPlan && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -322,7 +372,7 @@ export function SubscriptionPlanManagement() {
                   <label className="text-sm font-medium">Plan Name</label>
                   <Input
                     value={editingPlan.name}
-                    onChange={(e) => updateEditingPlan('name', e.target.value)}
+                    onChange={(e) => updateEditingPlan("name", e.target.value)}
                     placeholder="Enter plan name"
                   />
                 </div>
@@ -331,32 +381,44 @@ export function SubscriptionPlanManagement() {
                   <Input
                     type="number"
                     value={editingPlan.price}
-                    onChange={(e) => updateEditingPlan('price', parseFloat(e.target.value) || 0)}
+                    onChange={(e) =>
+                      updateEditingPlan(
+                        "price",
+                        parseFloat(e.target.value) || 0,
+                      )
+                    }
                     placeholder="Enter price"
                   />
                 </div>
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium">Duration (days)</label>
                 <Input
                   type="number"
                   value={editingPlan.duration}
-                  onChange={(e) => updateEditingPlan('duration', parseInt(e.target.value) || 30)}
+                  onChange={(e) =>
+                    updateEditingPlan(
+                      "duration",
+                      parseInt(e.target.value) || 30,
+                    )
+                  }
                   placeholder="Enter duration"
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-medium">Description</label>
                 <Textarea
                   value={editingPlan.description}
-                  onChange={(e) => updateEditingPlan('description', e.target.value)}
+                  onChange={(e) =>
+                    updateEditingPlan("description", e.target.value)
+                  }
                   placeholder="Enter plan description"
                   rows={3}
                 />
               </div>
-              
+
               <div>
                 <div className="flex justify-between items-center mb-2">
                   <label className="text-sm font-medium">Features</label>
@@ -385,12 +447,15 @@ export function SubscriptionPlanManagement() {
               </div>
             </div>
           )}
-          
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsEditDialogOpen(false)}
+            >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSavePlan}
               disabled={updatePlanMutation.isPending}
             >

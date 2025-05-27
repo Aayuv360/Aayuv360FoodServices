@@ -56,35 +56,57 @@ interface CartItemWithMeal extends CartItem {
 
 // Utility function to calculate subscription status
 function calculateSubscriptionStatus(subscription: any) {
-  const startDate = new Date(subscription.startDate);
-  const currentDate = new Date();
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + subscription.plan.duration);
-  
-  // Reset time components for accurate date comparison
-  const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-  
-  let status = "inactive";
-  if (current < start) {
-    status = "inactive";
-  } else if (current.getTime() === end.getTime()) {
-    status = "completed";
-  } else if (current >= start && current < end) {
-    status = "active";
-  } else {
-    status = "completed";
+  try {
+    const startDate = new Date(subscription.startDate);
+    const currentDate = new Date();
+    
+    // Validate the start date
+    if (isNaN(startDate.getTime())) {
+      return {
+        ...subscription,
+        status: "inactive",
+        endDate: null,
+        daysRemaining: 0
+      };
+    }
+    
+    const planDuration = subscription.plan?.duration || subscription.duration || 30;
+    const endDate = new Date(startDate);
+    endDate.setDate(startDate.getDate() + planDuration);
+    
+    // Reset time components for accurate date comparison
+    const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+    const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+    const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
+    
+    let status = "inactive";
+    if (current < start) {
+      status = "inactive";
+    } else if (current.getTime() === end.getTime()) {
+      status = "completed";
+    } else if (current >= start && current < end) {
+      status = "active";
+    } else {
+      status = "completed";
+    }
+    
+    const daysRemaining = status === "active" ? Math.ceil((end.getTime() - current.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    
+    return {
+      ...subscription,
+      status,
+      endDate: endDate.toISOString(),
+      daysRemaining
+    };
+  } catch (error) {
+    console.error("Error calculating subscription status:", error);
+    return {
+      ...subscription,
+      status: "inactive",
+      endDate: null,
+      daysRemaining: 0
+    };
   }
-  
-  const daysRemaining = status === "active" ? Math.ceil((end.getTime() - current.getTime()) / (1000 * 60 * 60 * 24)) : 0;
-  
-  return {
-    ...subscription,
-    status,
-    endDate: endDate.toISOString(),
-    daysRemaining
-  };
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
