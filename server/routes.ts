@@ -73,49 +73,70 @@ function calculateSubscriptionStatus(subscription: any) {
         ...subscription,
         status: "inactive",
         endDate: null,
-        daysRemaining: 0
+        daysRemaining: 0,
       };
     }
-    
+
     const currentDate = new Date();
-    
+
     // Validate the start date
     if (isNaN(startDate.getTime())) {
-      console.log("Invalid start date for subscription:", subscription.id, "Date value:", subscription.startDate || subscription.start_date);
+      console.log(
+        "Invalid start date for subscription:",
+        subscription.id,
+        "Date value:",
+        subscription.startDate || subscription.start_date,
+      );
       return {
         ...subscription,
         status: "inactive",
         endDate: null,
-        daysRemaining: 0
+        daysRemaining: 0,
       };
     }
-    
+
     // Get duration from various possible sources
-    const planDuration = subscription.plan?.duration || 
-                        subscription.duration || 
-                        subscription.meals_per_month || 
-                        subscription.mealsPerMonth || 
-                        30;
-    
+    const planDuration =
+      subscription.plan?.duration ||
+      subscription.duration ||
+      subscription.meals_per_month ||
+      subscription.mealsPerMonth ||
+      30;
+
     const endDate = new Date(startDate);
     endDate.setDate(startDate.getDate() + planDuration);
-    
+
     // Validate the end date
     if (isNaN(endDate.getTime())) {
-      console.log("Invalid end date calculation for subscription:", subscription.id);
+      console.log(
+        "Invalid end date calculation for subscription:",
+        subscription.id,
+      );
       return {
         ...subscription,
         status: "inactive",
         endDate: null,
-        daysRemaining: 0
+        daysRemaining: 0,
       };
     }
-    
+
     // Reset time components for accurate date comparison
-    const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-    const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-    const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-    
+    const current = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate(),
+    );
+    const start = new Date(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate(),
+    );
+    const end = new Date(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      endDate.getDate(),
+    );
+
     let status = "inactive";
     if (current < start) {
       status = "inactive";
@@ -126,22 +147,31 @@ function calculateSubscriptionStatus(subscription: any) {
     } else {
       status = "completed";
     }
+
+    const daysRemaining =
+      status === "active"
+        ? Math.ceil((end.getTime() - current.getTime()) / (1000 * 60 * 60 * 24))
+        : 0;
     
-    const daysRemaining = status === "active" ? Math.ceil((end.getTime() - current.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+    const finalEndDate = isNaN(endDate.getTime()) ? null : endDate.toISOString();
     
     return {
       ...subscription,
       status,
-      endDate: endDate.toISOString(),
-      daysRemaining
+      endDate: finalEndDate,
+      daysRemaining,
     };
   } catch (error) {
-    console.error("Error calculating subscription status for subscription:", subscription.id, error);
+    console.error(
+      "Error calculating subscription status for subscription:",
+      subscription.id,
+      error,
+    );
     return {
       ...subscription,
       status: "inactive",
       endDate: null,
-      daysRemaining: 0
+      daysRemaining: 0,
     };
   }
 }
@@ -885,23 +915,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       const subscriptions = await mongoStorage.getSubscriptionsByUserId(userId);
-      
+
       // Calculate status for each subscription with enhanced error handling
       const subscriptionsWithStatus = subscriptions.map((subscription: any) => {
         try {
           return calculateSubscriptionStatus(subscription);
         } catch (statusError) {
-          console.error("Failed to calculate status for subscription:", subscription.id, statusError);
+          console.error(
+            "Failed to calculate status for subscription:",
+            subscription.id,
+            statusError,
+          );
           // Return subscription with default status to prevent complete failure
           return {
             ...subscription,
             status: "inactive",
             endDate: null,
-            daysRemaining: 0
+            daysRemaining: 0,
           };
         }
       });
-      
+
       res.json(subscriptionsWithStatus);
     } catch (err) {
       console.error("Error fetching user subscriptions:", err);
@@ -1399,7 +1433,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
 
             // Calculate subscription status
-            const subscriptionWithStatus = calculateSubscriptionStatus(subscription);
+            const subscriptionWithStatus =
+              calculateSubscriptionStatus(subscription);
 
             return {
               ...subscriptionWithStatus,
