@@ -34,19 +34,21 @@ const SubscriptionPlans = () => {
   });
 
   // Transform API data to match component interface
-  const plans: Plan[] = apiPlans ? apiPlans
-    .filter((plan: any) => plan.dietaryPreference === 'veg') // Show vegetarian plans by default
-    .map((plan: any) => ({
+  const plans: Plan[] = apiPlans ? (() => {
+    // Find the vegetarian group (default)
+    const vegGroup = apiPlans.find((group: any) => group.dietaryPreference === 'veg');
+    return vegGroup?.plans?.map((plan: any) => ({
       id: plan.id,
       name: plan.name,
       price: plan.price,
       featured: plan.planType === 'premium',
-      mealsPerMonth: plan.features.length > 0 ? parseInt(plan.features[0].split(' ')[0]) || 15 : 15,
-      features: plan.features.map((feature: string) => ({
+      mealsPerMonth: plan.features?.length > 0 ? parseInt(plan.features[0].split(' ')[0]) || 15 : 15,
+      features: plan.features?.map((feature: string) => ({
         text: feature,
         included: true
-      }))
-    })) : [];
+      })) || []
+    })) || [];
+  })() : [];
 
   const handleSelectPlan = (plan: Plan) => {
     navigate(`/subscription?plan=${plan.id}`);

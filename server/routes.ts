@@ -651,7 +651,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     .get(isAuthenticated, isManagerOrAdmin, async (req, res) => {
       try {
         const plans = await mongoStorage.getAllSubscriptionPlans();
-        res.json(plans);
+        
+        // Group plans by dietary preference for admin portal
+        const groupedPlans = [
+          {
+            dietaryPreference: 'veg',
+            plans: plans.filter(plan => plan.dietaryPreference === 'veg'),
+            extraPrice: 0,
+            id: 1
+          },
+          {
+            dietaryPreference: 'veg_with_egg',
+            plans: plans.filter(plan => plan.dietaryPreference === 'veg_with_egg'),
+            extraPrice: 0,
+            id: 2
+          },
+          {
+            dietaryPreference: 'nonveg',
+            plans: plans.filter(plan => plan.dietaryPreference === 'nonveg'),
+            extraPrice: 0,
+            id: 3
+          }
+        ].filter(group => group.plans.length > 0); // Only include groups that have plans
+        
+        res.json(groupedPlans);
       } catch (error) {
         console.error("Error fetching subscription plans:", error);
         res.status(500).json({ message: "Error fetching subscription plans" });

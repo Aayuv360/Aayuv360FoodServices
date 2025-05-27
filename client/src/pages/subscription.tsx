@@ -169,7 +169,7 @@ const Subscription = () => {
 
   const defaultValues: SubscriptionFormValues = {
     plan: (selectedPlanFromParams as any) || "basic",
-    dietaryPreference: "vegetarian",
+    dietaryPreference: "veg",
     personCount: 1,
     subscriptionType: "default",
     startDate: new Date(),
@@ -602,15 +602,15 @@ const Subscription = () => {
               <div className="grid grid-cols-3 gap-3">
                 {[
                   {
-                    value: "vegetarian",
+                    value: "veg",
                     label: "Vegetarian",
                   },
                   {
-                    value: "veg-with-egg",
+                    value: "veg_with_egg",
                     label: "Veg with Egg",
                   },
                   {
-                    value: "non-vegetarian",
+                    value: "nonveg",
                     label: "Non-Vegetarian",
                   },
                 ].map(({ value, label }) => (
@@ -838,16 +838,16 @@ const Subscription = () => {
                 <Badge
                   variant="outline"
                   className={
-                    form.watch("dietaryPreference") === "vegetarian"
+                    form.watch("dietaryPreference") === "veg"
                       ? "bg-green-100 text-green-800"
-                      : form.watch("dietaryPreference") === "veg-with-egg"
+                      : form.watch("dietaryPreference") === "veg_with_egg"
                         ? "bg-amber-100 text-amber-800"
                         : "bg-red-100 text-red-800"
                   }
                 >
-                  {form.watch("dietaryPreference") === "vegetarian"
+                  {form.watch("dietaryPreference") === "veg"
                     ? "Vegetarian"
-                    : form.watch("dietaryPreference") === "veg-with-egg"
+                    : form.watch("dietaryPreference") === "veg_with_egg"
                       ? "Veg with Egg"
                       : "Non-Vegetarian"}
                 </Badge>
