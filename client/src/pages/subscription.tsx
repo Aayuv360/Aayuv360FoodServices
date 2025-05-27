@@ -623,7 +623,7 @@ const Subscription = () => {
                         : "outline"
                     }
                     className={`p-4 h-auto flex flex-col items-center gap-2`}
-                    onClick={() => form.setValue("dietaryPreference", value)}
+                    onClick={() => form.setValue("dietaryPreference", value as "veg" | "veg_with_egg" | "nonveg")}
                   >
                     <span className="font-medium">{label}</span>
                   </Button>
@@ -1202,7 +1202,7 @@ const Subscription = () => {
                   {priceAdjustment > 0 && (
                     <div className="flex justify-between mb-1">
                       <span className="text-sm">
-                        {dietaryPreference === "veg-with-egg"
+                        {dietaryPreference === "veg_with_egg"
                           ? "Egg Option"
                           : "Non-Veg Option"}
                       </span>
@@ -1411,7 +1411,7 @@ const Subscription = () => {
                             <>
                               {" "}
                               +{" "}
-                              {dietaryPreference === "veg-with-egg"
+                              {dietaryPreference === "veg_with_egg"
                                 ? "Egg"
                                 : "Non-veg"}
                               : {formatPrice(dietaryAddOn)}
@@ -1436,16 +1436,16 @@ const Subscription = () => {
                       <Badge
                         variant="outline"
                         className={
-                          dietaryPreference === "vegetarian"
+                          dietaryPreference === "veg"
                             ? "bg-green-100 text-green-800"
-                            : dietaryPreference === "veg-with-egg"
+                            : dietaryPreference === "veg_with_egg"
                               ? "bg-amber-100 text-amber-800"
                               : "bg-red-100 text-red-800"
                         }
                       >
-                        {dietaryPreference === "vegetarian"
+                        {dietaryPreference === "veg"
                           ? "Vegetarian"
-                          : dietaryPreference === "veg-with-egg"
+                          : dietaryPreference === "veg_with_egg"
                             ? "Veg with Egg"
                             : "Non-Vegetarian"}
                       </Badge>
