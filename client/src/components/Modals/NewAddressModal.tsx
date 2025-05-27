@@ -208,13 +208,18 @@ export const NewAddressModal = ({
                       id="address-pincode"
                       name="pincode"
                       placeholder="6-digit pincode"
+                      defaultValue={editingAddress?.pincode || ""}
                       required
                     />
                   </div>
                 </div>
 
                 <div className="flex items-center space-x-2 pt-2">
-                  <Checkbox id="address-default" name="isDefault" />
+                  <Checkbox 
+                    id="address-default" 
+                    name="isDefault" 
+                    defaultChecked={editingAddress?.isDefault || false}
+                  />
                   <Label htmlFor="address-default" className="font-normal">
                     Set as default address
                   </Label>

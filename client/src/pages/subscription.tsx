@@ -306,25 +306,41 @@ const Subscription = () => {
       isDefault: Boolean(formData.get("isDefault")),
     };
 
-    apiRequest("POST", "/api/addresses", addressData)
+    const isEditing = editingAddress !== null;
+    const method = isEditing ? "PUT" : "POST";
+    const url = isEditing ? `/api/addresses/${editingAddress.id}` : "/api/addresses";
+
+    apiRequest(method, url, addressData)
       .then((res) => res.json())
       .then((data) => {
-        // Add the new address to the list
-        setAddresses((prev) => [...prev, data]);
-        selectAddress(data.id);
+        if (isEditing) {
+          // Update the existing address in the list
+          setAddresses((prev) => 
+            prev.map(addr => addr.id === editingAddress.id ? data : addr)
+          );
+          selectAddress(data.id);
+        } else {
+          // Add the new address to the list
+          setAddresses((prev) => [...prev, data]);
+          selectAddress(data.id);
+        }
+        
         setAddressModalOpen(false);
+        setEditingAddress(null);
 
         toast({
-          title: "Address added",
-          description: "Your new delivery address has been added successfully.",
+          title: isEditing ? "Address updated" : "Address added",
+          description: isEditing 
+            ? "Your delivery address has been updated successfully."
+            : "Your new delivery address has been added successfully.",
           variant: "default",
         });
       })
       .catch((error) => {
-        console.error("Error creating address:", error);
+        console.error(`Error ${isEditing ? 'updating' : 'creating'} address:`, error);
         toast({
           title: "Error",
-          description: "Failed to add address. Please try again.",
+          description: `Failed to ${isEditing ? 'update' : 'add'} address. Please try again.`,
           variant: "destructive",
         });
       });
