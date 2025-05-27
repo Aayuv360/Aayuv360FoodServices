@@ -654,7 +654,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const plans = await mongoStorage.getAllSubscriptionPlans();
 
-        res.json(plans);
+        // Group plans by dietary preference for admin portal
+        const groupedPlans = [
+          {
+            dietaryPreference: "veg",
+            plans: plans.filter((plan) => plan.dietaryPreference === "veg"),
+            extraPrice: 0,
+            id: 1,
+          },
+          {
+            dietaryPreference: "veg_with_egg",
+            plans: plans.filter(
+              (plan) => plan.dietaryPreference === "veg_with_egg",
+            ),
+            extraPrice: 0,
+            id: 2,
+          },
+          {
+            dietaryPreference: "nonveg",
+            plans: plans.filter((plan) => plan.dietaryPreference === "nonveg"),
+            extraPrice: 0,
+            id: 3,
+          },
+        ].filter((group) => group.plans.length > 0); // Only include groups that have plans
+
+        res.json(groupedPlans);
       } catch (error) {
         console.error("Error fetching subscription plans:", error);
         res.status(500).json({ message: "Error fetching subscription plans" });
@@ -709,15 +733,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
+  // Test endpoint to verify MongoDB data (temporary)
+  app.get("/api/test/subscription-plans", async (req, res) => {
+    try {
+      const plans = await mongoStorage.getAllSubscriptionPlans();
+      res.json({
+        success: true,
+        count: plans.length,
+        plans: plans,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // API endpoint for subscription plans (public - no auth required)
   app.get("/api/subscription-plans", async (req, res) => {
     try {
       console.log(
         "📋 Retrieved subscription plans from MongoDB - returning grouped format",
       );
 
-      const dbPlans = await mongoStorage.getAllSubscriptionPlans();
+      // Always get from MongoDB first
+      const activePlans = await mongoStorage.getAllSubscriptionPlans();
 
-      res.json(dbPlans);
+      // Group plans by dietary preference
+      const groupedPlans = [
+        {
+          dietaryPreference: "veg",
+          plans: activePlans.filter((plan) => plan.dietaryPreference === "veg"),
+          extraPrice: 0,
+          id: 1,
+        },
+        {
+          dietaryPreference: "veg_with_egg",
+          plans: activePlans.filter(
+            (plan) => plan.dietaryPreference === "veg_with_egg",
+          ),
+          extraPrice: 0,
+          id: 2,
+        },
+        {
+          dietaryPreference: "nonveg",
+          plans: activePlans.filter(
+            (plan) => plan.dietaryPreference === "nonveg",
+          ),
+          extraPrice: 0,
+          id: 3,
+        },
+      ].filter((group) => group.plans.length > 0);
+      res.json(groupedPlans);
     } catch (error) {
       console.error("Error fetching subscription plans:", error);
       res.status(500).json({ message: "Failed to fetch subscription plans" });

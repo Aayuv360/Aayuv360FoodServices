@@ -15,6 +15,7 @@ import {
   Plus,
   PlusCircle,
   CreditCard,
+  Edit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -28,13 +29,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -54,8 +49,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useRazorpay } from "@/hooks/use-razorpay";
-import { SUBSCRIPTION_PLANS } from "@/lib/constants";
-import { CustomMealSheduleModal } from "@/components/Modals/CustomMealSheduleModal";
 import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -157,6 +150,7 @@ const Subscription = () => {
   const [defaulMealModalOpen, setDefaulMealModalOpen] =
     useState<boolean>(false);
   const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
@@ -171,44 +165,7 @@ const Subscription = () => {
   });
 
   const defaultValues: SubscriptionFormValues = {
-    plan: {
-      id: "veg-basic",
-      name: "Basic",
-      price: 2999,
-      duration: 30,
-      description: "Essential vegetarian millet meals for daily nutrition",
-      features: [
-        "15 meals per month",
-        "Basic meal variety",
-        "Standard delivery",
-      ],
-      dietaryPreference: "veg",
-      planType: "basic",
-      weeklyMeals: {
-        monday: { main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
-        tuesday: { main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
-        wednesday: { main: "Millet Pulao", sides: ["Raita", "Papad"] },
-        thursday: {
-          main: "Foxtail Millet Lemon Rice",
-          sides: ["Boondi Raita"],
-        },
-        friday: {
-          main: "Little Millet Pongal",
-          sides: ["Coconut Chutney"],
-        },
-        saturday: {
-          main: "Barnyard Millet Khichdi",
-          sides: ["Pickle", "Curd"],
-        },
-        sunday: {
-          main: "Pearl Millet Roti",
-          sides: ["Dal", "Vegetable Curry"],
-        },
-      },
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
+    plan: undefined as any,
     dietaryPreference: "veg",
     personCount: 1,
     subscriptionType: "default",
@@ -223,15 +180,6 @@ const Subscription = () => {
   const diet = form.watch("dietaryPreference");
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
-
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [subscribedDetails, setSubscribedDetails] = useState<{
-    planName: string;
-    startDate: Date;
-    dietaryPreference: string;
-    personCount: number;
-    totalPrice: number;
-  } | null>(null);
 
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
@@ -250,14 +198,6 @@ const Subscription = () => {
 
       const response = await apiRequest("POST", "/api/subscriptions", payload);
       const subscription = await response.json();
-
-      setSubscribedDetails({
-        planName: data.plan.name,
-        startDate: data.startDate,
-        dietaryPreference: data.dietaryPreference,
-        personCount: data.personCount,
-        totalPrice: totalPrice,
-      });
 
       initiatePayment({
         amount: data.plan.price || 0,
@@ -280,13 +220,11 @@ const Subscription = () => {
             variant: "default",
           });
 
-          // Store the subscription ID in local storage for retrieval on success page
           localStorage.setItem(
             "lastSubscriptionId",
             subscription.id.toString(),
           );
 
-          // Redirect to payment success page only after successful payment
           navigate(
             `/payment-success?subscriptionId=${subscription.id}&type=subscription`,
           );
@@ -307,7 +245,6 @@ const Subscription = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
       localStorage.setItem("lastSubscriptionId", data.id.toString());
-      setIsSuccess(true);
     },
     onError: (error: any) => {
       toast({
@@ -341,7 +278,6 @@ const Subscription = () => {
   };
 
   const selectLocation = (location: any) => {
-    // Pre-fill the pincode field based on selected location
     const addressForm = document.getElementById(
       "address-form",
     ) as HTMLFormElement;
@@ -426,25 +362,10 @@ const Subscription = () => {
     subscriptionMutation.mutate(values);
   };
 
-  const getPriceAdjustment = (preference: string) => {
-    switch (preference) {
-      case "vegetarian":
-        return 0;
-      case "veg-with-egg":
-        return 200;
-      case "non-vegetarian":
-        return 500;
-      default:
-        return 0;
-    }
-  };
-
   const dietaryPreference = form.watch("dietaryPreference");
   const personCount = form.watch("personCount") || 1;
-  const priceAdjustment = getPriceAdjustment(dietaryPreference);
   const basePrice = selectedPlan?.price;
-  const dietaryAddOn = priceAdjustment;
-  const totalPricePerPerson = basePrice + dietaryAddOn;
+  const totalPricePerPerson = basePrice;
   const totalPrice = totalPricePerPerson * personCount;
   useEffect(() => {
     const plans =
@@ -779,9 +700,7 @@ const Subscription = () => {
               <div className="mt-3 bg-white p-3 rounded-md border border-gray-100">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Price per person:</span>
-                  <span className="text-sm">
-                    {formatPrice(basePrice + dietaryAddOn)}
-                  </span>
+                  <span className="text-sm">{formatPrice(basePrice)}</span>
                 </div>
                 {personCount > 1 && (
                   <div className="flex justify-between items-center mt-1">
@@ -818,13 +737,20 @@ const Subscription = () => {
         return (
           <div className="space-y-6">
             <div>
-              <h3 className="text-lg font-semibold mb-4">Delivery Address</h3>
               {addresses.length > 0 && (
                 <div className="mb-6">
-                  <h4 className="font-medium text-sm mb-3">
-                    Select an existing address
-                  </h4>
-                  <div className="space-y-3">
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex items-center justify-center"
+                      onClick={() => setAddressModalOpen(true)}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add New Address
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {addresses.map((address) => (
                       <div
                         key={address.id}
@@ -844,7 +770,20 @@ const Subscription = () => {
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center">
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingAddress(address);
+                                setAddressModalOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
                             {form.watch("selectedAddressId") === address.id && (
                               <Check className="h-5 w-5 text-primary" />
                             )}
@@ -870,26 +809,20 @@ const Subscription = () => {
                 </div>
               )}
 
-              <div className="mt-4 mb-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full flex items-center justify-center"
-                  onClick={() => setAddressModalOpen(true)}
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Add New Address
-                </Button>
-              </div>
-
               <NewAddressModal
                 addressModalOpen={addressModalOpen}
-                setAddressModalOpen={setAddressModalOpen}
+                setAddressModalOpen={(open) => {
+                  setAddressModalOpen(open);
+                  if (!open) {
+                    setEditingAddress(null);
+                  }
+                }}
                 locationSearch={locationSearch}
                 filteredLocations={filteredLocations}
                 handleAddressFormSubmit={handleAddressFormSubmit}
                 setLocationSearch={setLocationSearch}
                 selectLocation={selectLocation}
+                editingAddress={editingAddress}
               />
 
               <div className="border-t pt-4 mt-6">
@@ -999,23 +932,11 @@ const Subscription = () => {
                       {formatPrice(selectedPlan.price)}/month
                     </span>
                   </div>
-                  {priceAdjustment > 0 && (
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm">
-                        {dietaryPreference === "veg_with_egg"
-                          ? "Egg Option"
-                          : "Non-Veg Option"}
-                      </span>
-                      <span className="text-sm">
-                        + {formatPrice(priceAdjustment)}
-                      </span>
-                    </div>
-                  )}
 
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Price per person</span>
                     <span className="text-sm">
-                      {formatPrice(basePrice + dietaryAddOn)}/month
+                      {formatPrice(basePrice)}/month
                     </span>
                   </div>
 
@@ -1029,7 +950,7 @@ const Subscription = () => {
                   <div className="flex justify-between mb-1">
                     <span className="text-sm">Subtotal</span>
                     <span className="text-sm">
-                      {formatPrice((basePrice + dietaryAddOn) * personCount)}
+                      {formatPrice(basePrice * personCount)}
                       /month
                     </span>
                   </div>
@@ -1037,17 +958,13 @@ const Subscription = () => {
                   <div className="flex justify-between mb-2">
                     <span className="text-sm">Tax (5%)</span>
                     <span className="text-sm">
-                      {formatPrice(
-                        (basePrice + dietaryAddOn) * personCount * 0.05,
-                      )}
+                      {formatPrice(basePrice * personCount * 0.05)}
                     </span>
                   </div>
                   <div className="flex justify-between font-bold">
                     <span>Total</span>
                     <span className="text-primary">
-                      {formatPrice(
-                        (basePrice + dietaryAddOn) * personCount * 1.05,
-                      )}
+                      {formatPrice(basePrice * personCount * 1.05)}
                     </span>
                   </div>
                 </div>
@@ -1103,23 +1020,11 @@ const Subscription = () => {
                     <div className="text-xs text-gray-500">
                       {personCount > 1 ? (
                         <>
-                          {formatPrice(basePrice + dietaryAddOn)} per person ×{" "}
-                          {personCount} persons
+                          {formatPrice(basePrice)} per person × {personCount}{" "}
+                          persons
                         </>
                       ) : (
-                        <>
-                          Base: {formatPrice(basePrice)}
-                          {dietaryAddOn > 0 && (
-                            <>
-                              {" "}
-                              +{" "}
-                              {dietaryPreference === "veg_with_egg"
-                                ? "Egg"
-                                : "Non-veg"}
-                              : {formatPrice(dietaryAddOn)}
-                            </>
-                          )}
-                        </>
+                        <>Base: {formatPrice(basePrice)}</>
                       )}
                     </div>
 

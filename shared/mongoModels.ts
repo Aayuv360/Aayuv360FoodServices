@@ -30,21 +30,6 @@ export interface CurryOption {
   mealId?: number | null;
 }
 
-export interface WeeklyMeal {
-  main: string;
-  sides: string[];
-}
-
-export interface WeeklyMeals {
-  monday: WeeklyMeal;
-  tuesday: WeeklyMeal;
-  wednesday: WeeklyMeal;
-  thursday: WeeklyMeal;
-  friday: WeeklyMeal;
-  saturday: WeeklyMeal;
-  sunday: WeeklyMeal;
-}
-
 export interface SubscriptionPlanDocument extends Document {
   id: string;
   name: string;
@@ -54,11 +39,17 @@ export interface SubscriptionPlanDocument extends Document {
   features: string[];
   dietaryPreference: "veg" | "veg_with_egg" | "nonveg";
   planType: "basic" | "premium" | "family";
-  weeklyMeals: WeeklyMeals;
+  weeklyMeals?: {
+    [key: string]: {
+      main: string;
+      sides: string[];
+    };
+  };
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
+
 export interface MealDocument extends Document {
   id: number;
   name: string;
