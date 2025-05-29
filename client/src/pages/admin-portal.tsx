@@ -1,7 +1,17 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, PlusCircle, Edit, Trash2, Plus, Pencil, Trash, ArrowUpCircle, Bell } from "lucide-react";
+import {
+  Loader2,
+  PlusCircle,
+  Edit,
+  Trash2,
+  Plus,
+  Pencil,
+  Trash,
+  ArrowUpCircle,
+  Bell,
+} from "lucide-react";
 import LocationManagement from "@/components/admin/LocationManagement";
 import { SubscriptionPlanManagement } from "@/components/admin/SubscriptionPlanManagement";
 import { DeliveryManagement } from "@/components/admin/DeliveryManagement";
@@ -99,7 +109,7 @@ export default function AdminPortalPage() {
       return await res.json();
     },
   });
-  
+
   // Query to fetch curry options
   const { data: curryOptions, isLoading: isLoadingCurryOptions } = useQuery({
     queryKey: ["/api/admin/curry-options"],
@@ -250,7 +260,11 @@ export default function AdminPortalPage() {
   // Curry option mutations
   const createCurryOptionMutation = useMutation({
     mutationFn: async (optionData: any) => {
-      const res = await apiRequest("POST", "/api/admin/curry-options", optionData);
+      const res = await apiRequest(
+        "POST",
+        "/api/admin/curry-options",
+        optionData,
+      );
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to create curry option");
@@ -277,7 +291,11 @@ export default function AdminPortalPage() {
 
   const updateCurryOptionMutation = useMutation({
     mutationFn: async ({ id, optionData }: { id: string; optionData: any }) => {
-      const res = await apiRequest("PUT", `/api/admin/curry-options/${id}`, optionData);
+      const res = await apiRequest(
+        "PUT",
+        `/api/admin/curry-options/${id}`,
+        optionData,
+      );
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to update curry option");
@@ -464,29 +482,30 @@ export default function AdminPortalPage() {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    
-    const optionData = {
-      id: formData.get('id') as string || `curry_${Date.now()}`,
-      name: formData.get('name') as string,
-      priceAdjustment: parseFloat(formData.get('priceAdjustment') as string),
-      description: formData.get('description') as string || "",
-      mealIds: selectedMealIds // Use the state value directly
-    };
-    
 
-    
+    const optionData = {
+      id: (formData.get("id") as string) || `curry_${Date.now()}`,
+      name: formData.get("name") as string,
+      priceAdjustment: parseFloat(formData.get("priceAdjustment") as string),
+      description: (formData.get("description") as string) || "",
+      mealIds: selectedMealIds, // Use the state value directly
+    };
+
     if (selectedCurryOption) {
-      updateCurryOptionMutation.mutate({ id: selectedCurryOption.id, optionData });
+      updateCurryOptionMutation.mutate({
+        id: selectedCurryOption.id,
+        optionData,
+      });
     } else {
       createCurryOptionMutation.mutate(optionData);
     }
   };
-  
+
   // Toggle a meal ID in the selection
   const toggleMealSelection = (mealId: number) => {
-    setSelectedMealIds(current => {
+    setSelectedMealIds((current) => {
       if (current.includes(mealId)) {
-        return current.filter(id => id !== mealId);
+        return current.filter((id) => id !== mealId);
       } else {
         return [...current, mealId];
       }
@@ -531,7 +550,9 @@ export default function AdminPortalPage() {
           <TabsTrigger value="meals">Meals</TabsTrigger>
           <TabsTrigger value="curry-options">Curry Options</TabsTrigger>
           <TabsTrigger value="locations">Locations</TabsTrigger>
-          <TabsTrigger value="subscription-plans">Subscription Plans</TabsTrigger>
+          <TabsTrigger value="subscription-plans">
+            Subscription Plans
+          </TabsTrigger>
           <TabsTrigger value="deliveries">Deliveries</TabsTrigger>
         </TabsList>
 
@@ -1167,10 +1188,7 @@ export default function AdminPortalPage() {
                     <TableBody>
                       {!curryOptions || curryOptions.length === 0 ? (
                         <TableRow>
-                          <TableCell
-                            colSpan={6}
-                            className="text-center py-4"
-                          >
+                          <TableCell colSpan={6} className="text-center py-4">
                             No curry options found
                           </TableCell>
                         </TableRow>
@@ -1178,12 +1196,20 @@ export default function AdminPortalPage() {
                         curryOptions?.map((option: any) => (
                           <TableRow key={option.id}>
                             <TableCell>{option.id}</TableCell>
-                            <TableCell className="font-medium">{option.name}</TableCell>
-                            <TableCell>₹{option.priceAdjustment.toFixed(2)}</TableCell>
-                            <TableCell className="max-w-xs truncate">{option.description || '-'}</TableCell>
+                            <TableCell className="font-medium">
+                              {option.name}
+                            </TableCell>
+                            <TableCell>
+                              ₹{option.priceAdjustment.toFixed(2)}
+                            </TableCell>
+                            <TableCell className="max-w-xs truncate">
+                              {option.description || "-"}
+                            </TableCell>
                             <TableCell>
                               {option.mealIds && option.mealIds.length > 0 ? (
-                                <Badge variant="outline">{option.mealIds.length} meals</Badge>
+                                <Badge variant="outline">
+                                  {option.mealIds.length} meals
+                                </Badge>
                               ) : (
                                 <Badge variant="secondary">No meals</Badge>
                               )}
@@ -1201,7 +1227,9 @@ export default function AdminPortalPage() {
                                   size="sm"
                                   variant="ghost"
                                   className="text-red-500"
-                                  onClick={() => handleDeleteCurryOption(option.id)}
+                                  onClick={() =>
+                                    handleDeleteCurryOption(option.id)
+                                  }
                                 >
                                   <Trash2 size={16} />
                                 </Button>
@@ -1218,11 +1246,16 @@ export default function AdminPortalPage() {
           </Card>
 
           {/* Curry Option Dialog */}
-          <Dialog open={isCurryOptionDialogOpen} onOpenChange={setIsCurryOptionDialogOpen}>
+          <Dialog
+            open={isCurryOptionDialogOpen}
+            onOpenChange={setIsCurryOptionDialogOpen}
+          >
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>
-                  {selectedCurryOption ? "Edit Curry Option" : "Add Curry Option"}
+                  {selectedCurryOption
+                    ? "Edit Curry Option"
+                    : "Add Curry Option"}
                 </DialogTitle>
                 <DialogDescription>
                   {selectedCurryOption
@@ -1231,7 +1264,10 @@ export default function AdminPortalPage() {
                 </DialogDescription>
               </DialogHeader>
 
-              <form onSubmit={handleCurryOptionFormSubmit} className="space-y-6">
+              <form
+                onSubmit={handleCurryOptionFormSubmit}
+                className="space-y-6"
+              >
                 {selectedCurryOption && (
                   <input
                     type="hidden"
@@ -1239,13 +1275,10 @@ export default function AdminPortalPage() {
                     value={selectedCurryOption.id}
                   />
                 )}
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <label
-                      htmlFor="name"
-                      className="text-sm font-medium block"
-                    >
+                    <label htmlFor="name" className="text-sm font-medium block">
                       Name <span className="text-red-500">*</span>
                     </label>
                     <Input
@@ -1255,13 +1288,14 @@ export default function AdminPortalPage() {
                       required
                     />
                   </div>
-                  
+
                   <div className="space-y-2">
                     <label
                       htmlFor="priceAdjustment"
                       className="text-sm font-medium block"
                     >
-                      Price Adjustment (₹) <span className="text-red-500">*</span>
+                      Price Adjustment (₹){" "}
+                      <span className="text-red-500">*</span>
                     </label>
                     <Input
                       id="priceAdjustment"
@@ -1273,7 +1307,7 @@ export default function AdminPortalPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <label
                     htmlFor="description"
@@ -1288,7 +1322,7 @@ export default function AdminPortalPage() {
                     placeholder="Describe the curry option..."
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium block">
                     Associated Meals <span className="text-red-500">*</span>
@@ -1301,11 +1335,16 @@ export default function AdminPortalPage() {
                     ) : meals && meals.length > 0 ? (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                         {meals.map((meal: any) => (
-                          <div key={meal.id} className="flex items-start space-x-2">
-                            <Checkbox 
+                          <div
+                            key={meal.id}
+                            className="flex items-start space-x-2"
+                          >
+                            <Checkbox
                               id={`meal-${meal.id}`}
                               checked={selectedMealIds.includes(meal.id)}
-                              onCheckedChange={() => toggleMealSelection(meal.id)}
+                              onCheckedChange={() =>
+                                toggleMealSelection(meal.id)
+                              }
                             />
                             <label
                               htmlFor={`meal-${meal.id}`}
@@ -1314,7 +1353,8 @@ export default function AdminPortalPage() {
                             >
                               {meal.name}
                               <span className="text-xs block text-muted-foreground">
-                                {meal.category} • {meal.mealType === "veg" ? "Veg" : "Non-veg"}
+                                {meal.category} •{" "}
+                                {meal.mealType === "veg" ? "Veg" : "Non-veg"}
                               </span>
                             </label>
                           </div>
@@ -1330,7 +1370,9 @@ export default function AdminPortalPage() {
 
                 <DialogFooter className="pt-4 border-t">
                   <Button type="submit" className="w-full sm:w-auto">
-                    {selectedCurryOption ? "Update Curry Option" : "Create Curry Option"}
+                    {selectedCurryOption
+                      ? "Update Curry Option"
+                      : "Create Curry Option"}
                   </Button>
                 </DialogFooter>
               </form>
@@ -1344,10 +1386,6 @@ export default function AdminPortalPage() {
 
         <TabsContent value="subscription-plans" className="space-y-4">
           <SubscriptionPlanManagement />
-        </TabsContent>
-
-        <TabsContent value="deliveries" className="space-y-4">
-          <DeliveryManagement />
         </TabsContent>
       </Tabs>
     </div>

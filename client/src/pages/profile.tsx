@@ -1073,22 +1073,6 @@ const Profile = () => {
                 </CardContent>
               </Card>
             )}
-
-            {currentTab === "deliveries" && (
-              <Card>
-                <CardHeader className="py-4 sm:py-6">
-                  <CardTitle className="text-lg sm:text-xl">
-                    Delivery Schedule
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Track your upcoming meal deliveries and status updates
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <UserDeliverySchedule />
-                </CardContent>
-              </Card>
-            )}
           </div>
         </div>
       </div>
