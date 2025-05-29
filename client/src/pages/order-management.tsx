@@ -195,7 +195,6 @@ export default function OrderManagementPage() {
       >
         <TabsList>
           <TabsTrigger value="cart-orders">Cart Orders</TabsTrigger>
-          <TabsTrigger value="scheduled-deliveries">Today's Deliveries</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="subscription-management">Subscription Management</TabsTrigger>
         </TabsList>

@@ -7,8 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Eye, Calendar, DollarSign } from "lucide-react";
+import { Loader2, Eye, Calendar, DollarSign, Truck, Package, Clock } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { format } from "date-fns";
 
 export function SubscriptionManagement() {
   const { toast } = useToast();
@@ -26,6 +27,15 @@ export function SubscriptionManagement() {
         throw new Error(errorData.message || "Failed to fetch subscriptions");
       }
       return await res.json();
+    },
+  });
+
+  // Query to fetch today's deliveries
+  const { data: todayDeliveries, isLoading: isLoadingDeliveries } = useQuery({
+    queryKey: ["/api/delivery/today"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/delivery/today");
+      return res.json();
     },
   });
 
@@ -99,6 +109,43 @@ export function SubscriptionManagement() {
     if (now < startDate) return 'inactive';
     if (now > endDate) return 'completed';
     return 'active';
+  };
+
+  // Helper function to get today's delivery for a subscription
+  const getTodayDeliveryForSubscription = (subscriptionId: number) => {
+    return todayDeliveries?.find((delivery: any) => delivery.subscriptionId === subscriptionId);
+  };
+
+  // Helper function to get delivery status badge styling
+  const getDeliveryStatusBadge = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return 'bg-blue-100 text-blue-800';
+      case 'preparing':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'out_for_delivery':
+        return 'bg-purple-100 text-purple-800';
+      case 'delivered':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Helper function to get delivery status icon
+  const getDeliveryStatusIcon = (status: string) => {
+    switch (status) {
+      case 'scheduled':
+        return <Calendar className="h-3 w-3" />;
+      case 'preparing':
+        return <Package className="h-3 w-3" />;
+      case 'out_for_delivery':
+        return <Truck className="h-3 w-3" />;
+      case 'delivered':
+        return <Clock className="h-3 w-3" />;
+      default:
+        return <Clock className="h-3 w-3" />;
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -208,6 +255,8 @@ export function SubscriptionManagement() {
                   <TableHead>Start Date</TableHead>
                   <TableHead>End Date</TableHead>
                   <TableHead>Price</TableHead>
+                  <TableHead>Today's Delivery</TableHead>
+                  <TableHead>Delivery Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -230,6 +279,39 @@ export function SubscriptionManagement() {
                       <TableCell>{formatDate(subscription.startDate)}</TableCell>
                       <TableCell>{formatDate(endDate)}</TableCell>
                       <TableCell>{formatPrice(subscription.price)}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const todayDelivery = getTodayDeliveryForSubscription(subscription.id);
+                          if (!todayDelivery) {
+                            return <span className="text-gray-500 text-sm">No delivery today</span>;
+                          }
+                          return (
+                            <div className="text-sm">
+                              <div className="font-medium">{todayDelivery.mealPlan.main}</div>
+                              <div className="text-gray-600 text-xs">
+                                {todayDelivery.mealPlan.sides.slice(0, 2).join(", ")}
+                                {todayDelivery.mealPlan.sides.length > 2 && "..."}
+                              </div>
+                            </div>
+                          );
+                        })()}
+                      </TableCell>
+                      <TableCell>
+                        {(() => {
+                          const todayDelivery = getTodayDeliveryForSubscription(subscription.id);
+                          if (!todayDelivery) {
+                            return <span className="text-gray-500 text-sm">-</span>;
+                          }
+                          return (
+                            <Badge className={getDeliveryStatusBadge(todayDelivery.deliveryStatus)}>
+                              <span className="flex items-center gap-1">
+                                {getDeliveryStatusIcon(todayDelivery.deliveryStatus)}
+                                {todayDelivery.deliveryStatus.replace('_', ' ')}
+                              </span>
+                            </Badge>
+                          );
+                        })()}
+                      </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Select
