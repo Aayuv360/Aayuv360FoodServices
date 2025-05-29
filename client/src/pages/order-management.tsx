@@ -44,6 +44,15 @@ export default function OrderManagementPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [expandedOrderIds, setExpandedOrderIds] = useState<number[]>([]);
 
+  // Fetch today's scheduled deliveries
+  const { data: todayDeliveries, isLoading: isLoadingDeliveries } = useQuery({
+    queryKey: ["/api/delivery/today"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/delivery/today");
+      return res.json();
+    },
+  });
+
   // Fetch cart orders
   const { data: cartOrders, isLoading: isLoadingCartOrders } = useQuery({
     queryKey: ["/api/admin/orders"],
@@ -112,8 +121,8 @@ export default function OrderManagementPage() {
   }
 
   // Format date for display
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateInput: string | Date) => {
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
     return new Intl.DateTimeFormat('en-US', {
       day: 'numeric',
       month: 'short',
@@ -186,6 +195,7 @@ export default function OrderManagementPage() {
       >
         <TabsList>
           <TabsTrigger value="cart-orders">Cart Orders</TabsTrigger>
+          <TabsTrigger value="scheduled-deliveries">Today's Deliveries</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
           <TabsTrigger value="subscription-management">Subscription Management</TabsTrigger>
         </TabsList>
@@ -397,7 +407,7 @@ export default function OrderManagementPage() {
                         </TableCell>
                         <TableCell>{formatDate(subscription.startDate)}</TableCell>
                         <TableCell>
-                          {subscription.endDate ? formatDate(subscription.endDate) : formatDate(new Date(new Date(subscription.startDate).getTime() + (subscription.duration || 30) * 24 * 60 * 60 * 1000))}
+                          {subscription.endDate ? formatDate(subscription.endDate) : formatDate(new Date(new Date(subscription.startDate).getTime() + (subscription.duration || 30) * 24 * 60 * 60 * 1000).toISOString())}
                         </TableCell>
                         <TableCell>₹{subscription.price.toLocaleString()}</TableCell>
                         <TableCell>
