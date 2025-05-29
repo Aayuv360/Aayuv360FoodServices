@@ -11,6 +11,7 @@ import {
   History,
   LogOut,
   ChevronRight,
+  Truck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,6 +36,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
+import { UserDeliverySchedule } from "@/components/user/UserDeliverySchedule";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -147,19 +149,22 @@ const Profile = () => {
   // Helper function to check if subscription needs renewal (within 2 days)
   const needsRenewal = (subscription: any) => {
     if (!subscription.endDate || subscription.status !== "active") return false;
-    
+
     const endDate = new Date(subscription.endDate);
     const currentDate = new Date();
     const twoDaysFromNow = new Date();
-    twoDaysFromNow.setDate(currentDate.getDate() + 2);
-    
-    return endDate <= twoDaysFromNow;
+    twoDaysFromNow.setDate(currentDate.getDate() + 4);
+
+    return endDate <= twoDaysFromNow && endDate >= currentDate;
   };
 
   // Mutation for renewing subscription
   const renewSubscriptionMutation = useMutation({
     mutationFn: async (subscriptionId: number) => {
-      const res = await apiRequest("POST", `/api/subscriptions/${subscriptionId}/renew`);
+      const res = await apiRequest(
+        "POST",
+        `/api/subscriptions/${subscriptionId}/renew`,
+      );
       return res.json();
     },
     onSuccess: () => {
@@ -172,7 +177,8 @@ const Profile = () => {
     onError: (error: any) => {
       toast({
         title: "Renewal failed",
-        description: error.message || "There was an error renewing your subscription",
+        description:
+          error.message || "There was an error renewing your subscription",
         variant: "destructive",
       });
     },
@@ -247,6 +253,17 @@ const Profile = () => {
                   >
                     <History className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Order History
+                  </Button>
+                  <Button
+                    variant={currentTab === "deliveries" ? "default" : "ghost"}
+                    className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+                    onClick={() => {
+                      setCurrentTab("deliveries");
+                      navigate("/profile?tab=deliveries", { replace: true });
+                    }}
+                  >
+                    <Truck className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    Deliveries
                   </Button>
                   <Button
                     variant="ghost"
@@ -477,14 +494,23 @@ const Profile = () => {
                                   </h4>
                                   <p className="text-xs text-orange-700 mb-3">
                                     Your subscription ends on{" "}
-                                    {format(new Date(subscription.endDate), "MMM d, yyyy")}. 
-                                    Renew now to continue enjoying your meals.
+                                    {format(
+                                      new Date(subscription.endDate),
+                                      "MMM d, yyyy",
+                                    )}
+                                    . Renew now to continue enjoying your meals.
                                   </p>
                                   <div className="flex gap-2">
                                     <Button
                                       size="sm"
-                                      onClick={() => renewSubscriptionMutation.mutate(subscription.id)}
-                                      disabled={renewSubscriptionMutation.isPending}
+                                      onClick={() =>
+                                        renewSubscriptionMutation.mutate(
+                                          subscription.id,
+                                        )
+                                      }
+                                      disabled={
+                                        renewSubscriptionMutation.isPending
+                                      }
                                       className="text-xs h-8"
                                     >
                                       {renewSubscriptionMutation.isPending ? (
@@ -1044,6 +1070,22 @@ const Profile = () => {
                       ))}
                     </div>
                   )}
+                </CardContent>
+              </Card>
+            )}
+
+            {currentTab === "deliveries" && (
+              <Card>
+                <CardHeader className="py-4 sm:py-6">
+                  <CardTitle className="text-lg sm:text-xl">
+                    Delivery Schedule
+                  </CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
+                    Track your upcoming meal deliveries and status updates
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <UserDeliverySchedule />
                 </CardContent>
               </Card>
             )}

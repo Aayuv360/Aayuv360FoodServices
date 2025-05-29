@@ -21,6 +21,8 @@ import {
   CurryOption,
 } from "../shared/mongoModels";
 import { updateOrderDeliveryStatus } from "./delivery-status";
+import { deliveryScheduler } from "./delivery-scheduler";
+import { smsService } from "./sms-service";
 import {
   insertSubscriptionSchema,
   insertAddressSchema,
@@ -2329,6 +2331,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching meal curry options:", error);
       res.status(500).json({ message: "Failed to fetch meal curry options" });
+    }
+  });
+
+  // Delivery scheduling endpoints
+  app.get("/api/delivery/today", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const todayDeliveries = await deliveryScheduler.getTodayDeliveries();
+      res.json(todayDeliveries);
+    } catch (err) {
+      console.error("Error fetching today's deliveries:", err);
+      res.status(500).json({ message: "Error fetching delivery schedule" });
+    }
+  });
+
+  app.get("/api/delivery/user/:userId", isAuthenticated, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const requestingUserId = (req.user as any).id;
+      const isAdmin = (req.user as any).role === "admin" || (req.user as any).role === "manager";
+      
+      // Users can only see their own deliveries unless they're admin
+      if (userId !== requestingUserId && !isAdmin) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const userDeliveries = await deliveryScheduler.getUserDeliveries(userId);
+      res.json(userDeliveries);
+    } catch (err) {
+      console.error("Error fetching user deliveries:", err);
+      res.status(500).json({ message: "Error fetching user deliveries" });
+    }
+  });
+
+  app.get("/api/delivery/schedule", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const weeklySchedule = await deliveryScheduler.getWeeklyDeliverySchedule();
+      res.json(weeklySchedule);
+    } catch (err) {
+      console.error("Error fetching delivery schedule:", err);
+      res.status(500).json({ message: "Error fetching delivery schedule" });
+    }
+  });
+
+  // SMS notification endpoints
+  app.post("/api/notifications/send-today-deliveries", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const todayDeliveries = await deliveryScheduler.getTodayDeliveries();
+      const result = await smsService.sendTodayDeliveryNotifications(todayDeliveries);
+      
+      res.json({
+        message: "Notifications processed",
+        sent: result.sent,
+        failed: result.failed,
+        total: todayDeliveries.length
+      });
+    } catch (err) {
+      console.error("Error sending delivery notifications:", err);
+      res.status(500).json({ message: "Error sending notifications" });
+    }
+  });
+
+  app.post("/api/notifications/delivery-status", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const { userId, status, estimatedTime } = req.body;
+      
+      if (!userId || !status) {
+        return res.status(400).json({ message: "userId and status are required" });
+      }
+
+      const success = await smsService.sendStatusUpdateNotification(userId, status, estimatedTime);
+      
+      if (success) {
+        res.json({ message: "Status notification sent successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to send status notification" });
+      }
+    } catch (err) {
+      console.error("Error sending status notification:", err);
+      res.status(500).json({ message: "Error sending status notification" });
     }
   });
 
