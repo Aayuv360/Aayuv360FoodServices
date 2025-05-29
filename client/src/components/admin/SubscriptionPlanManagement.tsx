@@ -160,15 +160,15 @@ export function SubscriptionPlanManagement() {
         description: plan.description || "",
         features: plan.features || [],
         dietaryPreference: dietary as "veg" | "veg_with_egg" | "nonveg",
-        weeklyMeals: plan.weeklyMeals || {
-          monday: { main: "", sides: [""] },
-          tuesday: { main: "", sides: [""] },
-          wednesday: { main: "", sides: [""] },
-          thursday: { main: "", sides: [""] },
-          friday: { main: "", sides: [""] },
-          saturday: { main: "", sides: [""] },
-          sunday: { main: "", sides: [""] },
-        },
+        menuItems: plan.menuItems || [
+          { day: 1, main: "", sides: [""] },
+          { day: 2, main: "", sides: [""] },
+          { day: 3, main: "", sides: [""] },
+          { day: 4, main: "", sides: [""] },
+          { day: 5, main: "", sides: [""] },
+          { day: 6, main: "", sides: [""] },
+          { day: 7, main: "", sides: [""] },
+        ],
       });
       setIsEditDialogOpen(true);
     } else {
@@ -182,15 +182,15 @@ export function SubscriptionPlanManagement() {
         description: "",
         features: [],
         dietaryPreference: dietary as "veg" | "veg_with_egg" | "nonveg",
-        weeklyMeals: {
-          monday: { main: "", sides: [""] },
-          tuesday: { main: "", sides: [""] },
-          wednesday: { main: "", sides: [""] },
-          thursday: { main: "", sides: [""] },
-          friday: { main: "", sides: [""] },
-          saturday: { main: "", sides: [""] },
-          sunday: { main: "", sides: [""] },
-        },
+        menuItems: [
+          { day: 1, main: "", sides: [""] },
+          { day: 2, main: "", sides: [""] },
+          { day: 3, main: "", sides: [""] },
+          { day: 4, main: "", sides: [""] },
+          { day: 5, main: "", sides: [""] },
+          { day: 6, main: "", sides: [""] },
+          { day: 7, main: "", sides: [""] },
+        ],
       });
       setIsEditDialogOpen(true);
     }
@@ -241,40 +241,46 @@ export function SubscriptionPlanManagement() {
     }
   };
 
-  const updateWeeklyMeal = (day: keyof WeeklyMeals, field: 'main' | 'sides', value: string | string[]) => {
-    if (editingPlan && editingPlan.weeklyMeals) {
+  const updateMenuItem = (dayNumber: number, field: 'main' | 'sides', value: string | string[]) => {
+    if (editingPlan && editingPlan.menuItems) {
+      const updatedMenuItems = editingPlan.menuItems.map(item => 
+        item.day === dayNumber 
+          ? { ...item, [field]: value }
+          : item
+      );
       setEditingPlan({
         ...editingPlan,
-        weeklyMeals: {
-          ...editingPlan.weeklyMeals,
-          [day]: {
-            ...editingPlan.weeklyMeals[day],
-            [field]: value,
-          },
-        },
+        menuItems: updatedMenuItems,
       });
     }
   };
 
-  const addSideDish = (day: keyof WeeklyMeals) => {
-    if (editingPlan && editingPlan.weeklyMeals) {
-      const currentSides = editingPlan.weeklyMeals[day].sides;
-      updateWeeklyMeal(day, 'sides', [...currentSides, '']);
+  const addSideDish = (dayNumber: number) => {
+    if (editingPlan && editingPlan.menuItems) {
+      const menuItem = editingPlan.menuItems.find(item => item.day === dayNumber);
+      if (menuItem) {
+        updateMenuItem(dayNumber, 'sides', [...menuItem.sides, '']);
+      }
     }
   };
 
-  const removeSideDish = (day: keyof WeeklyMeals, index: number) => {
-    if (editingPlan && editingPlan.weeklyMeals) {
-      const currentSides = editingPlan.weeklyMeals[day].sides;
-      updateWeeklyMeal(day, 'sides', currentSides.filter((_, i) => i !== index));
+  const removeSideDish = (dayNumber: number, index: number) => {
+    if (editingPlan && editingPlan.menuItems) {
+      const menuItem = editingPlan.menuItems.find(item => item.day === dayNumber);
+      if (menuItem) {
+        updateMenuItem(dayNumber, 'sides', menuItem.sides.filter((_, i) => i !== index));
+      }
     }
   };
 
-  const updateSideDish = (day: keyof WeeklyMeals, index: number, value: string) => {
-    if (editingPlan && editingPlan.weeklyMeals) {
-      const currentSides = [...editingPlan.weeklyMeals[day].sides];
-      currentSides[index] = value;
-      updateWeeklyMeal(day, 'sides', currentSides);
+  const updateSideDish = (dayNumber: number, index: number, value: string) => {
+    if (editingPlan && editingPlan.menuItems) {
+      const menuItem = editingPlan.menuItems.find(item => item.day === dayNumber);
+      if (menuItem) {
+        const currentSides = [...menuItem.sides];
+        currentSides[index] = value;
+        updateMenuItem(dayNumber, 'sides', currentSides);
+      }
     }
   };
 
@@ -371,19 +377,18 @@ export function SubscriptionPlanManagement() {
                         </div>
                       )}
 
-                      {plan.weeklyMeals && (
+                      {plan.menuItems && plan.menuItems.length > 0 && (
                         <div>
                           <h4 className="font-medium text-sm mb-2">
                             Weekly Meals:
                           </h4>
                           <div className="text-xs space-y-1">
-                            {Object.entries(plan.weeklyMeals).map(
-                              ([day, meals]: [string, any]) => (
-                                <div key={day}>
-                                  <span className="font-medium">{day}:</span>{" "}
-                                  {meals.mainDish}
-                                  {meals.sides &&
-                                    ` + ${meals.sides.join(", ")}`}
+                            {plan.menuItems.map((item: MenuItem) => (
+                                <div key={item.day}>
+                                  <span className="font-medium">Day {item.day}:</span>{" "}
+                                  {item.main}
+                                  {item.sides && item.sides.length > 0 &&
+                                    ` + ${item.sides.join(", ")}`}
                                 </div>
                               ),
                             )}
@@ -512,16 +517,16 @@ export function SubscriptionPlanManagement() {
               <div>
                 <label className="text-sm font-medium mb-4 block">Weekly Meals</label>
                 <div className="space-y-4">
-                  {editingPlan.weeklyMeals && Object.entries(editingPlan.weeklyMeals).map(([day, meals]) => (
-                    <div key={day} className="border rounded-lg p-4">
-                      <h4 className="font-medium capitalize mb-3">{day}</h4>
+                  {editingPlan.menuItems && editingPlan.menuItems.map((item: MenuItem) => (
+                    <div key={item.day} className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-3">Day {item.day}</h4>
                       <div className="space-y-3">
                         <div>
                           <label className="text-xs font-medium text-gray-600">Main Dish</label>
                           <Input
-                            value={meals.main}
-                            onChange={(e) => updateWeeklyMeal(day as keyof WeeklyMeals, 'main', e.target.value)}
-                            placeholder={`Enter main dish for ${day}`}
+                            value={item.main}
+                            onChange={(e) => updateMenuItem(item.day, 'main', e.target.value)}
+                            placeholder={`Enter main dish for Day ${item.day}`}
                             className="mt-1"
                           />
                         </div>
@@ -531,25 +536,25 @@ export function SubscriptionPlanManagement() {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => addSideDish(day as keyof WeeklyMeals)}
+                              onClick={() => addSideDish(item.day)}
                               className="h-6 px-2 text-xs"
                             >
                               Add Side
                             </Button>
                           </div>
                           <div className="space-y-2">
-                            {meals.sides.map((side, index) => (
+                            {item.sides.map((side: string, index: number) => (
                               <div key={index} className="flex gap-2">
                                 <Input
                                   value={side}
-                                  onChange={(e) => updateSideDish(day as keyof WeeklyMeals, index, e.target.value)}
+                                  onChange={(e) => updateSideDish(item.day, index, e.target.value)}
                                   placeholder={`Enter side dish ${index + 1}`}
                                   className="text-sm"
                                 />
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => removeSideDish(day as keyof WeeklyMeals, index)}
+                                  onClick={() => removeSideDish(item.day, index)}
                                   className="h-8 w-8 p-0"
                                 >
                                   <X className="h-3 w-3" />
