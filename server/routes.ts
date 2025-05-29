@@ -880,12 +880,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Always get from MongoDB first
       const activePlans = await mongoStorage.getAllSubscriptionPlans();
+      
+      // Ensure each plan has menuItems in the new format
+      const plansWithMenuItems = activePlans.map(plan => {
+        if (!plan.menuItems || plan.menuItems.length === 0) {
+          // Convert weeklyMeals to menuItems format if needed
+          const defaultMenuItems = [
+            { day: 1, main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
+            { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+            { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
+            { day: 4, main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
+            { day: 5, main: "Little Millet Pongal", sides: ["Coconut Chutney"] },
+            { day: 6, main: "Barnyard Millet Khichdi", sides: ["Pickle", "Curd"] },
+            { day: 7, main: "Pearl Millet Roti", sides: ["Dal", "Vegetable Curry"] }
+          ];
+          return { ...plan, menuItems: defaultMenuItems };
+        }
+        return plan;
+      });
 
-      // Group plans by dietary preference
+      // Group plans by dietary preference using the updated plans
       const groupedPlans = [
         {
           dietaryPreference: "veg",
-          plans: activePlans.filter((plan) => plan.dietaryPreference === "veg"),
+          plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "veg"),
           extraPrice: 0,
           id: 1,
         },

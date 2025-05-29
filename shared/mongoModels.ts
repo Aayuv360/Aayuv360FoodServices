@@ -39,6 +39,11 @@ export interface SubscriptionPlanDocument extends Document {
   features: string[];
   dietaryPreference: "veg" | "veg_with_egg" | "nonveg";
   planType: "basic" | "premium" | "family";
+  menuItems?: {
+    day: number;
+    main: string;
+    sides: string[];
+  }[];
   weeklyMeals?: {
     [key: string]: {
       main: string;
@@ -325,6 +330,14 @@ const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
     type: String,
     required: true,
     enum: ["basic", "premium", "family"],
+  },
+  menuItems: {
+    type: [{
+      day: { type: Number, required: true },
+      main: { type: String, required: true },
+      sides: { type: [String], required: true }
+    }],
+    default: []
   },
   weeklyMeals: {
     type: Schema.Types.Mixed,
