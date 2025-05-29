@@ -44,12 +44,6 @@ export interface SubscriptionPlanDocument extends Document {
     main: string;
     sides: string[];
   }[];
-  weeklyMeals?: {
-    [key: string]: {
-      main: string;
-      sides: string[];
-    };
-  };
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -338,10 +332,6 @@ const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
       sides: { type: [String], required: true }
     }],
     default: []
-  },
-  weeklyMeals: {
-    type: Schema.Types.Mixed,
-    default: {},
   },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },

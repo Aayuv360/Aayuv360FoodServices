@@ -17,14 +17,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, Edit, Save, X } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
-interface WeeklyMeals {
-  monday: { main: string; sides: string[] };
-  tuesday: { main: string; sides: string[] };
-  wednesday: { main: string; sides: string[] };
-  thursday: { main: string; sides: string[] };
-  friday: { main: string; sides: string[] };
-  saturday: { main: string; sides: string[] };
-  sunday: { main: string; sides: string[] };
+interface MenuItem {
+  day: number;
+  main: string;
+  sides: string[];
 }
 
 interface Plan {
@@ -36,7 +32,7 @@ interface Plan {
   description: string;
   features: string[];
   dietaryPreference: "veg" | "veg_with_egg" | "nonveg";
-  weeklyMeals?: WeeklyMeals;
+  menuItems?: MenuItem[];
 }
 
 export function SubscriptionPlanManagement() {
