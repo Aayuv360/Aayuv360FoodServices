@@ -777,18 +777,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     .get(isAuthenticated, isManagerOrAdmin, async (req, res) => {
       try {
         const plans = await mongoStorage.getAllSubscriptionPlans();
+        
+        // Ensure each plan has menuItems in the new format
+        const plansWithMenuItems = plans.map(plan => {
+          if (!plan.menuItems || plan.menuItems.length === 0) {
+            // Add default menuItems for admin view
+            const defaultMenuItems = [
+              { day: 1, main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
+              { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+              { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
+              { day: 4, main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
+              { day: 5, main: "Little Millet Pongal", sides: ["Coconut Chutney"] },
+              { day: 6, main: "Barnyard Millet Khichdi", sides: ["Pickle", "Curd"] },
+              { day: 7, main: "Pearl Millet Roti", sides: ["Dal", "Vegetable Curry"] }
+            ];
+            return { ...plan, menuItems: defaultMenuItems };
+          }
+          return plan;
+        });
 
         // Group plans by dietary preference for admin portal
         const groupedPlans = [
           {
             dietaryPreference: "veg",
-            plans: plans.filter((plan) => plan.dietaryPreference === "veg"),
+            plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "veg"),
             extraPrice: 0,
             id: 1,
           },
           {
             dietaryPreference: "veg_with_egg",
-            plans: plans.filter(
+            plans: plansWithMenuItems.filter(
               (plan) => plan.dietaryPreference === "veg_with_egg",
             ),
             extraPrice: 0,
@@ -796,7 +814,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           {
             dietaryPreference: "nonveg",
-            plans: plans.filter((plan) => plan.dietaryPreference === "nonveg"),
+            plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "nonveg"),
             extraPrice: 0,
             id: 3,
           },
@@ -909,7 +927,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         {
           dietaryPreference: "veg_with_egg",
-          plans: activePlans.filter(
+          plans: plansWithMenuItems.filter(
             (plan) => plan.dietaryPreference === "veg_with_egg",
           ),
           extraPrice: 0,
@@ -917,7 +935,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         },
         {
           dietaryPreference: "nonveg",
-          plans: activePlans.filter(
+          plans: plansWithMenuItems.filter(
             (plan) => plan.dietaryPreference === "nonveg",
           ),
           extraPrice: 0,
