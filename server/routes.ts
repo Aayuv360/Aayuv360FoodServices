@@ -187,23 +187,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   setupAuth(app);
 
-  // SUBSCRIPTION PLAN UPDATE - MUST BE FIRST TO WORK
-  app.put(
-    "/api/admin/subscription-plans/:id",
-    (req: Request, res: Response) => {
-      console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
-      res.setHeader("Content-Type", "application/json");
-      res.status(200).json({
-        success: true,
-        message: "Plan updated successfully!",
-        id: req.params.id,
-        data: req.body,
-      });
-    },
-  );
-
-  registerMealRoutes(app);
-
+  // Define middleware functions first
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
@@ -234,6 +218,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     next();
   };
+
+  // SUBSCRIPTION PLAN UPDATE - MUST BE FIRST TO WORK
+  app.put(
+    "/api/admin/subscription-plans/:id",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
+        const planId = req.params.id;
+        const updateData = req.body;
+
+        // Update the subscription plan in MongoDB
+        const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, updateData);
+        
+        if (!updatedPlan) {
+          return res.status(404).json({
+            success: false,
+            message: "Subscription plan not found"
+          });
+        }
+
+        console.log(`✅ Successfully updated subscription plan ${planId}`);
+        res.setHeader("Content-Type", "application/json");
+        res.status(200).json({
+          success: true,
+          message: "Plan updated successfully!",
+          id: planId,
+          data: updatedPlan,
+        });
+      } catch (error) {
+        console.error("Error updating subscription plan:", error);
+        res.status(500).json({
+          success: false,
+          message: "Failed to update subscription plan"
+        });
+      }
+    },
+  );
+
+  registerMealRoutes(app);
 
   app.get("/api/meals", async (req, res) => {
     try {
@@ -930,6 +955,64 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(groupedPlans);
     } catch (error) {
       console.error("Error fetching subscription plans:", error);
+      res.status(500).json({ message: "Failed to fetch subscription plans" });
+    }
+  });
+
+  // Public API endpoint for subscription plans (same data as admin, but public access)
+  app.get("/api/subscription-plans", async (req, res) => {
+    try {
+      console.log("📋 Fetching subscription plans for public API");
+      const plans = await mongoStorage.getAllSubscriptionPlans();
+      
+      // All plans now have menuItems after migration
+      const plansWithMenuItems = plans.map(plan => {
+        if (!plan.menuItems || plan.menuItems.length === 0) {
+          console.warn(`Plan ${plan.id} missing menuItems, adding default`);
+          const defaultMenuItems = [
+            { day: 1, main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
+            { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+            { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
+            { day: 4, main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
+            { day: 5, main: "Little Millet Pongal", sides: ["Coconut Chutney"] },
+            { day: 6, main: "Barnyard Millet Khichdi", sides: ["Pickle", "Curd"] },
+            { day: 7, main: "Pearl Millet Roti", sides: ["Dal", "Vegetable Curry"] }
+          ];
+          return { ...plan, menuItems: defaultMenuItems };
+        }
+        return plan;
+      });
+
+      // Group plans by dietary preference using the updated plans
+      const groupedPlans = [
+        {
+          dietaryPreference: "veg",
+          plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "veg"),
+          extraPrice: 0,
+          id: 1,
+        },
+        {
+          dietaryPreference: "veg_with_egg",
+          plans: plansWithMenuItems.filter(
+            (plan) => plan.dietaryPreference === "veg_with_egg",
+          ),
+          extraPrice: 0,
+          id: 2,
+        },
+        {
+          dietaryPreference: "nonveg",
+          plans: plansWithMenuItems.filter(
+            (plan) => plan.dietaryPreference === "nonveg",
+          ),
+          extraPrice: 0,
+          id: 3,
+        },
+      ].filter((group) => group.plans.length > 0);
+      
+      console.log(`📋 Retrieved ${plans.length} subscription plans for public API`);
+      res.json(groupedPlans);
+    } catch (error) {
+      console.error("Error fetching public subscription plans:", error);
       res.status(500).json({ message: "Failed to fetch subscription plans" });
     }
   });
