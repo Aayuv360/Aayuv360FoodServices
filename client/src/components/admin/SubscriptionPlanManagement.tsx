@@ -284,6 +284,32 @@ export function SubscriptionPlanManagement() {
     }
   };
 
+  const addMenuItem = () => {
+    if (editingPlan && editingPlan.menuItems) {
+      const maxDay = Math.max(...editingPlan.menuItems.map(item => item.day));
+      const newDay = maxDay + 1;
+      const newMenuItem: MenuItem = {
+        day: newDay,
+        main: '',
+        sides: ['']
+      };
+      setEditingPlan({
+        ...editingPlan,
+        menuItems: [...editingPlan.menuItems, newMenuItem]
+      });
+    }
+  };
+
+  const removeMenuItem = (dayNumber: number) => {
+    if (editingPlan && editingPlan.menuItems) {
+      const updatedMenuItems = editingPlan.menuItems.filter(item => item.day !== dayNumber);
+      setEditingPlan({
+        ...editingPlan,
+        menuItems: updatedMenuItems
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -515,11 +541,31 @@ export function SubscriptionPlanManagement() {
 
               {/* Weekly Meals Section */}
               <div>
-                <label className="text-sm font-medium mb-4 block">Weekly Meals</label>
+                <div className="flex justify-between items-center mb-4">
+                  <label className="text-sm font-medium">Weekly Meals</label>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={addMenuItem}
+                    className="h-8 px-3 text-xs"
+                  >
+                    Add Menu Item
+                  </Button>
+                </div>
                 <div className="space-y-4">
                   {editingPlan.menuItems && editingPlan.menuItems.map((item: MenuItem) => (
                     <div key={item.day} className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-3">Day {item.day}</h4>
+                      <div className="flex justify-between items-center mb-3">
+                        <h4 className="font-medium">Day {item.day}</h4>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removeMenuItem(item.day)}
+                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
                       <div className="space-y-3">
                         <div>
                           <label className="text-xs font-medium text-gray-600">Main Dish</label>
