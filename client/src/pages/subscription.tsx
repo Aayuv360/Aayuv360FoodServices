@@ -117,35 +117,12 @@ const addressSchema = z.object({
   pincode: z.string().min(6, "Valid pincode is required"),
   isDefault: z.boolean().default(false),
 });
-const weeklyMealsSchema = z.object({
-  monday: z.object({
-    main: z.string(),
-    sides: z.array(z.string()),
-  }),
-  tuesday: z.object({
-    main: z.string(),
-    sides: z.array(z.string()),
-  }),
-  wednesday: z.object({
-    main: z.string(),
-    sides: z.array(z.string()),
-  }),
-  thursday: z.object({
-    main: z.string(),
-    sides: z.array(z.string()),
-  }),
-  friday: z.object({
-    main: z.string(),
-    sides: z.array(z.string()),
-  }),
-  saturday: z.object({
-    main: z.string(),
-    sides: z.array(z.string()),
-  }),
-  sunday: z.object({
-    main: z.string(),
-    sides: z.array(z.string()),
-  }),
+
+
+const menuItemSchema = z.object({
+  day: z.number(),
+  main: z.string(),
+  sides: z.array(z.string()),
 });
 
 const planSchema = z.object({
@@ -158,7 +135,7 @@ const planSchema = z.object({
   features: z.array(z.string()),
   dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
   planType: z.string(),
-  weeklyMeals: weeklyMealsSchema,
+  menuItems: z.array(menuItemSchema).optional(),
   isActive: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
