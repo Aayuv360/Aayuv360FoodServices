@@ -9,7 +9,12 @@ import { useAuth } from "@/hooks/use-auth";
 export interface DeliveryStatus {
   id: number;
   orderId: number;
-  status: "preparing" | "in_transit" | "out_for_delivery" | "nearby" | "delivered";
+  status:
+    | "preparing"
+    | "in_transit"
+    | "out_for_delivery"
+    | "nearby"
+    | "delivered";
   message: string;
   estimatedTime?: string;
   location?: string;
@@ -23,21 +28,21 @@ export function DeliveryNotificationSystem() {
     useState<DeliveryStatus | null>(null);
 
   // Check if user has active orders first
-  const { data: userOrders = [] } = useQuery({
-    queryKey: ["/api/orders"],
-    queryFn: async () => {
-      if (!user) return [];
-      const res = await apiRequest("GET", "/api/orders");
-      if (!res.ok) return [];
-      return await res.json();
-    },
-    enabled: !!user,
-  });
+  // const { data: userOrders = [] } = useQuery({
+  //   queryKey: ["/api/orders"],
+  //   queryFn: async () => {
+  //     if (!user) return [];
+  //     const res = await apiRequest("GET", "/api/orders");
+  //     if (!res.ok) return [];
+  //     return await res.json();
+  //   },
+  //   enabled: !!user,
+  // });
 
-  // Only check delivery status if user has active orders
-  const hasActiveOrders = userOrders.length > 0 && userOrders.some((order: any) => 
-    !["delivered", "cancelled"].includes(order.status)
-  );
+  // // Only check delivery status if user has active orders
+  // const hasActiveOrders = userOrders.length > 0 && userOrders.some((order: any) =>
+  //   !["delivered", "cancelled"].includes(order.status)
+  // );
 
   const { data: deliveryUpdates = [] } = useQuery({
     queryKey: ["/api/delivery-status"],
@@ -46,8 +51,8 @@ export function DeliveryNotificationSystem() {
       if (!res.ok) return [];
       return await res.json();
     },
-    refetchInterval: hasActiveOrders ? 60000 : false,
-    enabled: !!user && hasActiveOrders,
+    refetchInterval: 60000,
+    enabled: !!user,
   });
 
   useEffect(() => {
@@ -120,8 +125,11 @@ export function DeliveryNotificationList({
   // Get only the latest status for each active order
   const latestUpdates: Record<number, DeliveryStatus> = {};
   deliveryUpdates.forEach((update) => {
-    if (!latestUpdates[update.orderId] || 
-        new Date(update.timestamp) > new Date(latestUpdates[update.orderId].timestamp)) {
+    if (
+      !latestUpdates[update.orderId] ||
+      new Date(update.timestamp) >
+        new Date(latestUpdates[update.orderId].timestamp)
+    ) {
       // Only include if it's not delivered or cancelled
       if (!["delivered", "cancelled"].includes(update.status)) {
         latestUpdates[update.orderId] = update;

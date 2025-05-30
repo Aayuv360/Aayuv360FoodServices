@@ -19,31 +19,49 @@ export function NotificationManager() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   
-  // Query to fetch delivery status updates only
-  const { data: deliveryUpdates = [], refetch: refetchDeliveryUpdates } = useQuery({
-    queryKey: ["/api/delivery-status"],
+  // Check if user has active orders first
+  const { data: userOrders = [] } = useQuery({
+    queryKey: ["/api/orders"],
     queryFn: async () => {
       if (!user) return [];
-      const res = await apiRequest("GET", "/api/delivery-status");
+      const res = await apiRequest("GET", "/api/orders");
       if (!res.ok) return [];
       return await res.json();
     },
     enabled: !!user,
   });
 
-  // Count total delivery updates for notification badge
-  const updateCount = deliveryUpdates.length;
+  // Only check delivery status if user has active orders
+  const hasActiveOrders = userOrders.length > 0 && userOrders.some((order: any) => 
+    !["delivered", "cancelled"].includes(order.status)
+  );
 
-  // Auto-refresh delivery updates
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      if (user) {
-        refetchDeliveryUpdates();
+  // Query to fetch delivery status updates only when there are active orders
+  const { data: deliveryUpdates = [], refetch: refetchDeliveryUpdates } = useQuery({
+    queryKey: ["/api/delivery-status"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/delivery-status");
+      if (!res.ok) return [];
+      return await res.json();
+    },
+    enabled: !!user && hasActiveOrders,
+    refetchInterval: hasActiveOrders ? 30000 : false,
+  });
+
+  // Show only current status for each active order
+  const activeUpdates: Record<number, any> = {};
+  deliveryUpdates.forEach((update: any) => {
+    if (!activeUpdates[update.orderId] || 
+        new Date(update.timestamp) > new Date(activeUpdates[update.orderId].timestamp)) {
+      // Only include if it's not delivered or cancelled
+      if (!["delivered", "cancelled"].includes(update.status)) {
+        activeUpdates[update.orderId] = update;
       }
-    }, 30000); // Refresh every 30 seconds for more real-time updates
+    }
+  });
 
-    return () => clearInterval(intervalId);
-  }, [user, refetchDeliveryUpdates]);
+  const currentDeliveryUpdates = Object.values(activeUpdates);
+  const updateCount = currentDeliveryUpdates.length;
 
   return (
     <>
@@ -66,9 +84,9 @@ export function NotificationManager() {
             </DialogDescription>
           </DialogHeader>
           <div className="pt-2">
-            {deliveryUpdates.length > 0 ? (
+            {currentDeliveryUpdates.length > 0 ? (
               <div className="space-y-4 max-h-96 overflow-y-auto p-1">
-                {deliveryUpdates.map((update: any) => {
+                {currentDeliveryUpdates.map((update: any) => {
                   // Determine icon and variant based on status
                   let icon = <Truck className="h-5 w-5" />;
                   let variant: "default" | "success" | "warning" | "info" = "default";
