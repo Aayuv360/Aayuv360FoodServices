@@ -22,16 +22,33 @@ export function DeliveryNotificationSystem() {
   const [lastDeliveryStatus, setLastDeliveryStatus] =
     useState<DeliveryStatus | null>(null);
 
+  // Check if user has active orders first
+  const { data: userOrders = [] } = useQuery({
+    queryKey: ["/api/orders"],
+    queryFn: async () => {
+      if (!user) return [];
+      const res = await apiRequest("GET", "/api/orders");
+      if (!res.ok) return [];
+      return await res.json();
+    },
+    enabled: !!user,
+  });
+
+  // Only check delivery status if user has active orders
+  const hasActiveOrders = userOrders.some((order: any) => 
+    !["delivered", "cancelled"].includes(order.status)
+  );
+
   const { data: deliveryUpdates = [], refetch } = useQuery({
     queryKey: ["/api/delivery-status"],
     queryFn: async () => {
-      if (!user) return [];
+      if (!user || !hasActiveOrders) return [];
       const res = await apiRequest("GET", "/api/delivery-status");
       if (!res.ok) return [];
       return await res.json();
     },
     refetchInterval: 60000,
-    enabled: !!user,
+    enabled: !!user && hasActiveOrders,
   });
 
   useEffect(() => {
@@ -55,6 +72,10 @@ export function DeliveryNotificationSystem() {
         case "preparing":
           icon = <Package className="h-5 w-5" />;
           variant = "default";
+          break;
+        case "in_transit":
+          icon = <Truck className="h-5 w-5" />;
+          variant = "info";
           break;
         case "out_for_delivery":
           icon = <Truck className="h-5 w-5" />;
@@ -92,34 +113,47 @@ export function DeliveryNotificationList({
   if (deliveryUpdates.length === 0) {
     return (
       <div className="flex justify-center items-center py-6 text-muted-foreground">
-        No delivery updates available
+        No active deliveries
       </div>
     );
   }
 
-  const groupedUpdates: Record<number, DeliveryStatus[]> = {};
+  // Get only the latest status for each active order
+  const latestUpdates: Record<number, DeliveryStatus> = {};
   deliveryUpdates.forEach((update) => {
-    if (!groupedUpdates[update.orderId]) {
-      groupedUpdates[update.orderId] = [];
+    if (!latestUpdates[update.orderId] || 
+        new Date(update.timestamp) > new Date(latestUpdates[update.orderId].timestamp)) {
+      // Only include if it's not delivered or cancelled
+      if (!["delivered", "cancelled"].includes(update.status)) {
+        latestUpdates[update.orderId] = update;
+      }
     }
-    groupedUpdates[update.orderId].push(update);
   });
+
+  const activeUpdates = Object.values(latestUpdates);
+
+  if (activeUpdates.length === 0) {
+    return (
+      <div className="flex justify-center items-center py-6 text-muted-foreground">
+        No active deliveries
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      {Object.entries(groupedUpdates).map(([orderId, updates]) => {
-        const sortedUpdates = [...updates].sort(
-          (a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        );
-        const latestUpdate = sortedUpdates[0];
+      {activeUpdates.map((update) => {
         let variant: "default" | "success" | "warning" | "info" = "default";
         let icon = <Truck className="h-5 w-5" />;
 
-        switch (latestUpdate.status) {
+        switch (update.status) {
           case "preparing":
             icon = <Package className="h-5 w-5" />;
             variant = "default";
+            break;
+          case "in_transit":
+            icon = <Truck className="h-5 w-5" />;
+            variant = "info";
             break;
           case "out_for_delivery":
             icon = <Truck className="h-5 w-5" />;
@@ -136,45 +170,24 @@ export function DeliveryNotificationList({
         }
 
         return (
-          <div key={orderId} className="space-y-2">
+          <div key={update.orderId} className="space-y-2">
             <h4 className="text-sm font-medium flex items-center gap-1">
-              <span>Order #{orderId}</span>
-              {latestUpdate.estimatedTime && (
+              <span>Order #{update.orderId}</span>
+              {update.estimatedTime && (
                 <span className="text-xs text-muted-foreground flex items-center ml-2">
                   <Clock className="h-3 w-3 mr-1" />
-                  {latestUpdate.estimatedTime}
+                  {update.estimatedTime}
                 </span>
               )}
             </h4>
 
             <Notification
               variant={variant}
-              title={`Status: ${latestUpdate.status.replace("_", " ")}`}
-              description={latestUpdate.message}
+              title={`Status: ${update.status.replace("_", " ")}`}
+              description={update.message}
               icon={icon}
               className="mb-2"
             />
-
-            {sortedUpdates.length > 1 && (
-              <div className="ml-6 border-l-2 pl-4 space-y-2 pt-2">
-                <p className="text-xs text-muted-foreground">
-                  Previous updates:
-                </p>
-                {sortedUpdates.slice(1, 3).map((update) => (
-                  <div key={update.id} className="text-xs">
-                    <p className="font-medium">
-                      {new Date(update.timestamp).toLocaleString()}
-                    </p>
-                    <p className="text-muted-foreground">{update.message}</p>
-                  </div>
-                ))}
-                {sortedUpdates.length > 3 && (
-                  <p className="text-xs text-muted-foreground">
-                    + {sortedUpdates.length - 3} more updates
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         );
       })}
