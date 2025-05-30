@@ -133,6 +133,11 @@ export const subscriptionSchema = z.object({
   personCount: z.number().default(1),
   mealsPerMonth: z.number(),
   price: z.number(),
+  menuItems: z.array(z.object({
+    day: z.number(),
+    main: z.string(),
+    sides: z.array(z.string()),
+  })).optional(),
   customMealPlans: z
     .array(
       z.object({
