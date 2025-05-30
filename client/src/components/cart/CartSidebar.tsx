@@ -9,6 +9,8 @@ import {
   ChevronLeft,
   ShoppingCart as ShoppingCartIcon,
   PlusCircle,
+  Trash2,
+  Edit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -29,6 +31,7 @@ import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 import { Meal } from "@shared/schema";
 import { Address } from "./Address";
+import DeleteAddressDialog from "../Modals/DeleteAddressDialog";
 
 interface CartSidebarProps {
   open: boolean;
@@ -73,6 +76,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
+  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [deletingAddress, setDeletingAddress] = useState<Address | null>(null);
 
   const {
     cartItems,
@@ -142,11 +147,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       setFilteredLocations([]);
     }
   }, [locationSearch, locations]);
-
-  const handleAddressFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const selectAddress = (addressId: number) => {
+    form.setValue("selectedAddressId", addressId);
+    form.setValue("useNewAddress", false);
+  };
+  const handleAddressFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData(e.target as HTMLFormElement);
     const addressData = {
       name: formData.get("addressName") as string,
       phone: formData.get("phone") as string,
@@ -158,28 +165,76 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       isDefault: Boolean(formData.get("isDefault")),
     };
 
-    apiRequest("POST", "/api/addresses", addressData)
+    const isEditing = editingAddress !== null;
+    const method = isEditing ? "PATCH" : "POST";
+    const url = isEditing
+      ? `/api/addresses/${editingAddress.id}`
+      : "/api/addresses";
+
+    apiRequest(method, url, addressData)
       .then((res) => res.json())
       .then((data) => {
-        setAddresses((prev) => [...prev, data]);
-        setSelectedAddressId(data.id);
+        if (isEditing) {
+          // Update the existing address in the list
+          setAddresses((prev) =>
+            prev.map((addr) => (addr.id === editingAddress.id ? data : addr)),
+          );
+          selectAddress(data.id);
+        } else {
+          // Add the new address to the list
+          setAddresses((prev) => [...prev, data]);
+          selectAddress(data.id);
+        }
+
         setAddressModalOpen(false);
+        setEditingAddress(null);
 
         toast({
-          title: "Address added",
-          description: "Your new delivery address has been added successfully.",
+          title: isEditing ? "Address updated" : "Address added",
+          description: isEditing
+            ? "Your delivery address has been updated successfully."
+            : "Your new delivery address has been added successfully.",
+          variant: "default",
         });
       })
       .catch((error) => {
-        console.error("Error creating address:", error);
+        console.error(
+          `Error ${isEditing ? "updating" : "creating"} address:`,
+          error,
+        );
         toast({
           title: "Error",
-          description: "Failed to add address. Please try again.",
+          description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
           variant: "destructive",
         });
       });
   };
+  const handleDeleteAddress = async (addressId: number) => {
+    try {
+      await apiRequest("DELETE", `/api/addresses/${addressId}`);
 
+      // Remove the address from the list
+      setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
+
+      // If the deleted address was selected, clear the selection
+      if (form.watch("selectedAddressId") === addressId) {
+        form.setValue("selectedAddressId", undefined);
+      }
+
+      toast({
+        title: "Address deleted",
+        description: "Your delivery address has been deleted successfully.",
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error deleting address:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete address. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   const selectLocation = (location: Location) => {
     setLocationSearch(location.area);
   };
@@ -570,6 +625,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       )}
     </div>
   );
+
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
@@ -617,6 +673,36 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                             {selectedAddressId === address.id && (
                               <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             )}
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingAddress(address);
+                                  setAddressModalOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingAddress(address);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              {selectedAddressId === address.id && (
+                                <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                              )}
+                            </div>
                           </div>
                           <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-1">
                             {address.addressLine1}
@@ -662,6 +748,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     handleAddressFormSubmit={handleAddressFormSubmit}
                     setLocationSearch={setLocationSearch}
                     selectLocation={selectLocation}
+                    editingAddress={editingAddress}
                   />
 
                   <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
@@ -842,6 +929,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           isInCart={true}
         />
       )}
+      <DeleteAddressDialog
+        open={!!deletingAddress}
+        address={deletingAddress}
+        onCancel={() => setDeletingAddress(null)}
+        onConfirm={(id) => {
+          handleDeleteAddress(id);
+          setDeletingAddress(null);
+        }}
+      />
     </>
   );
 };

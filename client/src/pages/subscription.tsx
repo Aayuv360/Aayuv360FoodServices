@@ -62,50 +62,7 @@ import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleMod
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Address } from "@shared/schema";
-
-// Utility function to calculate subscription status
-const calculateSubscriptionStatus = (
-  startDate: Date,
-  duration: number,
-): "inactive" | "active" | "completed" => {
-  const currentDate = new Date();
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + duration);
-
-  // Reset time components for accurate date comparison
-  const current = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth(),
-    currentDate.getDate(),
-  );
-  const start = new Date(
-    startDate.getFullYear(),
-    startDate.getMonth(),
-    startDate.getDate(),
-  );
-  const end = new Date(
-    endDate.getFullYear(),
-    endDate.getMonth(),
-    endDate.getDate(),
-  );
-
-  if (current < start) {
-    return "inactive";
-  } else if (current.getTime() === end.getTime()) {
-    return "completed";
-  } else if (current >= start && current < end) {
-    return "active";
-  } else {
-    return "completed";
-  }
-};
-
-// Utility function to calculate end date
-const calculateEndDate = (startDate: Date, duration: number): Date => {
-  const endDate = new Date(startDate);
-  endDate.setDate(startDate.getDate() + duration);
-  return endDate;
-};
+import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
@@ -117,7 +74,6 @@ const addressSchema = z.object({
   pincode: z.string().min(6, "Valid pincode is required"),
   isDefault: z.boolean().default(false),
 });
-
 
 const menuItemSchema = z.object({
   day: z.number(),
@@ -171,7 +127,6 @@ interface RazorpayPaymentData {
 const Subscription = () => {
   const [location, navigate] = useLocation();
   const searchParams = new URLSearchParams(location.split("?")[1] || "");
-  const selectedPlanFromParams = searchParams.get("plan");
   const { toast } = useToast();
   const { user } = useAuth();
   const { initiatePayment } = useRazorpay();
@@ -185,7 +140,7 @@ const Subscription = () => {
   const [locationSearch, setLocationSearch] = useState<string>("");
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [filteredPlans, setFilteredPlans] = useState([]);
+  const [filteredPlans, setFilteredPlans] = useState<any>([]);
 
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
@@ -225,7 +180,7 @@ const Subscription = () => {
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
         paymentMethod: "razorpay",
-        menuItems: data.plan.menuItems
+        menuItems: data.plan.menuItems,
       };
 
       const response = await apiRequest("POST", "/api/subscriptions", payload);
@@ -453,8 +408,17 @@ const Subscription = () => {
       subscriptionPlans?.find((group: any) => group.dietaryPreference === diet)
         ?.plans || [];
 
-    setFilteredPlans(plans);
-    const defaultPlan = plans?.find((plan: any) => plan.planType === "basic");
+    const sortedPlans = [
+      plans?.find((p: any) => p.planType === "basic"),
+      plans?.find((p: any) => p.planType === "premium"),
+      plans?.find((p: any) => p.planType === "family"),
+    ].filter(Boolean);
+
+    setFilteredPlans(sortedPlans);
+
+    const defaultPlan = sortedPlans?.find(
+      (plan: any) => plan.planType === "basic",
+    );
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
     }
@@ -602,6 +566,15 @@ const Subscription = () => {
                           ))}
                         </div>
                       </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setDefaulMealModalOpen(true);
+                        }}
+                      >
+                        <span className="font-medium">View default meal</span>
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -1313,62 +1286,15 @@ const Subscription = () => {
         onOpenChange={setAuthModalOpen}
         redirectUrl={`/subscription?plan=${selectedPlan?.planType}`}
       />
-
-      {/* Delete Address Confirmation Dialog */}
-      <Dialog
+      <DeleteAddressDialog
         open={!!deletingAddress}
-        onOpenChange={() => setDeletingAddress(null)}
-      >
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Delete Address</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete this address? This action cannot
-              be undone.
-            </DialogDescription>
-          </DialogHeader>
-          {deletingAddress && (
-            <div className="py-4">
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <p className="font-medium">{deletingAddress.name}</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  {deletingAddress.addressLine1}
-                </p>
-                {deletingAddress.addressLine2 && (
-                  <p className="text-sm text-gray-600">
-                    {deletingAddress.addressLine2}
-                  </p>
-                )}
-                <p className="text-sm text-gray-600">
-                  {deletingAddress.city}, {deletingAddress.state} -{" "}
-                  {deletingAddress.pincode}
-                </p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setDeletingAddress(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={() => {
-                if (deletingAddress) {
-                  handleDeleteAddress(deletingAddress.id);
-                  setDeletingAddress(null);
-                }
-              }}
-            >
-              Delete Address
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        address={deletingAddress}
+        onCancel={() => setDeletingAddress(null)}
+        onConfirm={(id) => {
+          handleDeleteAddress(id);
+          setDeletingAddress(null);
+        }}
+      />
     </div>
   );
 };

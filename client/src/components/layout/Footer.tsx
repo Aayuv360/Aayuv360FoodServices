@@ -170,23 +170,6 @@ const Footer = () => {
                 <span className="text-gray-400">+91 9876543210</span>
               </li>
             </ul>
-
-            <h3 className="text-lg font-accent font-semibold mt-6 mb-4">
-              Subscribe to Our Newsletter
-            </h3>
-            <form className="flex">
-              <Input
-                type="email"
-                placeholder="Your email address"
-                className="rounded-r-none text-neutral-dark"
-              />
-              <Button
-                type="submit"
-                className="rounded-l-none bg-primary hover:bg-primary/90"
-              >
-                Subscribe
-              </Button>
-            </form>
           </div>
         </div>
 

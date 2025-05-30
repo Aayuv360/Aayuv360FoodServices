@@ -553,7 +553,6 @@ export default function AdminPortalPage() {
           <TabsTrigger value="subscription-plans">
             Subscription Plans
           </TabsTrigger>
-          <TabsTrigger value="deliveries">Deliveries</TabsTrigger>
         </TabsList>
 
         <TabsContent value="users" className="space-y-4">

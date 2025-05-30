@@ -11,11 +11,11 @@ interface Plan {
   name: string;
   price: number;
   featured: boolean;
-  mealsPerMonth: number;
   features: {
     text: string;
     included: boolean;
   }[];
+  planType: string;
 }
 
 const SubscriptionPlans = () => {
@@ -33,22 +33,33 @@ const SubscriptionPlans = () => {
     },
   });
 
-  // Transform API data to match component interface
-  const plans: Plan[] = apiPlans ? (() => {
-    // Find the vegetarian group (default)
-    const vegGroup = apiPlans.find((group: any) => group.dietaryPreference === 'veg');
-    return vegGroup?.plans?.map((plan: any) => ({
-      id: plan.id,
-      name: plan.name,
-      price: plan.price,
-      featured: plan.planType === 'premium',
-      mealsPerMonth: plan.features?.length > 0 ? parseInt(plan.features[0].split(' ')[0]) || 15 : 15,
-      features: plan.features?.map((feature: string) => ({
-        text: feature,
-        included: true
-      })) || []
-    })) || [];
-  })() : [];
+  const plans: Plan[] = apiPlans
+    ? (() => {
+        const vegGroup = apiPlans.find(
+          (group: any) => group.dietaryPreference === "veg",
+        );
+        return (
+          vegGroup?.plans?.map((plan: any) => ({
+            id: plan.id,
+            name: plan.name,
+            price: plan.price,
+            featured: plan.planType === "premium",
+            planType: plan.planType, // make sure to include this
+            features:
+              plan.features?.map((feature: string) => ({
+                text: feature,
+                included: true,
+              })) || [],
+          })) || []
+        );
+      })()
+    : [];
+
+  const sortedPlans: Plan[] = [
+    plans.find((p) => p.planType === "basic"),
+    plans.find((p) => p.planType === "premium"),
+    plans.find((p) => p.planType === "family"),
+  ].filter(Boolean) as Plan[];
 
   const handleSelectPlan = (plan: Plan) => {
     navigate(`/subscription?plan=${plan.id}`);
@@ -60,7 +71,9 @@ const SubscriptionPlans = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Subscription Plans</h2>
-            <p className="text-lg text-gray-600">Loading subscription plans...</p>
+            <p className="text-lg text-gray-600">
+              Loading subscription plans...
+            </p>
           </div>
         </div>
       </section>
@@ -78,7 +91,7 @@ const SubscriptionPlans = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {plans.map((plan) => (
+          {sortedPlans?.map((plan) => (
             <div
               key={plan.id}
               className={`${
