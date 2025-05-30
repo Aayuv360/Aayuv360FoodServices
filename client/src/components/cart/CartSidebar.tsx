@@ -30,7 +30,6 @@ import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 import { Meal } from "@shared/schema";
-import { Address } from "./Address";
 import DeleteAddressDialog from "../Modals/DeleteAddressDialog";
 
 interface CartSidebarProps {
@@ -791,9 +790,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
 
       <NewAddressModal
-        open={addressModalOpen}
-        onOpenChange={setAddressModalOpen}
-        onSubmit={handleAddressFormSubmit}
+        addressModalOpen={addressModalOpen}
+        setAddressModalOpen={setAddressModalOpen}
+        handleAddressFormSubmit={handleAddressFormSubmit}
         editingAddress={editingAddress}
         locationSearch={locationSearch}
         setLocationSearch={setLocationSearch}
