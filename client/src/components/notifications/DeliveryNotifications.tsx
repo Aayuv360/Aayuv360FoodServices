@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 export interface DeliveryStatus {
   id: number;
   orderId: number;
-  status: "preparing" | "out_for_delivery" | "nearby" | "delivered";
+  status: "preparing" | "in_transit" | "out_for_delivery" | "nearby" | "delivered";
   message: string;
   estimatedTime?: string;
   location?: string;

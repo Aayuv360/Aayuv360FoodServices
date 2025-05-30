@@ -2478,6 +2478,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delivery status endpoint for users
+  app.get("/api/delivery-status", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { getUserDeliveryStatusUpdates } = await import("./delivery-status");
+      const deliveryUpdates = await getUserDeliveryStatusUpdates(userId);
+      res.json(deliveryUpdates);
+    } catch (err) {
+      console.error("Error fetching delivery status:", err);
+      res.status(500).json({ message: "Error fetching delivery status" });
+    }
+  });
+
   // SMS notification endpoints
   app.post("/api/notifications/send-today-deliveries", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {

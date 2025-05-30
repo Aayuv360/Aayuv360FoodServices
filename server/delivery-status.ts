@@ -7,7 +7,7 @@ export interface DeliveryStatus {
   id: number;
   orderId: number;
   userId: number;
-  status: 'preparing' | 'out_for_delivery' | 'nearby' | 'delivered';
+  status: 'preparing' | 'in_transit' | 'out_for_delivery' | 'nearby' | 'delivered';
   message: string;
   estimatedTime?: string;
   location?: string;
@@ -118,7 +118,7 @@ export async function createDeliveryStatusUpdate(
 export async function updateOrderDeliveryStatus(
   orderId: number,
   userId: number,
-  status: 'preparing' | 'out_for_delivery' | 'nearby' | 'delivered',
+  status: 'preparing' | 'in_transit' | 'out_for_delivery' | 'nearby' | 'delivered',
   customMessage?: string
 ): Promise<DeliveryStatus> {
   // Generate appropriate message based on status
@@ -130,6 +130,10 @@ export async function updateOrderDeliveryStatus(
       case 'preparing':
         message = "Your order is being prepared in our kitchen.";
         estimatedTime = "30-45 minutes until delivery";
+        break;
+      case 'in_transit':
+        message = "Your order is in transit to our delivery partner.";
+        estimatedTime = "20-30 minutes until delivery";
         break;
       case 'out_for_delivery':
         message = "Your order is on the way! Our delivery partner has picked it up.";
@@ -151,7 +155,7 @@ export async function updateOrderDeliveryStatus(
       orderId,
       userId,
       status,
-      message,
+      message: message || "Order status updated",
       estimatedTime
     },
     { app: true, sms: true, whatsapp: false } // Default to app and SMS, but not WhatsApp
