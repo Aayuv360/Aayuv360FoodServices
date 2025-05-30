@@ -126,13 +126,21 @@ export default function OrderManagementPage() {
     const statusStyles = {
       pending: "bg-yellow-100 text-yellow-800",
       confirmed: "bg-blue-100 text-blue-800",
+      preparing: "bg-orange-100 text-orange-800",
+      in_transit: "bg-purple-100 text-purple-800",
+      out_for_delivery: "bg-indigo-100 text-indigo-800",
+      nearby: "bg-cyan-100 text-cyan-800",
       delivered: "bg-green-100 text-green-800",
       cancelled: "bg-red-100 text-red-800",
     };
 
+    const displayText = status === "in_transit" ? "In Transit" : 
+                       status === "out_for_delivery" ? "Out for Delivery" :
+                       status.charAt(0).toUpperCase() + status.slice(1);
+
     return (
       <Badge className={statusStyles[status as keyof typeof statusStyles]}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {displayText}
       </Badge>
     );
   };
@@ -200,6 +208,10 @@ export default function OrderManagementPage() {
                   <SelectItem value="all">All Statuses</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                   <SelectItem value="confirmed">Confirmed</SelectItem>
+                  <SelectItem value="preparing">Preparing</SelectItem>
+                  <SelectItem value="in_transit">In Transit</SelectItem>
+                  <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+                  <SelectItem value="nearby">Nearby</SelectItem>
                   <SelectItem value="delivered">Delivered</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
                 </SelectContent>
@@ -258,13 +270,25 @@ export default function OrderManagementPage() {
                                     Pending
                                   </SelectItem>
                                   <SelectItem value="confirmed">
-                                    Confirm
+                                    Confirmed
+                                  </SelectItem>
+                                  <SelectItem value="preparing">
+                                    Preparing
+                                  </SelectItem>
+                                  <SelectItem value="in_transit">
+                                    In Transit
+                                  </SelectItem>
+                                  <SelectItem value="out_for_delivery">
+                                    Out for Delivery
+                                  </SelectItem>
+                                  <SelectItem value="nearby">
+                                    Nearby
                                   </SelectItem>
                                   <SelectItem value="delivered">
                                     Delivered
                                   </SelectItem>
                                   <SelectItem value="cancelled">
-                                    Cancel
+                                    Cancelled
                                   </SelectItem>
                                 </SelectContent>
                               </Select>

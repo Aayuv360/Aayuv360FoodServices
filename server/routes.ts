@@ -1684,9 +1684,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const orderId = parseInt(req.params.id);
         const { status } = req.body;
 
-        if (
-          !["pending", "confirmed", "delivered", "cancelled"].includes(status)
-        ) {
+        const validStatuses = [
+          "pending", 
+          "confirmed", 
+          "preparing", 
+          "in_transit", 
+          "out_for_delivery", 
+          "nearby", 
+          "delivered", 
+          "cancelled"
+        ];
+
+        if (!validStatuses.includes(status)) {
           return res.status(400).json({ message: "Invalid status" });
         }
 
@@ -1702,6 +1711,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         try {
           let deliveryStatus:
             | "preparing"
+            | "in_transit"
             | "out_for_delivery"
             | "nearby"
             | "delivered"
@@ -1711,8 +1721,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
             case "confirmed":
               deliveryStatus = "preparing";
               break;
-            case "processing":
+            case "preparing":
+              deliveryStatus = "preparing";
+              break;
+            case "in_transit":
+              deliveryStatus = "in_transit";
+              break;
+            case "out_for_delivery":
               deliveryStatus = "out_for_delivery";
+              break;
+            case "nearby":
+              deliveryStatus = "nearby";
               break;
             case "delivered":
               deliveryStatus = "delivered";
