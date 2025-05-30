@@ -277,6 +277,14 @@ const subscriptionSchema = new Schema<SubscriptionDocument>({
   paymentMethod: { type: String, required: true },
   dietaryPreference: { type: String, required: true },
   personCount: { type: Number, required: true },
+  menuItems: {
+    type: [{
+      day: { type: Number, required: true },
+      main: { type: String, required: true },
+      sides: { type: [String], required: true }
+    }],
+    default: []
+  },
   razorpayOrderId: String,
   razorpayPaymentId: String,
   razorpaySignature: String,
