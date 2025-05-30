@@ -64,16 +64,31 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import { Address } from "@shared/schema";
 
 // Utility function to calculate subscription status
-const calculateSubscriptionStatus = (startDate: Date, duration: number): "inactive" | "active" | "completed" => {
+const calculateSubscriptionStatus = (
+  startDate: Date,
+  duration: number,
+): "inactive" | "active" | "completed" => {
   const currentDate = new Date();
   const endDate = new Date(startDate);
   endDate.setDate(startDate.getDate() + duration);
-  
+
   // Reset time components for accurate date comparison
-  const current = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
-  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
-  
+  const current = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth(),
+    currentDate.getDate(),
+  );
+  const start = new Date(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate(),
+  );
+  const end = new Date(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate(),
+  );
+
   if (current < start) {
     return "inactive";
   } else if (current.getTime() === end.getTime()) {
@@ -347,15 +362,17 @@ const Subscription = () => {
 
     const isEditing = editingAddress !== null;
     const method = isEditing ? "PATCH" : "POST";
-    const url = isEditing ? `/api/addresses/${editingAddress.id}` : "/api/addresses";
+    const url = isEditing
+      ? `/api/addresses/${editingAddress.id}`
+      : "/api/addresses";
 
     apiRequest(method, url, addressData)
       .then((res) => res.json())
       .then((data) => {
         if (isEditing) {
           // Update the existing address in the list
-          setAddresses((prev) => 
-            prev.map(addr => addr.id === editingAddress.id ? data : addr)
+          setAddresses((prev) =>
+            prev.map((addr) => (addr.id === editingAddress.id ? data : addr)),
           );
           selectAddress(data.id);
         } else {
@@ -363,23 +380,26 @@ const Subscription = () => {
           setAddresses((prev) => [...prev, data]);
           selectAddress(data.id);
         }
-        
+
         setAddressModalOpen(false);
         setEditingAddress(null);
 
         toast({
           title: isEditing ? "Address updated" : "Address added",
-          description: isEditing 
+          description: isEditing
             ? "Your delivery address has been updated successfully."
             : "Your new delivery address has been added successfully.",
           variant: "default",
         });
       })
       .catch((error) => {
-        console.error(`Error ${isEditing ? 'updating' : 'creating'} address:`, error);
+        console.error(
+          `Error ${isEditing ? "updating" : "creating"} address:`,
+          error,
+        );
         toast({
           title: "Error",
-          description: `Failed to ${isEditing ? 'update' : 'add'} address. Please try again.`,
+          description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
           variant: "destructive",
         });
       });
@@ -388,15 +408,15 @@ const Subscription = () => {
   const handleDeleteAddress = async (addressId: number) => {
     try {
       await apiRequest("DELETE", `/api/addresses/${addressId}`);
-      
+
       // Remove the address from the list
-      setAddresses((prev) => prev.filter(addr => addr.id !== addressId));
-      
+      setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
+
       // If the deleted address was selected, clear the selection
       if (form.watch("selectedAddressId") === addressId) {
         form.setValue("selectedAddressId", undefined);
       }
-      
+
       toast({
         title: "Address deleted",
         description: "Your delivery address has been deleted successfully.",
@@ -413,6 +433,7 @@ const Subscription = () => {
   };
 
   const onSubmit = (values: SubscriptionFormValues) => {
+    console.log("test");
     if (formStep === "address") {
       if (!values.selectedAddressId && !values.useNewAddress) {
         toast({
@@ -1316,12 +1337,16 @@ const Subscription = () => {
       />
 
       {/* Delete Address Confirmation Dialog */}
-      <Dialog open={!!deletingAddress} onOpenChange={() => setDeletingAddress(null)}>
+      <Dialog
+        open={!!deletingAddress}
+        onOpenChange={() => setDeletingAddress(null)}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Delete Address</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this address? This action cannot be undone.
+              Are you sure you want to delete this address? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           {deletingAddress && (
@@ -1337,7 +1362,8 @@ const Subscription = () => {
                   </p>
                 )}
                 <p className="text-sm text-gray-600">
-                  {deletingAddress.city}, {deletingAddress.state} - {deletingAddress.pincode}
+                  {deletingAddress.city}, {deletingAddress.state} -{" "}
+                  {deletingAddress.pincode}
                 </p>
               </div>
             </div>

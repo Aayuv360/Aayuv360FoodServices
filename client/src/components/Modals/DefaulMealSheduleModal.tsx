@@ -27,27 +27,18 @@ export const DefaulMealSheduleModal = ({
               Meal Schedule ({currentPlan?.duration} days)
             </h4>
             <div className="flex flex-wrap gap-3 max-h-72 overflow-y-auto pr-2">
-              {currentPlan?.weeklyMeals &&
+              {currentPlan?.menuItems &&
                 Array.from({
                   length: Math.min(currentPlan?.duration, 30),
                 }).map((_, index) => {
                   const startDate = new Date(form.watch("startDate"));
                   const mealDate = new Date(startDate);
                   mealDate.setDate(startDate.getDate() + index);
-                  const dayOfWeek = mealDate.getDay();
-                  const dayNames = [
-                    "sunday",
-                    "monday",
-                    "tuesday",
-                    "wednesday",
-                    "thursday",
-                    "friday",
-                    "saturday",
-                  ];
-                  const dayName = dayNames[dayOfWeek];
-
                   const formattedDate = format(mealDate, "MMM d");
-                  const meals = currentPlan?.weeklyMeals[dayName as any];
+                  
+                  // Get the meal for this day using modulo to cycle through menuItems
+                  const dayIndex = index % currentPlan.menuItems.length;
+                  const meals = currentPlan.menuItems[dayIndex];
 
                   const curryType =
                     form.watch("dietaryPreference") === "vegetarian"
@@ -63,16 +54,16 @@ export const DefaulMealSheduleModal = ({
                     >
                       <p className="font-medium capitalize flex justify-between">
                         <span>
-                          Day {index + 1}: {dayName}
+                          Day {index + 1}
                         </span>
                         <span className="text-gray-500 text-sm">
                           {formattedDate}
                         </span>
                       </p>
                       <div className="mt-1">
-                        <p className="text-sm font-medium">{meals.main}</p>
+                        <p className="text-sm font-medium">{meals?.main}</p>
                         <p className="text-xs text-gray-600">
-                          With: {curryType}, {meals.sides.join(", ")}
+                          With: {curryType}, {meals?.sides?.join(", ")}
                         </p>
                       </div>
                     </div>
