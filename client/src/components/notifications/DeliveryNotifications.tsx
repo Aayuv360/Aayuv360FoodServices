@@ -35,19 +35,18 @@ export function DeliveryNotificationSystem() {
   });
 
   // Only check delivery status if user has active orders
-  const hasActiveOrders = userOrders.some((order: any) => 
+  const hasActiveOrders = userOrders.length > 0 && userOrders.some((order: any) => 
     !["delivered", "cancelled"].includes(order.status)
   );
 
-  const { data: deliveryUpdates = [], refetch } = useQuery({
+  const { data: deliveryUpdates = [] } = useQuery({
     queryKey: ["/api/delivery-status"],
     queryFn: async () => {
-      if (!user || !hasActiveOrders) return [];
       const res = await apiRequest("GET", "/api/delivery-status");
       if (!res.ok) return [];
       return await res.json();
     },
-    refetchInterval: 60000,
+    refetchInterval: hasActiveOrders ? 60000 : false,
     enabled: !!user && hasActiveOrders,
   });
 
