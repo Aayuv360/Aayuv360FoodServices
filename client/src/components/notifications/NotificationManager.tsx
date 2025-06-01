@@ -48,8 +48,8 @@ export function NotificationManager() {
         if (!res.ok) return [];
         return await res.json();
       },
-      enabled: !!user && hasActiveOrders && isOpen, // Only fetch when dialog is open
-      refetchInterval: false, // Stop automatic polling
+      enabled: !!user && hasActiveOrders && isOpen,
+      refetchInterval: false,
     });
 
   const activeUpdates: Record<number, any> = {};
