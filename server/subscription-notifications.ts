@@ -1,11 +1,13 @@
 import { connectToMongoDB } from "./db";
 import { mongoStorage } from "./mongoStorage";
 import { sendAppNotification, sendSmsNotification, sendWhatsAppNotification } from "./notifications";
+import { sendSubscriptionDeliveryEmail } from "./email-service";
 
 interface SubscriptionDeliveryItem {
   subscriptionId: number;
   userId: number;
   userName: string;
+  userEmail?: string;
   userPhone?: string;
   mainMeal: string;
   sides: string[];
@@ -62,6 +64,7 @@ export async function getTodaySubscriptionDeliveries(): Promise<SubscriptionDeli
             subscriptionId: subscription.id,
             userId: subscription.userId,
             userName: user.name || user.username,
+            userEmail: user.email,
             userPhone: user.phone,
             mainMeal: meal.name,
             sides: todayMenuItem.sides || [],
@@ -100,6 +103,17 @@ export async function sendDailyDeliveryNotifications(): Promise<{sent: number, f
           "Today's Meal Delivery",
           message
         );
+
+        // Send email notification if email is available
+        if (item.userEmail) {
+          await sendSubscriptionDeliveryEmail({
+            userEmail: item.userEmail,
+            userName: item.userName,
+            mainMeal: item.mainMeal,
+            sides: item.sides,
+            deliveryTime: item.deliveryTime
+          });
+        }
 
         // Send SMS if phone number is available
         if (item.userPhone) {

@@ -2585,6 +2585,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get today's subscription deliveries (for admin view)
+  app.get("/api/notifications/today-subscriptions", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const { getTodaySubscriptionDeliveries } = await import("./subscription-notifications");
+      const deliveries = await getTodaySubscriptionDeliveries();
+      
+      res.json({
+        deliveries,
+        count: deliveries.length,
+        scheduledTime: "6:00 PM",
+        deliveryTime: "7:30 PM"
+      });
+    } catch (err) {
+      console.error("Error getting today's subscription deliveries:", err);
+      res.status(500).json({ message: "Error fetching subscription deliveries" });
+    }
+  });
+
   app.post("/api/notifications/delivery-status", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {
       const { userId, status, estimatedTime } = req.body;
