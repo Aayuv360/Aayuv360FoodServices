@@ -538,12 +538,25 @@ const Subscription = () => {
                     onClick={() => form.setValue("plan", plan)}
                   >
                     <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center w-full">
                         <CardTitle className="text-lg">{plan.name}</CardTitle>
+
                         {selectedPlan?.planType === plan.planType && (
-                          <Check className="h-5 w-5 text-primary" />
+                          <div className="flex items-center space-x-2 ml-auto">
+                            <span
+                              role="button"
+                              className="text-primary hover:underline cursor-pointer font-medium text-sm"
+                              onClick={() => {
+                                setDefaulMealModalOpen(true);
+                              }}
+                            >
+                              Meal info
+                            </span>
+                            <Check className="h-5 w-5 text-primary" />
+                          </div>
                         )}
                       </div>
+
                       <CardDescription>{plan.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -566,15 +579,6 @@ const Subscription = () => {
                           ))}
                         </div>
                       </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => {
-                          setDefaulMealModalOpen(true);
-                        }}
-                      >
-                        <span className="font-medium">View default meal</span>
-                      </Button>
                     </CardContent>
                   </Card>
                 ))}

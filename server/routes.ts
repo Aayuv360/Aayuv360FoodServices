@@ -2603,6 +2603,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test email notification (without auth for testing)
+  app.post("/api/test-email", async (req, res) => {
+    try {
+      const { sendTestEmail } = await import("./email-service");
+      const { email, name } = req.body;
+      
+      if (!email || !name) {
+        return res.status(400).json({ message: "Email and name are required" });
+      }
+      
+      const success = await sendTestEmail(email, name);
+      
+      if (success) {
+        res.json({ message: "Test email sent successfully" });
+      } else {
+        res.status(500).json({ message: "Failed to send test email" });
+      }
+    } catch (err) {
+      console.error("Error sending test email:", err);
+      res.status(500).json({ message: "Error sending test email" });
+    }
+  });
+
   app.post("/api/notifications/delivery-status", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {
       const { userId, status, estimatedTime } = req.body;
