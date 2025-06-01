@@ -37,6 +37,7 @@ export function NotificationManager() {
   );
 
   // Query to fetch delivery status updates only when there are active orders
+  // Only fetch once when component loads, no automatic refetching
   const { data: deliveryUpdates = [], refetch: refetchDeliveryUpdates } = useQuery({
     queryKey: ["/api/delivery-status"],
     queryFn: async () => {
@@ -45,7 +46,8 @@ export function NotificationManager() {
       return await res.json();
     },
     enabled: !!user && hasActiveOrders,
-    refetchInterval: hasActiveOrders ? 30000 : false,
+    refetchInterval: false, // Stop automatic polling
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
   });
 
   // Show only current status for each active order
@@ -115,12 +117,10 @@ export function NotificationManager() {
                   
                   return (
                     <Notification
-                      key={update.id}
+                      key={update.orderId}
                       variant={variant}
-                      title={`Order #${update.orderId} - ${update.status.replace('_', ' ')}`}
-                      description={`${update.message}
-${formattedTime}
-${update.estimatedTime ? `Estimated arrival: ${update.estimatedTime}` : ''}`}
+                      title={`Order #${update.orderId} - Current Status: ${update.status.replace('_', ' ')}`}
+                      description={`${update.message}${update.estimatedTime ? ` • ETA: ${update.estimatedTime}` : ''}`}
                       icon={icon}
                     />
                   );
