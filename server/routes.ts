@@ -2510,6 +2510,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear old delivery status data
+  app.delete("/api/admin/delivery-status/clear", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const { connectToMongoDB } = await import("./db");
+      const { db } = await connectToMongoDB();
+      if (!db) throw new Error("Failed to connect to MongoDB");
+      
+      const deliveryCollection = db.collection("deliveryStatus");
+      
+      // Delete all delivery status records
+      const result = await deliveryCollection.deleteMany({});
+      
+      res.json({ 
+        message: "Delivery status data cleared", 
+        deletedCount: result.deletedCount 
+      });
+    } catch (err) {
+      console.error("Error clearing delivery status:", err);
+      res.status(500).json({ message: "Error clearing delivery status" });
+    }
+  });
+
   // SMS notification endpoints
   app.post("/api/notifications/send-today-deliveries", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {
