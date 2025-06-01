@@ -103,9 +103,6 @@ export async function getTodaySubscriptionDeliveries(): Promise<
   }
 }
 
-/**
- * Send daily delivery notifications to subscription users
- */
 export async function sendDailyDeliveryNotifications(): Promise<{
   sent: number;
   failed: number;
@@ -122,14 +119,12 @@ export async function sendDailyDeliveryNotifications(): Promise<{
           item.sides.length > 0 ? ` with ${item.sides.join(", ")}` : "";
         const message = `Your subscription meal for today: ${item.mainMeal}${sidesText}. Delivery at ${item.deliveryTime}.`;
 
-        // Send app notification
         await sendAppNotification(
           item.userId,
           "Today's Meal Delivery",
           message,
         );
 
-        // Send email notification if email is available
         if (item.userEmail) {
           await sendSubscriptionDeliveryEmail({
             userEmail: item.userEmail,
@@ -140,7 +135,6 @@ export async function sendDailyDeliveryNotifications(): Promise<{
           });
         }
 
-        // Send SMS if phone number is available
         if (item.userPhone) {
           await sendSmsNotification(
             item.userId,
@@ -172,16 +166,11 @@ export async function sendDailyDeliveryNotifications(): Promise<{
   }
 }
 
-/**
- * Schedule daily notifications at 6 PM
- */
 export function scheduleDailyNotifications() {
   const now = new Date();
   const target = new Date();
-  target.setHours(15, 0, 0, 0); // Set to 3:00 PM
+  target.setHours(14, 38, 0, 0);
 
-  const minutesToAdd = 30;
-  target.setMinutes(target.getMinutes() + minutesToAdd);
   if (now > target) {
     target.setDate(target.getDate() + 1);
   }
@@ -195,19 +184,15 @@ export function scheduleDailyNotifications() {
   setTimeout(() => {
     sendDailyDeliveryNotifications();
 
-    // Schedule recurring notifications every 24 hours
     setInterval(
       () => {
         sendDailyDeliveryNotifications();
       },
       24 * 60 * 60 * 1000,
-    ); // 24 hours
+    );
   }, msUntilTarget);
 }
 
-/**
- * Send immediate test notification for subscription delivery
- */
 export async function sendTestSubscriptionNotification(
   userId: number,
 ): Promise<boolean> {
