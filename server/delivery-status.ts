@@ -25,12 +25,25 @@ export async function getUserDeliveryStatusUpdates(userId: number): Promise<Deli
   
   const deliveryCollection = db.collection("deliveryStatus");
   
+  // Only get delivery status for orders that are not delivered or cancelled
   const statusUpdates = await deliveryCollection
-    .find({ userId })
+    .find({ 
+      userId,
+      status: { $nin: ["delivered", "cancelled"] } // Exclude delivered and cancelled orders
+    })
     .sort({ timestamp: -1 })
     .toArray();
   
-  return statusUpdates as DeliveryStatus[];
+  // Group by orderId and return only the latest status for each order
+  const latestUpdates: Record<number, DeliveryStatus> = {};
+  statusUpdates.forEach((update: any) => {
+    if (!latestUpdates[update.orderId] || 
+        new Date(update.timestamp) > new Date(latestUpdates[update.orderId].timestamp)) {
+      latestUpdates[update.orderId] = update;
+    }
+  });
+  
+  return Object.values(latestUpdates) as DeliveryStatus[];
 }
 
 /**

@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/use-auth";
 export function NotificationManager() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  
+
   // Check if user has active orders first
   const { data: userOrders = [] } = useQuery({
     queryKey: ["/api/orders"],
@@ -32,30 +32,33 @@ export function NotificationManager() {
   });
 
   // Only check delivery status if user has active orders
-  const hasActiveOrders = userOrders.length > 0 && userOrders.some((order: any) => 
-    !["delivered", "cancelled"].includes(order.status)
-  );
+  const hasActiveOrders =
+    userOrders.length > 0 &&
+    userOrders.some(
+      (order: any) => !["delivered", "cancelled"].includes(order.status),
+    );
 
   // Query to fetch delivery status updates only when there are active orders
   // Only fetch once when component loads, no automatic refetching
-  const { data: deliveryUpdates = [], refetch: refetchDeliveryUpdates } = useQuery({
-    queryKey: ["/api/delivery-status"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/delivery-status");
-      if (!res.ok) return [];
-      return await res.json();
-    },
-    enabled: !!user && hasActiveOrders,
-    refetchInterval: false, // Stop automatic polling
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-  });
+  const { data: deliveryUpdates = [], refetch: refetchDeliveryUpdates } =
+    useQuery({
+      queryKey: ["/api/delivery-status"],
+      queryFn: async () => {
+        const res = await apiRequest("GET", "/api/delivery-status");
+        if (!res.ok) return [];
+        return await res.json();
+      },
+      enabled: !!user && hasActiveOrders && isOpen, // Only fetch when dialog is open
+      refetchInterval: false, // Stop automatic polling
+    });
 
-  // Show only current status for each active order
   const activeUpdates: Record<number, any> = {};
   deliveryUpdates.forEach((update: any) => {
-    if (!activeUpdates[update.orderId] || 
-        new Date(update.timestamp) > new Date(activeUpdates[update.orderId].timestamp)) {
-      // Only include if it's not delivered or cancelled
+    if (
+      !activeUpdates[update.orderId] ||
+      new Date(update.timestamp) >
+        new Date(activeUpdates[update.orderId].timestamp)
+    ) {
       if (!["delivered", "cancelled"].includes(update.status)) {
         activeUpdates[update.orderId] = update;
       }
@@ -91,36 +94,39 @@ export function NotificationManager() {
                 {currentDeliveryUpdates.map((update: any) => {
                   // Determine icon and variant based on status
                   let icon = <Truck className="h-5 w-5" />;
-                  let variant: "default" | "success" | "warning" | "info" = "default";
-                  
+                  let variant: "default" | "success" | "warning" | "info" =
+                    "default";
+
                   switch (update.status) {
-                    case 'preparing':
+                    case "preparing":
                       icon = <Package className="h-5 w-5" />;
-                      variant = 'default';
+                      variant = "default";
                       break;
-                    case 'out_for_delivery':
+                    case "out_for_delivery":
                       icon = <Truck className="h-5 w-5" />;
-                      variant = 'info';
+                      variant = "info";
                       break;
-                    case 'nearby':
+                    case "nearby":
                       icon = <MapPin className="h-5 w-5" />;
-                      variant = 'warning';
+                      variant = "warning";
                       break;
-                    case 'delivered':
+                    case "delivered":
                       icon = <Package className="h-5 w-5" />;
-                      variant = 'success';
+                      variant = "success";
                       break;
                   }
-                  
+
                   // Format the timestamp to a readable date and time
-                  const formattedTime = new Date(update.timestamp).toLocaleString();
-                  
+                  const formattedTime = new Date(
+                    update.timestamp,
+                  ).toLocaleString();
+
                   return (
                     <Notification
                       key={update.orderId}
                       variant={variant}
-                      title={`Order #${update.orderId} - Current Status: ${update.status.replace('_', ' ')}`}
-                      description={`${update.message}${update.estimatedTime ? ` • ETA: ${update.estimatedTime}` : ''}`}
+                      title={`Order #${update.orderId} - Current Status: ${update.status.replace("_", " ")}`}
+                      description={`${update.message}${update.estimatedTime ? ` • ETA: ${update.estimatedTime}` : ""}`}
                       icon={icon}
                     />
                   );
@@ -130,7 +136,9 @@ export function NotificationManager() {
               <div className="flex flex-col justify-center items-center py-10 text-muted-foreground">
                 <Package className="h-12 w-12 mb-4 opacity-50" />
                 <p>No delivery updates yet</p>
-                <p className="text-sm mt-1">Your delivery updates will appear here</p>
+                <p className="text-sm mt-1">
+                  Your delivery updates will appear here
+                </p>
               </div>
             )}
           </div>
