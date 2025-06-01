@@ -23,33 +23,44 @@ export async function getUserDeliveryStatusUpdates(userId: number): Promise<Deli
   const { db } = await connectToMongoDB();
   if (!db) throw new Error("Failed to connect to MongoDB");
   
-  // Get user's active orders first
+  // Get user's recent orders (including recently delivered ones)
   const ordersCollection = db.collection("orders");
-  const activeOrders = await ordersCollection
+  const recentOrders = await ordersCollection
     .find({ 
       userId,
-      status: { $nin: ["delivered", "cancelled"] }
+      status: { $nin: ["cancelled"] } // Include delivered orders but exclude cancelled
     })
+    .sort({ createdAt: -1 })
     .toArray();
   
-  if (activeOrders.length === 0) {
+  if (recentOrders.length === 0) {
     return [];
   }
   
   const deliveryCollection = db.collection("deliveryStatus");
   
-  // Get latest delivery status for each active order
+  // Get latest delivery status for each recent order
   const latestUpdates: DeliveryStatus[] = [];
   
-  for (const order of activeOrders) {
+  for (const order of recentOrders) {
     const latestStatus = await deliveryCollection
       .findOne(
         { orderId: order.id },
         { sort: { timestamp: -1 } }
       );
     
-    if (latestStatus && latestStatus.status !== "delivered") {
-      latestUpdates.push(latestStatus as DeliveryStatus);
+    if (latestStatus) {
+      // Show delivered status for orders delivered within the last 2 hours
+      if (latestStatus.status === "delivered") {
+        const deliveredTime = new Date(latestStatus.timestamp);
+        const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
+        
+        if (deliveredTime > twoHoursAgo) {
+          latestUpdates.push(latestStatus as DeliveryStatus);
+        }
+      } else {
+        latestUpdates.push(latestStatus as DeliveryStatus);
+      }
     } else {
       // If no delivery status exists, create one based on order status
       const deliveryStatus = mapOrderStatusToDeliveryStatus(order.status);
