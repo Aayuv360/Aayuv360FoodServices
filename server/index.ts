@@ -52,7 +52,14 @@ async function connectToDatabase() {
       process.exit(1);
     }
     
-
+    // Initialize scheduled tasks
+    try {
+      const { scheduleDailyNotifications } = await import("./subscription-notifications");
+      scheduleDailyNotifications();
+      console.log("Daily subscription notifications scheduler initialized");
+    } catch (error) {
+      console.error("Failed to initialize scheduled tasks:", error);
+    }
 
     // Register API routes BEFORE Vite middleware
     const server = await registerRoutes(app);

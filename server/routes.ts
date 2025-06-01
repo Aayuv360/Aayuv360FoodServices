@@ -2550,6 +2550,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Subscription daily notifications
+  app.post("/api/notifications/send-subscription-notifications", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const { sendDailyDeliveryNotifications } = await import("./subscription-notifications");
+      const result = await sendDailyDeliveryNotifications();
+      
+      res.json({
+        message: "Subscription notifications sent",
+        sent: result.sent,
+        failed: result.failed
+      });
+    } catch (err) {
+      console.error("Error sending subscription notifications:", err);
+      res.status(500).json({ message: "Error sending subscription notifications" });
+    }
+  });
+
+  // Test subscription notification
+  app.post("/api/notifications/test-subscription/:userId", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const { sendTestSubscriptionNotification } = await import("./subscription-notifications");
+      const success = await sendTestSubscriptionNotification(userId);
+      
+      if (success) {
+        res.json({ message: "Test notification sent successfully" });
+      } else {
+        res.status(404).json({ message: "User not found or notification failed" });
+      }
+    } catch (err) {
+      console.error("Error sending test subscription notification:", err);
+      res.status(500).json({ message: "Error sending test notification" });
+    }
+  });
+
   app.post("/api/notifications/delivery-status", isAuthenticated, isManagerOrAdmin, async (req, res) => {
     try {
       const { userId, status, estimatedTime } = req.body;
