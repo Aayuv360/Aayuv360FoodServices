@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Truck, Package, MapPin, Clock } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -25,9 +26,11 @@ interface DeliveryUpdate {
 
 export function SimpleDeliveryNotifications() {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
+  const [lastUpdateId, setLastUpdateId] = useState<number | null>(null);
 
-  // Only fetch when user clicks the notification bell
+  // Fetch delivery updates - check every 2 minutes for status changes
   const { data: deliveryUpdates = [], refetch } = useQuery({
     queryKey: ["/api/delivery-status"],
     queryFn: async () => {
@@ -35,8 +38,35 @@ export function SimpleDeliveryNotifications() {
       if (!res.ok) return [];
       return await res.json();
     },
-    enabled: false, // Never auto-fetch
+    enabled: !!user,
+    refetchInterval: 2 * 60 * 1000, // Check every 2 minutes
+    staleTime: 30 * 1000, // Consider data stale after 30 seconds
   });
+
+  // Show toast notifications for new delivery updates
+  useEffect(() => {
+    if (deliveryUpdates.length === 0) return;
+
+    // Find the latest update
+    const latestUpdate = deliveryUpdates.reduce((latest: DeliveryUpdate, current: DeliveryUpdate) => {
+      return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
+    });
+
+    // Show toast if this is a new update
+    if (lastUpdateId === null) {
+      setLastUpdateId(latestUpdate.id);
+    } else if (latestUpdate.id !== lastUpdateId) {
+      setLastUpdateId(latestUpdate.id);
+      
+      // Show toast notification
+      const statusText = latestUpdate.status.replace("_", " ");
+      toast({
+        title: `Order #${latestUpdate.orderId} Update`,
+        description: `Status: ${statusText} - ${latestUpdate.message}`,
+        duration: 5000,
+      });
+    }
+  }, [deliveryUpdates, lastUpdateId, toast]);
 
   // Fetch updates when dialog opens
   const handleOpenDialog = () => {
