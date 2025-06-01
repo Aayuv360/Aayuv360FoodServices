@@ -22,90 +22,8 @@ export interface DeliveryStatus {
 }
 
 export function DeliveryNotificationSystem() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [lastDeliveryStatus, setLastDeliveryStatus] =
-    useState<DeliveryStatus | null>(null);
-
-  // Check if user has active orders first
-  // const { data: userOrders = [] } = useQuery({
-  //   queryKey: ["/api/orders"],
-  //   queryFn: async () => {
-  //     if (!user) return [];
-  //     const res = await apiRequest("GET", "/api/orders");
-  //     if (!res.ok) return [];
-  //     return await res.json();
-  //   },
-  //   enabled: !!user,
-  // });
-
-  // // Only check delivery status if user has active orders
-  // const hasActiveOrders = userOrders.length > 0 && userOrders.some((order: any) =>
-  //   !["delivered", "cancelled"].includes(order.status)
-  // );
-
-  const { data: deliveryUpdates = [] } = useQuery({
-    queryKey: ["/api/delivery-status"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/delivery-status");
-      if (!res.ok) return [];
-      return await res.json();
-    },
-    refetchInterval: 60000,
-    enabled: !!user,
-  });
-
-  useEffect(() => {
-    if (deliveryUpdates.length === 0) return;
-
-    const sortedUpdates = [...deliveryUpdates].sort(
-      (a, b) =>
-        new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-    );
-
-    const latestUpdate = sortedUpdates[0];
-
-    if (
-      lastDeliveryStatus === null ||
-      latestUpdate.id !== lastDeliveryStatus.id
-    ) {
-      setLastDeliveryStatus(latestUpdate);
-
-      let icon, variant;
-      switch (latestUpdate.status) {
-        case "preparing":
-          icon = <Package className="h-5 w-5" />;
-          variant = "default";
-          break;
-        case "in_transit":
-          icon = <Truck className="h-5 w-5" />;
-          variant = "info";
-          break;
-        case "out_for_delivery":
-          icon = <Truck className="h-5 w-5" />;
-          variant = "info";
-          break;
-        case "nearby":
-          icon = <MapPin className="h-5 w-5" />;
-          variant = "warning";
-          break;
-        case "delivered":
-          icon = <Package className="h-5 w-5" />;
-          variant = "success";
-          break;
-        default:
-          icon = <Truck className="h-5 w-5" />;
-          variant = "default";
-      }
-
-      toast({
-        title: `Order #${latestUpdate.orderId} Update`,
-        description: latestUpdate.message,
-        variant: variant as any,
-      });
-    }
-  }, [deliveryUpdates, lastDeliveryStatus, toast]);
-
+  // This component is no longer needed as notification logic
+  // is now handled by NotificationManager to avoid duplicate API calls
   return null;
 }
 
@@ -122,7 +40,6 @@ export function DeliveryNotificationList({
     );
   }
 
-  // Get only the latest status for each active order
   const latestUpdates: Record<number, DeliveryStatus> = {};
   deliveryUpdates.forEach((update) => {
     if (
@@ -130,7 +47,6 @@ export function DeliveryNotificationList({
       new Date(update.timestamp) >
         new Date(latestUpdates[update.orderId].timestamp)
     ) {
-      // Only include if it's not delivered or cancelled
       if (!["delivered", "cancelled"].includes(update.status)) {
         latestUpdates[update.orderId] = update;
       }

@@ -42,14 +42,6 @@ export function SubscriptionManagement() {
     },
   });
 
-  const { data: todayDeliveries, isLoading: isLoadingDeliveries } = useQuery({
-    queryKey: ["/api/delivery/today"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/delivery/today");
-      return res.json();
-    },
-  });
-
   const formatDate = (dateString: string | Date) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -72,43 +64,6 @@ export function SubscriptionManagement() {
     if (now < startDate) return "inactive";
     if (now > endDate) return "completed";
     return "active";
-  };
-
-  const getTodayDeliveryForSubscription = (subscriptionId: number) => {
-    return todayDeliveries?.find(
-      (delivery: any) => delivery.subscriptionId === subscriptionId,
-    );
-  };
-
-  const getDeliveryStatusBadge = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return "bg-blue-100 text-blue-800";
-      case "preparing":
-        return "bg-yellow-100 text-yellow-800";
-      case "out_for_delivery":
-        return "bg-purple-100 text-purple-800";
-      case "delivered":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Helper function to get delivery status icon
-  const getDeliveryStatusIcon = (status: string) => {
-    switch (status) {
-      case "scheduled":
-        return <Calendar className="h-3 w-3" />;
-      case "preparing":
-        return <Package className="h-3 w-3" />;
-      case "out_for_delivery":
-        return <Truck className="h-3 w-3" />;
-      case "delivered":
-        return <Clock className="h-3 w-3" />;
-      default:
-        return <Clock className="h-3 w-3" />;
-    }
   };
 
   const getStatusColor = (status: string) => {
@@ -248,6 +203,24 @@ export function SubscriptionManagement() {
                           (subscription.duration || 30) * 24 * 60 * 60 * 1000,
                       );
 
+                  const today = new Date();
+
+                  const stripTime = (date: Date) =>
+                    new Date(
+                      date.getFullYear(),
+                      date.getMonth(),
+                      date.getDate(),
+                    );
+
+                  const start = stripTime(new Date(subscription.startDate));
+
+                  // Difference in calendar days
+                  const dayIndex = Math.floor(
+                    (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
+                  );
+                  console.log(dayIndex);
+                  const todayMenu = subscription.menuItems?.[dayIndex];
+
                   return (
                     <TableRow key={subscription.id}>
                       <TableCell className="font-medium">
@@ -266,58 +239,31 @@ export function SubscriptionManagement() {
                       <TableCell>{formatDate(endDate)}</TableCell>
                       <TableCell>{formatPrice(subscription.price)}</TableCell>
                       <TableCell>
-                        {(() => {
-                          const todayDelivery = getTodayDeliveryForSubscription(
-                            subscription.id,
-                          );
-                          if (!todayDelivery) {
-                            return (
-                              <span className="text-gray-500 text-sm">
-                                No delivery today
-                              </span>
-                            );
-                          }
-                          return (
-                            <div className="text-sm">
-                              <div className="font-medium">
-                                {todayDelivery.mealPlan.main}
-                              </div>
-                              <div className="text-gray-600 text-xs">
-                                {todayDelivery.mealPlan.sides
-                                  .slice(0, 2)
-                                  .join(", ")}
-                                {todayDelivery.mealPlan.sides.length > 2 &&
-                                  "..."}
-                              </div>
+                        {todayMenu ? (
+                          <div className="text-sm">
+                            <div className="font-medium">{todayMenu.main}</div>
+                            <div className="text-gray-600 text-xs">
+                              {todayMenu.sides?.slice(0, 2).join(", ")}
+                              {todayMenu.sides?.length > 2 && "..."}
                             </div>
-                          );
-                        })()}
+                          </div>
+                        ) : (
+                          <span className="text-gray-500 text-sm">
+                            No delivery today
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell>
-                        {(() => {
-                          const todayDelivery = getTodayDeliveryForSubscription(
-                            subscription.id,
-                          );
-                          if (!todayDelivery) {
-                            return (
-                              <span className="text-gray-500 text-sm">-</span>
-                            );
-                          }
-                          return (
-                            <Badge
-                              className={getDeliveryStatusBadge(
-                                todayDelivery.deliveryStatus,
-                              )}
-                            >
-                              <span className="flex items-center gap-1">
-                                {getDeliveryStatusIcon(
-                                  todayDelivery.deliveryStatus,
-                                )}
-                                {todayDelivery.deliveryStatus.replace("_", " ")}
-                              </span>
-                            </Badge>
-                          );
-                        })()}
+                        {todayMenu ? (
+                          <Badge className="bg-blue-100 text-blue-800">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              Scheduled
+                            </span>
+                          </Badge>
+                        ) : (
+                          <span className="text-gray-500 text-sm">-</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
