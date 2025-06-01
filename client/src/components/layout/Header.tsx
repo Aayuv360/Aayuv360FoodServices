@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { ChevronDown, ShoppingCart, MapPin, LogIn, Bell } from "lucide-react";
-import { NotificationManager } from "@/components/notifications/NotificationManager";
+import { SimpleDeliveryNotifications } from "@/components/notifications/SimpleDeliveryNotifications";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -266,7 +266,7 @@ const Header = () => {
           </form>
 
           <div className="flex items-center space-x-2 sm:space-x-4">
-            {user && <NotificationManager />}
+            {user && <SimpleDeliveryNotifications />}
 
             <Button
               variant="outline"
