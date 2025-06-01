@@ -39,12 +39,14 @@ export function SimpleDeliveryNotifications() {
       return await res.json();
     },
     enabled: !!user,
-    refetchInterval: 2 * 60 * 1000, // Check every 2 minutes
-    staleTime: 30 * 1000, // Consider data stale after 30 seconds
+    refetchInterval: 10 * 1000, // Check every 10 seconds for real-time updates
+    staleTime: 5 * 1000, // Consider data stale after 5 seconds
   });
 
   // Show toast notifications for new delivery updates
   useEffect(() => {
+    console.log("Delivery updates changed:", deliveryUpdates);
+    
     if (deliveryUpdates.length === 0) return;
 
     // Find the latest update
@@ -52,9 +54,12 @@ export function SimpleDeliveryNotifications() {
       return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
     });
 
-    // Show toast if this is a new update
+    console.log("Latest update:", latestUpdate, "Last update ID:", lastUpdateId);
+
+    // Show toast if this is a new update (skip the first load)
     if (lastUpdateId === null) {
       setLastUpdateId(latestUpdate.id);
+      console.log("Setting initial last update ID:", latestUpdate.id);
     } else if (latestUpdate.id !== lastUpdateId) {
       setLastUpdateId(latestUpdate.id);
       
@@ -62,9 +67,11 @@ export function SimpleDeliveryNotifications() {
       const statusText = latestUpdate.status.replace("_", " ");
       toast({
         title: `Order #${latestUpdate.orderId} Update`,
-        description: `Status: ${statusText} - ${latestUpdate.message}`,
+        description: `Status: ${statusText.toUpperCase()} - ${latestUpdate.message}`,
         duration: 5000,
       });
+      
+      console.log("Toast notification shown for order:", latestUpdate.orderId, "Status:", statusText);
     }
   }, [deliveryUpdates, lastUpdateId, toast]);
 
