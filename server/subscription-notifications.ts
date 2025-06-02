@@ -169,7 +169,7 @@ export async function sendDailyDeliveryNotifications(): Promise<{
 export function scheduleDailyNotifications() {
   const now = new Date();
   const target = new Date();
-  target.setHours(14, 38, 0, 0);
+  target.setHours(14, 55, 0, 0);
 
   if (now > target) {
     target.setDate(target.getDate() + 1);

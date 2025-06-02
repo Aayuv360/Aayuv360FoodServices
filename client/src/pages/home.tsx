@@ -20,9 +20,9 @@ const Home = () => {
       <div className="mb-16">
         <TodaysMenu />
       </div>
-      <div className="my-16">
+      {/* <div className="my-16">
         <Testimonials />
-      </div>
+      </div> */}
       {/* <CallToAction /> */}
     </>
   );

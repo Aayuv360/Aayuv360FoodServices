@@ -34,7 +34,7 @@ const TodaysMenu = () => {
         })
     : [];
 
-  const displayedMeals = filteredMeals.slice(0, 6);
+  const displayedMeals = filteredMeals.slice(0, 8);
 
   return (
     <section id="menu" className="bg-neutral-light">
@@ -110,7 +110,7 @@ const TodaysMenu = () => {
           </div>
         )}
 
-        <div className="text-center mt-8">
+        {/* <div className="text-center mt-8">
           <Button
             asChild
             variant="outline"
@@ -118,7 +118,7 @@ const TodaysMenu = () => {
           >
             <Link href="/menu">View Full Menu</Link>
           </Button>
-        </div>
+        </div> */}
       </div>
     </section>
   );
