@@ -8,18 +8,13 @@ import CallToAction from "@/components/home/CallToAction";
 const Home = () => {
   return (
     <>
-      <div className="my-16">
-        <HeroSection />
-      </div>
-      <div className="mb-16">
-        <HowItWorks />
-      </div>
-      <div className="mb-16">
-        <SubscriptionPlans />
-      </div>
-      <div className="mb-16">
-        <TodaysMenu />
-      </div>
+      <HeroSection />
+
+      <HowItWorks />
+
+      <SubscriptionPlans />
+
+      <TodaysMenu />
       {/* <div className="my-16">
         <Testimonials />
       </div> */}

@@ -6,11 +6,22 @@ import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
 import { format } from "date-fns";
 import { Meal } from "@shared/schema";
-
+const tabs = [
+  { id: "all", name: "All Meals" },
+  { id: "breakfast", name: "Breakfast" },
+  { id: "lunch", name: "Lunch" },
+  { id: "dinner", name: "Dinner" },
+  { id: "vegetarian", name: "Vegetarian" },
+  { id: "gluten-free", name: "Gluten-Free" },
+];
 const TodaysMenu = () => {
   const [filter, setFilter] = useState("all");
-  const today = format(new Date(), "MMMM d, yyyy");
-
+  const currentDate = new Date();
+  const formattedDate = currentDate.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   const {
     data: meals,
     isLoading,
@@ -34,62 +45,34 @@ const TodaysMenu = () => {
         })
     : [];
 
-  const displayedMeals = filteredMeals.slice(0, 8);
+  const displayedMeals = filteredMeals;
 
   return (
-    <section id="menu" className="bg-neutral-light">
+    <section id="menu" className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold">Today's Menu</h2>
-          <div className="flex items-center space-x-2">
-            <span className="text-gray-600">{today}</span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full bg-white"
-            >
-              <Calendar className="h-5 w-5 text-primary" />
-            </Button>
+        <div className="flex flex-col md:flex-row justify-between items-center mb-10">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-0">
+            Today's Menu
+          </h2>
+          <div className="flex items-center text-gray-600">
+            <Calendar size={18} className="mr-2" />
+            <span>{formattedDate}</span>
           </div>
         </div>
-
-        <div className="mb-8 flex flex-wrap gap-2">
-          <FilterButton
-            active={filter === "all"}
-            onClick={() => setFilter("all")}
-          >
-            All Meals
-          </FilterButton>
-          <FilterButton
-            active={filter === "breakfast"}
-            onClick={() => setFilter("breakfast")}
-          >
-            Breakfast
-          </FilterButton>
-          <FilterButton
-            active={filter === "lunch"}
-            onClick={() => setFilter("lunch")}
-          >
-            Lunch
-          </FilterButton>
-          <FilterButton
-            active={filter === "dinner"}
-            onClick={() => setFilter("dinner")}
-          >
-            Dinner
-          </FilterButton>
-          <FilterButton
-            active={filter === "vegetarian"}
-            onClick={() => setFilter("vegetarian")}
-          >
-            Vegetarian
-          </FilterButton>
-          <FilterButton
-            active={filter === "gluten-free"}
-            onClick={() => setFilter("gluten-free")}
-          >
-            Gluten-Free
-          </FilterButton>
+        <div className="flex flex-wrap gap-2 mb-10">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                filter === tab.id
+                  ? "bg-orange-500 text-white"
+                  : "bg-white text-gray-700 hover:bg-orange-100"
+              }`}
+              onClick={() => setFilter(tab.id)}
+            >
+              {tab.name}
+            </button>
+          ))}
         </div>
 
         {isLoading ? (

@@ -8,15 +8,17 @@ import { formatPrice } from "@/lib/utils";
 import {
   Loader2,
   Check,
-  X,
   ArrowLeft,
   ArrowRight,
   Minus,
   Plus,
-  PlusCircle,
-  CreditCard,
   Edit,
   Trash2,
+  Sparkles,
+  ClipboardList,
+  CheckCircle,
+  Home,
+  ShoppingBag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -45,14 +47,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -63,7 +58,26 @@ import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Address } from "@shared/schema";
 import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SuccessPage from "./SuccessPage";
 
+const plansEmoji = [
+  {
+    id: "basic",
+    name: "Basic",
+    emoji: "🌱",
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    emoji: "🌾",
+  },
+  {
+    id: "family",
+    name: "Family",
+    emoji: "👑",
+  },
+];
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
   phone: z.string().min(10, "Valid phone number is required"),
@@ -116,7 +130,7 @@ const subscriptionSchema = z.object({
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 
-type FormStep = "plan" | "address" | "payment";
+type FormStep = "plan" | "payment" | "success";
 
 interface RazorpayPaymentData {
   razorpay_payment_id: string;
@@ -125,8 +139,8 @@ interface RazorpayPaymentData {
 }
 
 const Subscription = () => {
-  const [location, navigate] = useLocation();
-  const searchParams = new URLSearchParams(location.split("?")[1] || "");
+  const [location, setLocation] = useLocation();
+  const [, navigate] = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const { initiatePayment } = useRazorpay();
@@ -212,9 +226,10 @@ const Subscription = () => {
             subscription.id.toString(),
           );
 
-          navigate(
-            `/payment-success?subscriptionId=${subscription.id}&type=subscription`,
-          );
+          // navigate(
+          //   `/payment-success?subscriptionId=${subscription.id}&type=subscription`,
+          // );
+          setFormStep("success");
         },
         onFailure: (error: Error) => {
           toast({
@@ -245,16 +260,12 @@ const Subscription = () => {
 
   const goToNextStep = () => {
     if (formStep === "plan") {
-      setFormStep("address");
-    } else if (formStep === "address") {
       setFormStep("payment");
     }
   };
 
   const goToPreviousStep = () => {
     if (formStep === "payment") {
-      setFormStep("address");
-    } else if (formStep === "address") {
       setFormStep("plan");
     }
   };
@@ -366,8 +377,7 @@ const Subscription = () => {
   };
 
   const onSubmit = (values: SubscriptionFormValues) => {
-    console.log("test");
-    if (formStep === "address") {
+    if (formStep === "payment") {
       if (!values.selectedAddressId && !values.useNewAddress) {
         toast({
           title: "Address required",
@@ -376,18 +386,6 @@ const Subscription = () => {
         });
         return;
       }
-
-      if (values.useNewAddress && !values.newAddress) {
-        toast({
-          title: "New address details required",
-          description: "Please fill in all the required address fields",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      goToNextStep();
-      return;
     }
 
     toast({
@@ -476,70 +474,77 @@ const Subscription = () => {
     switch (formStep) {
       case "plan":
         return (
-          <div className="space-y-6">
-            <div className="flex justify-end">
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  {
-                    value: "veg",
-                    label: "Vegetarian",
-                    bg: "bg-green-100",
-                    text: "text-green-800",
-                    border: "border-green-300",
-                  },
-                  {
-                    value: "veg_with_egg",
-                    label: "Veg with Egg",
-                    bg: "bg-amber-100",
-                    text: "text-amber-800",
-                    border: "border-amber-300",
-                  },
-                  {
-                    value: "nonveg",
-                    label: "Non-Vegetarian",
-                    bg: "bg-red-100",
-                    text: "text-red-800",
-                    border: "border-red-300",
-                  },
-                ].map(({ value, label, bg, text, border }) => {
-                  const isSelected = form.watch("dietaryPreference") === value;
-                  return (
-                    <Button
-                      key={value}
-                      type="button"
-                      variant="outline"
-                      className={`${
-                        isSelected ? `${bg} ${text} ${border}` : ""
-                      }`}
-                      onClick={() =>
-                        form.setValue(
-                          "dietaryPreference",
-                          value as "veg" | "veg_with_egg" | "nonveg",
-                        )
-                      }
-                    >
-                      <span className="font-medium">{label}</span>
-                    </Button>
-                  );
-                })}
-              </div>
+          <div>
+            <div className="mb-5 text-center">
+              <h1 className="text-4xl font-bold inline-flex items-center gap-2">
+                <Sparkles className="text-orange-500" /> Subscribe to Aayuv
+              </h1>
+              <p className="text-lg text-gray-500 mt-2">
+                Custom millet meal plans tailored to your lifestyle
+              </p>
             </div>
-
+            <Tabs
+              defaultValue="vegetarian"
+              className="mb-5 flex flex-col items-center"
+            >
+              <TabsList className="bg-white p-1 rounded-full shadow-md flex gap-4">
+                <TabsTrigger
+                  value="vegetarian"
+                  onClick={() =>
+                    form.setValue(
+                      "dietaryPreference",
+                      "veg" as "veg" | "veg_with_egg" | "nonveg",
+                    )
+                  }
+                >
+                  🌿 Vegetarian
+                </TabsTrigger>
+                <TabsTrigger
+                  value="egg"
+                  onClick={() =>
+                    form.setValue(
+                      "dietaryPreference",
+                      "veg_with_egg" as "veg" | "veg_with_egg" | "nonveg",
+                    )
+                  }
+                >
+                  🥚 With Egg
+                </TabsTrigger>
+                <TabsTrigger
+                  value="nonveg"
+                  onClick={() =>
+                    form.setValue(
+                      "dietaryPreference",
+                      "nonveg" as "veg" | "veg_with_egg" | "nonveg",
+                    )
+                  }
+                >
+                  🍗 Non-Veg
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
                 {filteredPlans?.map((plan: any) => (
                   <Card
                     key={plan.id}
-                    className={`cursor-pointer transition-all border-2 ${
+                    className={`rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md   ${
                       selectedPlan?.planType === plan.planType
-                        ? "border-primary bg-primary/5"
+                        ? "border-primary"
                         : "border-gray-200 hover:border-primary/50"
                     }`}
                     onClick={() => form.setValue("plan", plan)}
                   >
                     <CardHeader className="pb-3">
                       <div className="flex items-center w-full">
-                        <CardTitle className="text-lg">{plan.name}</CardTitle>
+                        <CardTitle className="text-lg font-bold">
+                          {
+                            plansEmoji.find(
+                              (item: any) => item.name === plan.name,
+                            )?.emoji
+                          }{" "}
+                          {plan.name === "Family" ? "Elite" : plan.name}
+                        </CardTitle>
 
                         {selectedPlan?.planType === plan.planType && (
                           <div className="flex items-center space-x-2 ml-auto">
@@ -585,156 +590,14 @@ const Subscription = () => {
               </div>
             </div>
 
-            {/* Start Date and Person Count */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Start Date */}
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel>Start Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className="w-full flex justify-start text-left font-normal"
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          initialFocus
-                          disabled={(date) => date < new Date()}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Person Count */}
-              <FormField
-                control={form.control}
-                name="personCount"
-                render={({ field }) => (
-                  <FormItem className="mt-4">
-                    <FormLabel className="text-base font-medium">
-                      Number of Persons
-                    </FormLabel>
-                    <div className="mt-2">
-                      <div className="bg-neutral-50 rounded-lg border">
-                        <div className="flex items-center justify-between p-3">
-                          <div>
-                            <span className="text-sm text-gray-600">
-                              Select how many people will be eating
-                            </span>
-                            <div className="mt-1 text-primary font-semibold">
-                              {field.value}{" "}
-                              {field.value === 1 ? "person" : "people"}
-                            </div>
-                          </div>
-                          <div className="flex items-center bg-white rounded-md border shadow-sm">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-r-none border-r"
-                              onClick={() =>
-                                form.setValue(
-                                  "personCount",
-                                  Math.max(1, field.value - 1),
-                                )
-                              }
-                              disabled={field.value <= 1}
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                className="h-9 w-12 text-center border-0 rounded-none"
-                                {...field}
-                                onChange={(e) => {
-                                  const value = parseInt(e.target.value);
-                                  if (
-                                    !isNaN(value) &&
-                                    value >= 1 &&
-                                    value <= 10
-                                  ) {
-                                    field.onChange(value);
-                                  }
-                                }}
-                                min={1}
-                                max={10}
-                              />
-                            </FormControl>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-9 w-9 rounded-l-none border-l"
-                              onClick={() =>
-                                form.setValue(
-                                  "personCount",
-                                  Math.min(10, field.value + 1),
-                                )
-                              }
-                              disabled={field.value >= 10}
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div className="flex items-center p-3 bg-neutral-100 rounded-b-lg border-t">
-                          <div className="flex-1">
-                            <div className="text-xs text-gray-500">
-                              Price multiplier
-                            </div>
-                            <div className="text-sm font-medium">
-                              {field.value}x base price
-                            </div>
-                          </div>
-                          <div className="w-28">
-                            <div className="relative h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                              <div
-                                className="absolute top-0 left-0 h-full bg-primary"
-                                style={{
-                                  width: `${(field.value / 10) * 100}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <div className="flex justify-between text-xs text-gray-500 mt-1">
-                              <span>1</span>
-                              <span>10</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Plan Summary */}
-            <div className="bg-neutral-light rounded-lg p-4 border">
+            <div className="mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm">
               <div className="flex items-center justify-between">
+                {/* <h4 className="text-xl font-semibold">✨ Your Selection</h4>
+                 */}
                 <p className="text-xl font-semibold text-primary">
                   {selectedPlan?.name}
                 </p>
+
                 <Badge
                   variant="outline"
                   className={
@@ -752,10 +615,111 @@ const Subscription = () => {
                       : "Non-Vegetarian"}
                 </Badge>
               </div>
+
               <p className="text-sm text-gray-600 mt-1">
                 {selectedPlan?.description}
               </p>
-              <div className="mt-3 bg-white p-3 rounded-md border border-gray-100">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 ">
+                {/* Start Date */}
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel>Start Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className="w-full flex justify-start text-left font-normal"
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                          <Calendar
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                            initialFocus
+                            disabled={(date) => date < new Date()}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Person Count */}
+                <FormField
+                  control={form.control}
+                  name="personCount"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel className="text-base font-medium">
+                        Number of Persons
+                      </FormLabel>
+                      <div className="flex items-center">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 bg-white  shadow-sm rounded-r-none border-r"
+                          onClick={() =>
+                            form.setValue(
+                              "personCount",
+                              Math.max(1, field.value - 1),
+                            )
+                          }
+                          disabled={field.value <= 1}
+                        >
+                          <Minus className="h-4 w-4" />
+                        </Button>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            className="h-9 w-12 text-center border-0 rounded-none shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            {...field}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value);
+                              if (!isNaN(value) && value >= 1 && value <= 10) {
+                                field.onChange(value);
+                              }
+                            }}
+                            min={1}
+                            max={10}
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 bg-white  shadow-sm rounded-l-none border-l"
+                          onClick={() =>
+                            form.setValue(
+                              "personCount",
+                              Math.min(10, field.value + 1),
+                            )
+                          }
+                          disabled={field.value >= 10}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="mt-3 p-3 rounded-md border border-gray-100">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-medium">Price per person:</span>
                   <span className="text-sm">{formatPrice(basePrice)}</span>
@@ -791,9 +755,15 @@ const Subscription = () => {
           </div>
         );
 
-      case "address":
+      case "payment":
         return (
-          <div className="space-y-6">
+          <div>
+            <div className="flex items-center justify-center mb-6">
+              <ClipboardList className="h-8 w-8 text-orange-500 mr-3" />
+              <h1 className="text-3xl font-bold text-gray-800">
+                Complete Your Subscription
+              </h1>
+            </div>
             <div>
               {addresses.length > 0 && (
                 <div className="mb-6">
@@ -801,10 +771,10 @@ const Subscription = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      className="flex items-center justify-center"
+                      className="rounded-full"
                       onClick={() => setAddressModalOpen(true)}
                     >
-                      <PlusCircle className="mr-2 h-4 w-4" />
+                      <Plus className="h-4 w-4 mr-1" />
                       Add New Address
                     </Button>
                   </div>
@@ -812,16 +782,18 @@ const Subscription = () => {
                     {addresses.map((address) => (
                       <div
                         key={address.id}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        className={`p-4 rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md ${
                           form.watch("selectedAddressId") === address.id
-                            ? "border-primary ring-1 ring-primary"
-                            : "hover:border-gray-400"
+                            ? "border-primary"
+                            : "border-gray-200 hover:border-primary/50"
                         }`}
                         onClick={() => selectAddress(address.id)}
                       >
                         <div className="flex justify-between">
                           <div className="flex gap-2 items-center">
-                            <h5 className="font-medium">{address.name}</h5>
+                            <h5 className="text-xl font-semibold text-gray-800 mb-1">
+                              {address.name}
+                            </h5>
                             {address.isDefault && (
                               <Badge variant="outline" className="text-xs">
                                 Default
@@ -878,7 +850,99 @@ const Subscription = () => {
                   </div>
                 </div>
               )}
-
+              <div className="mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <div className="text-xl font-bold pb-4">
+                      📦 Subscription Details
+                    </div>
+                    <ul className="text-sm text-gray-700 space-y-3">
+                      <li>
+                        <span className="font-medium text-gray-900">Plan:</span>{" "}
+                        {selectedPlan?.name}
+                      </li>
+                      <li>
+                        <span className="font-medium text-gray-900">
+                          Start Date:
+                        </span>
+                        {format(form.watch("startDate"), "PPP")}
+                      </li>
+                      <li>
+                        <span className="font-medium text-gray-900">
+                          Number of Persons:
+                        </span>{" "}
+                        {personCount}
+                      </li>
+                      <li>
+                        <span className="font-medium text-gray-900">
+                          Meals Per Month:
+                        </span>{" "}
+                        {selectedPlan?.duration}
+                      </li>
+                      <li>
+                        <span className="font-medium text-gray-900">
+                          {" "}
+                          Selected Diet:
+                        </span>{" "}
+                        <Badge
+                          variant="outline"
+                          className={
+                            dietaryPreference === "veg"
+                              ? "bg-green-100 text-green-800"
+                              : dietaryPreference === "veg_with_egg"
+                                ? "bg-amber-100 text-amber-800"
+                                : "bg-red-100 text-red-800"
+                          }
+                        >
+                          {dietaryPreference === "veg"
+                            ? "Vegetarian"
+                            : dietaryPreference === "veg_with_egg"
+                              ? "Veg with Egg"
+                              : "Non-Vegetarian"}
+                        </Badge>
+                      </li>
+                    </ul>
+                  </div>
+                  <div>
+                    <div className="text-xl font-bold pb-4">
+                      💰 Order Summary
+                    </div>
+                    <ul className="text-sm text-gray-700 space-y-3">
+                      <li>
+                        <span className="font-medium text-gray-900">
+                          Base Price (per person):
+                        </span>{" "}
+                        {formatPrice(selectedPlan.price)}/month
+                      </li>
+                      {personCount > 1 && (
+                        <li>
+                          <span className="font-medium text-gray-900">
+                            Number of persons:
+                          </span>
+                          × {personCount}
+                        </li>
+                      )}
+                      <li>
+                        <span className="font-medium text-gray-900">
+                          Subtotal:
+                        </span>{" "}
+                        {formatPrice(basePrice * personCount)}
+                        /month
+                      </li>
+                      <li>
+                        <span className="font-medium text-gray-900">
+                          Tax (5% GST):
+                        </span>{" "}
+                        {formatPrice(basePrice * personCount * 0.05)}
+                      </li>
+                      <li className="text-lg font-bold text-gray-900 border-t pt-3">
+                        <span className="text-primary">Total:</span>{" "}
+                        {formatPrice(basePrice * personCount * 1.05)}
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
               <NewAddressModal
                 addressModalOpen={addressModalOpen}
                 setAddressModalOpen={(open) => {
@@ -895,394 +959,82 @@ const Subscription = () => {
                 editingAddress={editingAddress}
               />
 
-              <div className="border-t pt-4 mt-6">
-                <div className="text-sm text-gray-500 mb-4">
-                  <p>
-                    Note: We currently deliver only in Hyderabad, within a 10km
-                    radius of our service locations.
-                  </p>
-                </div>
+              <div className="text-gray-600 text-sm mt-6 mb-10 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <p>
+                  <CheckCircle className="inline-block h-4 w-4 text-green-500 mr-2" />
+                  Note: We currently deliver only in Hyderabad, within a 10km
+                  radius of our service locations.
+                </p>
               </div>
             </div>
           </div>
         );
-
-      case "payment":
+      case "success":
         return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <div className="mb-6">
-                  <h3 className="font-medium mb-2">Delivery Address</h3>
-                  <div className="bg-neutral-light rounded-lg">
-                    {form.watch("useNewAddress") && form.watch("newAddress") ? (
-                      <>
-                        <p className="text-sm font-medium">
-                          {form.watch("newAddress.name")}
-                        </p>
-                        <p className="text-sm mt-1">
-                          {form.watch("newAddress.addressLine1")}
-                        </p>
-                        {form.watch("newAddress.addressLine2") && (
-                          <p className="text-sm">
-                            {form.watch("newAddress.addressLine2")}
-                          </p>
-                        )}
-                        <p className="text-sm">
-                          {form.watch("newAddress.city")},{" "}
-                          {form.watch("newAddress.state")} -{" "}
-                          {form.watch("newAddress.pincode")}
-                        </p>
-                        <p className="text-sm mt-1">
-                          Phone: {form.watch("newAddress.phone")}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        {form.watch("selectedAddressId") !== undefined && (
-                          <>
-                            {addresses
-                              .filter(
-                                (a) => a.id === form.watch("selectedAddressId"),
-                              )
-                              .map((address) => (
-                                <div key={address.id}>
-                                  <p className="text-sm font-medium">
-                                    {address.name}
-                                  </p>
-                                  <p className="text-sm mt-1">
-                                    {address.addressLine1}
-                                  </p>
-                                  {address.addressLine2 && (
-                                    <p className="text-sm">
-                                      {address.addressLine2}
-                                    </p>
-                                  )}
-                                  <p className="text-sm">
-                                    {address.city}, {address.state} -{" "}
-                                    {address.pincode}
-                                  </p>
-                                  <p className="text-sm mt-1">
-                                    Phone: {address.phone}
-                                  </p>
-                                </div>
-                              ))}
-                          </>
-                        )}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <div className="bg-neutral-light rounded-lg">
-                  <h3 className="font-medium mb-2">Order Summary</h3>
-                  <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Plan:</span>{" "}
-                    {selectedPlan.name}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Type:</span>{" "}
-                    {subscriptionType === "default" ? "Default" : "Customized"}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Start Date:</span>{" "}
-                    {format(form.watch("startDate"), "PPP")}
-                  </p>
-                  <p className="text-sm text-gray-600 mb-1">
-                    <span className="font-medium">Persons:</span> {personCount}
-                  </p>
-
-                  <div className="border-t my-3"></div>
-
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Base Plan Price</span>
-                    <span className="text-sm">
-                      {formatPrice(selectedPlan.price)}/month
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Price per person</span>
-                    <span className="text-sm">
-                      {formatPrice(basePrice)}/month
-                    </span>
-                  </div>
-
-                  {personCount > 1 && (
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm">Number of persons</span>
-                      <span className="text-sm">× {personCount}</span>
-                    </div>
-                  )}
-
-                  <div className="flex justify-between mb-1">
-                    <span className="text-sm">Subtotal</span>
-                    <span className="text-sm">
-                      {formatPrice(basePrice * personCount)}
-                      /month
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm">Tax (5%)</span>
-                    <span className="text-sm">
-                      {formatPrice(basePrice * personCount * 0.05)}
-                    </span>
-                  </div>
-                  <div className="flex justify-between font-bold">
-                    <span>Total</span>
-                    <span className="text-primary">
-                      {formatPrice(basePrice * personCount * 1.05)}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t pt-6">
-              <p className="text-sm text-gray-500 mb-4">
-                Please verify all details before completing your subscription.
-              </p>
-            </div>
+          <div>
+            <SuccessPage />
           </div>
         );
     }
   };
 
   return (
-    <div className="min-h-screen bg-neutral-light py-12">
-      <div className="container mx-auto px-4">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-between flex-wrap">
-            <h1 className="text-3xl font-bold mr-4">Subscribe to Aayuv</h1>
-          </div>
+    <div className="bg-gray-50">
+      <div className="container mx-auto">
+        <Form {...form}>
+          <div className="max-w-7xl mx-auto px-5 py-6">
+            {renderStepContent()}
 
-          <p className="text-gray-600 mb-4">
-            {formStep === "plan"
-              ? "Select a plan and customize your subscription"
-              : "Your subscription details"}
-          </p>
+            <div className="flex justify-between items-center pt-4">
+              {formStep === "payment" && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={goToPreviousStep}
+                  className="rounded-full"
+                >
+                  <ArrowLeft className="mr-1 h-4 w-4" />
+                  Back to Plan
+                </Button>
+              )}
 
-          {formStep === "plan" ? (
-            <></>
-          ) : (
-            <div className="mb-8">
-              <Card className="border-2 border-primary mb-4">
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-center">
-                    <CardTitle className="text-lg">
-                      {selectedPlan.name}
-                    </CardTitle>
-                    <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                      <Check className="h-4 w-4 text-white" />
-                    </div>
-                  </div>
-                  <CardDescription>{selectedPlan.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div>
-                    <div className="text-xl font-semibold text-primary">
-                      {formatPrice(totalPrice)}
-                      <span className="text-sm text-gray-500">/month</span>
-                    </div>
-                    <div className="text-xs text-gray-500">
-                      {personCount > 1 ? (
-                        <>
-                          {formatPrice(basePrice)} per person × {personCount}{" "}
-                          persons
-                        </>
-                      ) : (
-                        <>Base: {formatPrice(basePrice)}</>
-                      )}
-                    </div>
+              {formStep === "plan" && (
+                <Button
+                  type="button"
+                  className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
+                  onClick={() => {
+                    if (!user) {
+                      setAuthModalOpen(true);
+                    } else {
+                      goToNextStep();
+                    }
+                  }}
+                >
+                  {!user ? "Login and continue" : "Continue to payment"}
 
-                    <div className="text-sm text-gray-600 mt-1">
-                      <span className="font-medium">Start Date:</span>{" "}
-                      {format(form.watch("startDate"), "PPP")}
-                    </div>
-                    {/* <div className="text-sm text-gray-600">
-                      <span className="font-medium">Persons:</span>{" "}
-                      {personCount}
-                    </div> */}
-                    <div className="text-sm text-gray-600 mt-1">
-                      <span className="text-sm font-medium mr-2">
-                        Selected Diet:
-                      </span>
-                      <Badge
-                        variant="outline"
-                        className={
-                          dietaryPreference === "veg"
-                            ? "bg-green-100 text-green-800"
-                            : dietaryPreference === "veg_with_egg"
-                              ? "bg-amber-100 text-amber-800"
-                              : "bg-red-100 text-red-800"
-                        }
-                      >
-                        {dietaryPreference === "veg"
-                          ? "Vegetarian"
-                          : dietaryPreference === "veg_with_egg"
-                            ? "Veg with Egg"
-                            : "Non-Vegetarian"}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              )}
+
+              {formStep === "payment" && (
+                <Button
+                  type="button"
+                  className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
+                  onClick={form.handleSubmit(onSubmit)}
+                >
+                  {subscriptionMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>Complete Subscription</>
+                  )}
+                </Button>
+              )}
             </div>
-          )}
-
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {formStep === "plan" && "Choose Your Plan"}
-                {formStep === "address" && "Delivery Address"}
-                {formStep === "payment" && "Payment Information"}
-              </CardTitle>
-              <CardDescription>
-                {formStep === "plan" &&
-                  "Select a plan and customize your meals"}
-                {formStep === "address" && "Choose delivery location"}
-                {formStep === "payment" &&
-                  "Complete your subscription purchase"}
-              </CardDescription>
-
-              <div className="mt-4">
-                <div className="flex justify-between">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center bg-primary text-white`}
-                    >
-                      1
-                    </div>
-                    <span className="text-xs mt-1">Plan</span>
-                  </div>
-                  <div className="flex-1 flex items-center mx-2 mb-[18px]">
-                    <div
-                      className={`h-1 w-full ${
-                        formStep !== "plan" ? "bg-primary" : "bg-gray-200"
-                      }`}
-                    ></div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        formStep === "address"
-                          ? "bg-primary text-white"
-                          : formStep === "payment"
-                            ? "bg-primary text-white"
-                            : "bg-gray-200"
-                      }`}
-                    >
-                      2
-                    </div>
-                    <span className="text-xs mt-1">Address</span>
-                  </div>
-                  <div className="flex-1 flex items-center mx-2 mb-[18px]">
-                    <div
-                      className={`h-1 w-full ${
-                        formStep === "payment" ? "bg-primary" : "bg-gray-200"
-                      }`}
-                    ></div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                        formStep === "payment"
-                          ? "bg-primary text-white"
-                          : "bg-gray-200"
-                      }`}
-                    >
-                      3
-                    </div>
-                    <span className="text-xs mt-1">Payment</span>
-                  </div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <div className="space-y-6">
-                  {renderStepContent()}
-
-                  {/* Navigation buttons outside the step content */}
-                  <div className="flex justify-between items-center mt-6">
-                    {formStep !== "plan" && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={goToPreviousStep}
-                      >
-                        <ArrowLeft className="mr-2 h-4 w-4" />
-                        {formStep === "address"
-                          ? "Back to Plan"
-                          : "Back to Address"}
-                      </Button>
-                    )}
-
-                    {formStep === "plan" && (
-                      <Button
-                        type="button"
-                        className="ml-auto bg-primary hover:bg-primary/90"
-                        onClick={() => {
-                          if (!user) {
-                            setAuthModalOpen(true);
-                          } else {
-                            goToNextStep();
-                          }
-                        }}
-                      >
-                        {!user ? "Login and continue" : "Continue"}
-
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
-
-                    {formStep === "address" && (
-                      <Button
-                        type="button"
-                        className="ml-auto bg-primary hover:bg-primary/90"
-                        onClick={() => {
-                          if (!form.watch("selectedAddressId")) {
-                            toast({
-                              title: "Address required",
-                              description:
-                                "Please select an existing address or add a new one",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-                          goToNextStep();
-                        }}
-                      >
-                        Continue to Payment
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    )}
-
-                    {formStep === "payment" && (
-                      <Button
-                        type="button"
-                        className="ml-auto bg-primary hover:bg-primary/90"
-                        onClick={form.handleSubmit(onSubmit)}
-                      >
-                        {subscriptionMutation.isPending ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>Complete Subscription</>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </Form>
-            </CardContent>
-          </Card>
-        </div>
+          </div>
+        </Form>
       </div>
 
       <AuthModal

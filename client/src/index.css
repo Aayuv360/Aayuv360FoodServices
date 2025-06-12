@@ -18,22 +18,25 @@
   --radius: 0.5rem;
 
   /* MealMillet colors */
-  --primary: 13 70% 63%;  /* #E27D60 - Coral */
+  --primary: 25 95% 53%;
+  /* #E27D60 - Coral */
   --primary-foreground: 0 0% 100%;
-  --secondary: 39 64% 65%;  /* #DDB26E - Gold */
+  --secondary: 39 64% 65%;
+  /* #DDB26E - Gold */
   --secondary-foreground: 24 9.8% 10%;
-  --accent: 169 45% 48%;  /* #41B3A3 - Teal */
+  --accent: 25 95% 53%;
+  /* #41B3A3 - Teal */
   --accent-foreground: 0 0% 100%;
   --destructive: 0 84.2% 60.2%;
   --destructive-foreground: 60 9.1% 97.8%;
-  
+
   /* Chart colors */
   --chart-1: var(--primary);
   --chart-2: var(--secondary);
   --chart-3: var(--accent);
   --chart-4: 135 53% 45%;
   --chart-5: 262 83% 58%;
-  
+
   /* Sidebar colors */
   --sidebar-background: 240 10% 3.9%;
   --sidebar-foreground: 0 0% 98%;
@@ -69,12 +72,18 @@
     font-family: "Open Sans", sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: "Playfair Display", serif;
     @apply font-bold;
   }
 
-  button, .font-accent {
+  button,
+  .font-accent {
     font-family: "Poppins", sans-serif;
     @apply font-medium;
   }
@@ -92,7 +101,7 @@
   .hero-gradient {
     @apply bg-gradient-to-r from-primary to-secondary text-white;
   }
-  
+
   .cta-gradient {
     @apply bg-gradient-to-r from-primary to-secondary text-white;
   }
@@ -102,19 +111,162 @@
   .fade-in {
     animation: fadeIn 0.5s ease-in;
   }
-  
+
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
-  
+
   /* Hide scrollbar but keep functionality */
   .no-scrollbar::-webkit-scrollbar {
     display: none;
   }
-  
+
   .no-scrollbar {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+}
+
+
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-sans text-gray-800 antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-medium leading-tight;
+  }
+}
+
+@layer components {
+  .container {
+    @apply px-4 mx-auto;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:shadow-glow focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-orange-600 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500;
+  }
+}
+
+/* 3D Transform Utilities */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.perspective-3000 {
+  perspective: 3000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.rotate-y-2 {
+  transform: rotateY(2deg);
+}
+
+.translate-z-10 {
+  transform: translateZ(10px);
+}
+
+.translate-z-12 {
+  transform: translateZ(12px);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.6s ease-out forwards;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Gradient Animations */
+.gradient-text {
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-orange-600 to-amber-500;
+  background-size: 200% 200%;
+  animation: gradient 8s ease infinite;
+}
+
+@keyframes gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
   }
 }

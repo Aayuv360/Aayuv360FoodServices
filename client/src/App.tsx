@@ -25,37 +25,54 @@ import NotFound from "@/pages/not-found";
 import { useAuth } from "./hooks/use-auth";
 
 function Router() {
-  const { user } = useAuth();
-  const [location] = useLocation();
-  
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <div className="font-sans min-h-screen flex flex-col bg-gradient-to-b from-orange-50 to-amber-50">
+        <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.1),rgba(249,115,22,0))] pointer-events-none"></div>
+        <Header />
+        <main className="flex-grow relative">
+          <Switch>
+            <Route path="/" component={Home} />
+            <Route path="/menu" component={Menu} />
 
-      <main className="flex-grow">
-        <Switch>
-          <Route path="/" component={Home} />
-          <Route path="/menu" component={Menu} />
-          
-          {/* Protected routes */}
-          <ProtectedRoute path="/profile" component={Profile} />
-          <ProtectedRoute path="/subscription" component={Subscription} />
-          <ProtectedRoute path="/subscription/:subscriptionId" component={Subscription} />
-          <ProtectedRoute path="/checkout/:orderId" component={Checkout} />
-          <ProtectedRoute path="/payment-success" component={PaymentSuccess} />
-          <ProtectedRoute path="/meal-planner" component={MealPlanner} />
-          
-          {/* Admin routes */}
-          <ProtectedRoute path="/analytics" component={Analytics} adminOnly />
-          <ProtectedRoute path="/order-management" component={OrderManagement} managerOnly />
-          <ProtectedRoute path="/admin-portal" component={AdminPortal} adminOnly />
-          <ProtectedRoute path="/make-admin" component={MakeAdmin} adminOnly />
-          
-          <Route component={NotFound} />
-        </Switch>
-      </main>
-      
-      <Footer />
+            {/* Protected routes */}
+            <ProtectedRoute path="/profile" component={Profile} />
+            <Route path="/subscription" component={Subscription} />
+            <ProtectedRoute
+              path="/subscription/:subscriptionId"
+              component={Subscription}
+            />
+            <ProtectedRoute path="/checkout/:orderId" component={Checkout} />
+            <ProtectedRoute
+              path="/payment-success"
+              component={PaymentSuccess}
+            />
+            <ProtectedRoute path="/meal-planner" component={MealPlanner} />
+
+            {/* Admin routes */}
+            <ProtectedRoute path="/analytics" component={Analytics} adminOnly />
+            <ProtectedRoute
+              path="/order-management"
+              component={OrderManagement}
+              managerOnly
+            />
+            <ProtectedRoute
+              path="/admin-portal"
+              component={AdminPortal}
+              adminOnly
+            />
+            <ProtectedRoute
+              path="/make-admin"
+              component={MakeAdmin}
+              adminOnly
+            />
+
+            <Route component={NotFound} />
+          </Switch>
+        </main>
+
+        <Footer />
+      </div>
     </div>
   );
 }

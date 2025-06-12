@@ -35,16 +35,16 @@ const MenuCard = ({ meal }: MenuCardProps) => {
   };
 
   return (
-    <>
-      <div className="bg-white rounded-lg overflow-hidden card-shadow hover:shadow-lg transition duration-300">
-        <div className="relative">
+    <div className="group perspective-2000">
+      <div className="bg-white rounded-lg overflow-hidden shadow-card-3d hover:shadow-hover-3d transition-all duration-500 transform hover:-translate-y-2 hover:rotate-y-2 hover:scale-105">
+        <div className="relative h-48 overflow-hidden">
           <img
             src={
               meal.imageUrl ||
               "https://via.placeholder.com/300x200?text=Millet+Meal"
             }
             alt={meal.name}
-            className="w-full h-32 sm:h-40 object-cover"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
           />
           {meal.isPopular && (
             <div className="absolute top-2 right-2 bg-accent text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5 sm:py-1 text-[10px] sm:text-xs">
@@ -57,22 +57,22 @@ const MenuCard = ({ meal }: MenuCardProps) => {
             </div>
           )}
         </div>
-        <div className="p-2 sm:p-3 flex-grow flex flex-col">
-          <div className="flex justify-between items-start mb-1 sm:mb-2">
-            <h3 className="text-sm sm:text-base font-bold line-clamp-1">
+        <div className="p-4 transform transition-transform duration-500 group-hover:translate-z-10">
+          <div className="flex justify-between items-start">
+            <h3 className="font-semibold text-lg text-gray-800 mb-2">
               {meal.name}
             </h3>
 
             <div className="flex items-center ml-2 flex-shrink-0">
-              <span className="text-primary font-semibold text-sm sm:text-base">
+              <span className="text-orange-500 font-semibold text-sm sm:text-base">
                 {formatPrice(meal.price)}
               </span>
             </div>
           </div>
-          <p className="text-gray-600 text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2">
+          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
             {meal.description}
           </p>
-          <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
+          {/* <div className="flex flex-wrap gap-2 mb-4">
             {meal.dietaryPreferences?.map((preference, index) => (
               <span
                 key={index}
@@ -81,16 +81,17 @@ const MenuCard = ({ meal }: MenuCardProps) => {
                 {preference.charAt(0).toUpperCase() + preference.slice(1)}
               </span>
             ))}
-          </div>
+          </div> */}
+
           <div className="flex justify-between items-center">
             <Button
               variant="ghost"
               size="sm"
-              className="text-accent hover:text-primary transition duration-200 flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 h-auto text-xs sm:text-sm"
+              className="text-xs sm:text-sm py-1 px-3 h-auto"
               onClick={() => setNutritionModalOpen(true)}
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Nutrition</span>
+              <span className="xs:inline">Nutrition</span>
             </Button>
             <MealCardActions meal={meal} />
           </div>
@@ -102,7 +103,7 @@ const MenuCard = ({ meal }: MenuCardProps) => {
         open={nutritionModalOpen}
         onClose={() => setNutritionModalOpen(false)}
       />
-    </>
+    </div>
   );
 };
 
