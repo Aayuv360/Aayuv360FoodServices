@@ -228,7 +228,6 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
         </div>
       ) : (
         <Button
-          variant="outline"
           size="sm"
           className="rounded-full text-xs sm:text-sm py-1 px-3 h-auto"
           onClick={handleAddClick}

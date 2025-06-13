@@ -979,7 +979,7 @@ const Subscription = () => {
   };
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 min-h-screen">
       <div className="container mx-auto">
         <Form {...form}>
           <div className="max-w-7xl mx-auto px-5 py-6">

@@ -21,9 +21,7 @@ const Footer = () => {
               <div className="h-10 w-10 rounded-full bg-orange-500 text-white flex items-center justify-center text-xl font-bold">
                 A
               </div>
-              <span className="ml-2 font-bold text-xl text-orange-600">
-                Aayuv
-              </span>
+              <span className="ml-2 font-bold text-xl text-primary">Aayuv</span>
             </div>
             <p className="text-gray-600 text-sm mb-4">
               Bringing traditional millet-based cuisine to modern tables with

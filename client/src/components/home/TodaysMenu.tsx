@@ -1,21 +1,23 @@
 import { useState } from "react";
-import { Link } from "wouter";
 import { Calendar, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
-import { format } from "date-fns";
 import { Meal } from "@shared/schema";
+import NutritionModal from "../menu/NutritionModal";
 const tabs = [
   { id: "all", name: "All Meals" },
-  { id: "breakfast", name: "Breakfast" },
-  { id: "lunch", name: "Lunch" },
-  { id: "dinner", name: "Dinner" },
+  // { id: "breakfast", name: "Breakfast" },
+  // { id: "lunch", name: "Lunch" },
+  // { id: "dinner", name: "Dinner" },
   { id: "vegetarian", name: "Vegetarian" },
   { id: "gluten-free", name: "Gluten-Free" },
+  { id: "high-protein", name: "High-protein" },
 ];
 const TodaysMenu = () => {
   const [filter, setFilter] = useState("all");
+  const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
+  const [mealData, setMealData] = useState<any>();
   const currentDate = new Date();
   const formattedDate = currentDate.toLocaleDateString("en-US", {
     month: "long",
@@ -86,9 +88,14 @@ const TodaysMenu = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
             {displayedMeals.map((meal) => (
-              <MenuCard key={meal.id} meal={meal} />
+              <MenuCard
+                key={meal.id}
+                meal={meal}
+                setNutritionModalOpen={setNutritionModalOpen}
+                setMealData={setMealData}
+              />
             ))}
           </div>
         )}
@@ -103,6 +110,13 @@ const TodaysMenu = () => {
           </Button>
         </div> */}
       </div>
+      {nutritionModalOpen && (
+        <NutritionModal
+          meal={mealData}
+          open={nutritionModalOpen}
+          onClose={() => setNutritionModalOpen(false)}
+        />
+      )}
     </section>
   );
 };

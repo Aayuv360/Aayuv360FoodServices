@@ -42,7 +42,7 @@ const HowItWorks = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto perspective-2000">
+        <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-3 gap-12 max-w-6xl mx-auto perspective-2000">
           {steps.map((step, index) => {
             const IconComponent = step.icon;
 

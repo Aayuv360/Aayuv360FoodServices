@@ -1,19 +1,29 @@
 import { useState, useEffect } from "react";
-import { Calendar, Loader2, Search } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
 import { format } from "date-fns";
 import { Meal } from "@shared/schema";
 import { useLocation } from "wouter";
+import NutritionModal from "@/components/menu/NutritionModal";
 
+const tabs = [
+  { id: "all", name: "All Meals" },
+  // { id: "breakfast", name: "Breakfast" },
+  // { id: "lunch", name: "Lunch" },
+  // { id: "dinner", name: "Dinner" },
+  { id: "vegetarian", name: "Vegetarian" },
+  { id: "gluten-free", name: "Gluten-Free" },
+  { id: "high-protein", name: "High-protein" },
+];
 const Menu = () => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [location] = useLocation();
   const today = format(new Date(), "MMMM d, yyyy");
-
+  const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
+  const [mealData, setMealData] = useState<any>();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     console.log(params);
@@ -80,7 +90,7 @@ const Menu = () => {
     : [];
 
   return (
-    <div className="py-8 sm:py-12 bg-neutral-light min-h-screen">
+    <div className="py-8 sm:py-12 bg-neutral-light min-h-screen bg-gray-50">
       <div className="container mx-auto px-3 sm:px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
           <div>
@@ -91,66 +101,23 @@ const Menu = () => {
               Explore our delicious millet-based dishes for {today}
             </p>
           </div>
-          {/* <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search meals..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" size="icon" className="rounded-full bg-white">
-              <Calendar className="h-5 w-5 text-primary" />
-            </Button>
-          </div> */}
+        </div>
+        <div className="flex flex-wrap gap-2 mb-10">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                filter === tab.id
+                  ? "bg-orange-500 text-white"
+                  : "bg-white text-gray-700 hover:bg-orange-100"
+              }`}
+              onClick={() => setFilter(tab.id)}
+            >
+              {tab.name}
+            </button>
+          ))}
         </div>
 
-        {/* Menu Filters */}
-        <div className="mb-6 sm:mb-8 flex flex-wrap gap-1.5 sm:gap-2">
-          <FilterButton
-            active={filter === "all"}
-            onClick={() => setFilter("all")}
-          >
-            All Meals
-          </FilterButton>
-          {/* <FilterButton
-            active={filter === "breakfast"}
-            onClick={() => setFilter("breakfast")}
-          >
-            Breakfast
-          </FilterButton>
-          <FilterButton active={filter === "lunch"} onClick={() => setFilter("lunch")}>
-            Lunch
-          </FilterButton>
-          <FilterButton active={filter === "dinner"} onClick={() => setFilter("dinner")}>
-            Dinner
-          </FilterButton> */}
-          <FilterButton
-            active={filter === "vegetarian"}
-            onClick={() => setFilter("vegetarian")}
-          >
-            Vegetarian
-          </FilterButton>
-          <FilterButton
-            active={filter === "gluten-free"}
-            onClick={() => setFilter("gluten-free")}
-          >
-            Gluten-Free
-          </FilterButton>
-          <FilterButton
-            active={filter === "high-protein"}
-            onClick={() => setFilter("high-protein")}
-          >
-            High Protein
-          </FilterButton>
-          {/* <FilterButton active={filter === "spicy"} onClick={() => setFilter("spicy")}>
-            Spicy
-          </FilterButton> */}
-        </div>
-
-        {/* Menu Items Grid */}
         {isLoading ? (
           <div className="flex justify-center py-8 sm:py-12">
             <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
@@ -174,11 +141,23 @@ const Menu = () => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
             {filteredMeals.map((meal: any) => (
-              <MenuCard key={meal.id} meal={meal} />
+              <MenuCard
+                key={meal.id}
+                meal={meal}
+                setNutritionModalOpen={setNutritionModalOpen}
+                setMealData={setMealData}
+              />
             ))}
           </div>
         )}
       </div>
+      {nutritionModalOpen && (
+        <NutritionModal
+          meal={mealData}
+          open={nutritionModalOpen}
+          onClose={() => setNutritionModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

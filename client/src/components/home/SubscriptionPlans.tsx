@@ -86,7 +86,7 @@ const SubscriptionPlans = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {sortedPlans.map((plan) => (
             <div
               key={plan.id}
