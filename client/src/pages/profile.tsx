@@ -102,8 +102,6 @@ const Profile = () => {
       enabled: currentTab === "subscriptions",
     });
 
-  // Using imported formatPrice function from utils for consistent price formatting without decimals
-
   const defaultValues: ProfileFormValues = {
     name: user?.name || "",
     email: user?.email || "",
@@ -146,7 +144,6 @@ const Profile = () => {
     return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
 
-  // Helper function to check if subscription needs renewal (within 2 days)
   const needsRenewal = (subscription: any) => {
     if (!subscription.endDate || subscription.status !== "active") return false;
 
@@ -158,7 +155,6 @@ const Profile = () => {
     return endDate <= twoDaysFromNow && endDate >= currentDate;
   };
 
-  // Mutation for renewing subscription
   const renewSubscriptionMutation = useMutation({
     mutationFn: async (subscriptionId: number) => {
       const res = await apiRequest(
@@ -200,10 +196,9 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-light py-6 sm:py-12">
+    <div className="min-h-screen bg-neutral-light py-6 sm:py-12 min-h-screen bg-gray-50">
       <div className="container mx-auto px-3 sm:px-4">
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
-          {/* Sidebar */}
           <div className="w-full md:w-64 space-y-3 sm:space-y-4">
             <Card>
               <CardContent className="p-3 sm:p-4">

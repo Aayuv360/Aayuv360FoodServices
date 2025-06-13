@@ -205,20 +205,20 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
   return (
     <>
       {inCart ? (
-        <div className="flex items-center border rounded-full text-xs sm:text-sm bg-primary">
+        <div className="flex items-center rounded-full text-xs sm:text-sm bg-primary">
           <Button
             size="icon"
-            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full font-extrabold"
             onClick={handleRemoveClick}
           >
             <Minus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
           </Button>
-          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1">
+          <span className="px-1.5 sm:px-2 py-0.5 sm:py-1 font-extrabold">
             {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
           </span>
           <Button
             size="icon"
-            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full font-extrabold"
             onClick={handleAddClick}
           >
             <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />

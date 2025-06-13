@@ -109,7 +109,7 @@ const SubscriptionPlans = () => {
 
                 <div className="p-6">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    {plan.name}
+                    {plan.name === "Family" ? "Elite" : plan.name}
                   </h3>
                   <div className="flex items-baseline mb-4">
                     <span className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent">
