@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
 import { format } from "date-fns";
 import { Meal } from "@shared/schema";
 import { useLocation } from "wouter";
 import NutritionModal from "@/components/menu/NutritionModal";
+import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 
 const tabs = [
   { id: "all", name: "All Meals" },
@@ -26,13 +26,6 @@ const Menu = () => {
   const [mealData, setMealData] = useState<any>();
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    console.log(params);
-    const searchParam = params.get("search");
-    console.log(searchParam);
-
-    if (searchParam) {
-      setSearchQuery(searchParam);
-    }
 
     const mealId = params.get("id");
     if (mealId) {
@@ -49,12 +42,14 @@ const Menu = () => {
     isLoading,
     error,
   } = useQuery<Meal[]>({
-    queryKey: ["/api/meals", searchQuery],
+    // queryKey: ["/api/meals", searchQuery],
+    queryKey: ["/api/meals"],
+
     queryFn: async () => {
       const params = new URLSearchParams();
-      if (searchQuery) {
-        params.append("query", searchQuery);
-      }
+      // if (searchQuery) {
+      //   params.append("query", searchQuery);
+      // }
       const response = await fetch(
         `/api/meals${params.toString() ? `?${params.toString()}` : ""}`,
       );
@@ -71,20 +66,21 @@ const Menu = () => {
     ? meals
         .filter((meal) => {
           if (filter === "all") return true;
-          if (
-            filter === "breakfast" ||
-            filter === "lunch" ||
-            filter === "dinner"
-          ) {
-            return meal.mealType === filter;
-          }
           return meal.dietaryPreferences?.includes(filter as any);
         })
         .filter((meal) => {
           if (!searchQuery) return true;
+
+          const query = searchQuery.toLowerCase();
+
           return (
-            meal.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            meal.description.toLowerCase().includes(searchQuery.toLowerCase())
+            meal?.name?.toLowerCase()?.includes(query) ||
+            meal?.description?.toLowerCase()?.includes(query) ||
+            meal?.category?.toLowerCase()?.includes(query) ||
+            meal?.price?.toString()?.includes(query) ||
+            meal?.dietaryPreferences?.some((pref) =>
+              pref?.toLowerCase()?.includes(query),
+            )
           );
         })
     : [];
@@ -101,6 +97,31 @@ const Menu = () => {
               Explore our delicious millet-based dishes for {today}
             </p>
           </div>
+          <form className="flex-grow max-w-xl relative order-last md:order-none my-2 md:my-0">
+            <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
+              placeholder="Search meals..."
+              className="w-full py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                }}
+                className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            )}
+          </form>
         </div>
         <div className="flex flex-wrap gap-2 mb-10">
           {tabs.map((tab) => (
@@ -161,25 +182,5 @@ const Menu = () => {
     </div>
   );
 };
-
-interface FilterButtonProps {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}
-
-const FilterButton = ({ children, active, onClick }: FilterButtonProps) => (
-  <Button
-    variant={active ? "default" : "outline"}
-    className={`rounded-full text-xs sm:text-sm h-auto py-1.5 sm:py-2 px-3 sm:px-4 ${
-      active
-        ? "bg-primary text-white"
-        : "bg-white text-neutral-dark hover:bg-gray-100"
-    }`}
-    onClick={onClick}
-  >
-    {children}
-  </Button>
-);
 
 export default Menu;

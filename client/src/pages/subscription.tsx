@@ -765,19 +765,19 @@ const Subscription = () => {
               </h1>
             </div>
             <div>
-              {addresses.length > 0 && (
-                <div className="mb-6">
-                  <div className="flex justify-end mb-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="rounded-full"
-                      onClick={() => setAddressModalOpen(true)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add New Address
-                    </Button>
-                  </div>
+              <div className="mb-6">
+                <div className="flex justify-end mb-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="rounded-full"
+                    onClick={() => setAddressModalOpen(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add New Address
+                  </Button>
+                </div>
+                {addresses.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     {addresses.map((address) => (
                       <div
@@ -848,8 +848,11 @@ const Subscription = () => {
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <></>
+                )}
+              </div>
+
               <div className="mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>

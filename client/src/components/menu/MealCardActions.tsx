@@ -205,9 +205,8 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
   return (
     <>
       {inCart ? (
-        <div className="flex items-center border rounded-full text-xs sm:text-sm">
+        <div className="flex items-center border rounded-full text-xs sm:text-sm bg-primary">
           <Button
-            variant="ghost"
             size="icon"
             className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
             onClick={handleRemoveClick}
@@ -218,7 +217,6 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
             {cartItems.reduce((sum, item) => sum + item.quantity, 0)}
           </span>
           <Button
-            variant="ghost"
             size="icon"
             className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
             onClick={handleAddClick}

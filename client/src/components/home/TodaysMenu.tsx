@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Calendar, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
 import { Meal } from "@shared/schema";
 import NutritionModal from "../menu/NutritionModal";
+import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
+
 const tabs = [
   { id: "all", name: "All Meals" },
   // { id: "breakfast", name: "Breakfast" },
@@ -19,6 +20,8 @@ const TodaysMenu = () => {
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
   const [mealData, setMealData] = useState<any>();
   const currentDate = new Date();
+  const [searchQuery, setSearchQuery] = useState("");
+
   const formattedDate = currentDate.toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -32,23 +35,28 @@ const TodaysMenu = () => {
     queryKey: ["/api/meals"],
   });
 
-  const filteredMeals = meals
-    ? filter === "all"
-      ? meals
-      : meals.filter((meal) => {
-          if (
-            filter === "breakfast" ||
-            filter === "lunch" ||
-            filter === "dinner"
-          ) {
-            return meal.mealType === filter;
-          }
+  const displayedMeals = meals
+    ? meals
+        .filter((meal) => {
+          if (filter === "all") return true;
           return meal.dietaryPreferences?.includes(filter as any);
         })
+        .filter((meal) => {
+          if (!searchQuery) return true;
+
+          const query = searchQuery.toLowerCase();
+
+          return (
+            meal?.name?.toLowerCase()?.includes(query) ||
+            meal?.description?.toLowerCase()?.includes(query) ||
+            meal?.category?.toLowerCase()?.includes(query) ||
+            meal?.price?.toString()?.includes(query) ||
+            meal?.dietaryPreferences?.some((pref) =>
+              pref?.toLowerCase()?.includes(query),
+            )
+          );
+        })
     : [];
-
-  const displayedMeals = filteredMeals;
-
   return (
     <section id="menu" className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -56,10 +64,35 @@ const TodaysMenu = () => {
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-0">
             Today's Menu
           </h2>
-          <div className="flex items-center text-gray-600">
+          <form className="flex-grow max-w-xl relative order-last md:order-none my-2 md:my-0">
+            <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+              }}
+              placeholder="Search meals..."
+              className="w-full py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchQuery("");
+                }}
+                className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+              </button>
+            )}
+          </form>
+          {/* <div className="flex items-center text-gray-600">
             <Calendar size={18} className="mr-2" />
             <span>{formattedDate}</span>
-          </div>
+          </div> */}
         </div>
         <div className="flex flex-wrap gap-2 mb-10">
           {tabs.map((tab) => (
@@ -88,7 +121,7 @@ const TodaysMenu = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
             {displayedMeals.map((meal) => (
               <MenuCard
                 key={meal.id}
@@ -99,16 +132,6 @@ const TodaysMenu = () => {
             ))}
           </div>
         )}
-
-        {/* <div className="text-center mt-8">
-          <Button
-            asChild
-            variant="outline"
-            className="border-primary text-primary hover:bg-primary hover:text-white"
-          >
-            <Link href="/menu">View Full Menu</Link>
-          </Button>
-        </div> */}
       </div>
       {nutritionModalOpen && (
         <NutritionModal
@@ -120,25 +143,5 @@ const TodaysMenu = () => {
     </section>
   );
 };
-
-interface FilterButtonProps {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}
-
-const FilterButton = ({ children, active, onClick }: FilterButtonProps) => (
-  <Button
-    variant={active ? "default" : "outline"}
-    className={`rounded-full text-sm ${
-      active
-        ? "bg-primary text-white"
-        : "bg-white text-neutral-dark hover:bg-gray-100"
-    }`}
-    onClick={onClick}
-  >
-    {children}
-  </Button>
-);
 
 export default TodaysMenu;

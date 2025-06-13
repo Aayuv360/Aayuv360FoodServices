@@ -1,8 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { ChevronDown, ShoppingCart, MapPin, LogIn, Bell } from "lucide-react";
+import { User, ShoppingCart, MapPin, LogIn, Search } from "lucide-react";
 import { SimpleDeliveryNotifications } from "@/components/notifications/SimpleDeliveryNotifications";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CartSidebar from "@/components/cart/CartSidebar";
-import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -38,13 +37,12 @@ const Header = () => {
   );
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
   const [userLocation, setUserLocation] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
   const [locationQuery, setLocationQuery] = useState("");
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
   const [, navigate] = useLocation();
-  // Function to open auth modal
+
   const openAuthModal = (
     mode: "normal" | "subscribe" = "normal",
     redirectUrl = "",
@@ -64,18 +62,12 @@ const Header = () => {
         params.append("query", locationQuery);
       }
       const response = await fetch(`/api/locations?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch locations");
-      }
-
+      if (!response.ok) throw new Error("Failed to fetch locations");
       return response.json();
     },
   });
 
-  const toggleCart = () => {
-    setCartOpen(!cartOpen);
-  };
+  const toggleCart = () => setCartOpen(!cartOpen);
 
   const fetchLocationsByCoordinates = async (lat: number, lng: number) => {
     try {
@@ -85,13 +77,9 @@ const Header = () => {
       params.append("radius", "10");
 
       const response = await fetch(`/api/locations?${params.toString()}`);
+      if (!response.ok) throw new Error("Failed to fetch nearby locations");
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch nearby locations");
-      }
-
-      const nearbyLocations: Location[] = await response.json();
-      return nearbyLocations;
+      return await response.json();
     } catch (error) {
       console.error("Error fetching locations by coordinates:", error);
       return [];
@@ -133,7 +121,7 @@ const Header = () => {
         } else {
           toast({
             title: "No Delivery Available",
-            description: "Sorry, we don't deliver to your current location yet",
+            description: "We don't deliver to your current location yet",
             variant: "destructive",
           });
         }
@@ -157,17 +145,12 @@ const Header = () => {
     setUserLocation(`${location.area} - ${location.pincode}`);
     setLocationQuery("");
   };
-  useEffect(() => {
-    if (searchQuery) {
-      navigate(`/menu?search=${encodeURIComponent(searchQuery)}`);
-    }
-  }, [searchQuery]);
+
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-2 sm:px-4 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3 md:gap-4">
-          {/* Logo */}
-          <div className="flex items-center justify-between w-full md:w-auto">
+        <div className="container mx-auto px-2 sm:px-4 py-4 flex  items-center justify-between gap-y-2 md:gap-y-0 gap-x-4">
+          <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center">
               <div className="h-8 w-8 sm:h-10 sm:w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-base sm:text-lg font-bold">
                 A
@@ -179,9 +162,9 @@ const Header = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <div className="cursor-pointer text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
-                  <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                  <span className="truncate max-w-[120px] sm:max-w-none">
+                <div className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
+                  <MapPin className="h-5 w-5 hover:text-primary" />
+                  <span className="truncate max-w-[120px] sm:max-w-none hidden sm:inline">
                     {userLocation || "Select Location"}
                   </span>
                 </div>
@@ -207,7 +190,7 @@ const Header = () => {
                         className="cursor-pointer"
                       >
                         <div className="flex items-start">
-                          <MapPin className="h-4 w-4 mr-2 text-primary flex-shrink-0 mt-0.5" />
+                          <MapPin className="h-4 w-4 mr-2 text-primary mt-0.5" />
                           <div>
                             <div className="font-medium">{loc.area}</div>
                             <div className="text-xs text-muted-foreground">
@@ -239,71 +222,46 @@ const Header = () => {
             </DropdownMenu>
           </div>
 
-          <form className="flex-grow max-w-xl relative order-last md:order-none my-2 md:my-0">
-            <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+          {/* Icons Row */}
+          <div className="flex items-center flex-nowrap justify-end gap-2 sm:gap-4 w-full md:w-auto overflow-hidden">
+            <button
+              onClick={() => navigate("/menu")}
+              className="hover:text-primary relative flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-0.75 sm:py-1 text-xs sm:text-sm"
+              aria-label="Search"
+            >
+              <Search className="w-5 h-5" />
+              <span className="hidden sm:inline text-sm">Search</span>
+            </button>
 
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-              }}
-              placeholder="Search meals..."
-              className="w-full py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                }}
-                className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-            )}
-          </form>
-
-          <div className="flex items-center space-x-2 sm:space-x-4">
             {user && <SimpleDeliveryNotifications />}
 
-            <Button
-              variant="outline"
-              className="relative flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm"
+            <button
+              className="hover:text-primary relative flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-0.75 sm:py-1 text-xs sm:text-sm m-1"
               onClick={toggleCart}
               disabled={!cartItems.length}
             >
-              <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-              <span className="hidden xs:inline">Cart</span>
-
+              <ShoppingCart className="w-5 h-5" />
+              <span className="hidden sm:inline">Cart</span>
               {cartItems.length > 0 && (
-                <span className="ml-auto bg-primary text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5">
+                <span className="absolute -top-0.5 -right-5 ml-auto bg-primary text-white text-xs rounded-full px-1.5 sm:px-2 py-0.5">
                   {cartItems.length}
                 </span>
               )}
-            </Button>
+            </button>
 
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="flex items-center gap-1 sm:gap-2 p-1 sm:p-2"
+                  <button
+                    onClick={() => navigate("/menu")}
+                    className="hover:text-primary relative flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-0.75 sm:py-1 text-xs sm:text-sm"
+                    aria-label="Search"
                   >
-                    <Avatar className="h-6 w-6 sm:h-8 sm:w-8">
-                      <AvatarImage
-                        src={`https://ui-avatars.com/api/?name=${user.name || user.username || "User"}&background=random`}
-                      />
-                      <AvatarFallback>
-                        {(user.name || user.username || "U").charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="ml-1 sm:ml-2 hidden md:inline text-xs sm:text-sm">
+                    <User className="w-5 h-5" />
+                    <span className="hidden sm:inline text-xs sm:text-sm whitespace-nowrap truncate max-w-[100px]">
                       {(user.name || user.username || "User").split(" ")[0]}
-                    </span>
-                    <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4" />
-                  </Button>
+                    </span>{" "}
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem asChild>
@@ -321,29 +279,24 @@ const Header = () => {
                       Order History
                     </Link>
                   </DropdownMenuItem>
-
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={logout}>Sign out</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  className="hidden md:flex"
-                  onClick={() => openAuthModal("normal", "")}
-                >
-                  <LogIn className="h-4 w-4 mr-2" />
-                  Login
-                </Button>
-              </div>
+              <button
+                className="hover:text-primary relative flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-0.75 sm:py-1 text-xs sm:text-sm"
+                onClick={() => openAuthModal("normal", "")}
+              >
+                <LogIn className="w-5 h-5" />
+                <span className="hidden sm:inline">Login</span>
+              </button>
             )}
           </div>
         </div>
       </header>
 
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
-
       <AuthModal
         isOpen={authModalOpen}
         onOpenChange={setAuthModalOpen}

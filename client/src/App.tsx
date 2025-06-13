@@ -23,7 +23,7 @@ import AdminPortal from "@/pages/admin-portal";
 import MakeAdmin from "@/pages/make-admin";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "./hooks/use-auth";
-
+import { RecoilRoot } from "recoil";
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -79,16 +79,18 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <CartProvider>
-            <Toaster />
-            <Router />
-          </CartProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </QueryClientProvider>
+    <RecoilRoot>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <AuthProvider>
+            <CartProvider>
+              <Toaster />
+              <Router />
+            </CartProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </RecoilRoot>
   );
 }
 

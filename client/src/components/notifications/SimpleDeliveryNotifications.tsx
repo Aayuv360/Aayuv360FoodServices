@@ -18,7 +18,12 @@ import { useAuth } from "@/hooks/use-auth";
 interface DeliveryUpdate {
   id: number;
   orderId: number;
-  status: "preparing" | "in_transit" | "out_for_delivery" | "nearby" | "delivered";
+  status:
+    | "preparing"
+    | "in_transit"
+    | "out_for_delivery"
+    | "nearby"
+    | "delivered";
   message: string;
   estimatedTime?: string;
   timestamp: string;
@@ -46,15 +51,24 @@ export function SimpleDeliveryNotifications() {
   // Show toast notifications for new delivery updates
   useEffect(() => {
     console.log("Delivery updates changed:", deliveryUpdates);
-    
+
     if (deliveryUpdates.length === 0) return;
 
     // Find the latest update
-    const latestUpdate = deliveryUpdates.reduce((latest: DeliveryUpdate, current: DeliveryUpdate) => {
-      return new Date(current.timestamp) > new Date(latest.timestamp) ? current : latest;
-    });
+    const latestUpdate = deliveryUpdates.reduce(
+      (latest: DeliveryUpdate, current: DeliveryUpdate) => {
+        return new Date(current.timestamp) > new Date(latest.timestamp)
+          ? current
+          : latest;
+      },
+    );
 
-    console.log("Latest update:", latestUpdate, "Last update ID:", lastUpdateId);
+    console.log(
+      "Latest update:",
+      latestUpdate,
+      "Last update ID:",
+      lastUpdateId,
+    );
 
     // Show toast if this is a new update (skip the first load)
     if (lastUpdateId === null) {
@@ -62,7 +76,7 @@ export function SimpleDeliveryNotifications() {
       console.log("Setting initial last update ID:", latestUpdate.id);
     } else if (latestUpdate.id !== lastUpdateId) {
       setLastUpdateId(latestUpdate.id);
-      
+
       // Show toast notification
       const statusText = latestUpdate.status.replace("_", " ");
       toast({
@@ -70,8 +84,13 @@ export function SimpleDeliveryNotifications() {
         description: `Status: ${statusText.toUpperCase()} - ${latestUpdate.message}`,
         duration: 5000,
       });
-      
-      console.log("Toast notification shown for order:", latestUpdate.orderId, "Status:", statusText);
+
+      console.log(
+        "Toast notification shown for order:",
+        latestUpdate.orderId,
+        "Status:",
+        statusText,
+      );
     }
   }, [deliveryUpdates, lastUpdateId, toast]);
 
@@ -120,10 +139,8 @@ export function SimpleDeliveryNotifications() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="icon" 
-          className="relative"
+        <button
+          className="hover:text-primary relative flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-0.75 sm:py-1 text-xs sm:text-sm"
           onClick={handleOpenDialog}
         >
           <Truck className="h-5 w-5" />
@@ -132,7 +149,7 @@ export function SimpleDeliveryNotifications() {
               {deliveryUpdates.length}
             </Badge>
           )}
-        </Button>
+        </button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
@@ -169,7 +186,9 @@ export function SimpleDeliveryNotifications() {
             <div className="flex flex-col items-center py-8 text-center">
               <Package className="h-12 w-12 text-gray-300 mb-3" />
               <p className="text-gray-500">No active deliveries</p>
-              <p className="text-sm text-gray-400">Your delivery updates will appear here</p>
+              <p className="text-sm text-gray-400">
+                Your delivery updates will appear here
+              </p>
             </div>
           )}
         </div>
