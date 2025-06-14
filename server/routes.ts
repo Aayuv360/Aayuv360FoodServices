@@ -154,9 +154,11 @@ function calculateSubscriptionStatus(subscription: any) {
       status === "active"
         ? Math.ceil((end.getTime() - current.getTime()) / (1000 * 60 * 60 * 24))
         : 0;
-    
-    const finalEndDate = isNaN(endDate.getTime()) ? null : endDate.toISOString();
-    
+
+    const finalEndDate = isNaN(endDate.getTime())
+      ? null
+      : endDate.toISOString();
+
     return {
       ...subscription,
       status,
@@ -231,12 +233,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const updateData = req.body;
 
         // Update the subscription plan in MongoDB
-        const updatedPlan = await mongoStorage.updateSubscriptionPlan(planId, updateData);
-        
+        const updatedPlan = await mongoStorage.updateSubscriptionPlan(
+          planId,
+          updateData,
+        );
+
         if (!updatedPlan) {
           return res.status(404).json({
             success: false,
-            message: "Subscription plan not found"
+            message: "Subscription plan not found",
           });
         }
 
@@ -252,7 +257,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating subscription plan:", error);
         res.status(500).json({
           success: false,
-          message: "Failed to update subscription plan"
+          message: "Failed to update subscription plan",
         });
       }
     },
@@ -802,7 +807,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     .get(isAuthenticated, isManagerOrAdmin, async (req, res) => {
       try {
         const plans = await mongoStorage.getAllSubscriptionPlans();
-        
+
         // All plans now have menuItems after migration
         const plansWithMenuItems = plans;
 
@@ -810,7 +815,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const groupedPlans = [
           {
             dietaryPreference: "veg",
-            plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "veg"),
+            plans: plansWithMenuItems.filter(
+              (plan) => plan.dietaryPreference === "veg",
+            ),
             extraPrice: 0,
             id: 1,
           },
@@ -824,7 +831,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           },
           {
             dietaryPreference: "nonveg",
-            plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "nonveg"),
+            plans: plansWithMenuItems.filter(
+              (plan) => plan.dietaryPreference === "nonveg",
+            ),
             extraPrice: 0,
             id: 3,
           },
@@ -908,19 +917,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Always get from MongoDB first
       const activePlans = await mongoStorage.getAllSubscriptionPlans();
-      
+
       // All plans now have menuItems, but ensure fallback for any edge cases
-      const plansWithMenuItems = activePlans.map(plan => {
+      const plansWithMenuItems = activePlans.map((plan) => {
         if (!plan.menuItems || plan.menuItems.length === 0) {
           console.warn(`Plan ${plan.id} missing menuItems, adding default`);
           const defaultMenuItems = [
             { day: 1, main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
             { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
             { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
-            { day: 4, main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
-            { day: 5, main: "Little Millet Pongal", sides: ["Coconut Chutney"] },
-            { day: 6, main: "Barnyard Millet Khichdi", sides: ["Pickle", "Curd"] },
-            { day: 7, main: "Pearl Millet Roti", sides: ["Dal", "Vegetable Curry"] }
+            {
+              day: 4,
+              main: "Foxtail Millet Lemon Rice",
+              sides: ["Boondi Raita"],
+            },
+            {
+              day: 5,
+              main: "Little Millet Pongal",
+              sides: ["Coconut Chutney"],
+            },
+            {
+              day: 6,
+              main: "Barnyard Millet Khichdi",
+              sides: ["Pickle", "Curd"],
+            },
+            {
+              day: 7,
+              main: "Pearl Millet Roti",
+              sides: ["Dal", "Vegetable Curry"],
+            },
           ];
           return { ...plan, menuItems: defaultMenuItems };
         }
@@ -931,7 +956,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const groupedPlans = [
         {
           dietaryPreference: "veg",
-          plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "veg"),
+          plans: plansWithMenuItems.filter(
+            (plan) => plan.dietaryPreference === "veg",
+          ),
           extraPrice: 0,
           id: 1,
         },
@@ -964,19 +991,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("📋 Fetching subscription plans for public API");
       const plans = await mongoStorage.getAllSubscriptionPlans();
-      
+
       // All plans now have menuItems after migration
-      const plansWithMenuItems = plans.map(plan => {
+      const plansWithMenuItems = plans.map((plan) => {
         if (!plan.menuItems || plan.menuItems.length === 0) {
           console.warn(`Plan ${plan.id} missing menuItems, adding default`);
           const defaultMenuItems = [
             { day: 1, main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
             { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
             { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
-            { day: 4, main: "Foxtail Millet Lemon Rice", sides: ["Boondi Raita"] },
-            { day: 5, main: "Little Millet Pongal", sides: ["Coconut Chutney"] },
-            { day: 6, main: "Barnyard Millet Khichdi", sides: ["Pickle", "Curd"] },
-            { day: 7, main: "Pearl Millet Roti", sides: ["Dal", "Vegetable Curry"] }
+            {
+              day: 4,
+              main: "Foxtail Millet Lemon Rice",
+              sides: ["Boondi Raita"],
+            },
+            {
+              day: 5,
+              main: "Little Millet Pongal",
+              sides: ["Coconut Chutney"],
+            },
+            {
+              day: 6,
+              main: "Barnyard Millet Khichdi",
+              sides: ["Pickle", "Curd"],
+            },
+            {
+              day: 7,
+              main: "Pearl Millet Roti",
+              sides: ["Dal", "Vegetable Curry"],
+            },
           ];
           return { ...plan, menuItems: defaultMenuItems };
         }
@@ -987,7 +1030,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const groupedPlans = [
         {
           dietaryPreference: "veg",
-          plans: plansWithMenuItems.filter((plan) => plan.dietaryPreference === "veg"),
+          plans: plansWithMenuItems.filter(
+            (plan) => plan.dietaryPreference === "veg",
+          ),
           extraPrice: 0,
           id: 1,
         },
@@ -1008,8 +1053,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 3,
         },
       ].filter((group) => group.plans.length > 0);
-      
-      console.log(`📋 Retrieved ${plans.length} subscription plans for public API`);
+
+      console.log(
+        `📋 Retrieved ${plans.length} subscription plans for public API`,
+      );
       res.json(groupedPlans);
     } catch (error) {
       console.error("Error fetching public subscription plans:", error);
@@ -1104,53 +1151,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     }
   });
+  app.post(
+    "/api/subscriptions/:id/modify",
+    isAuthenticated,
+    async (req, res) => {
+      try {
+        const userId = (req.user as any).id;
+        const subscriptionId = parseInt(req.params.id, 10);
+        const { resumeDate, timeSlot, deliveryAddressId } = req.body;
 
-  // Renew subscription endpoint
-  app.post("/api/subscriptions/:id/renew", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const subscriptionId = parseInt(req.params.id);
-      
-      const subscription = await mongoStorage.getSubscription(subscriptionId);
-      
-      if (!subscription) {
-        return res.status(404).json({ message: "Subscription not found" });
+        const parsedResumeDate = new Date(resumeDate);
+        if (!resumeDate || isNaN(parsedResumeDate.getTime())) {
+          return res
+            .status(400)
+            .json({ message: "Invalid or missing resumeDate in request body" });
+        }
+
+        const subscription = await mongoStorage.getSubscription(subscriptionId);
+        if (!subscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        if (subscription.userId !== userId) {
+          return res.status(403).json({
+            message: "You do not have permission to modify this subscription",
+          });
+        }
+
+        const planDuration = subscription?.mealsPerMonth;
+        if (typeof planDuration !== "number" || planDuration <= 0) {
+          console.error(
+            "Invalid or missing plan duration for subscription:",
+            planDuration,
+          );
+          return res.status(400).json({
+            message: "Invalid or missing plan duration for the subscription.",
+          });
+        }
+
+        const today = new Date();
+        const startDate = new Date(subscription.startDate);
+
+        const deliveredDays = Math.max(
+          0,
+          Math.floor(
+            (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+          ) + 1,
+        );
+
+        const remainingDays = planDuration - deliveredDays;
+        if (remainingDays <= 0) {
+          return res
+            .status(400)
+            .json({ message: "No remaining days in the subscription plan" });
+        }
+
+        // Safe date addition
+        const addDays = (date: Date, days: number) => {
+          const result = new Date(date);
+          result.setUTCDate(result.getUTCDate() + days);
+          return result;
+        };
+
+        const newEndDate =
+          remainingDays > 1
+            ? addDays(parsedResumeDate, planDuration - 1)
+            : addDays(parsedResumeDate, remainingDays - 1);
+
+        const updates = {
+          startDate: parsedResumeDate.toISOString(),
+          endDate: newEndDate.toISOString(),
+          timeSlot,
+          deliveryAddressId,
+          updatedAt: new Date(),
+        };
+
+        const updatedSubscription = await mongoStorage.updateSubscription(
+          subscriptionId,
+          updates,
+        );
+
+        if (!updatedSubscription) {
+          return res
+            .status(500)
+            .json({ message: "Failed to modify subscription" });
+        }
+
+        const modifiedSubscriptionWithStatus =
+          calculateSubscriptionStatus(updatedSubscription);
+
+        return res.json(modifiedSubscriptionWithStatus);
+      } catch (err) {
+        console.error("Error modifying subscription:", err);
+        return res
+          .status(500)
+          .json({ message: "Error modifying subscription" });
       }
-      
-      if (subscription.userId !== userId) {
-        return res.status(403).json({ message: "You do not have permission to renew this subscription" });
+    },
+  );
+
+  app.post(
+    "/api/subscriptions/:id/renew",
+    isAuthenticated,
+    async (req, res) => {
+      try {
+        const userId = (req.user as any).id;
+        const subscriptionId = parseInt(req.params.id);
+
+        const subscription = await mongoStorage.getSubscription(subscriptionId);
+
+        if (!subscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        if (subscription.userId !== userId) {
+          return res.status(403).json({
+            message: "You do not have permission to renew this subscription",
+          });
+        }
+
+        // Calculate new start and end dates for renewal
+        const currentEndDate = subscription.endDate
+          ? new Date(subscription.endDate)
+          : new Date();
+        const newStartDate = new Date(currentEndDate);
+        newStartDate.setDate(currentEndDate.getDate() + 1); // Start the day after current subscription ends
+
+        const planDuration =
+          subscription.plan?.duration || subscription.duration || 30;
+        const newEndDate = new Date(newStartDate);
+        newEndDate.setDate(newStartDate.getDate() + planDuration);
+
+        // Update subscription with new dates and active status
+        const updatedSubscription = await mongoStorage.updateSubscription(
+          subscriptionId,
+          {
+            startDate: newStartDate.toISOString(),
+            endDate: newEndDate.toISOString(),
+            status: "active",
+            updatedAt: new Date(),
+          },
+        );
+
+        if (!updatedSubscription) {
+          return res
+            .status(404)
+            .json({ message: "Failed to renew subscription" });
+        }
+
+        // Calculate status for the renewed subscription
+        const renewedSubscriptionWithStatus =
+          calculateSubscriptionStatus(updatedSubscription);
+
+        res.json(renewedSubscriptionWithStatus);
+      } catch (err) {
+        console.error("Error renewing subscription:", err);
+        res.status(500).json({ message: "Error renewing subscription" });
       }
-      
-      // Calculate new start and end dates for renewal
-      const currentEndDate = subscription.endDate ? new Date(subscription.endDate) : new Date();
-      const newStartDate = new Date(currentEndDate);
-      newStartDate.setDate(currentEndDate.getDate() + 1); // Start the day after current subscription ends
-      
-      const planDuration = subscription.plan?.duration || subscription.duration || 30;
-      const newEndDate = new Date(newStartDate);
-      newEndDate.setDate(newStartDate.getDate() + planDuration);
-      
-      // Update subscription with new dates and active status
-      const updatedSubscription = await mongoStorage.updateSubscription(subscriptionId, {
-        startDate: newStartDate.toISOString(),
-        endDate: newEndDate.toISOString(),
-        status: "active",
-        updatedAt: new Date(),
-      });
-      
-      if (!updatedSubscription) {
-        return res.status(404).json({ message: "Failed to renew subscription" });
-      }
-      
-      // Calculate status for the renewed subscription
-      const renewedSubscriptionWithStatus = calculateSubscriptionStatus(updatedSubscription);
-      
-      res.json(renewedSubscriptionWithStatus);
-    } catch (err) {
-      console.error("Error renewing subscription:", err);
-      res.status(500).json({ message: "Error renewing subscription" });
-    }
-  });
+    },
+  );
 
   app.patch("/api/subscriptions/:id", isAuthenticated, async (req, res) => {
     try {
@@ -1685,14 +1844,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { status } = req.body;
 
         const validStatuses = [
-          "pending", 
-          "confirmed", 
-          "preparing", 
-          "in_transit", 
-          "out_for_delivery", 
-          "nearby", 
-          "delivered", 
-          "cancelled"
+          "pending",
+          "confirmed",
+          "preparing",
+          "in_transit",
+          "out_for_delivery",
+          "nearby",
+          "delivered",
+          "cancelled",
         ];
 
         if (!validStatuses.includes(status)) {
@@ -2458,22 +2617,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delivery scheduling endpoints
-  app.get("/api/delivery/today", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const todayDeliveries = await deliveryScheduler.getTodayDeliveries();
-      res.json(todayDeliveries);
-    } catch (err) {
-      console.error("Error fetching today's deliveries:", err);
-      res.status(500).json({ message: "Error fetching delivery schedule" });
-    }
-  });
+  app.get(
+    "/api/delivery/today",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const todayDeliveries = await deliveryScheduler.getTodayDeliveries();
+        res.json(todayDeliveries);
+      } catch (err) {
+        console.error("Error fetching today's deliveries:", err);
+        res.status(500).json({ message: "Error fetching delivery schedule" });
+      }
+    },
+  );
 
   app.get("/api/delivery/user/:userId", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const requestingUserId = (req.user as any).id;
-      const isAdmin = (req.user as any).role === "admin" || (req.user as any).role === "manager";
-      
+      const isAdmin =
+        (req.user as any).role === "admin" ||
+        (req.user as any).role === "manager";
+
       // Users can only see their own deliveries unless they're admin
       if (userId !== requestingUserId && !isAdmin) {
         return res.status(403).json({ message: "Access denied" });
@@ -2487,21 +2653,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/delivery/schedule", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const weeklySchedule = await deliveryScheduler.getWeeklyDeliverySchedule();
-      res.json(weeklySchedule);
-    } catch (err) {
-      console.error("Error fetching delivery schedule:", err);
-      res.status(500).json({ message: "Error fetching delivery schedule" });
-    }
-  });
+  app.get(
+    "/api/delivery/schedule",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const weeklySchedule =
+          await deliveryScheduler.getWeeklyDeliverySchedule();
+        res.json(weeklySchedule);
+      } catch (err) {
+        console.error("Error fetching delivery schedule:", err);
+        res.status(500).json({ message: "Error fetching delivery schedule" });
+      }
+    },
+  );
 
   // Delivery status endpoint for users
   app.get("/api/delivery-status", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const { getUserDeliveryStatusUpdates } = await import("./delivery-status");
+      const { getUserDeliveryStatusUpdates } = await import(
+        "./delivery-status"
+      );
       const deliveryUpdates = await getUserDeliveryStatusUpdates(userId);
       res.json(deliveryUpdates);
     } catch (err) {
@@ -2511,110 +2685,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Clear old delivery status data
-  app.delete("/api/admin/delivery-status/clear", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const { connectToMongoDB } = await import("./db");
-      const { db } = await connectToMongoDB();
-      if (!db) throw new Error("Failed to connect to MongoDB");
-      
-      const deliveryCollection = db.collection("deliveryStatus");
-      
-      // Delete all delivery status records
-      const result = await deliveryCollection.deleteMany({});
-      
-      res.json({ 
-        message: "Delivery status data cleared", 
-        deletedCount: result.deletedCount 
-      });
-    } catch (err) {
-      console.error("Error clearing delivery status:", err);
-      res.status(500).json({ message: "Error clearing delivery status" });
-    }
-  });
+  app.delete(
+    "/api/admin/delivery-status/clear",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const { connectToMongoDB } = await import("./db");
+        const { db } = await connectToMongoDB();
+        if (!db) throw new Error("Failed to connect to MongoDB");
+
+        const deliveryCollection = db.collection("deliveryStatus");
+
+        // Delete all delivery status records
+        const result = await deliveryCollection.deleteMany({});
+
+        res.json({
+          message: "Delivery status data cleared",
+          deletedCount: result.deletedCount,
+        });
+      } catch (err) {
+        console.error("Error clearing delivery status:", err);
+        res.status(500).json({ message: "Error clearing delivery status" });
+      }
+    },
+  );
 
   // SMS notification endpoints
-  app.post("/api/notifications/send-today-deliveries", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const todayDeliveries = await deliveryScheduler.getTodayDeliveries();
-      const result = await smsService.sendTodayDeliveryNotifications(todayDeliveries);
-      
-      res.json({
-        message: "Notifications processed",
-        sent: result.sent,
-        failed: result.failed,
-        total: todayDeliveries.length
-      });
-    } catch (err) {
-      console.error("Error sending delivery notifications:", err);
-      res.status(500).json({ message: "Error sending notifications" });
-    }
-  });
+  app.post(
+    "/api/notifications/send-today-deliveries",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const todayDeliveries = await deliveryScheduler.getTodayDeliveries();
+        const result =
+          await smsService.sendTodayDeliveryNotifications(todayDeliveries);
+
+        res.json({
+          message: "Notifications processed",
+          sent: result.sent,
+          failed: result.failed,
+          total: todayDeliveries.length,
+        });
+      } catch (err) {
+        console.error("Error sending delivery notifications:", err);
+        res.status(500).json({ message: "Error sending notifications" });
+      }
+    },
+  );
 
   // Subscription daily notifications
-  app.post("/api/notifications/send-subscription-notifications", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const { sendDailyDeliveryNotifications } = await import("./subscription-notifications");
-      const result = await sendDailyDeliveryNotifications();
-      
-      res.json({
-        message: "Subscription notifications sent",
-        sent: result.sent,
-        failed: result.failed
-      });
-    } catch (err) {
-      console.error("Error sending subscription notifications:", err);
-      res.status(500).json({ message: "Error sending subscription notifications" });
-    }
-  });
+  app.post(
+    "/api/notifications/send-subscription-notifications",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const { sendDailyDeliveryNotifications } = await import(
+          "./subscription-notifications"
+        );
+        const result = await sendDailyDeliveryNotifications();
+
+        res.json({
+          message: "Subscription notifications sent",
+          sent: result.sent,
+          failed: result.failed,
+        });
+      } catch (err) {
+        console.error("Error sending subscription notifications:", err);
+        res
+          .status(500)
+          .json({ message: "Error sending subscription notifications" });
+      }
+    },
+  );
 
   // Test subscription notification
-  app.post("/api/notifications/test-subscription/:userId", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const userId = parseInt(req.params.userId);
-      const { sendTestSubscriptionNotification } = await import("./subscription-notifications");
-      const success = await sendTestSubscriptionNotification(userId);
-      
-      if (success) {
-        res.json({ message: "Test notification sent successfully" });
-      } else {
-        res.status(404).json({ message: "User not found or notification failed" });
+  app.post(
+    "/api/notifications/test-subscription/:userId",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const userId = parseInt(req.params.userId);
+        const { sendTestSubscriptionNotification } = await import(
+          "./subscription-notifications"
+        );
+        const success = await sendTestSubscriptionNotification(userId);
+
+        if (success) {
+          res.json({ message: "Test notification sent successfully" });
+        } else {
+          res
+            .status(404)
+            .json({ message: "User not found or notification failed" });
+        }
+      } catch (err) {
+        console.error("Error sending test subscription notification:", err);
+        res.status(500).json({ message: "Error sending test notification" });
       }
-    } catch (err) {
-      console.error("Error sending test subscription notification:", err);
-      res.status(500).json({ message: "Error sending test notification" });
-    }
-  });
+    },
+  );
 
   // Get today's subscription deliveries (for admin view)
-  app.get("/api/notifications/today-subscriptions", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const { getTodaySubscriptionDeliveries } = await import("./subscription-notifications");
-      const deliveries = await getTodaySubscriptionDeliveries();
-      
-      res.json({
-        deliveries,
-        count: deliveries.length,
-        scheduledTime: "6:00 PM",
-        deliveryTime: "7:30 PM"
-      });
-    } catch (err) {
-      console.error("Error getting today's subscription deliveries:", err);
-      res.status(500).json({ message: "Error fetching subscription deliveries" });
-    }
-  });
+  app.get(
+    "/api/notifications/today-subscriptions",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const { getTodaySubscriptionDeliveries } = await import(
+          "./subscription-notifications"
+        );
+        const deliveries = await getTodaySubscriptionDeliveries();
+
+        res.json({
+          deliveries,
+          count: deliveries.length,
+          scheduledTime: "6:00 PM",
+          deliveryTime: "7:30 PM",
+        });
+      } catch (err) {
+        console.error("Error getting today's subscription deliveries:", err);
+        res
+          .status(500)
+          .json({ message: "Error fetching subscription deliveries" });
+      }
+    },
+  );
 
   // Test email notification (without auth for testing)
   app.post("/api/test-email", async (req, res) => {
     try {
       const { sendTestEmail } = await import("./email-service");
       const { email, name } = req.body;
-      
+
       if (!email || !name) {
         return res.status(400).json({ message: "Email and name are required" });
       }
-      
+
       const success = await sendTestEmail(email, name);
-      
+
       if (success) {
         res.json({ message: "Test email sent successfully" });
       } else {
@@ -2626,26 +2838,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/notifications/delivery-status", isAuthenticated, isManagerOrAdmin, async (req, res) => {
-    try {
-      const { userId, status, estimatedTime } = req.body;
-      
-      if (!userId || !status) {
-        return res.status(400).json({ message: "userId and status are required" });
-      }
+  app.post(
+    "/api/notifications/delivery-status",
+    isAuthenticated,
+    isManagerOrAdmin,
+    async (req, res) => {
+      try {
+        const { userId, status, estimatedTime } = req.body;
 
-      const success = await smsService.sendStatusUpdateNotification(userId, status, estimatedTime);
-      
-      if (success) {
-        res.json({ message: "Status notification sent successfully" });
-      } else {
-        res.status(500).json({ message: "Failed to send status notification" });
+        if (!userId || !status) {
+          return res
+            .status(400)
+            .json({ message: "userId and status are required" });
+        }
+
+        const success = await smsService.sendStatusUpdateNotification(
+          userId,
+          status,
+          estimatedTime,
+        );
+
+        if (success) {
+          res.json({ message: "Status notification sent successfully" });
+        } else {
+          res
+            .status(500)
+            .json({ message: "Failed to send status notification" });
+        }
+      } catch (err) {
+        console.error("Error sending status notification:", err);
+        res.status(500).json({ message: "Error sending status notification" });
       }
-    } catch (err) {
-      console.error("Error sending status notification:", err);
-      res.status(500).json({ message: "Error sending status notification" });
-    }
-  });
+    },
+  );
 
   const httpServer = createServer(app);
   return httpServer;

@@ -826,6 +826,7 @@ export class MongoDBStorage implements IStorage {
     id: number,
     updateData: any,
   ): Promise<any | undefined> {
+    console.log(updateData);
     try {
       const subscription = await Subscription.findOneAndUpdate(
         { id },
@@ -1205,7 +1206,7 @@ export class MongoDBStorage implements IStorage {
   async getCurryOptions(): Promise<any[]> {
     try {
       const curryOptions = await CurryOption.find({});
-      return curryOptions.map(option => option.toObject());
+      return curryOptions.map((option) => option.toObject());
     } catch (error) {
       console.error("Error getting curry options:", error);
       return [];
@@ -1215,8 +1216,12 @@ export class MongoDBStorage implements IStorage {
   // Subscription Plan operations
   async getAllSubscriptionPlans(): Promise<any[]> {
     try {
-      const plans = await SubscriptionPlan.find({}).sort({ dietaryPreference: 1, planType: 1 }).lean();
-      console.log(`📋 Retrieved ${plans.length} subscription plans from MongoDB`);
+      const plans = await SubscriptionPlan.find({})
+        .sort({ dietaryPreference: 1, planType: 1 })
+        .lean();
+      console.log(
+        `📋 Retrieved ${plans.length} subscription plans from MongoDB`,
+      );
       return plans;
     } catch (error) {
       console.error("Error getting subscription plans:", error);
@@ -1234,7 +1239,10 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async updateSubscriptionPlan(id: string, updateData: any): Promise<any | undefined> {
+  async updateSubscriptionPlan(
+    id: string,
+    updateData: any,
+  ): Promise<any | undefined> {
     try {
       console.log(`🔄 Updating subscription plan ${id} with data:`, updateData);
       const updatedPlan = await SubscriptionPlan.findOneAndUpdate(
@@ -1243,7 +1251,7 @@ export class MongoDBStorage implements IStorage {
           ...updateData,
           updatedAt: new Date(),
         },
-        { new: true, upsert: true }
+        { new: true, upsert: true },
       ).lean();
       console.log(`✅ Successfully updated plan ${id}:`, updatedPlan);
       return updatedPlan;

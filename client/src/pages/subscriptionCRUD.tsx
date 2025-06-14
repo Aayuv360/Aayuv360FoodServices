@@ -496,7 +496,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
   const determineAction = () => {
     const previousActivePlan = previousPlansData?.find(
-      (p: any) => p.status === "active",
+      (p: any) => p.status === "active" || p.status === "inactive",
     );
 
     const previousCompletedPlan = previousPlansData?.find(
@@ -520,6 +520,93 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
     setDeterminedAction(action);
   };
+
+  const ModifySubscriptionMutation = useMutation({
+    mutationFn: async ({
+      subscriptionId,
+      resumeDate,
+      timeSlot,
+      deliveryAddressId,
+    }: {
+      subscriptionId: number;
+      resumeDate: any;
+      timeSlot: any;
+      deliveryAddressId: number;
+    }) => {
+      const payload = {
+        resumeDate: resumeDate,
+        timeSlot: timeSlot,
+        deliveryAddressId: deliveryAddressId,
+      };
+      console.log(payload);
+
+      const res = await apiRequest(
+        "POST",
+        `/api/subscriptions/${subscriptionId}/modify`,
+        payload,
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to modify subscription");
+      }
+
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      toast({
+        title: "Subscription updated",
+        description: "Your subscription has been updated successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description:
+          error.message || "There was an error updating your subscription",
+        variant: "destructive",
+      });
+    },
+  });
+  const getButtonLabel = (user: any, action: any, addressStatus: any) => {
+    if (!user) return "Login and continue";
+
+    switch (action) {
+      case "MODIFY":
+        return "Modify";
+      case "UPGRADE":
+        return "Upgrade";
+      case "RENEW":
+        return "Renewal";
+      default:
+        return addressStatus === "No"
+          ? "Complete Subscription"
+          : "Continue to Delivery";
+    }
+  };
+  const onModifySubmit = (data: SubscriptionFormValues) => {
+    if (determinedAction === "MODIFY") {
+      if (!previousPlansData?.[0]?.id) {
+        toast({
+          title: "Missing subscription ID",
+          description: "Cannot proceed without a subscription ID",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      ModifySubscriptionMutation.mutate({
+        subscriptionId: previousPlansData?.[0]?.id,
+        resumeDate: new Date(data.startDate).toISOString(),
+        timeSlot: data.timeSlot,
+        deliveryAddressId: 2,
+      });
+    } else {
+      goToNextStep();
+    }
+  };
+
   const renderStepContent = () => {
     switch (formStep) {
       case "plan":
@@ -1115,26 +1202,9 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 <Button
                   type="button"
                   className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
-                  onClick={() => {
-                    if (!user) {
-                      setAuthModalOpen(true);
-                    } else {
-                      goToNextStep();
-                    }
-                  }}
+                  onClick={form.handleSubmit(onModifySubmit)}
                 >
-                  {!user
-                    ? "Login and continue"
-                    : determinedAction === "MODIFY"
-                      ? "Modify"
-                      : determinedAction === "UPGRADE"
-                        ? "Upgrade"
-                        : determinedAction === "RENEW"
-                          ? "Renwal"
-                          : modifydelivaryAdrs === "No"
-                            ? "Complete Subscription"
-                            : "Continue to Delivery"}
-
+                  {getButtonLabel(user, determinedAction, modifydelivaryAdrs)}
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               )}
