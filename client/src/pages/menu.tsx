@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
 import { format } from "date-fns";
@@ -11,7 +11,7 @@ const tabs = [
   { id: "all", name: "All Meals" },
   { id: "vegetarian", name: "Vegetarian" },
   { id: "gluten-free", name: "Gluten-Free" },
-  { id: "high-protein", name: "High-protein" },
+  { id: "high-protein", name: "High Protein" },
   { id: "Mixed Millet", name: "Mixed Millet" },
   { id: "Finger Millet", name: "Finger Millet" },
 ];
@@ -23,6 +23,7 @@ const Menu = () => {
   const today = format(new Date(), "MMMM d, yyyy");
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
   const [mealData, setMealData] = useState<any>();
+  const [scrolled, setScrolled] = useState(false);
 
   const {
     data: meals,
@@ -38,15 +39,27 @@ const Menu = () => {
     staleTime: 10 * 60 * 1000,
   });
 
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const filteredMeals = useMemo(() => {
     if (!meals) return [];
 
     return meals
       .filter((meal) => {
         if (filter === "all") return true;
-        const matchesDietary = meal.dietaryPreferences?.includes(filter as any);
-        const matchesCategory =
-          meal.category?.toLowerCase() === filter.toLowerCase();
+        const normalizedFilter = filter.toLowerCase();
+        const matchesDietary = meal.dietaryPreferences?.some(
+          (pref) => pref?.toLowerCase() === normalizedFilter,
+        );
+        const matchesCategory = meal.category
+          ?.toLowerCase()
+          .includes(normalizedFilter);
         return matchesDietary || matchesCategory;
       })
       .filter((meal) => {
@@ -65,55 +78,68 @@ const Menu = () => {
   }, [meals, filter, debouncedSearch]);
 
   return (
-    <div className="py-8 sm:py-12 bg-neutral-light min-h-screen bg-gray-50">
-      <div className="container mx-auto px-3 sm:px-4">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 sm:mb-8 gap-3 sm:gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
-              Our Menu
-            </h1>
-            <p className="text-sm sm:text-base text-gray-600">
-              Explore our delicious millet-based dishes for {today}
-            </p>
+    <div className="py-0 bg-neutral-light min-h-screen bg-gray-50">
+      {/* ✅ Sticky Header */}
+      <div
+        className={`sticky top-[72px] z-40 bg-gray-50 transition-shadow ${scrolled ? "shadow-sm border-b border-gray-200" : ""}`}
+      >
+        <div className="container mx-auto px-3 sm:px-4 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">
+                Discover Our Menu
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                Enjoy our millet-powered meals for {today}
+              </p>
+            </div>
+
+            <form
+              className="flex-grow max-w-xl relative order-last md:order-none"
+              role="search"
+            >
+              <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
+              <input
+                type="text"
+                aria-label="Search meals"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search meals..."
+                className="w-full py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                </button>
+              )}
+            </form>
           </div>
 
-          <form className="flex-grow max-w-xl relative order-last md:order-none my-2 md:my-0">
-            <MagnifyingGlassIcon className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 pointer-events-none" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search meals..."
-              className="w-full py-1.5 sm:py-2 pl-8 sm:pl-10 pr-8 sm:pr-10 text-sm border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            {searchQuery && (
+          {/* ✅ Filter Tabs */}
+          <div className="flex flex-wrap gap-2 mt-4">
+            {tabs.map((tab) => (
               <button
-                type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                key={tab.id}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                  filter === tab.id
+                    ? "bg-orange-500 text-white"
+                    : "bg-white text-gray-700 hover:bg-orange-100"
+                }`}
+                onClick={() => setFilter(tab.id)}
               >
-                <XMarkIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                {tab.name}
               </button>
-            )}
-          </form>
+            ))}
+          </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap gap-2 mb-10">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
-                filter === tab.id
-                  ? "bg-orange-500 text-white"
-                  : "bg-white text-gray-700 hover:bg-orange-100"
-              }`}
-              onClick={() => setFilter(tab.id)}
-            >
-              {tab.name}
-            </button>
-          ))}
-        </div>
-
+      {/* ✅ Main Content */}
+      <div className="container mx-auto px-3 sm:px-4 pt-8 sm:pt-10 pb-12">
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">
             {Array.from({ length: 10 }).map((_, i) => (
@@ -124,14 +150,14 @@ const Menu = () => {
             ))}
           </div>
         ) : error ? (
-          <div className="text-center py-8 sm:py-12">
+          <div className="text-center py-12">
             <p className="text-destructive text-sm sm:text-base">
               Error loading menu. Please try again later.
             </p>
           </div>
         ) : filteredMeals.length === 0 ? (
-          <div className="text-center py-8 sm:py-12 bg-white rounded-lg shadow p-6 sm:p-8">
-            <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">
+          <div className="text-center py-12 bg-white rounded-lg shadow p-6 sm:p-8">
+            <h3 className="text-base sm:text-lg font-medium mb-2">
               No meals found
             </h3>
             <p className="text-sm sm:text-base text-gray-600">
@@ -153,7 +179,7 @@ const Menu = () => {
         )}
       </div>
 
-      {/* Nutrition Modal */}
+      {/* ✅ Nutrition Modal */}
       {nutritionModalOpen && (
         <NutritionModal
           meal={mealData}

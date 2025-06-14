@@ -24,6 +24,8 @@ import MakeAdmin from "@/pages/make-admin";
 import NotFound from "@/pages/not-found";
 import { useAuth } from "./hooks/use-auth";
 import { RecoilRoot } from "recoil";
+import { ItemDetailsPage } from "./pages/ItemDetailsPage";
+import SubscriptionManager from "./pages/subscriptionManager";
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -34,14 +36,15 @@ function Router() {
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/menu" component={Menu} />
+            <Route path="/MealDetails/:mealId" component={ItemDetailsPage} />
 
             {/* Protected routes */}
             <ProtectedRoute path="/profile" component={Profile} />
-            <Route path="/subscription" component={Subscription} />
-            <ProtectedRoute
+            <Route path="/subscription" component={SubscriptionManager} />
+            {/* <ProtectedRoute
               path="/subscription/:subscriptionId"
               component={Subscription}
-            />
+            /> */}
             <ProtectedRoute path="/checkout/:orderId" component={Checkout} />
             <ProtectedRoute
               path="/payment-success"
@@ -66,7 +69,6 @@ function Router() {
               component={MakeAdmin}
               adminOnly
             />
-
             <Route component={NotFound} />
           </Switch>
         </main>

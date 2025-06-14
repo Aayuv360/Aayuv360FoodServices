@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import NutritionModal from "./NutritionModal";
 import { MealCardActions } from "./MealCardActions";
 import { Meal } from "@shared/schema";
 import { formatPrice } from "@/lib/utils";
+import { useLocation } from "wouter";
 
 interface MenuCardProps {
   meal: Meal & {
@@ -19,6 +19,7 @@ const MenuCard = ({
   setNutritionModalOpen,
   setMealData,
 }: MenuCardProps) => {
+  const [_, setLocation] = useLocation();
   const dietaryBadgeColor = (preference: string) => {
     switch (preference) {
       case "vegetarian":
@@ -37,7 +38,9 @@ const MenuCard = ({
         return "bg-gray-100 text-gray-800";
     }
   };
-
+  // onClick={() => {
+  //   setLocation(`/MealDetails/${meal.id}`);
+  // }}
   return (
     <div className="relative w-full pb-[100%] bg-white rounded-2xl shadow-lg overflow-hidden transform transition duration-500 hover:scale-103 hover:shadow-xl group">
       <img

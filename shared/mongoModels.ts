@@ -47,6 +47,8 @@ export interface SubscriptionPlanDocument extends Document {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  timeSlot: string;
+  deliveryAddressId: number;
 }
 
 export interface MealDocument extends Document {
@@ -132,6 +134,8 @@ export interface SubscriptionDocument extends Document {
     date?: Date;
     [key: string]: any;
   }>;
+  timeSlot: string;
+  deliveryAddressId: number;
 }
 
 export interface AddressDocument extends Document {
@@ -278,18 +282,22 @@ const subscriptionSchema = new Schema<SubscriptionDocument>({
   dietaryPreference: { type: String, required: true },
   personCount: { type: Number, required: true },
   menuItems: {
-    type: [{
-      day: { type: Number, required: true },
-      main: { type: String, required: true },
-      sides: { type: [String], required: true }
-    }],
-    default: []
+    type: [
+      {
+        day: { type: Number, required: true },
+        main: { type: String, required: true },
+        sides: { type: [String], required: true },
+      },
+    ],
+    default: [],
   },
   razorpayOrderId: String,
   razorpayPaymentId: String,
   razorpaySignature: String,
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  timeSlot: { type: String, required: true },
+  deliveryAddressId: { type: Number, required: true },
 });
 
 const addressSchema = new Schema<AddressDocument>({
@@ -334,16 +342,20 @@ const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
     enum: ["basic", "premium", "family"],
   },
   menuItems: {
-    type: [{
-      day: { type: Number, required: true },
-      main: { type: String, required: true },
-      sides: { type: [String], required: true }
-    }],
-    default: []
+    type: [
+      {
+        day: { type: Number, required: true },
+        main: { type: String, required: true },
+        sides: { type: [String], required: true },
+      },
+    ],
+    default: [],
   },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  timeSlot: { type: String, required: true },
+  deliveryAddressId: { type: Number, required: true },
 });
 
 // Create and export models

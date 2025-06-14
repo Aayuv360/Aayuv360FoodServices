@@ -90,6 +90,10 @@ const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
   { id: 2, time: "8:00 PM - 9:00 PM" },
 ];
+const modifyDelivaryAddress = [
+  { id: 1, name: "Yes" },
+  { id: 2, name: "No" },
+];
 const addressSchema = z.object({
   name: z.string().min(2, "Name is required"),
   phone: z.string().min(10, "Valid phone number is required"),
@@ -135,10 +139,11 @@ const subscriptionSchema = z.object({
   startDate: z.date({
     required_error: "Please select a start date",
   }),
+  selectedAddressId: z.number().optional(),
   useNewAddress: z.boolean().default(false),
   newAddress: addressSchema.optional(),
   timeSlot: z.string().optional(),
-  selectedAddressId: z.number().optional(),
+  modifydelivaryAdrs: z.string().optional(),
 });
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
@@ -151,7 +156,7 @@ interface RazorpayPaymentData {
   razorpay_signature: string;
 }
 
-const Subscription = () => {
+const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { initiatePayment } = useRazorpay();
@@ -166,7 +171,8 @@ const Subscription = () => {
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [filteredPlans, setFilteredPlans] = useState<any>([]);
-
+  const [determinedAction, setDeterminedAction] =
+    useState<string>("NONE / DEFAULT");
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
     queryFn: async () => {
@@ -183,6 +189,7 @@ const Subscription = () => {
     startDate: new Date(),
     useNewAddress: false,
     timeSlot: deliveryTime[0].time,
+    modifydelivaryAdrs: modifyDelivaryAddress[0].name,
   };
 
   const form = useForm<SubscriptionFormValues>({
@@ -192,7 +199,7 @@ const Subscription = () => {
   const diet = form.watch("dietaryPreference");
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
-  const deliveryAddressId = form.watch("selectedAddressId");
+
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
       const payload = {
@@ -208,7 +215,6 @@ const Subscription = () => {
         paymentMethod: "razorpay",
         menuItems: data.plan.menuItems,
         timeSlot: data.timeSlot,
-        deliveryAddressId: deliveryAddressId,
       };
 
       const response = await apiRequest("POST", "/api/subscriptions", payload);
@@ -409,7 +415,7 @@ const Subscription = () => {
 
     subscriptionMutation.mutate(values);
   };
-
+  const modifydelivaryAdrs = form.watch("modifydelivaryAdrs");
   const dietaryPreference = form.watch("dietaryPreference");
   const personCount = form.watch("personCount") || 1;
   const basePrice = selectedPlan?.price;
@@ -484,6 +490,36 @@ const Subscription = () => {
     }
   }, [locations]);
 
+  useEffect(() => {
+    determineAction();
+  }, [diet, selectedPlan, previousPlansData]);
+
+  const determineAction = () => {
+    const previousActivePlan = previousPlansData?.find(
+      (p: any) => p.status === "active",
+    );
+
+    const previousCompletedPlan = previousPlansData?.find(
+      (p: any) => p.status === "completed",
+    );
+
+    let action = "NONE / DEFAULT";
+
+    if (previousActivePlan) {
+      const prevDiet = previousActivePlan.dietaryPreference;
+      const prevPlanType = previousActivePlan.plan;
+
+      if (prevDiet === diet && prevPlanType === selectedPlan?.planType) {
+        action = "MODIFY";
+      } else {
+        action = "UPGRADE";
+      }
+    } else if (previousCompletedPlan) {
+      action = "RENEW";
+    }
+
+    setDeterminedAction(action);
+  };
   const renderStepContent = () => {
     switch (formStep) {
       case "plan":
@@ -491,7 +527,8 @@ const Subscription = () => {
           <div>
             <div className="mb-5 text-center">
               <h1 className="text-4xl font-bold inline-flex items-center gap-2">
-                <Sparkles className="text-orange-500" /> Subscribe to Aayuv
+                <Sparkles className="text-orange-500" /> Manage Your
+                Subscription
               </h1>
               <p className="text-lg text-gray-500 mt-2">
                 Custom millet meal plans tailored to your lifestyle
@@ -759,6 +796,36 @@ const Subscription = () => {
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="modifydelivaryAdrs"
+                  render={({ field }) => (
+                    <FormItem className="mt-4">
+                      <FormLabel className="text-base font-medium">
+                        Confirm Address
+                      </FormLabel>
+                      <FormControl>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          defaultValue=""
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select a time slot" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {modifyDelivaryAddress.map(({ id, name }) => (
+                              <SelectItem key={id} value={name}>
+                                {name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               <div className="mt-3 p-3 rounded-md border border-gray-100">
@@ -991,7 +1058,7 @@ const Subscription = () => {
               </div>
               <NewAddressModal
                 addressModalOpen={addressModalOpen}
-                setAddressModalOpen={(open) => {
+                setAddressModalOpen={(open: boolean) => {
                   setAddressModalOpen(open);
                   if (!open) {
                     setEditingAddress(null);
@@ -1056,7 +1123,17 @@ const Subscription = () => {
                     }
                   }}
                 >
-                  {!user ? "Login and continue" : "Continue to payment"}
+                  {!user
+                    ? "Login and continue"
+                    : determinedAction === "MODIFY"
+                      ? "Modify"
+                      : determinedAction === "UPGRADE"
+                        ? "Upgrade"
+                        : determinedAction === "RENEW"
+                          ? "Renwal"
+                          : modifydelivaryAdrs === "No"
+                            ? "Complete Subscription"
+                            : "Continue to Delivery"}
 
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
@@ -1101,4 +1178,4 @@ const Subscription = () => {
   );
 };
 
-export default Subscription;
+export default SubscriptionCRUD;
