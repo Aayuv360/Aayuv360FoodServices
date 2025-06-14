@@ -155,6 +155,7 @@ const Subscription = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { initiatePayment } = useRazorpay();
+  const [_, navigate] = useLocation();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [defaulMealModalOpen, setDefaulMealModalOpen] =
@@ -240,10 +241,10 @@ const Subscription = () => {
             subscription.id.toString(),
           );
 
-          // navigate(
-          //   `/payment-success?subscriptionId=${subscription.id}&type=subscription`,
-          // );
-          setFormStep("success");
+          navigate(
+            `/payment-success?subscriptionId=${subscription.id}&type=subscription`,
+          );
+          // setFormStep("success");
         },
         onFailure: (error: Error) => {
           toast({
@@ -1013,12 +1014,6 @@ const Subscription = () => {
                 </p>
               </div>
             </div>
-          </div>
-        );
-      case "success":
-        return (
-          <div>
-            <SuccessPage />
           </div>
         );
     }

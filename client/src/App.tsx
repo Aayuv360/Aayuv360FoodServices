@@ -26,6 +26,7 @@ import { useAuth } from "./hooks/use-auth";
 import { RecoilRoot } from "recoil";
 import { ItemDetailsPage } from "./pages/ItemDetailsPage";
 import SubscriptionManager from "./pages/subscriptionManager";
+import SuccessPage from "./pages/SuccessPage";
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -46,10 +47,7 @@ function Router() {
               component={Subscription}
             /> */}
             <ProtectedRoute path="/checkout/:orderId" component={Checkout} />
-            <ProtectedRoute
-              path="/payment-success"
-              component={PaymentSuccess}
-            />
+            <ProtectedRoute path="/payment-success" component={SuccessPage} />
             <ProtectedRoute path="/meal-planner" component={MealPlanner} />
 
             {/* Admin routes */}
