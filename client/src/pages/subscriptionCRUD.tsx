@@ -159,6 +159,7 @@ interface RazorpayPaymentData {
 const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const [_, navigate] = useLocation();
   const { initiatePayment } = useRazorpay();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -180,7 +181,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       return res.json();
     },
   });
-
+  const [exictingAdrs, setExictingAdrs] = useState<Address | null>(null);
   const defaultValues: SubscriptionFormValues = {
     plan: undefined as any,
     dietaryPreference: "veg",
@@ -199,75 +200,180 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const diet = form.watch("dietaryPreference");
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
+  function calculatePlanPriceChange(
+    selectedPlan: any,
+    previousPlan: any,
+    currentDate?: Date,
+  ) {
+    if (
+      typeof selectedPlan.price !== "number" ||
+      typeof previousPlan.price !== "number"
+    ) {
+      console.error(
+        "Invalid plan objects: 'price' property missing or not a number.",
+      );
+      return { price: 0, changeType: "invalidPlanData" };
+    }
 
+    let netPriceDifference: number;
+    let changeType: any;
+
+    if (previousPlan.status === "inactive") {
+      netPriceDifference = selectedPlan.price - previousPlan.price;
+    } else if (previousPlan.status === "active") {
+      if (
+        typeof previousPlan.mealsPerMonth !== "number" ||
+        previousPlan.mealsPerMonth <= 0
+      ) {
+        console.error(
+          "For an active previous plan, 'mealsPerMonth' must be a positive number for prorated calculation.",
+        );
+        return { price: 0, changeType: "invalidPlanData" };
+      }
+
+      if (!previousPlan.startDate) {
+        console.error(
+          "For an active previous plan, 'startDate' is required for date-based consumption calculation.",
+        );
+        return { price: 0, changeType: "invalidPlanData" };
+      }
+
+      const planStartDate = new Date(previousPlan.startDate);
+      const now = currentDate ? currentDate : new Date();
+
+      if (isNaN(planStartDate.getTime()) || isNaN(now.getTime())) {
+        return { price: 0, changeType: "invalidPlanData" };
+      }
+
+      const timeDiff = now.getTime() - planStartDate.getTime();
+
+      const actualUnitsConsumed = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+
+      const unitsConsumed = Math.max(0, actualUnitsConsumed);
+
+      if (unitsConsumed > previousPlan.mealsPerMonth) {
+        console.warn(
+          `Calculated units consumed (${unitsConsumed}) exceed total plan units (${previousPlan.mealsPerMonth}). This may result in negative remaining value.`,
+        );
+      }
+
+      const costPerUnit = previousPlan.price / previousPlan.mealsPerMonth;
+      const consumedValue = costPerUnit * unitsConsumed;
+      const remainingValue = previousPlan.price - consumedValue;
+
+      netPriceDifference = selectedPlan.price - remainingValue;
+    } else {
+      console.error(
+        "Previous plan status is missing or not recognized ('active' or 'inactive').",
+      );
+      return { price: 0, changeType: "invalidPlanData" };
+    }
+
+    if (netPriceDifference > 0) {
+      changeType = "priceUp";
+    } else if (netPriceDifference < 0) {
+      changeType = "priceDown";
+    } else {
+      changeType = "noChange";
+    }
+
+    return {
+      price: Math.abs(netPriceDifference),
+      changeType: changeType,
+    };
+  }
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
+      const result1 = calculatePlanPriceChange(
+        data.plan,
+        previousPlansData?.[0],
+      );
+      console.log(`Price: ${result1.price}, Type: ${result1.changeType}`);
+
       const payload = {
-        userId: user?.id,
         plan: data.plan.planType,
         subscriptionType: data.subscriptionType,
         startDate: data.startDate.toISOString(),
         mealsPerMonth: data.plan.duration,
         price: data.plan.price || 0,
-        status: "pending",
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
-        paymentMethod: "razorpay",
         menuItems: data.plan.menuItems,
         timeSlot: data.timeSlot,
       };
 
-      const response = await apiRequest("POST", "/api/subscriptions", payload);
-      const subscription = await response.json();
+      const previousPlanId = previousPlansData?.[0]?.id;
 
-      initiatePayment({
-        amount: data.plan.price || 0,
-        orderId: subscription.id,
-        type: "subscription",
-        description: `${data.plan.name} Millet Meal Subscription`,
-        name: "Aayuv Millet Foods",
-        theme: { color: "#9E6D38" },
-        onSuccess: async (paymentData: RazorpayPaymentData) => {
-          await apiRequest("PATCH", `/api/subscriptions/${subscription.id}`, {
-            status: "active",
-            razorpayPaymentId: paymentData.razorpay_payment_id,
-            razorpayOrderId: paymentData.razorpay_order_id,
-            razorpaySignature: paymentData.razorpay_signature,
-          });
+      const subscriptionType =
+        determinedAction === "UPGRADE"
+          ? "subscriptionUpgrade"
+          : determinedAction === "RENEW"
+            ? "subscriptionRenewal"
+            : "subscription";
 
-          toast({
-            title: "Subscription Successful!",
-            description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
-            variant: "default",
-          });
+      return new Promise((resolve, reject) => {
+        initiatePayment({
+          amount: data.plan.price || 0,
+          orderId: previousPlanId,
+          type: subscriptionType,
+          description: `${data.plan.name} Millet Meal Subscription`,
+          name: "Aayuv Millet Foods",
+          theme: { color: "#9E6D38" },
 
-          localStorage.setItem(
-            "lastSubscriptionId",
-            subscription.id.toString(),
-          );
+          onSuccess: async (paymentData: RazorpayPaymentData) => {
+            try {
+              const subscription = await apiRequest(
+                "PATCH",
+                `/api/subscriptions/${previousPlanId}`,
+                {
+                  status: "active",
+                  razorpayPaymentId: paymentData.razorpay_payment_id,
+                  razorpayOrderId: paymentData.razorpay_order_id,
+                  razorpaySignature: paymentData.razorpay_signature,
+                  ...payload,
+                },
+              );
 
-          // navigate(
-          //   `/payment-success?subscriptionId=${subscription.id}&type=subscription`,
-          // );
-          setFormStep("success");
-        },
-        onFailure: (error: Error) => {
-          toast({
-            title: "Payment Failed",
-            description:
-              error.message ||
-              "Failed to process your payment. Please try again.",
-            variant: "destructive",
-          });
-        },
+              toast({
+                title: "Subscription Successful!",
+                description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
+                variant: "default",
+              });
+
+              localStorage.setItem(
+                "lastSubscriptionId",
+                previousPlanId.toString(),
+              );
+
+              navigate(
+                `/payment-success?subscriptionId=${previousPlanId}&type=subscription`,
+              );
+
+              resolve(subscription);
+            } catch (error) {
+              console.error("Error during subscription update:", error);
+              reject(error);
+            }
+          },
+
+          onFailure: (error: Error) => {
+            toast({
+              title: "Payment Failed",
+              description:
+                error.message ||
+                "Failed to process your payment. Please try again.",
+              variant: "destructive",
+            });
+            reject(error);
+          },
+        });
       });
+    },
 
-      return subscription;
-    },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      localStorage.setItem("lastSubscriptionId", data.id.toString());
     },
+
     onError: (error: any) => {
       toast({
         title: "Error processing subscription",
@@ -373,10 +479,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     try {
       await apiRequest("DELETE", `/api/addresses/${addressId}`);
 
-      // Remove the address from the list
       setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
 
-      // If the deleted address was selected, clear the selection
       if (form.watch("selectedAddressId") === addressId) {
         form.setValue("selectedAddressId", undefined);
       }
@@ -396,25 +500,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     }
   };
 
-  const onSubmit = (values: SubscriptionFormValues) => {
-    if (formStep === "payment") {
-      if (!values.selectedAddressId && !values.useNewAddress) {
-        toast({
-          title: "Address required",
-          description: "Please select an existing address or add a new one",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
-    toast({
-      title: "Processing subscription...",
-      description: "Your subscription request is being processed.",
-    });
-
-    subscriptionMutation.mutate(values);
-  };
   const modifydelivaryAdrs = form.watch("modifydelivaryAdrs");
   const dietaryPreference = form.watch("dietaryPreference");
   const personCount = form.watch("personCount") || 1;
@@ -435,12 +520,12 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     setFilteredPlans(sortedPlans);
 
     const defaultPlan = sortedPlans?.find(
-      (plan: any) => plan.planType === "basic",
+      (plan: any) => plan.planType === previousPlansData?.[0]?.plan,
     );
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
     }
-  }, [subscriptionPlans, diet]);
+  }, [subscriptionPlans, diet, previousPlansData]);
 
   useEffect(() => {
     if (user) {
@@ -448,7 +533,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         .then((res) => res.json())
         .then((data) => {
           setAddresses(data);
-
+          const exicting = data?.find(
+            (address: any) =>
+              address.id === previousPlansData[0]?.deliveryAddressId,
+          );
+          setExictingAdrs(exicting);
           // Set default address in form if available
           const defaultAddress = data.find((addr: Address) => addr.isDefault);
           if (defaultAddress) {
@@ -509,6 +598,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       const prevDiet = previousActivePlan.dietaryPreference;
       const prevPlanType = previousActivePlan.plan;
 
+      const isPlanUpgrade =
+        prevPlanType === "basic" && selectedPlan?.planType === "premium";
+
+      const isDietUpgrade = prevDiet === "veg" && diet === "veg_with_egg";
       if (prevDiet === diet && prevPlanType === selectedPlan?.planType) {
         action = "MODIFY";
       } else {
@@ -538,7 +631,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         timeSlot: timeSlot,
         deliveryAddressId: deliveryAddressId,
       };
-      console.log(payload);
 
       const res = await apiRequest(
         "POST",
@@ -571,39 +663,39 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   });
   const getButtonLabel = (user: any, action: any, addressStatus: any) => {
     if (!user) return "Login and continue";
-
+    if (modifydelivaryAdrs === "No") return "Continue to Delivery";
     switch (action) {
       case "MODIFY":
-        return "Modify";
+        return "Modify & Complete Subscription";
       case "UPGRADE":
-        return "Upgrade";
+        return "change plan & Complete Subscription";
       case "RENEW":
-        return "Renewal";
-      default:
-        return addressStatus === "No"
-          ? "Complete Subscription"
-          : "Continue to Delivery";
+        return "Renewal & Complete Subscription";
     }
   };
   const onModifySubmit = (data: SubscriptionFormValues) => {
-    if (determinedAction === "MODIFY") {
-      if (!previousPlansData?.[0]?.id) {
-        toast({
-          title: "Missing subscription ID",
-          description: "Cannot proceed without a subscription ID",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      ModifySubscriptionMutation.mutate({
-        subscriptionId: previousPlansData?.[0]?.id,
-        resumeDate: new Date(data.startDate).toISOString(),
-        timeSlot: data.timeSlot,
-        deliveryAddressId: 2,
-      });
-    } else {
+    const previousPlanId = previousPlansData?.[0]?.id;
+    if (modifydelivaryAdrs === "No") {
       goToNextStep();
+    } else if (previousPlanId) {
+      if (determinedAction === "MODIFY") {
+        ModifySubscriptionMutation.mutate({
+          subscriptionId: previousPlanId,
+          resumeDate: new Date(data.startDate).toISOString(),
+          timeSlot: data.timeSlot,
+          deliveryAddressId: 2,
+        });
+      } else if (determinedAction === "UPGRADE") {
+        subscriptionMutation.mutate(data);
+      } else if (determinedAction === "RENEW") {
+        subscriptionMutation.mutate(data);
+      }
+    } else {
+      toast({
+        title: "No Previous Plan Found",
+        description: "Unable to proceed without a valid subscription.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -914,7 +1006,28 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   )}
                 />
               </div>
-
+              {modifydelivaryAdrs !== "No" && (
+                <div className="flex gap-2 items-center">
+                  <h5 className="text-xl font-semibold text-gray-800 mb-1">
+                    {exictingAdrs?.name}
+                  </h5>
+                  <p className="text-sm text-gray-600 mt-1">
+                    {exictingAdrs?.addressLine1}
+                  </p>
+                  {exictingAdrs?.addressLine2 && (
+                    <p className="text-sm text-gray-600">
+                      {exictingAdrs?.addressLine2}
+                    </p>
+                  )}
+                  <p className="text-sm text-gray-600">
+                    {exictingAdrs?.city}, {exictingAdrs?.state} -{" "}
+                    {exictingAdrs?.pincode}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Phone: {exictingAdrs?.phone}
+                  </p>
+                </div>
+              )}
               <div className="mt-3 p-3 rounded-md border border-gray-100">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-bold">Price per person:</span>
@@ -1204,7 +1317,13 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
                   onClick={form.handleSubmit(onModifySubmit)}
                 >
-                  {getButtonLabel(user, determinedAction, modifydelivaryAdrs)}
+                  {modifydelivaryAdrs === "No"
+                    ? "Continue to Delivery"
+                    : getButtonLabel(
+                        user,
+                        determinedAction,
+                        modifydelivaryAdrs,
+                      )}
                   <ArrowRight className="ml-1 h-4 w-4" />
                 </Button>
               )}
@@ -1213,7 +1332,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 <Button
                   type="button"
                   className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
-                  onClick={form.handleSubmit(onSubmit)}
                 >
                   {subscriptionMutation.isPending ? (
                     <>

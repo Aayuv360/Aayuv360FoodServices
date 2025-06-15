@@ -13,7 +13,12 @@ declare global {
 interface CreateOrderOptions {
   amount: number;
   orderId: number;
-  type?: "order" | "subscription";
+  type?:
+    | "order"
+    | "subscription"
+    | "subscriptionUpgrade"
+    | "subscriptionRenewal"
+    | any;
   notes?: Record<string, string>;
 }
 
@@ -22,7 +27,12 @@ interface PaymentVerifyOptions {
   razorpayOrderId: string;
   razorpayPaymentId: string;
   razorpaySignature: string;
-  type?: "order" | "subscription";
+  type?:
+    | "order"
+    | "subscription"
+    | "subscriptionUpgrade"
+    | "subscriptionRenewal"
+    | any;
 }
 
 interface PaymentFailureOptions {
@@ -132,7 +142,12 @@ export const useRazorpay = () => {
       orderId: number;
       description: string;
       name: string;
-      type?: "order" | "subscription";
+      type?:
+        | "order"
+        | "subscription"
+        | "subscriptionUpgrade"
+        | "subscriptionRenewal"
+        | any;
       theme?: { color: string };
       onSuccess?: (data: any) => void;
       onFailure?: (error: any) => void;

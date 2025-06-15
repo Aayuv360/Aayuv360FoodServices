@@ -908,17 +908,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // API endpoint for subscription plans (public - no auth required)
   app.get("/api/subscription-plans", async (req, res) => {
     try {
-      console.log(
-        "📋 Retrieved subscription plans from MongoDB - returning grouped format",
-      );
-
-      // Always get from MongoDB first
       const activePlans = await mongoStorage.getAllSubscriptionPlans();
-
-      // All plans now have menuItems, but ensure fallback for any edge cases
       const plansWithMenuItems = activePlans.map((plan) => {
         if (!plan.menuItems || plan.menuItems.length === 0) {
           console.warn(`Plan ${plan.id} missing menuItems, adding default`);
@@ -952,7 +944,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return plan;
       });
 
-      // Group plans by dietary preference using the updated plans
       const groupedPlans = [
         {
           dietaryPreference: "veg",
@@ -1246,67 +1237,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res
           .status(500)
           .json({ message: "Error modifying subscription" });
-      }
-    },
-  );
-
-  app.post(
-    "/api/subscriptions/:id/renew",
-    isAuthenticated,
-    async (req, res) => {
-      try {
-        const userId = (req.user as any).id;
-        const subscriptionId = parseInt(req.params.id);
-
-        const subscription = await mongoStorage.getSubscription(subscriptionId);
-
-        if (!subscription) {
-          return res.status(404).json({ message: "Subscription not found" });
-        }
-
-        if (subscription.userId !== userId) {
-          return res.status(403).json({
-            message: "You do not have permission to renew this subscription",
-          });
-        }
-
-        // Calculate new start and end dates for renewal
-        const currentEndDate = subscription.endDate
-          ? new Date(subscription.endDate)
-          : new Date();
-        const newStartDate = new Date(currentEndDate);
-        newStartDate.setDate(currentEndDate.getDate() + 1); // Start the day after current subscription ends
-
-        const planDuration =
-          subscription.plan?.duration || subscription.duration || 30;
-        const newEndDate = new Date(newStartDate);
-        newEndDate.setDate(newStartDate.getDate() + planDuration);
-
-        // Update subscription with new dates and active status
-        const updatedSubscription = await mongoStorage.updateSubscription(
-          subscriptionId,
-          {
-            startDate: newStartDate.toISOString(),
-            endDate: newEndDate.toISOString(),
-            status: "active",
-            updatedAt: new Date(),
-          },
-        );
-
-        if (!updatedSubscription) {
-          return res
-            .status(404)
-            .json({ message: "Failed to renew subscription" });
-        }
-
-        // Calculate status for the renewed subscription
-        const renewedSubscriptionWithStatus =
-          calculateSubscriptionStatus(updatedSubscription);
-
-        res.json(renewedSubscriptionWithStatus);
-      } catch (err) {
-        console.error("Error renewing subscription:", err);
-        res.status(500).json({ message: "Error renewing subscription" });
       }
     },
   );
@@ -2340,6 +2270,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         entity = subscription;
         entityType = "subscription";
+      } else if (type === "subscriptionUpgrade") {
+        const subscription = await storage.getSubscription(orderId);
+
+        if (!subscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        if (subscription.userId !== userId) {
+          return res.status(403).json({
+            message: "You do not have permission to pay for this subscription",
+          });
+        }
+
+        entity = subscription;
+        entityType = "subscriptionUpgrade";
+      } else if (type === "subscriptionRenewal") {
+        const subscription = await storage.getSubscription(orderId);
+
+        if (!subscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
+
+        if (subscription.userId !== userId) {
+          return res.status(403).json({
+            message: "You do not have permission to pay for this subscription",
+          });
+        }
+
+        entity = subscription;
+        entityType = "subscriptionRenewal";
       } else {
         const order = await storage.getOrder(orderId);
 
@@ -2370,6 +2330,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         subscriptionPaymentMap.set(orderId, {
           razorpaySubscriptionId: razorpayOrder.id,
           status: "created",
+        });
+      } else if (entityType === "subscriptionUpgrade") {
+        subscriptionPaymentMap.set(orderId, {
+          razorpaySubscriptionId: razorpayOrder.id,
+          status: "upgrade",
+        });
+      } else if (entityType === "subscriptionRenewal") {
+        subscriptionPaymentMap.set(orderId, {
+          razorpaySubscriptionId: razorpayOrder.id,
+          status: "renewal",
         });
       } else {
         orderPaymentMap.set(orderId, {

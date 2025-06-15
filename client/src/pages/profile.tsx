@@ -23,7 +23,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -36,7 +35,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
-import { UserDeliverySchedule } from "@/components/user/UserDeliverySchedule";
 
 const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -77,7 +75,6 @@ const Profile = () => {
     }
   };
 
-  // Update tab when URL changes
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get("tab");
@@ -99,7 +96,7 @@ const Profile = () => {
   const { data: subscriptions = [], isLoading: isLoadingSubscriptions } =
     useQuery<any[]>({
       queryKey: ["/api/subscriptions"],
-      enabled: currentTab === "subscriptions",
+      enabled: !!user,
     });
 
   const defaultValues: ProfileFormValues = {
@@ -143,42 +140,6 @@ const Profile = () => {
   const getSubscriptionStatusClass = (isActive: boolean) => {
     return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
   };
-
-  const needsRenewal = (subscription: any) => {
-    if (!subscription.endDate || subscription.status !== "active") return false;
-
-    const endDate = new Date(subscription.endDate);
-    const currentDate = new Date();
-    const twoDaysFromNow = new Date();
-    twoDaysFromNow.setDate(currentDate.getDate() + 4);
-
-    return endDate <= twoDaysFromNow && endDate >= currentDate;
-  };
-
-  const renewSubscriptionMutation = useMutation({
-    mutationFn: async (subscriptionId: number) => {
-      const res = await apiRequest(
-        "POST",
-        `/api/subscriptions/${subscriptionId}/renew`,
-      );
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      toast({
-        title: "Subscription renewed",
-        description: "Your subscription has been renewed successfully",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Renewal failed",
-        description:
-          error.message || "There was an error renewing your subscription",
-        variant: "destructive",
-      });
-    },
-  });
 
   const getOrderStatusClass = (status: string) => {
     switch (status) {
@@ -478,60 +439,6 @@ const Profile = () => {
                             </div>
                           </div>
 
-                          {/* Renewal Prompt for subscriptions ending within 2 days */}
-                          {needsRenewal(subscription) && (
-                            <div className="mt-3 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                              <div className="flex items-start gap-3">
-                                <ClockIcon className="h-5 w-5 text-orange-600 mt-0.5" />
-                                <div className="flex-1">
-                                  <h4 className="text-sm font-semibold text-orange-800 mb-1">
-                                    Subscription Ending Soon!
-                                  </h4>
-                                  <p className="text-xs text-orange-700 mb-3">
-                                    Your subscription ends on{" "}
-                                    {format(
-                                      new Date(subscription.endDate),
-                                      "MMM d, yyyy",
-                                    )}
-                                    . Renew now to continue enjoying your meals.
-                                  </p>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      onClick={() =>
-                                        renewSubscriptionMutation.mutate(
-                                          subscription.id,
-                                        )
-                                      }
-                                      disabled={
-                                        renewSubscriptionMutation.isPending
-                                      }
-                                      className="text-xs h-8"
-                                    >
-                                      {renewSubscriptionMutation.isPending ? (
-                                        <>
-                                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                                          Renewing...
-                                        </>
-                                      ) : (
-                                        "Continue Existing Plan"
-                                      )}
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      onClick={() => navigate("/subscription")}
-                                      className="text-xs h-8"
-                                    >
-                                      Change Plan
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Expanded Subscription Details */}
                           {expandedSubscriptionId === subscription.id && (
                             <div className="border-t mt-3 sm:mt-4 pt-3 sm:pt-4">
                               {/* Subscription Details */}
@@ -689,9 +596,6 @@ const Profile = () => {
                                 </div>
                               </div>
 
-                              {/* Action Buttons for Subscription */}
-
-                              {/* Upcoming Deliveries */}
                               {subscription.isActive && (
                                 <div className="mt-6">
                                   <h4 className="font-medium mb-3">
