@@ -1149,7 +1149,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         const userId = (req.user as any).id;
         const subscriptionId = parseInt(req.params.id, 10);
-        const { resumeDate, timeSlot, deliveryAddressId } = req.body;
+        const { resumeDate, timeSlot, deliveryAddressId, personCount } =
+          req.body;
 
         const parsedResumeDate = new Date(resumeDate);
         if (!resumeDate || isNaN(parsedResumeDate.getTime())) {
@@ -1215,6 +1216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           timeSlot,
           deliveryAddressId,
           updatedAt: new Date(),
+          personCount,
         };
 
         const updatedSubscription = await mongoStorage.updateSubscription(

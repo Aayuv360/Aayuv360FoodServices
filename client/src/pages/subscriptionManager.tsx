@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import Subscription from "./subscription";
 import SubscriptionCRUD from "./subscriptionCRUD";
 import { useAuth } from "@/hooks/use-auth";
+import { Loader } from "lucide-react";
 
 const SubscriptionManager = () => {
   const { user } = useAuth();
@@ -22,10 +23,18 @@ const SubscriptionManager = () => {
 
   const hasActiveSubscription = subscriptions.length > 0;
 
-  return hasActiveSubscription ? (
-    <SubscriptionCRUD previousPlansData={subscriptions} />
+  return isLoadingSubscriptions ? (
+    <div className="flex items-center justify-center h-screen">
+      <Loader className="animate-spin w-8 h-8 text-primary" />
+    </div>
   ) : (
-    <Subscription />
+    <>
+      {hasActiveSubscription ? (
+        <SubscriptionCRUD previousPlansData={subscriptions} />
+      ) : (
+        <Subscription />
+      )}
+    </>
   );
 };
 

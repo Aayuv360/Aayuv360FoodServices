@@ -185,9 +185,12 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const defaultValues: SubscriptionFormValues = {
     plan: undefined as any,
     dietaryPreference: "veg",
-    personCount: 1,
+    personCount: previousPlansData?.[0]?.personCount || 1,
     subscriptionType: "default",
-    startDate: new Date(),
+    startDate:
+      determinedAction === "RENEW"
+        ? new Date()
+        : new Date(previousPlansData?.[0]?.startDate) || new Date(),
     useNewAddress: false,
     timeSlot: deliveryTime[0].time,
     modifydelivaryAdrs: modifyDelivaryAddress[0].name,
@@ -200,96 +203,98 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const diet = form.watch("dietaryPreference");
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
-  function calculatePlanPriceChange(
-    selectedPlan: any,
-    previousPlan: any,
-    currentDate?: Date,
-  ) {
+  const modifydelivaryAdrs = form.watch("modifydelivaryAdrs");
+  const dietaryPreference = form.watch("dietaryPreference");
+  const personCount = form.watch("personCount") || 1;
+  const deliveryAddressId = form.watch("selectedAddressId");
+  const basePrice = selectedPlan?.price;
+  const totalPricePerPerson = basePrice;
+  const totalPrice = totalPricePerPerson * personCount;
+  type PriceChangeResult = {
+    price: number;
+    changeType: "priceUp" | "priceDown" | "noChange" | "invalidPlanData";
+    unitsConsumed: number | null;
+  };
+
+  function calculatePlanPriceChange(): PriceChangeResult {
+    const previousPlan = previousPlansData?.[0];
+
+    let unitsConsumed: number | null = null;
+
     if (
-      typeof selectedPlan.price !== "number" ||
-      typeof previousPlan.price !== "number"
+      typeof selectedPlan?.price !== "number" ||
+      typeof previousPlan?.price !== "number"
     ) {
-      console.error(
-        "Invalid plan objects: 'price' property missing or not a number.",
-      );
-      return { price: 0, changeType: "invalidPlanData" };
+      return { price: 0, changeType: "invalidPlanData", unitsConsumed };
     }
 
     let netPriceDifference: number;
-    let changeType: any;
 
     if (previousPlan.status === "inactive") {
       netPriceDifference = selectedPlan.price - previousPlan.price;
+      unitsConsumed = 0; // or null, depending on business logic
     } else if (previousPlan.status === "active") {
-      if (
-        typeof previousPlan.mealsPerMonth !== "number" ||
-        previousPlan.mealsPerMonth <= 0
-      ) {
-        console.error(
-          "For an active previous plan, 'mealsPerMonth' must be a positive number for prorated calculation.",
-        );
-        return { price: 0, changeType: "invalidPlanData" };
+      const { mealsPerMonth, startDate } = previousPlan;
+
+      if (typeof mealsPerMonth !== "number" || mealsPerMonth <= 0) {
+        return { price: 0, changeType: "invalidPlanData", unitsConsumed };
       }
 
-      if (!previousPlan.startDate) {
-        console.error(
-          "For an active previous plan, 'startDate' is required for date-based consumption calculation.",
-        );
-        return { price: 0, changeType: "invalidPlanData" };
+      if (!startDate || isNaN(new Date(startDate).getTime())) {
+        return { price: 0, changeType: "invalidPlanData", unitsConsumed };
       }
 
-      const planStartDate = new Date(previousPlan.startDate);
-      const now = currentDate ? currentDate : new Date();
+      const now = new Date();
+      const planStartDate = new Date(startDate);
+      unitsConsumed = Math.max(
+        0,
+        Math.floor(
+          (now.getTime() - planStartDate.getTime()) / (1000 * 60 * 60 * 24),
+        ),
+      );
 
-      if (isNaN(planStartDate.getTime()) || isNaN(now.getTime())) {
-        return { price: 0, changeType: "invalidPlanData" };
+      if (unitsConsumed > mealsPerMonth) {
       }
 
-      const timeDiff = now.getTime() - planStartDate.getTime();
-
-      const actualUnitsConsumed = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
-
-      const unitsConsumed = Math.max(0, actualUnitsConsumed);
-
-      if (unitsConsumed > previousPlan.mealsPerMonth) {
-        console.warn(
-          `Calculated units consumed (${unitsConsumed}) exceed total plan units (${previousPlan.mealsPerMonth}). This may result in negative remaining value.`,
-        );
-      }
-
-      const costPerUnit = previousPlan.price / previousPlan.mealsPerMonth;
+      const costPerUnit =
+        (previousPlan.price * previousPlan.personCount) / mealsPerMonth;
       const consumedValue = costPerUnit * unitsConsumed;
       const remainingValue = previousPlan.price - consumedValue;
 
-      netPriceDifference = selectedPlan.price - remainingValue;
+      if (
+        typeof selectedPlan.duration !== "number" ||
+        selectedPlan.duration <= 0
+      ) {
+        return { price: 0, changeType: "invalidPlanData", unitsConsumed };
+      }
+
+      const costPerNewUnit =
+        (selectedPlan.price * personCount) / selectedPlan.duration;
+      const selectedPlanActualPrice =
+        selectedPlan.price - costPerNewUnit * unitsConsumed;
+
+      netPriceDifference = selectedPlanActualPrice - remainingValue;
     } else {
-      console.error(
-        "Previous plan status is missing or not recognized ('active' or 'inactive').",
-      );
-      return { price: 0, changeType: "invalidPlanData" };
+      return { price: 0, changeType: "invalidPlanData", unitsConsumed };
     }
 
-    if (netPriceDifference > 0) {
-      changeType = "priceUp";
-    } else if (netPriceDifference < 0) {
-      changeType = "priceDown";
-    } else {
-      changeType = "noChange";
-    }
+    const changeType: PriceChangeResult["changeType"] =
+      netPriceDifference > 0
+        ? "priceUp"
+        : netPriceDifference < 0
+          ? "priceDown"
+          : "noChange";
 
     return {
       price: Math.abs(netPriceDifference),
-      changeType: changeType,
+      changeType,
+      unitsConsumed,
     };
   }
+
+  const upgradePrice = calculatePlanPriceChange();
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
-      const result1 = calculatePlanPriceChange(
-        data.plan,
-        previousPlansData?.[0],
-      );
-      console.log(`Price: ${result1.price}, Type: ${result1.changeType}`);
-
       const payload = {
         plan: data.plan.planType,
         subscriptionType: data.subscriptionType,
@@ -351,7 +356,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
               resolve(subscription);
             } catch (error) {
-              console.error("Error during subscription update:", error);
               reject(error);
             }
           },
@@ -463,10 +467,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         });
       })
       .catch((error) => {
-        console.error(
-          `Error ${isEditing ? "updating" : "creating"} address:`,
-          error,
-        );
         toast({
           title: "Error",
           description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
@@ -491,7 +491,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         variant: "default",
       });
     } catch (error) {
-      console.error("Error deleting address:", error);
       toast({
         title: "Error",
         description: "Failed to delete address. Please try again.",
@@ -500,12 +499,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     }
   };
 
-  const modifydelivaryAdrs = form.watch("modifydelivaryAdrs");
-  const dietaryPreference = form.watch("dietaryPreference");
-  const personCount = form.watch("personCount") || 1;
-  const basePrice = selectedPlan?.price;
-  const totalPricePerPerson = basePrice;
-  const totalPrice = totalPricePerPerson * personCount;
   useEffect(() => {
     const plans =
       subscriptionPlans?.find((group: any) => group.dietaryPreference === diet)
@@ -525,7 +518,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
     }
-  }, [subscriptionPlans, diet, previousPlansData]);
+    if (determinedAction === "RENEW") {
+      const date = new Date();
+      form.setValue("startDate", date);
+    }
+  }, [subscriptionPlans, diet, previousPlansData, determinedAction]);
 
   useEffect(() => {
     if (user) {
@@ -547,7 +544,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
           }
         })
         .catch((error) => {
-          console.error("Error fetching addresses:", error);
           toast({
             title: "Error",
             description: "Failed to load addresses",
@@ -620,16 +616,19 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       resumeDate,
       timeSlot,
       deliveryAddressId,
+      personCount,
     }: {
       subscriptionId: number;
       resumeDate: any;
       timeSlot: any;
       deliveryAddressId: number;
+      personCount: number;
     }) => {
       const payload = {
         resumeDate: resumeDate,
         timeSlot: timeSlot,
         deliveryAddressId: deliveryAddressId,
+        personCount: personCount,
       };
 
       const res = await apiRequest(
@@ -683,7 +682,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
           subscriptionId: previousPlanId,
           resumeDate: new Date(data.startDate).toISOString(),
           timeSlot: data.timeSlot,
-          deliveryAddressId: 2,
+          deliveryAddressId:
+            modifydelivaryAdrs === "Yes"
+              ? previousPlansData?.[0]?.deliveryAddressId
+              : deliveryAddressId,
+          personCount: personCount,
         });
       } else if (determinedAction === "UPGRADE") {
         subscriptionMutation.mutate(data);
@@ -698,7 +701,27 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       });
     }
   };
-
+  const onSubmit = (data: SubscriptionFormValues) => {
+    const previousPlanId = previousPlansData?.[0]?.id;
+    if (previousPlanId) {
+      if (determinedAction === "MODIFY") {
+        ModifySubscriptionMutation.mutate({
+          subscriptionId: previousPlanId,
+          resumeDate: new Date(data.startDate).toISOString(),
+          timeSlot: data.timeSlot,
+          deliveryAddressId:
+            modifydelivaryAdrs === "Yes"
+              ? previousPlansData?.[0]?.deliveryAddressId
+              : deliveryAddressId,
+          personCount: personCount,
+        });
+      } else if (determinedAction === "UPGRADE") {
+        subscriptionMutation.mutate(data);
+      } else if (determinedAction === "RENEW") {
+        subscriptionMutation.mutate(data);
+      }
+    }
+  };
   const renderStepContent = () => {
     switch (formStep) {
       case "plan":
@@ -827,7 +850,9 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 <p className="text-xl font-semibold text-primary">
                   {selectedPlan?.name}
                 </p>
-
+                {/* <p className="text-sm text-gray-600 mt-1">
+                  {selectedPlan?.description}
+                </p> */}
                 <Badge
                   variant="outline"
                   className={
@@ -846,188 +871,203 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 </Badge>
               </div>
 
-              <p className="text-sm text-gray-600 mt-1">
-                {selectedPlan?.description}
-              </p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 ">
-                <FormField
-                  control={form.control}
-                  name="startDate"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel>Start Date</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className="w-full flex justify-start text-left font-normal"
-                            >
-                              {field.value ? (
-                                format(field.value, "PPP")
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            initialFocus
-                            disabled={(date) => date < new Date()}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <div className="grid grid-cols-2 sm:grid-cols-2 gap-6 ">
+                <div>
+                  <FormField
+                    control={form.control}
+                    name="startDate"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel>Start Date</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className="w-full flex justify-start text-left font-normal"
+                              >
+                                {field.value ? (
+                                  format(field.value, "PPP")
+                                ) : (
+                                  <span>Pick a date</span>
+                                )}
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              initialFocus
+                              disabled={(date) => date < new Date()}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="timeSlot"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel className="text-base font-medium">
-                        Delivery Time Slot
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          defaultValue=""
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a time slot" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {deliveryTime.map(({ id, time }) => (
-                              <SelectItem key={id} value={time}>
-                                {time}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="personCount"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel className="text-base font-medium">
-                        Number of Persons
-                      </FormLabel>
-                      <div className="flex items-center">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 bg-white  shadow-sm rounded-r-none border-r"
-                          onClick={() =>
-                            form.setValue(
-                              "personCount",
-                              Math.max(1, field.value - 1),
-                            )
-                          }
-                          disabled={field.value <= 1}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
+                  <FormField
+                    control={form.control}
+                    name="timeSlot"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel className="text-base font-medium">
+                          Delivery Time Slot
+                        </FormLabel>
                         <FormControl>
-                          <Input
-                            type="number"
-                            className="h-9 w-12 text-center border-0 rounded-none shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                            {...field}
-                            onChange={(e) => {
-                              const value = parseInt(e.target.value);
-                              if (!isNaN(value) && value >= 1 && value <= 10) {
-                                field.onChange(value);
-                              }
-                            }}
-                            min={1}
-                            max={10}
-                          />
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            defaultValue=""
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select a time slot" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {deliveryTime.map(({ id, time }) => (
+                                <SelectItem key={id} value={time}>
+                                  {time}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-9 w-9 bg-white  shadow-sm rounded-l-none border-l"
-                          onClick={() =>
-                            form.setValue(
-                              "personCount",
-                              Math.min(10, field.value + 1),
-                            )
-                          }
-                          disabled={field.value >= 10}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="modifydelivaryAdrs"
-                  render={({ field }) => (
-                    <FormItem className="mt-4">
-                      <FormLabel className="text-base font-medium">
-                        Confirm Address
-                      </FormLabel>
-                      <FormControl>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                          defaultValue=""
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select a time slot" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {modifyDelivaryAddress.map(({ id, name }) => (
-                              <SelectItem key={id} value={name}>
-                                {name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              {modifydelivaryAdrs !== "No" && (
-                <div className="flex gap-2 items-center">
-                  <h5 className="text-xl font-semibold text-gray-800 mb-1">
-                    {exictingAdrs?.name}
-                  </h5>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {exictingAdrs?.addressLine1}
-                  </p>
-                  {exictingAdrs?.addressLine2 && (
-                    <p className="text-sm text-gray-600">
-                      {exictingAdrs?.addressLine2}
-                    </p>
-                  )}
-                  <p className="text-sm text-gray-600">
-                    {exictingAdrs?.city}, {exictingAdrs?.state} -{" "}
-                    {exictingAdrs?.pincode}
-                  </p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Phone: {exictingAdrs?.phone}
-                  </p>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="personCount"
+                    render={({ field }) => (
+                      <FormItem className="mt-4">
+                        <FormLabel className="text-base font-medium">
+                          Number of Persons
+                        </FormLabel>
+                        <div className="flex items-center">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 bg-white  shadow-sm rounded-r-none border-r"
+                            onClick={() =>
+                              form.setValue(
+                                "personCount",
+                                Math.max(1, field.value - 1),
+                              )
+                            }
+                            disabled={field.value <= 1}
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              className="h-9 w-12 text-center border-0 rounded-none shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                              {...field}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (
+                                  !isNaN(value) &&
+                                  value >= 1 &&
+                                  value <= 10
+                                ) {
+                                  field.onChange(value);
+                                }
+                              }}
+                              min={1}
+                              max={10}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 bg-white  shadow-sm rounded-l-none border-l"
+                            onClick={() =>
+                              form.setValue(
+                                "personCount",
+                                Math.min(10, field.value + 1),
+                              )
+                            }
+                            disabled={field.value >= 10}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 </div>
-              )}
+                <div>
+                  <div></div>
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="modifydelivaryAdrs"
+                      render={({ field }) => (
+                        <FormItem className="mt-4">
+                          <FormLabel className="text-base font-medium">
+                            Confirm Address
+                          </FormLabel>
+                          <FormControl>
+                            <Select
+                              onValueChange={field.onChange}
+                              value={field.value}
+                              defaultValue=""
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select a time slot" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {modifyDelivaryAddress.map(({ id, name }) => (
+                                  <SelectItem key={id} value={name}>
+                                    {name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {modifydelivaryAdrs !== "No" && (
+                      <div className="flex flex-col">
+                        <div>
+                          <h5 className="text-sm font-semibold text-gray-800">
+                            {exictingAdrs?.name}
+                          </h5>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">
+                            {exictingAdrs?.addressLine1}
+                          </p>
+                          {exictingAdrs?.addressLine2 && (
+                            <p className="text-sm text-gray-600">
+                              {exictingAdrs?.addressLine2}
+                            </p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">
+                            {exictingAdrs?.city}, {exictingAdrs?.state} -{" "}
+                            {exictingAdrs?.pincode}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            Phone: {exictingAdrs?.phone}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-3 p-3 rounded-md border border-gray-100">
                 <div className="flex justify-between items-center">
                   <span className="text-sm font-bold">Price per person:</span>
@@ -1035,6 +1075,29 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                     {formatPrice(basePrice)}
                   </span>
                 </div>
+                {determinedAction === "UPGRADE" ? (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold">
+                        Previous Price per person:
+                      </span>
+                      <span className="text-sm font-bold">
+                        {formatPrice(previousPlansData?.[0]?.price)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-bold">
+                        Previous days consumed:
+                      </span>
+                      <span className="text-sm font-bold">
+                        {upgradePrice?.unitsConsumed}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <></>
+                )}
+
                 {personCount > 1 && (
                   <div className="flex justify-between items-center mt-1">
                     <span className="text-sm font-bold">
@@ -1048,7 +1111,9 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                     Total monthly price:
                   </span>
                   <span className="text-sm font-extrabold">
-                    {formatPrice(totalPrice)}
+                    {determinedAction === "UPGRADE"
+                      ? formatPrice(upgradePrice?.price * personCount)
+                      : formatPrice(totalPrice)}
                   </span>
                 </div>
               </div>
@@ -1332,6 +1397,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 <Button
                   type="button"
                   className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
+                  onClick={form.handleSubmit(onSubmit)}
                 >
                   {subscriptionMutation.isPending ? (
                     <>
