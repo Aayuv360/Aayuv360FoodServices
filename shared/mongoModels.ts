@@ -49,6 +49,8 @@ export interface SubscriptionPlanDocument extends Document {
   updatedAt: Date;
   timeSlot: string;
   deliveryAddressId: number;
+  increasedPrice?: number;
+  walletPrice?: number;
 }
 
 export interface MealDocument extends Document {
@@ -136,6 +138,8 @@ export interface SubscriptionDocument extends Document {
   }>;
   timeSlot: string;
   deliveryAddressId: number;
+  increasedPrice?: number;
+  walletPrice?: number;
 }
 
 export interface AddressDocument extends Document {
@@ -298,6 +302,8 @@ const subscriptionSchema = new Schema<SubscriptionDocument>({
   updatedAt: { type: Date, default: Date.now },
   timeSlot: { type: String, required: true },
   deliveryAddressId: { type: Number, required: true },
+  increasedPrice: { type: Number, required: true },
+  walletPrice: { type: Number, required: true },
 });
 
 const addressSchema = new Schema<AddressDocument>({
@@ -356,6 +362,8 @@ const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
   updatedAt: { type: Date, default: Date.now },
   timeSlot: { type: String, required: true },
   deliveryAddressId: { type: Number, required: true },
+  increasedPrice: { type: Number, required: true },
+  walletPrice: { type: Number, required: true },
 });
 
 // Create and export models

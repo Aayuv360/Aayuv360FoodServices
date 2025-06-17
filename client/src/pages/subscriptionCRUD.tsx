@@ -19,6 +19,9 @@ import {
   CheckCircle,
   Home,
   ShoppingBag,
+  CalendarDays,
+  Clock,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -305,6 +308,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         personCount: data.personCount,
         menuItems: data.plan.menuItems,
         timeSlot: data.timeSlot,
+        increasedPrice:
+          upgradePrice?.changeType === "priceUp" ? upgradePrice?.price : 0,
+        walletPrice:
+          upgradePrice?.changeType === "priceDown" ? upgradePrice?.price : 0,
       };
 
       const previousPlanId = previousPlansData?.[0]?.id;
@@ -315,10 +322,13 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
           : determinedAction === "RENEW"
             ? "subscriptionRenewal"
             : "subscription";
-
+      const subscriptionPrice =
+        upgradePrice?.changeType === "priceUp"
+          ? (upgradePrice?.price ?? 0)
+          : (data?.plan?.price ?? 0);
       return new Promise((resolve, reject) => {
         initiatePayment({
-          amount: data.plan.price || 0,
+          amount: subscriptionPrice,
           orderId: previousPlanId,
           type: subscriptionType,
           description: `${data.plan.name} Millet Meal Subscription`,
@@ -514,12 +524,13 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
     }
+  }, [subscriptionPlans, diet, previousPlansData]);
+  useEffect(() => {
     if (determinedAction === "RENEW") {
       const date = new Date();
       form.setValue("startDate", date);
     }
-  }, [subscriptionPlans, diet, previousPlansData, determinedAction]);
-
+  }, [determinedAction]);
   useEffect(() => {
     if (user) {
       apiRequest("GET", "/api/addresses")
@@ -657,17 +668,33 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     },
   });
   const getButtonLabel = (user: any, action: any, addressStatus: any) => {
-    if (!user) return "Login and continue";
-    if (modifydelivaryAdrs === "No") return "Continue to Delivery";
+    if (!user) return "Login & Continue";
+    if (addressStatus === "No") return "Delivery Info";
     switch (action) {
       case "MODIFY":
-        return "Modify & Complete Subscription";
+        return "Update Subscription";
       case "UPGRADE":
-        return "change plan & Complete Subscription";
+        return "Upgrade Plan";
       case "RENEW":
-        return "Renewal & Complete Subscription";
+        return "Renew Plan";
+      default:
+        return "Continue";
     }
   };
+
+  const getAdrsButtonLabel = (action: any) => {
+    switch (action) {
+      case "MODIFY":
+        return "Update Subscription";
+      case "UPGRADE":
+        return "Upgrade Plan";
+      case "RENEW":
+        return "Renew Plan";
+      default:
+        return "Continue";
+    }
+  };
+
   const onModifySubmit = (data: SubscriptionFormValues) => {
     const previousPlanId = previousPlansData?.[0]?.id;
     if (modifydelivaryAdrs === "No") {
@@ -839,42 +866,44 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
               </div>
             </div>
 
-            <div className="mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm">
-              <div className="flex items-center justify-between">
-                {/* <h4 className="text-xl font-semibold">✨ Your Selection</h4>
-                 */}
-                <p className="text-xl font-semibold text-primary">
-                  {selectedPlan?.name}
-                </p>
-                {/* <p className="text-sm text-gray-600 mt-1">
-                  {selectedPlan?.description}
-                </p> */}
-                <Badge
-                  variant="outline"
-                  className={
-                    form.watch("dietaryPreference") === "veg"
-                      ? "bg-green-100 text-green-800"
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm ">
+              <div className="col-span-2 space-y-2">
+                <div className="flex items-center justify-between">
+                  {/* <h4 className="text-xl font-semibold">✨ Your Selection</h4>
+                   */}
+                  <p className="text-xl font-semibold text-primary">
+                    {selectedPlan?.name}
+                  </p>
+                  {/* <p className="text-sm text-gray-600 mt-1">
+                    {selectedPlan?.description}
+                  </p> */}
+                  <Badge
+                    variant="outline"
+                    className={
+                      form.watch("dietaryPreference") === "veg"
+                        ? "bg-green-100 text-green-800"
+                        : form.watch("dietaryPreference") === "veg_with_egg"
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-red-100 text-red-800"
+                    }
+                  >
+                    {form.watch("dietaryPreference") === "veg"
+                      ? "Vegetarian"
                       : form.watch("dietaryPreference") === "veg_with_egg"
-                        ? "bg-amber-100 text-amber-800"
-                        : "bg-red-100 text-red-800"
-                  }
-                >
-                  {form.watch("dietaryPreference") === "veg"
-                    ? "Vegetarian"
-                    : form.watch("dietaryPreference") === "veg_with_egg"
-                      ? "Veg with Egg"
-                      : "Non-Vegetarian"}
-                </Badge>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-2 gap-6 ">
-                <div>
+                        ? "Veg with Egg"
+                        : "Non-Vegetarian"}
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <FormField
                     control={form.control}
                     name="startDate"
                     render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel>Start Date</FormLabel>
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1 text-base font-medium">
+                          <CalendarDays className="h-4 w-4 text-primary" />
+                          Start Date
+                        </FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -909,8 +938,9 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                     control={form.control}
                     name="timeSlot"
                     render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel className="text-base font-medium">
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1 text-base font-medium">
+                          <Clock className="h-4 w-4 text-primary" />
                           Delivery Time Slot
                         </FormLabel>
                         <FormControl>
@@ -937,180 +967,149 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   />
                   <FormField
                     control={form.control}
-                    name="personCount"
+                    name="modifydelivaryAdrs"
                     render={({ field }) => (
-                      <FormItem className="mt-4">
-                        <FormLabel className="text-base font-medium">
-                          Number of Persons
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1 text-base font-medium">
+                          <Home className="h-4 w-4 text-primary" />
+                          Confirm Address
                         </FormLabel>
-                        <div className="flex items-center">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 bg-white  shadow-sm rounded-r-none border-r"
-                            onClick={() =>
-                              form.setValue(
-                                "personCount",
-                                Math.max(1, field.value - 1),
-                              )
-                            }
-                            disabled={field.value <= 1}
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            defaultValue=""
                           >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              className="h-9 w-12 text-center border-0 rounded-none shadow-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                              {...field}
-                              onChange={(e) => {
-                                const value = parseInt(e.target.value);
-                                if (
-                                  !isNaN(value) &&
-                                  value >= 1 &&
-                                  value <= 10
-                                ) {
-                                  field.onChange(value);
-                                }
-                              }}
-                              min={1}
-                              max={10}
-                            />
-                          </FormControl>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-9 w-9 bg-white  shadow-sm rounded-l-none border-l"
-                            onClick={() =>
-                              form.setValue(
-                                "personCount",
-                                Math.min(10, field.value + 1),
-                              )
-                            }
-                            disabled={field.value >= 10}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select a time slot" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {modifyDelivaryAddress.map(({ id, name }) => (
+                                <SelectItem key={id} value={name}>
+                                  {name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
                         <FormMessage />
+                        {modifydelivaryAdrs !== "No" && (
+                          <div className="flex flex-col">
+                            <p className="text-sm text-gray-600">
+                              {exictingAdrs?.addressLine1}
+                            </p>
+                            {exictingAdrs?.addressLine2 && (
+                              <p className="text-sm text-gray-600">
+                                {exictingAdrs?.addressLine2},{" "}
+                                {exictingAdrs?.city}, {exictingAdrs?.state} -{" "}
+                                {exictingAdrs?.pincode}
+                              </p>
+                            )}
+
+                            <p className="text-sm text-gray-600">
+                              Phone: {exictingAdrs?.phone}
+                            </p>
+                          </div>
+                        )}
                       </FormItem>
                     )}
                   />
                 </div>
-                <div>
-                  <div></div>
-                  <div>
-                    <FormField
-                      control={form.control}
-                      name="modifydelivaryAdrs"
-                      render={({ field }) => (
-                        <FormItem className="mt-4">
-                          <FormLabel className="text-base font-medium">
-                            Confirm Address
-                          </FormLabel>
-                          <FormControl>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              defaultValue=""
-                            >
-                              <SelectTrigger className="w-full">
-                                <SelectValue placeholder="Select a time slot" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {modifyDelivaryAddress.map(({ id, name }) => (
-                                  <SelectItem key={id} value={name}>
-                                    {name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    {modifydelivaryAdrs !== "No" && (
-                      <div className="flex flex-col">
-                        <div>
-                          <h5 className="text-sm font-semibold text-gray-800">
-                            {exictingAdrs?.name}
-                          </h5>
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">
-                            {exictingAdrs?.addressLine1}
-                          </p>
-                          {exictingAdrs?.addressLine2 && (
-                            <p className="text-sm text-gray-600">
-                              {exictingAdrs?.addressLine2}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-sm text-gray-600">
-                            {exictingAdrs?.city}, {exictingAdrs?.state} -{" "}
-                            {exictingAdrs?.pincode}
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Phone: {exictingAdrs?.phone}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
               </div>
-
-              <div className="mt-3 p-3 rounded-md border border-gray-100">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm font-bold">Price per person:</span>
-                  <span className="text-sm font-bold">
-                    {formatPrice(basePrice)}
+              <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full max-w-md mx-auto">
+                <div>
+                  <span className="text-lg font-bold block mb-3">
+                    {" "}
+                    💰 Order Summary
                   </span>
-                </div>
-                {determinedAction === "UPGRADE" ? (
-                  <>
+                  <div className="space-y-2 text-sm font-medium text-gray-900">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold">
-                        Previous Price per person:
-                      </span>
-                      <span className="text-sm font-bold">
-                        {formatPrice(previousPlansData?.[0]?.price)}
-                      </span>
+                      <span>Base Price (per person):</span>
+                      <span>{formatPrice(basePrice)}</span>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-bold">
-                        Previous days consumed:
-                      </span>
-                      <span className="text-sm font-bold">
-                        {upgradePrice?.unitsConsumed}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <></>
-                )}
 
-                {personCount > 1 && (
-                  <div className="flex justify-between items-center mt-1">
-                    <span className="text-sm font-bold">
-                      Number of persons:
-                    </span>
-                    <span className="text-sm font-bold">{personCount}</span>
+                    {determinedAction === "UPGRADE" && (
+                      <>
+                        <div className="flex justify-between items-center">
+                          <span>Previous Price per person:</span>
+                          <span>
+                            {formatPrice(previousPlansData?.[0]?.price)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span>Previous days consumed:</span>
+                          <span>{upgradePrice?.unitsConsumed}</span>
+                        </div>
+                      </>
+                    )}
+
+                    <div className="flex justify-between items-center">
+                      <span>Persons:</span>
+                      <FormField
+                        control={form.control}
+                        name="personCount"
+                        render={({ field }) => (
+                          <FormItem>
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6 sm:h-7 sm:w-7 rounded-full"
+                                onClick={() =>
+                                  form.setValue(
+                                    "personCount",
+                                    Math.max(1, field.value - 1),
+                                  )
+                                }
+                                disabled={field.value <= 1}
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+
+                              <span className="text-sm font-medium w-3 text-center">
+                                {personCount}
+                              </span>
+
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-6 w-6 sm:h-7 sm:w-7 rounded-full"
+                                onClick={() =>
+                                  form.setValue(
+                                    "personCount",
+                                    Math.min(10, field.value + 1),
+                                  )
+                                }
+                                disabled={field.value >= 10}
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <div className="text-lg font-bold text-gray-900 flex justify-between items-center pt-3 border-t">
+                      <span>Total:</span>
+                      <span>
+                        {determinedAction === "UPGRADE"
+                          ? formatPrice(upgradePrice?.price * personCount)
+                          : formatPrice(totalPrice)}
+                      </span>
+                    </div>
                   </div>
-                )}
-                <div className="flex justify-between items-center mt-1 border-t pt-2">
-                  <span className="text-sm font-extrabold">
-                    Total monthly price:
-                  </span>
-                  <span className="text-sm font-extrabold">
-                    {determinedAction === "UPGRADE"
-                      ? formatPrice(upgradePrice?.price * personCount)
-                      : formatPrice(totalPrice)}
-                  </span>
+                </div>
+                <div className="mt-6 flex justify-center">
+                  <Button
+                    type="button"
+                    className="bg-primary hover:bg-primary/90 rounded-full text-sm sm:text-base px-4 py-2 whitespace-normal text-center"
+                    onClick={form.handleSubmit(onModifySubmit)}
+                  >
+                    {getButtonLabel(user, determinedAction, modifydelivaryAdrs)}
+                    <ArrowRight className="ml-1 h-4 w-4" />
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1137,88 +1136,92 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
             </div>
             <div>
               <div className="mb-6">
-                <div className="flex justify-end mb-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="rounded-full"
-                    onClick={() => setAddressModalOpen(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    Add New Address
-                  </Button>
-                </div>
                 {addresses.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {addresses.map((address) => (
-                      <div
-                        key={address.id}
-                        className={`p-4 rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md ${
-                          form.watch("selectedAddressId") === address.id
-                            ? "border-primary"
-                            : "border-gray-200 hover:border-primary/50"
-                        }`}
-                        onClick={() => selectAddress(address.id)}
+                  <>
+                    <div className="flex justify-end mb-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="rounded-full"
+                        onClick={() => setAddressModalOpen(true)}
                       >
-                        <div className="flex justify-between">
-                          <div className="flex gap-2 items-center">
-                            <h5 className="text-xl font-semibold text-gray-800 mb-1">
-                              {address.name}
-                            </h5>
-                            {address.isDefault && (
-                              <Badge variant="outline" className="text-xs">
-                                Default
-                              </Badge>
-                            )}
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add New Address
+                      </Button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {addresses.map((address) => (
+                        <div
+                          key={address.id}
+                          className={`p-4 rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md ${
+                            form.watch("selectedAddressId") === address.id
+                              ? "border-primary"
+                              : "border-gray-200 hover:border-primary/50"
+                          }`}
+                          onClick={() => selectAddress(address.id)}
+                        >
+                          <div className="flex justify-between">
+                            <div className="flex gap-2 items-center">
+                              <span className="text-xl font-bold text-gray-800 mb-1">
+                                {address.name}
+                              </span>
+                              {address.isDefault && (
+                                <Badge variant="outline" className="text-xs">
+                                  Default
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingAddress(address);
+                                  setAddressModalOpen(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeletingAddress(address);
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              {form.watch("selectedAddressId") ===
+                                address.id && (
+                                <Check className="h-5 w-5 text-primary" />
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingAddress(address);
-                                setAddressModalOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeletingAddress(address);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            {form.watch("selectedAddressId") === address.id && (
-                              <Check className="h-5 w-5 text-primary" />
+                          <div className="flex flex-col">
+                            <p className="text-sm text-gray-600">
+                              {address?.addressLine1}
+                            </p>
+                            {address?.addressLine2 && (
+                              <p className="text-sm text-gray-600">
+                                {address?.addressLine2}, {address?.city},{" "}
+                                {address?.state} - {address?.pincode}
+                              </p>
                             )}
+
+                            <p className="text-sm text-gray-600">
+                              Phone: {exictingAdrs?.phone}
+                            </p>
                           </div>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {address.addressLine1}
-                        </p>
-                        {address.addressLine2 && (
-                          <p className="text-sm text-gray-600">
-                            {address.addressLine2}
-                          </p>
-                        )}
-                        <p className="text-sm text-gray-600">
-                          {address.city}, {address.state} - {address.pincode}
-                        </p>
-                        <p className="text-sm text-gray-600 mt-1">
-                          Phone: {address.phone}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  </>
                 ) : (
                   <></>
                 )}
@@ -1226,38 +1229,61 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
               <div className="mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <div className="text-xl font-bold pb-4">
-                      📦 Subscription Details
+                  <div className="flex flex-col gap-8">
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
+                      {(() => {
+                        const address = addresses.find(
+                          (address) => address.id === deliveryAddressId,
+                        );
+                        if (!address)
+                          return (
+                            <>
+                              <div className="flex justify-center">
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  className="rounded-full"
+                                  onClick={() => setAddressModalOpen(true)}
+                                >
+                                  <Plus className="h-4 w-4 mr-1" />
+                                  Add New Address
+                                </Button>
+                              </div>
+                            </>
+                          );
+
+                        return (
+                          <div>
+                            <div className="flex justify-between">
+                              <span className="text-xl font-bold text-gray-800 mb-1">
+                                🚚 Delivary Address
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <p className="text-sm text-gray-600">
+                                {address?.addressLine1}
+                              </p>
+                              {address?.addressLine2 && (
+                                <p className="text-sm text-gray-600">
+                                  {address.addressLine2}, {address.city},{" "}
+                                  {address.state} - {address.pincode}
+                                </p>
+                              )}
+                              <p className="text-sm text-gray-600">
+                                Phone: {address?.phone}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
-                    <ul className="text-sm text-gray-700 space-y-3">
-                      <li>
-                        <span className="font-medium text-gray-900">Plan:</span>{" "}
-                        {selectedPlan?.name}
-                      </li>
-                      <li>
-                        <span className="font-medium text-gray-900">
-                          Start Date:
-                        </span>
-                        {format(form.watch("startDate"), "PPP")}
-                      </li>
-                      <li>
-                        <span className="font-medium text-gray-900">
-                          Number of Persons:
-                        </span>{" "}
-                        {personCount}
-                      </li>
-                      <li>
-                        <span className="font-medium text-gray-900">
-                          Meals Per Month:
-                        </span>{" "}
-                        {selectedPlan?.duration}
-                      </li>
-                      <li>
-                        <span className="font-medium text-gray-900">
-                          {" "}
-                          Selected Diet:
-                        </span>{" "}
+
+                    {/* Subscription Details Card */}
+                    <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
+                      <div className="flex justify-between items-center pb-4">
+                        <div className="text-xl font-bold">
+                          📦 Subscription Details
+                        </div>
                         <Badge
                           variant="outline"
                           className={
@@ -1274,49 +1300,103 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                               ? "Veg with Egg"
                               : "Non-Vegetarian"}
                         </Badge>
-                      </li>
-                    </ul>
+                      </div>
+
+                      <ul className="text-base text-gray-700 space-y-1">
+                        <li>
+                          <span className="font-medium text-gray-900">
+                            Plan:
+                          </span>{" "}
+                          {selectedPlan?.name}
+                        </li>
+                        <li>
+                          <span className="font-medium text-gray-900">
+                            Start Date:
+                          </span>{" "}
+                          {format(form.watch("startDate"), "PPP")}
+                        </li>
+                        <li>
+                          <span className="font-medium text-gray-900">
+                            Meals Per Month:
+                          </span>{" "}
+                          {selectedPlan?.duration}
+                        </li>
+                      </ul>
+
+                      <div className="mt-6 flex justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={goToPreviousStep}
+                          className="rounded-full"
+                        >
+                          <ArrowLeft className="mr-1 h-4 w-4" />
+                          Change Plan
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                  <div>
+
+                  {/* Right Column - Order Summary */}
+                  <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
                     <div className="text-xl font-bold pb-4">
                       💰 Order Summary
                     </div>
-                    <ul className="text-sm text-gray-700 space-y-3">
-                      <li>
-                        <span className="font-medium text-gray-900">
-                          Base Price (per person):
-                        </span>{" "}
+                    <ul className="text-base font-medium text-gray-900 space-y-1">
+                      <li className="flex justify-between items-center">
+                        <span>Base Price (per person):</span>
                         {formatPrice(selectedPlan.price)}/month
                       </li>
-                      {personCount > 1 && (
-                        <li>
-                          <span className="font-medium text-gray-900">
-                            Number of persons:
-                          </span>
-                          × {personCount}
-                        </li>
+
+                      {determinedAction === "UPGRADE" && (
+                        <>
+                          <li className="flex justify-between items-center">
+                            <span>Previous Price per person:</span>
+                            <span>
+                              {formatPrice(previousPlansData?.[0]?.price)}
+                            </span>
+                          </li>
+                          <li className="flex justify-between items-center">
+                            <span>Previous days consumed:</span>
+                            <span>{upgradePrice?.unitsConsumed}</span>
+                          </li>
+                        </>
                       )}
-                      <li>
-                        <span className="font-medium text-gray-900">
-                          Subtotal:
-                        </span>{" "}
-                        {formatPrice(basePrice * personCount)}
-                        /month
+
+                      <li className="flex justify-between items-center">
+                        <span>Persons:</span>
+                        {personCount}
                       </li>
-                      <li>
-                        <span className="font-medium text-gray-900">
-                          Tax (5% GST):
-                        </span>{" "}
-                        {formatPrice(basePrice * personCount * 0.05)}
-                      </li>
-                      <li className="text-lg font-bold text-gray-900 border-t pt-3">
-                        <span className="text-primary">Total:</span>{" "}
-                        {formatPrice(basePrice * personCount * 1.05)}
+
+                      <li className="text-lg font-bold text-gray-900 flex justify-between items-center pt-3 border-t">
+                        <span>Total:</span>
+                        {determinedAction === "UPGRADE"
+                          ? formatPrice(upgradePrice?.price * personCount)
+                          : formatPrice(basePrice * personCount)}
                       </li>
                     </ul>
+
+                    {/* Button */}
+                    <div className="mt-6 flex justify-center">
+                      <Button
+                        type="button"
+                        className="bg-primary hover:bg-primary/90 rounded-full text-sm sm:text-base px-4 py-2 whitespace-normal text-center"
+                        onClick={form.handleSubmit(onSubmit)}
+                      >
+                        {subscriptionMutation.isPending ? (
+                          <>
+                            <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>{getAdrsButtonLabel(determinedAction)}</>
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
+
               <NewAddressModal
                 addressModalOpen={addressModalOpen}
                 setAddressModalOpen={(open: boolean) => {
@@ -1358,54 +1438,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         <Form {...form}>
           <div className="max-w-7xl mx-auto px-5 py-6">
             {renderStepContent()}
-
-            <div className="flex justify-between items-center pt-4">
-              {formStep === "payment" && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={goToPreviousStep}
-                  className="rounded-full"
-                >
-                  <ArrowLeft className="mr-1 h-4 w-4" />
-                  Back to Plan
-                </Button>
-              )}
-
-              {formStep === "plan" && (
-                <Button
-                  type="button"
-                  className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
-                  onClick={form.handleSubmit(onModifySubmit)}
-                >
-                  {modifydelivaryAdrs === "No"
-                    ? "Continue to Delivery"
-                    : getButtonLabel(
-                        user,
-                        determinedAction,
-                        modifydelivaryAdrs,
-                      )}
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
-              )}
-
-              {formStep === "payment" && (
-                <Button
-                  type="button"
-                  className="ml-auto bg-primary hover:bg-primary/90 rounded-full"
-                  onClick={form.handleSubmit(onSubmit)}
-                >
-                  {subscriptionMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
-                  ) : (
-                    <>Complete Subscription</>
-                  )}
-                </Button>
-              )}
-            </div>
           </div>
         </Form>
       </div>
