@@ -872,7 +872,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   {/* <h4 className="text-xl font-semibold">✨ Your Selection</h4>
                    */}
                   <p className="text-xl font-semibold text-primary">
-                    {selectedPlan?.name}
+                    ✨ {selectedPlan?.name}
                   </p>
                   {/* <p className="text-sm text-gray-600 mt-1">
                     {selectedPlan?.description}
@@ -1022,7 +1022,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                     {" "}
                     💰 Order Summary
                   </span>
-                  <div className="space-y-2 text-sm font-medium text-gray-900">
+                  <div className="space-y-2 text-base font-medium text-gray-900">
                     <div className="flex justify-between items-center">
                       <span>Base Price (per person):</span>
                       <span>{formatPrice(basePrice)}</span>
