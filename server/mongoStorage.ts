@@ -633,10 +633,10 @@ export class MongoDBStorage implements IStorage {
   // Subscription operations
   async createSubscription(subscriptionData: any): Promise<any> {
     try {
-      const id = await getNextSequence("subscription");
+      const newId = await getNextSequence("subscription");
       const newSubscription = new Subscription({
         ...subscriptionData,
-        id,
+        id: subscriptionData?.id,
         createdAt: new Date(),
         updatedAt: new Date(),
       });

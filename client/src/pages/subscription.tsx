@@ -19,6 +19,9 @@ import {
   CheckCircle,
   Home,
   ShoppingBag,
+  CalendarDays,
+  Clock,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -203,7 +206,6 @@ const Subscription = () => {
         startDate: data.startDate.toISOString(),
         mealsPerMonth: data.plan.duration,
         price: data.plan.price || 0,
-        status: "pending",
         dietaryPreference: data.dietaryPreference,
         personCount: data.personCount,
         paymentMethod: "razorpay",
@@ -212,57 +214,70 @@ const Subscription = () => {
         deliveryAddressId: deliveryAddressId,
       };
 
-      const response = await apiRequest("POST", "/api/subscriptions", payload);
-      const subscription = await response.json();
+      const response = await apiRequest(
+        "POST",
+        "/api/subscriptions/generate-id",
+      );
 
-      initiatePayment({
-        amount: data.plan.price || 0,
-        orderId: subscription.id,
-        type: "subscription",
-        description: `${data.plan.name} Millet Meal Subscription`,
-        name: "Aayuv Millet Foods",
-        theme: { color: "#9E6D38" },
-        onSuccess: async (paymentData: RazorpayPaymentData) => {
-          await apiRequest("PATCH", `/api/subscriptions/${subscription.id}`, {
-            status: "active",
-            razorpayPaymentId: paymentData.razorpay_payment_id,
-            razorpayOrderId: paymentData.razorpay_order_id,
-            razorpaySignature: paymentData.razorpay_signature,
-          });
+      const { id: subscriptionId } = await response.json();
 
-          toast({
-            title: "Subscription Successful!",
-            description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
-            variant: "default",
-          });
+      return new Promise((resolve, reject) => {
+        initiatePayment({
+          amount: data.plan.price || 0,
+          orderId: subscriptionId,
+          type: "subscription",
+          description: `${data.plan.name} Millet Meal Subscription`,
+          name: "Aayuv Millet Foods",
+          theme: { color: "#9E6D38" },
 
-          localStorage.setItem(
-            "lastSubscriptionId",
-            subscription.id.toString(),
-          );
+          onSuccess: async (paymentData: RazorpayPaymentData) => {
+            try {
+              const updatedSubscription = await apiRequest(
+                "POST",
+                `/api/subscriptions`,
+                {
+                  ...payload,
+                  id: subscriptionId,
+                  razorpayPaymentId: paymentData.razorpay_payment_id,
+                  razorpayOrderId: paymentData.razorpay_order_id,
+                  razorpaySignature: paymentData.razorpay_signature,
+                },
+              );
 
-          navigate(
-            `/payment-success?subscriptionId=${subscription.id}&type=subscription`,
-          );
-          // setFormStep("success");
-        },
-        onFailure: (error: Error) => {
-          toast({
-            title: "Payment Failed",
-            description:
-              error.message ||
-              "Failed to process your payment. Please try again.",
-            variant: "destructive",
-          });
-        },
+              toast({
+                title: "Subscription Successful!",
+                description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
+                variant: "default",
+              });
+
+              // navigate(
+              //   `/payment-success?subscriptionId=${subscriptionId}&type=subscription`,
+              // );
+              setFormStep("success");
+              resolve(updatedSubscription);
+            } catch (error) {
+              reject(error);
+            }
+          },
+
+          onFailure: (error: Error) => {
+            toast({
+              title: "Payment Failed",
+              description:
+                error.message ||
+                "Failed to process your payment. Please try again.",
+              variant: "destructive",
+            });
+            reject(error);
+          },
+        });
       });
+    },
 
-      return subscription;
-    },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
-      localStorage.setItem("lastSubscriptionId", data.id.toString());
     },
+
     onError: (error: any) => {
       toast({
         title: "Error processing subscription",
@@ -1014,6 +1029,12 @@ const Subscription = () => {
                 </p>
               </div>
             </div>
+          </div>
+        );
+      case "success":
+        return (
+          <div>
+            <SuccessPage />
           </div>
         );
     }

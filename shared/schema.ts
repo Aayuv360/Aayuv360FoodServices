@@ -152,6 +152,9 @@ export const subscriptionSchema = z.object({
     .optional(),
   timeSlot: z.string().optional(),
   deliveryAddressId: z.number().optional(),
+  razorpayOrderId: z.string(),
+  razorpayPaymentId: z.string(),
+  razorpaySignature: z.string(),
 });
 
 export const addressSchema = z.object({
@@ -204,7 +207,7 @@ export const insertOrderSchema = orderSchema.omit({
   createdAt: true,
   status: true,
 });
-export const insertSubscriptionSchema = subscriptionSchema.omit({ id: true });
+export const insertSubscriptionSchema = subscriptionSchema;
 export const insertAddressSchema = addressSchema.omit({
   id: true,
   createdAt: true,

@@ -331,7 +331,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 "PATCH",
                 `/api/subscriptions/${previousPlanId}`,
                 {
-                  status: "active",
+                  // status: "active",
                   razorpayPaymentId: paymentData.razorpay_payment_id,
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
@@ -345,14 +345,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 variant: "default",
               });
 
-              localStorage.setItem(
-                "lastSubscriptionId",
-                previousPlanId.toString(),
-              );
-
-              navigate(
-                `/payment-success?subscriptionId=${previousPlanId}&type=subscription`,
-              );
+              // navigate(
+              //   `/payment-success?subscriptionId=${previousPlanId}&type=subscription`,
+              // );
+              setFormStep("success");
 
               resolve(subscription);
             } catch (error) {

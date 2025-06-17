@@ -19,6 +19,7 @@ import {
   Meal as MealModel,
   CartItem as CartItemModel,
   CurryOption,
+  getNextSequence,
 } from "../shared/mongoModels";
 import { updateOrderDeliveryStatus } from "./delivery-status";
 import { deliveryScheduler } from "./delivery-scheduler";
@@ -1114,6 +1115,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Error fetching subscription" });
     }
   });
+  app.post(
+    "/api/subscriptions/generate-id",
+    isAuthenticated,
+    async (req, res) => {
+      try {
+        const id = await getNextSequence("subscription");
+        res.status(200).json({ id });
+      } catch (error) {
+        console.error("Error generating subscription ID:", error);
+        res.status(500).json({ message: "Failed to generate subscription ID" });
+      }
+    },
+  );
 
   app.post("/api/subscriptions", isAuthenticated, async (req, res) => {
     try {
@@ -1124,6 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         startDate: req.body.startDate
           ? new Date(req.body.startDate)
           : undefined,
+        id: req.body.id,
       };
 
       const subscriptionData = insertSubscriptionSchema.parse(requestData);
@@ -1137,8 +1152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .status(400)
           .json({ message: "Validation error", errors: err.errors });
       } else {
-        console.error("Error creating subscription:", err);
-        res.status(500).json({ message: "Error creating subscription" });
+        console.error("Error creating subscriptionRoute:", err);
+        res.status(500).json({ message: "Error creating subscriptionADAS" });
       }
     }
   });
@@ -1905,8 +1920,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
-      console.log("Admin: Fetching all meals from MongoDB...");
-
       const meals = await MealModel.find().lean();
 
       const globalCurryOptions = await CurryOption.find().lean();
@@ -2258,19 +2271,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let entityType = "order";
       let entity;
       if (type === "subscription") {
-        const subscription = await storage.getSubscription(orderId);
+        // const subscription = await getNextSequence("subscription");
 
-        if (!subscription) {
-          return res.status(404).json({ message: "Subscription not found" });
-        }
+        // if (!subscription) {
+        //   return res.status(404).json({ message: "Subscription not found" });
+        // }
 
-        if (subscription.userId !== userId) {
-          return res.status(403).json({
-            message: "You do not have permission to pay for this subscription",
-          });
-        }
-
-        entity = subscription;
+        // entity = subscription;
         entityType = "subscription";
       } else if (type === "subscriptionUpgrade") {
         const subscription = await storage.getSubscription(orderId);
