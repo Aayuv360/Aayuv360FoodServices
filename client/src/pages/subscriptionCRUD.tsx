@@ -18,10 +18,8 @@ import {
   ClipboardList,
   CheckCircle,
   Home,
-  ShoppingBag,
   CalendarDays,
   Clock,
-  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -162,7 +160,6 @@ interface RazorpayPaymentData {
 const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const [_, navigate] = useLocation();
   const { initiatePayment } = useRazorpay();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -170,9 +167,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     useState<boolean>(false);
   const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [deletingAddress, setDeletingAddress] = useState<Address | null>(null);
-  const [locationSearch, setLocationSearch] = useState<string>("");
-  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
+  const [deletingAddress, setDeletingAddress] = useState<any>(null);
+  const [addressModalAction, setAddressModalAction] = useState<string>("");
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [filteredPlans, setFilteredPlans] = useState<any>([]);
   const [determinedAction, setDeterminedAction] =
@@ -411,21 +407,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     form.setValue("useNewAddress", false);
   };
 
-  const selectLocation = (location: any) => {
-    const addressForm = document.getElementById(
-      "address-form",
-    ) as HTMLFormElement;
-    if (addressForm) {
-      const pincodeInput = addressForm.querySelector(
-        "#address-pincode",
-      ) as HTMLInputElement;
-      if (pincodeInput) {
-        pincodeInput.value = location.pincode;
-      }
-    }
-    setLocationSearch("");
-  };
-
   const handleAddressFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
@@ -438,6 +419,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       state: formData.get("state") as string,
       pincode: formData.get("pincode") as string,
       isDefault: Boolean(formData.get("isDefault")),
+      userName: formData.get("userName") as string,
     };
 
     const isEditing = editingAddress !== null;
@@ -450,13 +432,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       .then((res) => res.json())
       .then((data) => {
         if (isEditing) {
-          // Update the existing address in the list
           setAddresses((prev) =>
             prev.map((addr) => (addr.id === editingAddress.id ? data : addr)),
           );
           selectAddress(data.id);
         } else {
-          // Add the new address to the list
           setAddresses((prev) => [...prev, data]);
           selectAddress(data.id);
         }
@@ -560,28 +540,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     }
   }, [user, toast, form]);
 
-  const { data: locations } = useQuery({
-    queryKey: ["/api/locations", locationSearch],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (locationSearch) {
-        params.append("query", locationSearch);
-      }
-      const response = await fetch(`/api/locations?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch locations");
-      }
-      return response.json();
-    },
-    enabled: locationSearch.length > 1,
-  });
-
-  useEffect(() => {
-    if (locations) {
-      setFilteredLocations(locations);
-    }
-  }, [locations]);
-
   useEffect(() => {
     determineAction();
   }, [diet, selectedPlan, previousPlansData]);
@@ -601,10 +559,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       const prevDiet = previousActivePlan.dietaryPreference;
       const prevPlanType = previousActivePlan.plan;
 
-      const isPlanUpgrade =
-        prevPlanType === "basic" && selectedPlan?.planType === "premium";
-
-      const isDietUpgrade = prevDiet === "veg" && diet === "veg_with_egg";
       if (prevDiet === diet && prevPlanType === selectedPlan?.planType) {
         action = "MODIFY";
       } else {
@@ -869,14 +823,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm ">
               <div className="col-span-2 space-y-2">
                 <div className="flex items-center justify-between">
-                  {/* <h4 className="text-xl font-semibold">✨ Your Selection</h4>
-                   */}
                   <p className="text-xl font-semibold text-primary">
                     ✨ {selectedPlan?.name}
                   </p>
-                  {/* <p className="text-sm text-gray-600 mt-1">
-                    {selectedPlan?.description}
-                  </p> */}
+
                   <Badge
                     variant="outline"
                     className={
@@ -1143,7 +1093,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                         type="button"
                         variant="outline"
                         className="rounded-full"
-                        onClick={() => setAddressModalOpen(true)}
+                        onClick={() => {
+                          setAddressModalOpen(true),
+                            setAddressModalAction("addressAdd");
+                        }}
                       >
                         <Plus className="h-4 w-4 mr-1" />
                         Add New Address
@@ -1181,6 +1134,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                                   e.stopPropagation();
                                   setEditingAddress(address);
                                   setAddressModalOpen(true);
+                                  setAddressModalAction("addressEdit");
                                 }}
                               >
                                 <Edit className="h-4 w-4" />
@@ -1243,7 +1197,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                                   type="button"
                                   variant="outline"
                                   className="rounded-full"
-                                  onClick={() => setAddressModalOpen(true)}
+                                  onClick={() => {
+                                    setAddressModalOpen(true),
+                                      setAddressModalAction("addressAdd");
+                                  }}
                                 >
                                   <Plus className="h-4 w-4 mr-1" />
                                   Add New Address
@@ -1401,16 +1358,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 addressModalOpen={addressModalOpen}
                 setAddressModalOpen={(open: boolean) => {
                   setAddressModalOpen(open);
-                  if (!open) {
-                    setEditingAddress(null);
-                  }
                 }}
-                locationSearch={locationSearch}
-                filteredLocations={filteredLocations}
                 handleAddressFormSubmit={handleAddressFormSubmit}
-                setLocationSearch={setLocationSearch}
-                selectLocation={selectLocation}
                 editingAddress={editingAddress}
+                addressModalAction={addressModalAction}
               />
 
               <div className="text-gray-600 text-sm mt-6 mb-10 p-4 bg-gray-50 border border-gray-200 rounded-lg">

@@ -162,6 +162,7 @@ export const addressSchema = z.object({
   userId: z.number(),
   name: z.string(),
   phone: z.string(),
+  userName: z.string(),
   addressLine1: z.string(),
   addressLine2: z.string().optional(),
   city: z.string(),
@@ -172,6 +173,8 @@ export const addressSchema = z.object({
     .date()
     .optional()
     .default(() => new Date()),
+  latitude: z.number(),
+  langtiude: z.number(),
 });
 
 export const reviewSchema = z.object({

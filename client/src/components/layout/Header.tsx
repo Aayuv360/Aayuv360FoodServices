@@ -4,8 +4,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { User, ShoppingCart, MapPin, LogIn, Search } from "lucide-react";
 import { SimpleDeliveryNotifications } from "@/components/notifications/SimpleDeliveryNotifications";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,17 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CartSidebar from "@/components/cart/CartSidebar";
-import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
 import { AuthModal } from "@/components/auth/AuthModal";
-
-interface Location {
-  id: number;
-  area: string;
-  pincode: string;
-  deliveryFee: number;
-  available?: boolean;
-}
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
@@ -36,9 +24,6 @@ const Header = () => {
     "login",
   );
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
-  const [userLocation, setUserLocation] = useState("");
-  const [locationQuery, setLocationQuery] = useState("");
-  const { toast } = useToast();
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
   const [, navigate] = useLocation();
@@ -54,97 +39,7 @@ const Header = () => {
     setAuthModalOpen(true);
   };
 
-  const { data: locations = [] } = useQuery<Location[]>({
-    queryKey: ["/api/locations", locationQuery],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (locationQuery) {
-        params.append("query", locationQuery);
-      }
-      const response = await fetch(`/api/locations?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch locations");
-      return response.json();
-    },
-  });
-
   const toggleCart = () => setCartOpen(!cartOpen);
-
-  const fetchLocationsByCoordinates = async (lat: number, lng: number) => {
-    try {
-      const params = new URLSearchParams();
-      params.append("lat", lat.toString());
-      params.append("lng", lng.toString());
-      params.append("radius", "10");
-
-      const response = await fetch(`/api/locations?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to fetch nearby locations");
-
-      return await response.json();
-    } catch (error) {
-      console.error("Error fetching locations by coordinates:", error);
-      return [];
-    }
-  };
-
-  const fetchCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "Geolocation Error",
-        description: "Geolocation is not supported by your browser",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Locating...",
-      description: "Finding your current location",
-    });
-
-    navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        const { latitude, longitude } = position.coords;
-        const nearbyLocations = await fetchLocationsByCoordinates(
-          latitude,
-          longitude,
-        );
-
-        if (nearbyLocations.length > 0) {
-          const closestLocation = nearbyLocations[0];
-          setUserLocation(
-            `${closestLocation.area} - ${closestLocation.pincode}`,
-          );
-          toast({
-            title: "Location Set",
-            description: `Your location is set to ${closestLocation.area}`,
-          });
-        } else {
-          toast({
-            title: "No Delivery Available",
-            description: "We don't deliver to your current location yet",
-            variant: "destructive",
-          });
-        }
-      },
-      (error) => {
-        toast({
-          title: "Location Error",
-          description: "Failed to get your location. " + error.message,
-          variant: "destructive",
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
-      },
-    );
-  };
-
-  const selectLocation = (location: Location) => {
-    setUserLocation(`${location.area} - ${location.pincode}`);
-    setLocationQuery("");
-  };
 
   return (
     <>
@@ -165,7 +60,7 @@ const Header = () => {
                 <div className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
                   <MapPin className="h-5 w-5 hover:text-primary" />
                   <span className="truncate max-w-[120px] sm:max-w-none hidden sm:inline">
-                    {userLocation || "Select Location"}
+                    {"Select Location"}
                   </span>
                 </div>
               </DropdownMenuTrigger>
@@ -176,43 +71,11 @@ const Header = () => {
                     type="text"
                     placeholder="Search location..."
                     className="w-full px-3 py-2 border rounded-md text-sm"
-                    value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
                   />
                 </div>
 
-                <div className="max-h-48 overflow-auto">
-                  {locations.length > 0 ? (
-                    locations.map((loc) => (
-                      <DropdownMenuItem
-                        key={loc.id}
-                        onClick={() => selectLocation(loc)}
-                        className="cursor-pointer"
-                      >
-                        <div className="flex items-start">
-                          <MapPin className="h-4 w-4 mr-2 text-primary mt-0.5" />
-                          <div>
-                            <div className="font-medium">{loc.area}</div>
-                            <div className="text-xs text-muted-foreground">
-                              PIN: {loc.pincode} • ₹
-                              {(loc.deliveryFee / 100).toFixed(2)} delivery
-                            </div>
-                          </div>
-                        </div>
-                      </DropdownMenuItem>
-                    ))
-                  ) : (
-                    <div className="text-sm text-muted-foreground p-2 text-center">
-                      No locations found
-                    </div>
-                  )}
-                </div>
-
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={fetchCurrentLocation}
-                  className="cursor-pointer mt-1"
-                >
+                <DropdownMenuItem className="cursor-pointer mt-1">
                   <span className="flex items-center text-primary">
                     <MapPin className="h-4 w-4 mr-2" />
                     Use My Current Location

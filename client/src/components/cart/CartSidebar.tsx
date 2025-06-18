@@ -67,15 +67,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
-
+  const [addressModalAction, setAddressModalAction] = useState<string>("");
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
     null,
   );
   const [addressModalOpen, setAddressModalOpen] = useState(false);
-  const [locationSearch, setLocationSearch] = useState<string>("");
-  const [filteredLocations, setFilteredLocations] = useState<Location[]>([]);
-  const [locations, setLocations] = useState<Location[]>([]);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [deletingAddress, setDeletingAddress] = useState<Address | null>(null);
 
@@ -124,29 +121,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
   }, [user, open, toast]);
 
-  useEffect(() => {
-    apiRequest("GET", "/api/locations")
-      .then((res) => res.json())
-      .then((data) => {
-        setLocations(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching locations:", error);
-      });
-  }, []);
-
-  useEffect(() => {
-    if (locationSearch.trim()) {
-      const filtered = locations.filter(
-        (loc) =>
-          loc.area.toLowerCase().includes(locationSearch.toLowerCase()) ||
-          loc.pincode.includes(locationSearch),
-      );
-      setFilteredLocations(filtered);
-    } else {
-      setFilteredLocations([]);
-    }
-  }, [locationSearch, locations]);
   const selectAddress = (addressId: number) => {
     setSelectedAddressId(addressId);
   };
@@ -233,9 +207,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         variant: "destructive",
       });
     }
-  };
-  const selectLocation = (location: Location) => {
-    setLocationSearch(location.area);
   };
 
   const calculateCartTotal = (): number => {
@@ -680,6 +651,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                   e.stopPropagation();
                                   setEditingAddress(address);
                                   setAddressModalOpen(true);
+                                  setAddressModalAction("addressEdit");
                                 }}
                               >
                                 <Edit className="h-4 w-4" />
@@ -730,7 +702,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       type="button"
                       variant="outline"
                       className="w-full flex items-center justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
-                      onClick={() => setAddressModalOpen(true)}
+                      onClick={() => {
+                        setAddressModalOpen(true),
+                          setAddressModalAction("addressAdd");
+                      }}
                     >
                       <PlusCircle className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                       Add New Address
@@ -740,12 +715,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   <NewAddressModal
                     addressModalOpen={addressModalOpen}
                     setAddressModalOpen={setAddressModalOpen}
-                    locationSearch={locationSearch}
-                    filteredLocations={filteredLocations}
                     handleAddressFormSubmit={handleAddressFormSubmit}
-                    setLocationSearch={setLocationSearch}
-                    selectLocation={selectLocation}
                     editingAddress={editingAddress}
+                    addressModalAction={addressModalAction}
                   />
 
                   <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">

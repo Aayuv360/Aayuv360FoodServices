@@ -17,11 +17,8 @@ import {
   Sparkles,
   ClipboardList,
   CheckCircle,
-  Home,
-  ShoppingBag,
   CalendarDays,
   Clock,
-  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,19 +29,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 
-import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -158,7 +152,6 @@ const Subscription = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const { initiatePayment } = useRazorpay();
-  const [_, navigate] = useLocation();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [defaulMealModalOpen, setDefaulMealModalOpen] =
@@ -170,6 +163,7 @@ const Subscription = () => {
   const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [filteredPlans, setFilteredPlans] = useState<any>([]);
+  const [addressModalAction, setAddressModalAction] = useState<string>("");
 
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
@@ -853,7 +847,10 @@ const Subscription = () => {
                               ? "border-primary"
                               : "border-gray-200 hover:border-primary/50"
                           }`}
-                          onClick={() => selectAddress(address.id)}
+                          onClick={() => {
+                            selectAddress(address.id),
+                              setAddressModalAction("addressAdd");
+                          }}
                         >
                           <div className="flex justify-between">
                             <div className="flex gap-2 items-center">
@@ -876,6 +873,7 @@ const Subscription = () => {
                                   e.stopPropagation();
                                   setEditingAddress(address);
                                   setAddressModalOpen(true);
+                                  setAddressModalAction("addressEdit");
                                 }}
                               >
                                 <Edit className="h-4 w-4" />
@@ -938,7 +936,10 @@ const Subscription = () => {
                                   type="button"
                                   variant="outline"
                                   className="rounded-full"
-                                  onClick={() => setAddressModalOpen(true)}
+                                  onClick={() => {
+                                    setAddressModalOpen(true),
+                                      setAddressModalAction("addressAdd");
+                                  }}
                                 >
                                   <Plus className="h-4 w-4 mr-1" />
                                   Add New Address
@@ -1043,19 +1044,7 @@ const Subscription = () => {
                         </span>
                         {personCount}
                       </li>
-                      {/* <li>
-                        <span className="font-medium text-gray-900">
-                          Subtotal:
-                        </span>{" "}
-                        {formatPrice(basePrice * personCount)}
-                        /month
-                      </li> */}
-                      {/* <li>
-                        <span className="font-medium text-gray-900">
-                          Tax (5% GST):
-                        </span>{" "}
-                        {formatPrice(basePrice * personCount * 0.05)}
-                      </li> */}
+
                       <li className="text-lg font-bold text-gray-900 flex justify-between items-center pt-3 border-t">
                         <span className="text-primary">Total:</span>{" "}
                         {formatPrice(basePrice * personCount)}
@@ -1084,16 +1073,10 @@ const Subscription = () => {
                 addressModalOpen={addressModalOpen}
                 setAddressModalOpen={(open) => {
                   setAddressModalOpen(open);
-                  if (!open) {
-                    setEditingAddress(null);
-                  }
                 }}
-                locationSearch={locationSearch}
-                filteredLocations={filteredLocations}
                 handleAddressFormSubmit={handleAddressFormSubmit}
-                setLocationSearch={setLocationSearch}
-                selectLocation={selectLocation}
                 editingAddress={editingAddress}
+                addressModalAction={addressModalAction}
               />
 
               <div className="text-gray-600 text-sm mt-6 mb-10 p-4 bg-gray-50 border border-gray-200 rounded-lg">

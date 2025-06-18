@@ -20,24 +20,7 @@ const MenuCard = ({
   setMealData,
 }: MenuCardProps) => {
   const [_, setLocation] = useLocation();
-  const dietaryBadgeColor = (preference: string) => {
-    switch (preference) {
-      case "vegetarian":
-        return "bg-green-100 text-green-800";
-      case "gluten-free":
-        return "bg-yellow-100 text-yellow-800";
-      case "high-protein":
-        return "bg-blue-100 text-blue-800";
-      case "spicy":
-        return "bg-red-100 text-red-800";
-      case "low-carb":
-        return "bg-purple-100 text-purple-800";
-      case "vegan":
-        return "bg-emerald-100 text-emerald-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
+
   const handleCardClick = () => {
     setLocation(`/MealDetails/${meal.id}`);
   };
@@ -58,7 +41,7 @@ const MenuCard = ({
           "https://via.placeholder.com/300x200?text=Millet+Meal"
         }
         alt={meal.name}
-        className="absolute inset-0 w-full h-full object-cover transition duration-500 group-hover:scale-110"
+        className="absolute inset-0 w-full h-full object-cover"
       />
 
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-4 flex flex-col justify-end text-white">

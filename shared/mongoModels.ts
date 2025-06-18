@@ -147,6 +147,7 @@ export interface AddressDocument extends Document {
   userId: number;
   name: string;
   phone: string;
+  userName: string;
   addressLine1: string;
   addressLine2?: string;
   city: string;
@@ -155,6 +156,8 @@ export interface AddressDocument extends Document {
   isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
+  latitude: number;
+  langtiude: number;
 }
 
 export interface LocationDocument extends Document {
@@ -180,7 +183,7 @@ export interface CurryOptionDocument extends Document {
 
 const userSchema = new Schema<UserDocument>({
   id: { type: Number, required: true, unique: true },
-  username: { type: String, required: true, unique: true },
+  username: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   name: { type: String },
@@ -308,6 +311,7 @@ const subscriptionSchema = new Schema<SubscriptionDocument>({
 
 const addressSchema = new Schema<AddressDocument>({
   id: { type: Number, required: true, unique: true },
+  userName: { type: String, required: true },
   userId: { type: Number, required: true },
   name: { type: String, required: true },
   phone: { type: String, required: true },
@@ -319,6 +323,8 @@ const addressSchema = new Schema<AddressDocument>({
   isDefault: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  latitude: { type: Number, required: true },
+  langtiude: { type: Number, required: true },
 });
 
 const locationSchema = new Schema<LocationDocument>({

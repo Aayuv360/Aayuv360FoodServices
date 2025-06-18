@@ -1,10 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import {
-  GoogleMap,
-  Marker,
-  useLoadScript,
-  Autocomplete,
-} from "@react-google-maps/api";
+import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -15,14 +10,9 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Home,
-  Briefcase,
-  Hotel,
-  MoreHorizontal,
-  LocateFixed,
-} from "lucide-react";
+import { LocateFixed } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/hooks/use-auth";
 
 const libraries = ["places"];
 const mapContainerStyle = {
@@ -32,27 +22,53 @@ const mapContainerStyle = {
 const centerHyderabad = { lat: 17.385044, lng: 78.486671 };
 const allowedPostalCodes = ["500075"];
 
-export const NewAddressModal = ({
+interface Address {
+  name?: string;
+  phone?: string;
+  userName?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  latitude?: number;
+  longitude?: number;
+  isDefault?: boolean;
+}
+
+interface NewAddressModalProps {
+  addressModalOpen: boolean;
+  setAddressModalOpen: (open: boolean) => void;
+  handleAddressFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  editingAddress?: any;
+  addressModalAction: string;
+}
+
+export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   addressModalOpen,
   setAddressModalOpen,
   handleAddressFormSubmit,
   editingAddress,
-}: any) => {
+  addressModalAction,
+}) => {
+  const { user } = useAuth();
   const [locationSearch, setLocationSearch] = useState("");
+  const [suggestions, setSuggestions] = useState<
+    google.maps.places.AutocompletePrediction[]
+  >([]);
   const [mapCenter, setMapCenter] = useState(centerHyderabad);
   const [markerPosition, setMarkerPosition] = useState(centerHyderabad);
   const [isServiceAvailable, setIsServiceAvailable] = useState(true);
+  const [addressType, setAddressType] = useState(
+    editingAddress?.name || "Home",
+  );
+
   const [addressDetails, setAddressDetails] = useState({
     city: "Hyderabad",
     state: "Telangana",
     pincode: "",
     landmark: "",
   });
-  const [addressType, setAddressType] = useState(
-    editingAddress?.name || "Home",
-  );
-
-  const autocompleteRef = useRef<any>(null);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
@@ -62,7 +78,21 @@ export const NewAddressModal = ({
   useEffect(() => {
     if (!isLoaded) return;
 
-    if (navigator.geolocation) {
+    if (editingAddress) {
+      const loc = {
+        lat: editingAddress.latitude || centerHyderabad.lat,
+        lng: editingAddress.longitude || centerHyderabad.lng,
+      };
+      setMapCenter(loc);
+      setMarkerPosition(loc);
+      setAddressDetails({
+        city: editingAddress.city || "Hyderabad",
+        state: editingAddress.state || "Telangana",
+        pincode: editingAddress.pincode || "",
+        landmark: editingAddress.addressLine2 || "",
+      });
+      setAddressType(editingAddress.name || "Home");
+    } else if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((position) => {
         const loc = {
           lat: position.coords.latitude,
@@ -79,21 +109,42 @@ export const NewAddressModal = ({
     if (!window.google) return;
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ location }, (results, status) => {
-      if (status === "OK" && results && results[0]) {
+      if (status === "OK" && results?.[0]) {
         const addressComponents = results[0].address_components;
+
         const getComponent = (type: string) =>
           addressComponents.find((c) => c.types.includes(type))?.long_name ||
           "";
-
         const pincode = getComponent("postal_code");
         const isAllowed = allowedPostalCodes.includes(pincode);
+        const landmarkParts: string[] = [];
+
+        const priorityTypes = [
+          "subpremise",
+          "premise",
+          "street_number",
+          "route",
+          "neighborhood",
+          "sublocality",
+          "sublocality_level_1",
+        ];
+
+        for (const type of priorityTypes) {
+          const part = getComponent(type);
+          if (part && !landmarkParts.includes(part)) {
+            landmarkParts.push(part);
+          }
+        }
+
+        const landmark = landmarkParts.join(", ");
+
         setIsServiceAvailable(isAllowed);
 
         setAddressDetails({
-          city: getComponent("locality"),
-          state: getComponent("administrative_area_level_1"),
-          pincode: pincode,
-          landmark: results[0].formatted_address,
+          city: getComponent("locality") || "Hyderabad",
+          state: getComponent("administrative_area_level_1") || "Telangana",
+          pincode,
+          landmark,
         });
       }
     });
@@ -102,7 +153,7 @@ export const NewAddressModal = ({
   const geocodePincode = (pincode: string) => {
     const geocoder = new window.google.maps.Geocoder();
     geocoder.geocode({ address: pincode }, (results, status) => {
-      if (status === "OK" && results && results[0]) {
+      if (status === "OK" && results?.[0]) {
         const location = results[0].geometry.location;
         const loc = {
           lat: location.lat(),
@@ -115,10 +166,32 @@ export const NewAddressModal = ({
     });
   };
 
-  const onPlaceChanged = () => {
-    if (autocompleteRef.current) {
-      const place = autocompleteRef.current.getPlace();
-      if (place.geometry && place.geometry.location) {
+  const fetchSuggestions = (input: string) => {
+    if (!window.google || !input) return;
+
+    const service = new window.google.maps.places.AutocompleteService();
+    service.getPlacePredictions(
+      {
+        input,
+        componentRestrictions: { country: "in" },
+      },
+      (predictions, status) => {
+        if (status === "OK" && predictions) {
+          setSuggestions(predictions);
+        } else {
+          setSuggestions([]);
+        }
+      },
+    );
+  };
+
+  const handleSuggestionClick = (placeId: string, description: string) => {
+    const service = new window.google.maps.places.PlacesService(
+      document.createElement("div"),
+    );
+
+    service.getDetails({ placeId }, (place, status) => {
+      if (status === "OK" && place?.geometry?.location) {
         const loc = {
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
@@ -126,63 +199,87 @@ export const NewAddressModal = ({
         setMapCenter(loc);
         setMarkerPosition(loc);
         reverseGeocode(loc);
+        setLocationSearch(description);
+        setSuggestions([]);
       }
-    }
+    });
   };
-
-  if (!isLoaded) return <div>Loading...</div>;
-
+  useEffect(() => {
+    if (!addressModalOpen) {
+      setLocationSearch("");
+      fetchSuggestions("");
+    }
+  }, [addressModalOpen]);
+  if (!isLoaded) return <div>Loading map...</div>;
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
-      <DialogContent className="sm:max-w-[1000px]">
+      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {editingAddress
+            {addressModalAction === "addressEdit"
               ? "Edit Delivery Address"
               : "Add New Delivery Address"}
           </DialogTitle>
           <DialogDescription>
-            Search for your location on the map or enter address details
-            manually.
+            Search for your location or enter address details manually.
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+          {/* Map + Search Section */}
           <div className="space-y-2 relative z-[1]">
-            <div>
-              <Autocomplete
-                onLoad={(auto) => (autocompleteRef.current = auto)}
-                onPlaceChanged={onPlaceChanged}
-                restrictions={{ country: "in" }}
-              >
-                <Input
-                  placeholder="Search for your location"
-                  value={locationSearch}
-                  onChange={(e) => setLocationSearch(e.target.value)}
-                />
-              </Autocomplete>
-
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => {
-                  if (navigator.geolocation) {
-                    navigator.geolocation.getCurrentPosition((position) => {
-                      const loc = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                      };
-                      setMapCenter(loc);
-                      setMarkerPosition(loc);
-                      reverseGeocode(loc);
-                    });
-                  }
+            <div className="relative">
+              <Input
+                className="w-full"
+                placeholder="Search for your location"
+                value={locationSearch}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLocationSearch(val);
+                  fetchSuggestions(val);
                 }}
-                className="text-sm"
-              >
-                <LocateFixed className="h-4 w-4 mr-2" /> Use Current Location
-              </Button>
+              />
+
+              {locationSearch !== "" && suggestions.length > 0 && (
+                <div className="absolute z-50 w-full bg-white shadow-md border rounded-md max-h-[200px] overflow-y-auto mt-1">
+                  {suggestions.map((suggestion) => (
+                    <div
+                      key={suggestion.place_id}
+                      className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                      onClick={() =>
+                        handleSuggestionClick(
+                          suggestion.place_id,
+                          suggestion.description,
+                        )
+                      }
+                    >
+                      {suggestion.description}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
+
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition((position) => {
+                    const loc = {
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude,
+                    };
+                    setMapCenter(loc);
+                    setMarkerPosition(loc);
+                    reverseGeocode(loc);
+                  });
+                }
+              }}
+              className="text-sm"
+            >
+              <LocateFixed className="h-4 w-4 mr-2" /> Use Current Location
+            </Button>
 
             <GoogleMap
               mapContainerStyle={mapContainerStyle}
@@ -207,12 +304,12 @@ export const NewAddressModal = ({
 
             {!isServiceAvailable && (
               <p className="text-red-500 text-sm mt-2">
-                We are not providing services in this location yet. Coming
-                soon... we will let you know.
+                We are not providing services in this location yet. Stay tuned!
               </p>
             )}
           </div>
 
+          {/* Address Form Section */}
           <div className="space-y-4">
             <form
               id="address-form"
@@ -222,11 +319,12 @@ export const NewAddressModal = ({
               }}
               className="space-y-4"
             >
-              <div className="flex gap-2">
-                {"Home,Office,Hotel,Others".split(",").map((label) => (
+              <div className="flex flex-wrap gap-2">
+                {["Home", "Office", "Hotel", "Others"].map((label) => (
                   <Button
                     key={label}
                     type="button"
+                    className="w-full sm:w-auto"
                     variant={addressType === label ? "default" : "outline"}
                     onClick={() => setAddressType(label)}
                   >
@@ -239,20 +337,34 @@ export const NewAddressModal = ({
               <div>
                 <Label>Phone Number</Label>
                 <Input
+                  className="w-full"
                   name="phone"
                   placeholder="10-digit mobile number"
+                  defaultValue={editingAddress?.phone || ""}
                   required
                 />
               </div>
+
               <div>
                 <Label>Name</Label>
-                <Input name="name" placeholder="Your name" required />
+                <Input
+                  className="w-full"
+                  name="userName"
+                  placeholder="Your name"
+                  defaultValue={
+                    editingAddress?.userName || user?.username || ""
+                  }
+                  required
+                />
               </div>
+
               <div>
                 <Label>Address Line 1</Label>
                 <Input
+                  className="w-full"
                   name="addressLine1"
                   placeholder="House/Flat No., Street, Locality"
+                  defaultValue={editingAddress?.addressLine1 || ""}
                   required
                 />
               </div>
@@ -260,6 +372,7 @@ export const NewAddressModal = ({
               <div>
                 <Label>Landmark</Label>
                 <Input
+                  className="w-full"
                   name="addressLine2"
                   placeholder="Landmark, Area, etc."
                   value={addressDetails.landmark}
@@ -272,7 +385,7 @@ export const NewAddressModal = ({
                 />
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
                   <Label>City</Label>
                   <Input
@@ -311,15 +424,20 @@ export const NewAddressModal = ({
                 </div>
               </div>
 
-              <DialogFooter>
+              <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
                 <Button
                   type="button"
                   variant="outline"
+                  className="w-full sm:w-auto"
                   onClick={() => setAddressModalOpen(false)}
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={!isServiceAvailable}>
+                <Button
+                  type="submit"
+                  className="w-full sm:w-auto"
+                  disabled={!isServiceAvailable}
+                >
                   Save Address
                 </Button>
               </DialogFooter>
