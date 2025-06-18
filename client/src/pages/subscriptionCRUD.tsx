@@ -1215,7 +1215,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                             )}
 
                             <p className="text-sm text-gray-600">
-                              Phone: {exictingAdrs?.phone}
+                              Phone: {address?.phone}
                             </p>
                           </div>
                         </div>

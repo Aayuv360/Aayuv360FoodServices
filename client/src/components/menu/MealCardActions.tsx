@@ -87,7 +87,8 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
     }
   };
 
-  const handleAddClick = () => {
+  const handleAddClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user) {
       if (!hasCurryOptions()) {
         setPendingCurryAction(false);

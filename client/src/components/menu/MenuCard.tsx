@@ -38,9 +38,18 @@ const MenuCard = ({
         return "bg-gray-100 text-gray-800";
     }
   };
-  // onClick={() => {
-  //   setLocation(`/MealDetails/${meal.id}`);
-  // }}
+  const handleCardClick = () => {
+    setLocation(`/MealDetails/${meal.id}`);
+  };
+
+  const handleNutritionClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card navigation
+    setNutritionModalOpen(true);
+    setMealData(meal);
+  };
+  {
+    /* onClick={handleCardClick} */
+  }
   return (
     <div className="relative w-full pb-[100%] bg-white rounded-2xl shadow-lg overflow-hidden transform transition duration-500 hover:scale-103 hover:shadow-xl group">
       <img
@@ -62,9 +71,7 @@ const MenuCard = ({
               variant="ghost"
               size="sm"
               className="text-xs sm:text-sm py-1 px-3 h-auto"
-              onClick={() => {
-                setNutritionModalOpen(true), setMealData(meal);
-              }}
+              onClick={handleNutritionClick}
             >
               <Info className="h-3 w-3 sm:h-4 sm:w-4" />
               <span className="hidden xs:inline">Nutrition</span>
