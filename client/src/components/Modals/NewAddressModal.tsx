@@ -81,32 +81,51 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   useEffect(() => {
     if (!isLoaded) return;
 
-    if (editingAddress) {
-      const loc = {
-        lat: editingAddress.latitude || centerHyderabad.lat,
-        lng: editingAddress.longitude || centerHyderabad.lng,
-      };
-      setMapCenter(loc);
-      setMarkerPosition(loc);
-      setAddressDetails({
-        city: editingAddress.city || "Hyderabad",
-        state: editingAddress.state || "Telangana",
-        pincode: editingAddress.pincode || "",
-        landmark: editingAddress.addressLine2 || "",
-      });
-      setAddressType(editingAddress.name || "Home");
-    } else if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
+    const initializeFromEditingAddress = async () => {
+      if (editingAddress) {
         const loc = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
+          lat: editingAddress.latitude || centerHyderabad.lat,
+          lng: editingAddress.longitude || centerHyderabad.lng,
         };
         setMapCenter(loc);
         setMarkerPosition(loc);
-        reverseGeocode(loc);
-      });
-    }
-  }, [isLoaded]);
+
+        // Reverse geocode to get formatted address
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ location: loc }, (results, status) => {
+          if (status === "OK" && results?.[0]) {
+            setLocationSearch(results[0].formatted_address || "");
+          }
+        });
+
+        setAddressDetails({
+          city: editingAddress.city || "Hyderabad",
+          state: editingAddress.state || "Telangana",
+          pincode: editingAddress.pincode || "",
+          landmark: editingAddress.addressLine2 || "",
+        });
+        setAddressType(editingAddress.name || "Home");
+      } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const loc = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            setMapCenter(loc);
+            setMarkerPosition(loc);
+            reverseGeocode(loc);
+          },
+          (error) => {
+            console.error("Failed to get current location:", error);
+          },
+          { enableHighAccuracy: true },
+        );
+      }
+    };
+
+    initializeFromEditingAddress();
+  }, [isLoaded, editingAddress]);
 
   const reverseGeocode = (location: { lat: number; lng: number }) => {
     if (!window.google) return;
@@ -215,39 +234,57 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     }
   }, [addressModalOpen]);
   if (!isLoaded) return <div>Loading map...</div>;
+  function haversineDistance(
+    loc1: { lat: number; lng: number },
+    loc2: { lat: number; lng: number },
+  ): number {
+    const toRad = (x: number) => (x * Math.PI) / 180;
+    const R = 6371; // Earth radius in km
+
+    const dLat = toRad(loc2.lat - loc1.lat);
+    const dLng = toRad(loc2.lng - loc1.lng);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(loc1.lat)) *
+        Math.cos(toRad(loc2.lat)) *
+        Math.sin(dLng / 2) ** 2;
+
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+  }
+
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
       <DialogContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh] max-h-[70vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex flex-wrap gap-2 items-center">
-            <div>
-              {addressModalAction === "addressEdit"
-                ? "Edit Delivery Address"
-                : "Add New Delivery Address"}
-            </div>
+        <div className="flex gap-2 items-center">
+          <div className="font-bold text-xl">
+            {addressModalAction === "addressEdit"
+              ? "Edit Delivery Address"
+              : "Add New Delivery Address"}
+          </div>
 
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => {
-                if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition((position) => {
-                    const loc = {
-                      lat: position.coords.latitude,
-                      lng: position.coords.longitude,
-                    };
-                    setMapCenter(loc);
-                    setMarkerPosition(loc);
-                    reverseGeocode(loc);
-                  });
-                }
-              }}
-              className="text-sm"
-            >
-              <LocateFixed className="h-5 w-5" /> Use Current Location
-            </Button>
-          </DialogTitle>
-        </DialogHeader>
+          <Button
+            type="button"
+            variant="link"
+            onClick={() => {
+              if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                  const loc = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                  };
+                  setMapCenter(loc);
+                  setMarkerPosition(loc);
+                  reverseGeocode(loc);
+                });
+              } else {
+                alert("Geolocation is not supported by your browser.");
+              }
+            }}
+            className="text-sm"
+          >
+            <LocateFixed className="h-5 w-5" /> Use Current Location
+          </Button>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Map + Search Section */}

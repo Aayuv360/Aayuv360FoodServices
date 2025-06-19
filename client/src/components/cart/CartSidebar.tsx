@@ -11,6 +11,9 @@ import {
   PlusCircle,
   Trash2,
   Edit,
+  Star,
+  Info,
+  ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -61,7 +64,6 @@ type CheckoutStep = "cart" | "delivery" | "payment" | "success";
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
-  const selectedPaymentMethod = "razorpay";
   const [orderId, setOrderId] = useState<number | null>(null);
   const [deliveryType, setDeliveryType] = useState<string>("default");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -91,11 +93,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const selectedAddress = addresses.find(
     (addr) => addr.id === selectedAddressId,
   );
-  // useEffect(() => {
-  //   if (open) {
-  //     setCurrentStep("cart");
-  //   }
-  // }, [open]);
+  useEffect(() => {
+    if (open) {
+      setCurrentStep("cart");
+    }
+  }, [open]);
 
   useEffect(() => {
     if (user && open) {
@@ -289,193 +291,183 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   }
 
   const handleNextStep = async () => {
-    if (currentStep === "cart") {
-      if (!user) {
-        setAuthModalOpen(true);
-        return;
+    if (!user) {
+      setAuthModalOpen(true);
+      return;
+    }
+
+    if (!selectedAddressId) {
+      toast({
+        title: "Address required",
+        description: "Please select an existing address or add a new one",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsCreatingOrder(true);
+
+      const selectedAddress = addresses.find(
+        (addr) => addr.id === selectedAddressId,
+      );
+
+      if (!selectedAddress) {
+        throw new Error("Selected address not found");
       }
-      setCurrentStep("delivery");
-    } else if (currentStep === "delivery") {
-      if (!selectedAddressId) {
-        toast({
-          title: "Address required",
-          description: "Please select an existing address or add a new one",
-          variant: "destructive",
-        });
-        return;
-      }
-      setCurrentStep("payment");
-    } else if (currentStep === "payment") {
-      try {
-        setIsCreatingOrder(true);
-        const selectedAddress = addresses.find(
-          (addr) => addr.id === selectedAddressId,
-        );
-        if (!selectedAddress) {
-          throw new Error("Selected address not found");
-        }
-        const deliveryDetails = {
-          name: selectedAddress.name,
-          phoneNumber: selectedAddress.phone,
-          completeAddress: selectedAddress.addressLine1,
-          nearbyLandmark: selectedAddress.addressLine2 || "",
-          zipCode: selectedAddress.pincode,
-          addressType: selectedAddress.name.toLowerCase().includes("home")
-            ? "home"
-            : selectedAddress.name.toLowerCase().includes("work")
-              ? "work"
-              : "other",
-          deliveryType,
-        };
 
-        const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
+      const deliveryDetails = {
+        name: selectedAddress.name,
+        phoneNumber: selectedAddress.phone,
+        completeAddress: selectedAddress.addressLine1,
+        nearbyLandmark: selectedAddress.addressLine2 || "",
+        zipCode: selectedAddress.pincode,
+        addressType: selectedAddress.name.toLowerCase().includes("home")
+          ? "home"
+          : selectedAddress.name.toLowerCase().includes("work")
+            ? "work"
+            : "other",
+        deliveryType,
+      };
 
-        const total =
-          calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;
+      const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
 
-        const orderPayload = {
-          items: cartItems.map((item) => ({
-            mealId: item.mealId,
-            quantity: item.quantity,
-            notes: item.notes,
-            curryOptionId: (item.meal as any)?.curryOption?.id,
-            curryOptionName: (item.meal as any)?.curryOption?.name,
-            curryOptionPrice: (item.meal as any)?.curryOption?.priceAdjustment,
-          })),
-          deliveryDetails,
-          paymentMethod: selectedPaymentMethod,
-          totalPrice: total,
-          deliveryAddress: formattedAddress,
-        };
+      const total =
+        calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;
 
-        const res = await apiRequest("POST", "/api/orders", orderPayload);
-        const orderData = await res.json();
-        setOrderId(orderData.id);
+      const orderPayload = {
+        items: cartItems.map((item) => ({
+          mealId: item.mealId,
+          quantity: item.quantity,
+          notes: item.notes,
+          curryOptionId: (item.meal as any)?.curryOption?.id,
+          curryOptionName: (item.meal as any)?.curryOption?.name,
+          curryOptionPrice: (item.meal as any)?.curryOption?.priceAdjustment,
+        })),
+        deliveryDetails,
+        paymentMethod: "razorpay",
+        totalPrice: total,
+        deliveryAddress: formattedAddress,
+      };
 
-        if (selectedPaymentMethod === "razorpay") {
-          initiatePayment({
-            amount: total,
-            orderId: orderData.id,
-            description: "Food Order",
-            name: "Aayuv Millet Foods",
-            theme: { color: "#9E6D38" },
-            onSuccess: async (response) => {
-              await apiRequest("PATCH", `/api/orders/${orderData.id}`, {
-                status: "confirmed",
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpaySignature: response.razorpay_signature,
-              });
+      const res = await apiRequest("POST", "/api/orders", orderPayload);
+      const orderData = await res.json();
+      setOrderId(orderData.id);
 
-              await clearCart();
-
-              toast({
-                title: "Order Placed!",
-                description:
-                  "Your order has been placed successfully. You can track your order in your profile.",
-                variant: "default",
-              });
-
-              navigate(`/payment-success?orderId=${orderData.id}`);
-              onClose();
-            },
-            onFailure: (error) => {
-              toast({
-                title: "Payment Failed",
-                description:
-                  error.message ||
-                  "Failed to process your payment. Please try again.",
-                variant: "destructive",
-              });
-            },
+      initiatePayment({
+        amount: total,
+        orderId: orderData.id,
+        description: "Food Order",
+        name: "Aayuv Millet Foods",
+        theme: { color: "#9E6D38" },
+        onSuccess: async (response) => {
+          await apiRequest("PATCH", `/api/orders/${orderData.id}`, {
+            status: "confirmed",
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+            razorpaySignature: response.razorpay_signature,
           });
-        } else {
+
+          await clearCart();
+
+          toast({
+            title: "Order Placed!",
+            description:
+              "Your order has been placed successfully. You can track your order in your profile.",
+            variant: "default",
+          });
+
+          // navigate(`/payment-success?orderId=${orderData.id}`);
           setCurrentStep("success");
-        }
-      } catch (error) {
-        console.error("Error creating order:", error);
-        toast({
-          title: "Error",
-          description: "Failed to create order",
-          variant: "destructive",
-        });
-      } finally {
-        setIsCreatingOrder(false);
-      }
-    } else if (currentStep === "success") {
-      onClose();
-      setCurrentStep("cart");
+          // onClose();
+        },
+        onFailure: (error) => {
+          toast({
+            title: "Payment Failed",
+            description:
+              error.message ||
+              "Failed to process your payment. Please try again.",
+            variant: "destructive",
+          });
+        },
+      });
+    } catch (error) {
+      console.error("Error creating order:", error);
+      toast({
+        title: "Error",
+        description: "Failed to create order",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCreatingOrder(false);
     }
   };
 
   const handlePreviousStep = () => {
-    if (currentStep === "payment") {
-      setCurrentStep("delivery");
-    } else if (currentStep === "delivery") {
-      setCurrentStep("cart");
-    }
+    setCurrentStep("cart");
+  };
+  const addressChange = () => {
+    setCurrentStep("delivery");
   };
   const renderCartSummary = () => (
-    <div className="flex-grow overflow-y-auto">
-      {cartItems.length === 0 ? (
-        <div className="text-center py-6 sm:py-8 px-4">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
-            <ShoppingCartIcon className="w-full h-full" />
-          </div>
-          <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
-            Your cart is empty
-          </p>
-          <Button
-            onClick={() => {
-              navigate("/menu");
-              onClose();
-            }}
-            className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-          >
-            Browse Menu
-          </Button>
+    <div className="flex flex-col h-full px-4">
+      <SheetHeader className="p-3 sm:p-4 border-b">
+        <div className="flex justify-between items-center">
+          <SheetTitle className="flex gap-2 font-extrabold text-orange-600 text-lg text-2xl">
+            🛒 Your Cart{" "}
+            <span className="text-yellow-400">
+              <Star size={20} fill="currentColor" />
+            </span>
+          </SheetTitle>
         </div>
-      ) : (
-        <div>
-          <div className="px-4 py-3">
-            {cartItems.map((item) => {
-              return (
+      </SheetHeader>
+      <div className="flex-grow overflow-y-auto">
+        {cartItems.length === 0 ? (
+          <div className="text-center py-6 sm:py-8">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
+              <ShoppingCartIcon className="w-full h-full" />
+            </div>
+            <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
+              Your cart is empty
+            </p>
+            <Button
+              onClick={() => {
+                navigate("/menu");
+                onClose();
+              }}
+              className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
+            >
+              Browse Menu
+            </Button>
+          </div>
+        ) : (
+          <>
+            <div className="py-3">
+              {cartItems.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start border-b py-2 sm:py-3"
+                  className="flex items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-lg "
                 >
                   <div className="w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
                     <img
                       src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
                       alt={item.meal?.name || "Meal item"}
-                      className="w-full h-full object-cover"
+                      className="w-20 h-20 rounded-2xl object-cover shadow-md ring-2 ring-orange-300"
                     />
                   </div>
                   <div className="flex-grow px-2 sm:px-3">
-                    <h4 className="font-medium text-xs sm:text-sm line-clamp-1">
+                    <h4 className="font-bold text-lg text-gray-900">
                       {item.meal?.name}
                     </h4>
-                    {((item.meal as any)?.curryOption ||
-                      (item.meal as any)?.selectedCurry ||
-                      item.curryOptionName) && (
-                      <p className="text-[10px] sm:text-xs text-gray-600">
-                        with{" "}
-                        {(item.meal as any)?.curryOption?.name ||
-                          (item.meal as any)?.selectedCurry?.name ||
-                          item.curryOptionName}
-                        {((item.meal as any)?.curryOption?.priceAdjustment >
-                          0 ||
-                          (item.meal as any)?.selectedCurry?.priceAdjustment >
-                            0 ||
-                          (item.curryOptionPrice &&
-                            item.curryOptionPrice > 0)) && (
+                    {item?.meal?.selectedCurry && (
+                      <p className="text-[10px] sm:text-sm text-gray-600">
+                        with {item.meal?.selectedCurry?.name}
+                        {item.meal?.selectedCurry?.priceAdjustment > 0 && (
                           <span className="text-primary ml-1">
                             (+
                             {formatPrice(
-                              (item.meal as any)?.curryOption
-                                ?.priceAdjustment ||
-                                (item.meal as any)?.selectedCurry
-                                  ?.priceAdjustment ||
+                              item.meal?.curryOption?.priceAdjustment ||
+                                item.meal?.selectedCurry?.priceAdjustment ||
                                 item.curryOptionPrice ||
                                 0,
                             )}
@@ -484,13 +476,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         )}
                       </p>
                     )}
-                    <p className="text-primary text-xs sm:text-sm font-semibold">
+                    <p className="text-primary text-md font-extrabold">
                       {formatPrice(calculateMealPrice(item))}
                     </p>
                   </div>
 
                   <div className="flex flex-col items-start space-y-1 sm:space-y-1.5">
-                    {/* Quantity Controls */}
                     <div className="flex items-center">
                       <Button
                         variant="outline"
@@ -518,8 +509,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </Button>
                     </div>
-
-                    {/* Customize Button */}
                     {hasCurryOptions(item.meal) && (
                       <Button
                         variant="link"
@@ -532,220 +521,207 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-medium mb-4 flex items-center justify-center shadow-sm animate-bounce">
+              🎉 You saved ₹25 on this order!
+            </div>
+            <div className="border-t border-orange-200 pt-4">
+              <h3 className="font-bold mb-3 text-gray-800 text-lg">
+                💰 Bill Details
+              </h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between text-gray-700">
+                  <span>Items Total</span>
+                  <span>{formatPrice(calculateCartTotal())}</span>
+                </div>
 
-          <div className="px-4 py-4 border-t">
-            <h3 className="font-medium text-base mb-3">Bill Details</h3>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Items Total</span>
-                <span>{formatPrice(calculateCartTotal())}</span>
-              </div>
+                <div className="flex justify-between text-gray-700">
+                  <span>Delivery Charge</span>
+                  <span>
+                    {formatPrice(deliveryType === "express" ? 60 : 40)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-gray-700">
+                  <span>Taxes</span>
+                  <span>{formatPrice(20)}</span>
+                </div>
 
-              <div className="flex justify-between">
-                <span className="text-gray-600">Delivery Charge</span>
-                <span>{formatPrice(deliveryType === "express" ? 60 : 40)}</span>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-gray-600">Taxes</span>
-                <span>{formatPrice(20)}</span>
-              </div>
-              <Separator className="my-2" />
-              <div className="flex justify-between font-semibold">
-                <span>Grand Total</span>
-                <span className="text-primary">
-                  {formatPrice(
-                    calculateCartTotal() +
-                      (deliveryType === "express" ? 60 : 40) +
-                      20,
-                  )}
-                </span>
+                <div className="border-t border-dashed border-orange-300 pt-3 flex justify-between font-extrabold text-lg">
+                  <span className="text-gray-900">Total</span>
+                  <span className="text-primary">
+                    {formatPrice(
+                      calculateCartTotal() +
+                        (deliveryType === "express" ? 60 : 40) +
+                        20,
+                    )}
+                  </span>{" "}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Cancellation Policy */}
-          <div className="px-3 sm:px-4 py-2 sm:py-3 border-t">
-            <h3 className="font-medium text-xs sm:text-sm mb-0.5 sm:mb-1">
-              Cancellation Policy
-            </h3>
-            <p className="text-[10px] sm:text-xs text-gray-600">
-              Orders can be cancelled before they are confirmed by the
-              restaurant. Once confirmed, refunds will be processed as per our
-              policy.
-            </p>
-          </div>
-        </div>
-      )}
+            <div className="mt-6 bg-yellow-50 p-4 rounded-xl text-sm text-gray-700 flex items-start gap-3 shadow-inner border border-yellow-200">
+              <Info size={18} className="text-orange-600 mt-0.5" />
+              <p>
+                Orders can be cancelled before confirmation. Once confirmed,
+                refunds follow our refund policy.
+              </p>
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="pb-5 border-t border-gray-200 animate-fade-in-up">
+        {<Address selectedAddress={selectedAddress} onEdit={addressChange} />}
+
+        <Button
+          onClick={handleNextStep}
+          className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
+          disabled={loading || isCreatingOrder}
+        >
+          {isCreatingOrder ? (
+            <>Processing...</>
+          ) : (
+            <>
+              {/* <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" /> */}
+              💳 Pay{" "}
+              {formatPrice(
+                calculateCartTotal() +
+                  (deliveryType === "express" ? 60 : 40) +
+                  20,
+              )}
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   );
 
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent className="w-full sm:max-w-md p-0 flex flex-col h-full overflow-hidden">
-          <SheetHeader className="p-3 sm:p-4 border-b">
-            <div className="flex justify-between items-center">
-              <SheetTitle className="text-lg sm:text-xl">Your Cart</SheetTitle>
-            </div>
-          </SheetHeader>
-
+        <SheetContent
+          onInteractOutside={(e) => e.preventDefault()}
+          className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl
+ overflow-hidden"
+        >
           <div className="flex-grow overflow-auto">
             {currentStep === "cart" && renderCartSummary()}
 
             {currentStep === "delivery" && (
-              <div className="p-3 sm:p-4">
-                <div className="space-y-3 sm:space-y-4">
-                  <h3 className="font-medium text-sm sm:text-base">
-                    Delivery Address
-                  </h3>
+              <div className="flex flex-col h-full px-4">
+                <SheetHeader
+                  className="group p-3 sm:p-4 border-b cursor-pointer hover:opacity-90 transition-opacity duration-200"
+                  onClick={handlePreviousStep}
+                >
+                  <SheetTitle className="flex items-center font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
+                    <ArrowLeft
+                      className="mr-2 mt-1 transition-transform duration-200 group-hover:-translate-x-1"
+                      strokeWidth={3}
+                    />
+                    <span>Delivery Address</span>
+                  </SheetTitle>
+                </SheetHeader>
 
-                  {/* Display existing addresses */}
-                  {addresses.length > 0 ? (
-                    <div className="space-y-2 sm:space-y-3">
-                      {addresses.map((address) => (
-                        <div
-                          key={address.id}
-                          className={`border rounded-md p-2 sm:p-3 cursor-pointer ${
-                            selectedAddressId === address.id
-                              ? "border-primary bg-primary/5"
-                              : ""
-                          }`}
-                          onClick={() => setSelectedAddressId(address.id)}
-                        >
-                          <div className="flex justify-between items-start">
-                            <div className="flex items-center gap-1 sm:gap-2">
-                              <div className="font-medium text-xs sm:text-sm">
-                                {address.name}
-                              </div>
-                              {address.isDefault && (
-                                <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-1.5 sm:px-2 py-0.5 rounded">
-                                  Default
-                                </span>
-                              )}
-                            </div>
+                <div className="flex items-center justify-between mt-4">
+                  <div className="font-bold text-base sm:text-lg">
+                    Your Saved Address
+                  </div>
+                  <Button
+                    variant="link"
+                    className="flex items-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
+                    onClick={() => {
+                      setAddressModalOpen(true);
+                      setAddressModalAction("addressAdd");
+                    }}
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add New Address</span>
+                  </Button>
+                </div>
 
-                            <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingAddress(address);
-                                  setAddressModalOpen(true);
-                                  setAddressModalAction("addressEdit");
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeletingAddress(address);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                              {selectedAddressId === address.id && (
-                                <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                              )}
+                {/* Address List */}
+                {addresses.length > 0 ? (
+                  <div className="space-y-2 sm:space-y-3 mt-4">
+                    {addresses.map((address) => (
+                      <div
+                        key={address.id}
+                        className={`border rounded-xl p-3 sm:p-4 cursor-pointer transition hover:shadow-sm ${
+                          selectedAddressId === address.id
+                            ? "border-primary bg-primary/5"
+                            : ""
+                        }`}
+                        onClick={() => setSelectedAddressId(address.id)}
+                      >
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            <div className="font-semibold   text-base sm:text-sm">
+                              {address.name}
                             </div>
+                            {address.isDefault && (
+                              <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                                Default
+                              </span>
+                            )}
                           </div>
-                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-1">
-                            {address.addressLine1}
-                          </p>
+
+                          <div className="flex items-center gap-2">
+                            <Edit
+                              className="h-4 w-4 text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingAddress(address);
+                                setAddressModalOpen(true);
+                                setAddressModalAction("addressEdit");
+                              }}
+                            />
+                            <Trash2
+                              className="h-4 w-4 text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingAddress(address);
+                              }}
+                            />
+                            {selectedAddressId === address.id && (
+                              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-xs sm:text-sm text-gray-600 space-y-0.5">
+                          <p className="line-clamp-1">{address.addressLine1}</p>
                           {address.addressLine2 && (
-                            <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
+                            <p className="line-clamp-1">
                               {address.addressLine2}
                             </p>
                           )}
-                          <p className="text-xs sm:text-sm text-gray-600 line-clamp-1">
-                            {address.city}, {address.state} - {address.pincode}
-                          </p>
-                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1">
-                            Phone: {address.phone}
-                          </p>
+                          <p>Phone: {address.phone}</p>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-4 text-gray-500">
-                      No saved addresses found
-                    </div>
-                  )}
-
-                  {/* Button to add a new address */}
-                  <div className="mt-3 sm:mt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full flex items-center justify-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
-                      onClick={() => {
-                        setAddressModalOpen(true),
-                          setAddressModalAction("addressAdd");
-                      }}
-                    >
-                      <PlusCircle className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      Add New Address
-                    </Button>
+                      </div>
+                    ))}
                   </div>
-
-                  <NewAddressModal
-                    addressModalOpen={addressModalOpen}
-                    setAddressModalOpen={setAddressModalOpen}
-                    handleAddressFormSubmit={handleAddressFormSubmit}
-                    editingAddress={editingAddress}
-                    addressModalAction={addressModalAction}
-                  />
-
-                  <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
-                    <h3 className="font-medium text-xs sm:text-sm mb-1.5 sm:mb-2">
-                      Delivery Type
-                    </h3>
-                    <div className="flex gap-1.5 sm:gap-2">
-                      <Button
-                        type="button"
-                        variant={
-                          deliveryType === "default" ? "default" : "outline"
-                        }
-                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                        onClick={() => setDeliveryType("default")}
-                      >
-                        Standard
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={
-                          deliveryType === "express" ? "default" : "outline"
-                        }
-                        className="flex-1 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                        onClick={() => setDeliveryType("express")}
-                      >
-                        Express (+ 60)
-                      </Button>
-                    </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500 mt-4">
+                    No saved addresses found
                   </div>
+                )}
 
-                  <div className="text-xs sm:text-sm text-gray-500 mt-3 sm:mt-4">
-                    <p>
-                      We currently deliver only in Hyderabad, within a 10km
-                      radius of our service locations.
-                    </p>
-                  </div>
+                <NewAddressModal
+                  addressModalOpen={addressModalOpen}
+                  setAddressModalOpen={setAddressModalOpen}
+                  handleAddressFormSubmit={handleAddressFormSubmit}
+                  editingAddress={editingAddress}
+                  addressModalAction={addressModalAction}
+                />
+
+                <div className="text-xs sm:text-sm text-gray-500 mt-6 sm:mt-8">
+                  <p>
+                    We currently deliver only in Hyderabad, within a 10km radius
+                    of our service locations.
+                  </p>
                 </div>
               </div>
             )}
-
-            {currentStep === "payment" && renderCartSummary()}
 
             {currentStep === "success" && (
               <div className="p-3 sm:p-4 text-center">
@@ -759,7 +735,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   Your order #{orderId} has been placed successfully.
                 </p>
                 <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
-                  <h3 className="font-medium text-sm sm:text-base text-left mb-1.5 sm:mb-2">
+                  <h3 className="font-bold text-sm sm:text-base text-left mb-1.5 sm:mb-2">
                     Order Details
                   </h3>
                   <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
@@ -767,14 +743,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <span>Order Number</span>
                       <span>#{orderId}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span>Payment Method</span>
-                      <span>
-                        {selectedPaymentMethod === "razorpay"
-                          ? "Online Payment"
-                          : "Cash on Delivery"}
-                      </span>
-                    </div>
+
                     <div className="flex justify-between">
                       <span>Total Amount</span>
                       <span>
@@ -811,66 +780,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </div>
             )}
           </div>
-
-          {/* Footer with proceed button */}
-          {currentStep !== "success" && cartItems.length > 0 && (
-            <div className="border-t">
-              {currentStep === "cart" ? (
-                <div className="p-3 sm:p-4">
-                  <Button
-                    onClick={handleNextStep}
-                    className="w-full bg-primary text-white font-medium text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                    disabled={loading || cartItems.length === 0}
-                  >
-                    Proceed
-                  </Button>
-                </div>
-              ) : (
-                <>
-                  {currentStep === "payment" && (
-                    <Address selectedAddress={selectedAddress} />
-                  )}
-                  <div className="p-3 sm:p-4 flex gap-1.5 sm:gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={handlePreviousStep}
-                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                    >
-                      <ChevronLeft className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                      Back
-                    </Button>
-                    <Button
-                      onClick={handleNextStep}
-                      className="flex-1 text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
-                      disabled={loading || isCreatingOrder}
-                    >
-                      {currentStep === "delivery" && "Continue to Payment"}
-                      {currentStep === "payment" && (
-                        <>
-                          {isCreatingOrder ? (
-                            <>Processing...</>
-                          ) : (
-                            <>
-                              <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" />
-                              Pay{" "}
-                              {formatPrice(
-                                calculateCartTotal() +
-                                  (deliveryType === "express" ? 60 : 40) +
-                                  20,
-                              )}
-                            </>
-                          )}
-                        </>
-                      )}
-                      {currentStep === "delivery" && (
-                        <ChevronRight className="ml-1 h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
         </SheetContent>
       </Sheet>
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />

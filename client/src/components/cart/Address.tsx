@@ -1,5 +1,6 @@
 import React from "react";
 import { MapPin, Pencil } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AddressProps {
   selectedAddress: any;
@@ -11,32 +12,33 @@ export const Address: React.FC<AddressProps> = ({
   onEdit,
 }) => {
   return (
-    <div key={selectedAddress.id} className="p-2 sm:p-3">
+    <div key={selectedAddress?.id} className="p-2 sm:p-3">
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-2 sm:gap-3">
-          <MapPin className="w-5 h-5 mt-0.5 text-primary" />
+          <MapPin className="text-orange-600 mt-0.5" size={30} />
           <div className="flex flex-col">
-            <span className="font-medium text-xs sm:text-sm">
-              Delivering to {selectedAddress.name}
+            <span className="font-semibold   text-base sm:text-sm">
+              Delivering to {selectedAddress?.name}
             </span>
-            <p className="text-xs sm:text-sm text-gray-600 mt-0.5 sm:mt-1 line-clamp-2">
-              {selectedAddress.addressLine1}, {selectedAddress.addressLine2},{" "}
-              {selectedAddress.city}, {selectedAddress.state} -{" "}
-              {selectedAddress.pincode}
+            <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+              {selectedAddress?.addressLine1}, {selectedAddress?.addressLine2},{" "}
+              {selectedAddress?.city}, {selectedAddress?.state} -{" "}
+              {selectedAddress?.pincode}
             </p>
             <p className="text-xs sm:text-sm text-gray-600">
-              Phone: {selectedAddress.phone}
+              Phone: {selectedAddress?.phone}
             </p>
           </div>
         </div>
         {onEdit && (
-          <button
+          <Button
+            variant="link"
             onClick={onEdit}
-            className="p-1 rounded hover:bg-primary/10 transition"
-            aria-label="Edit address"
+            size="sm"
+            className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary"
           >
-            <Pencil className="w-4 h-4 text-primary" />
-          </button>
+            Change{" "}
+          </Button>
         )}
       </div>
     </div>
