@@ -407,21 +407,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     form.setValue("useNewAddress", false);
   };
 
-  const handleAddressFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const formData = new FormData(e.target as HTMLFormElement);
-    const addressData = {
-      name: formData.get("addressName") as string,
-      phone: formData.get("phone") as string,
-      addressLine1: formData.get("addressLine1") as string,
-      addressLine2: (formData.get("addressLine2") as string) || undefined,
-      city: formData.get("city") as string,
-      state: formData.get("state") as string,
-      pincode: formData.get("pincode") as string,
-      isDefault: Boolean(formData.get("isDefault")),
-      userName: formData.get("userName") as string,
-    };
-
+  const handleAddressFormSubmit = (addressData: any) => {
     const isEditing = editingAddress !== null;
     const method = isEditing ? "PATCH" : "POST";
     const url = isEditing

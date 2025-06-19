@@ -174,7 +174,7 @@ export const addressSchema = z.object({
     .optional()
     .default(() => new Date()),
   latitude: z.number(),
-  langtiude: z.number(),
+  longitude: z.number(),
 });
 
 export const reviewSchema = z.object({

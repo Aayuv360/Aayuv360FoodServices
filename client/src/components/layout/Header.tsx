@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { AuthModal } from "@/components/auth/AuthModal";
+import LocationSelector from "./LocationSelecto";
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
@@ -54,35 +55,7 @@ const Header = () => {
                 Aayuv
               </h1>
             </Link>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <div className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
-                  <MapPin className="h-5 w-5 hover:text-primary" />
-                  <span className="truncate max-w-[120px] sm:max-w-none hidden sm:inline">
-                    {"Select Location"}
-                  </span>
-                </div>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent className="w-64 p-2">
-                <div className="mb-2">
-                  <input
-                    type="text"
-                    placeholder="Search location..."
-                    className="w-full px-3 py-2 border rounded-md text-sm"
-                  />
-                </div>
-
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="cursor-pointer mt-1">
-                  <span className="flex items-center text-primary">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    Use My Current Location
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* <LocationSelector /> */}
           </div>
 
           {/* Icons Row */}

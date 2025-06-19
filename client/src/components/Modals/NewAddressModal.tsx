@@ -13,11 +13,13 @@ import {
 import { LocateFixed } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
+import { mapLoadState } from "@/Recoil/recoil";
+import { useRecoilValue } from "recoil";
 
 const libraries = ["places"];
 const mapContainerStyle = {
   width: "100%",
-  height: "300px",
+  height: "100%",
 };
 const centerHyderabad = { lat: 17.385044, lng: 78.486671 };
 const allowedPostalCodes = ["500075"];
@@ -39,7 +41,7 @@ interface Address {
 interface NewAddressModalProps {
   addressModalOpen: boolean;
   setAddressModalOpen: (open: boolean) => void;
-  handleAddressFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+  handleAddressFormSubmit: (data: any) => void;
   editingAddress?: any;
   addressModalAction: string;
 }
@@ -52,6 +54,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   addressModalAction,
 }) => {
   const { user } = useAuth();
+  // const isLoaded = useRecoilValue(mapLoadState);
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
@@ -139,7 +142,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         const landmark = landmarkParts.join(", ");
 
         setIsServiceAvailable(isAllowed);
-
+        const locationSearchValue = results[0].formatted_address;
+        setLocationSearch(locationSearchValue);
         setAddressDetails({
           city: getComponent("locality") || "Hyderabad",
           state: getComponent("administrative_area_level_1") || "Telangana",
@@ -213,19 +217,39 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   if (!isLoaded) return <div>Loading map...</div>;
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
-      <DialogContent className="sm:max-w-[1000px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh] max-h-[70vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            {addressModalAction === "addressEdit"
-              ? "Edit Delivery Address"
-              : "Add New Delivery Address"}
+          <DialogTitle className="flex flex-wrap gap-2 items-center">
+            <div>
+              {addressModalAction === "addressEdit"
+                ? "Edit Delivery Address"
+                : "Add New Delivery Address"}
+            </div>
+
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => {
+                if (navigator.geolocation) {
+                  navigator.geolocation.getCurrentPosition((position) => {
+                    const loc = {
+                      lat: position.coords.latitude,
+                      lng: position.coords.longitude,
+                    };
+                    setMapCenter(loc);
+                    setMarkerPosition(loc);
+                    reverseGeocode(loc);
+                  });
+                }
+              }}
+              className="text-sm"
+            >
+              <LocateFixed className="h-5 w-5" /> Use Current Location
+            </Button>
           </DialogTitle>
-          <DialogDescription>
-            Search for your location or enter address details manually.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Map + Search Section */}
           <div className="space-y-2 relative z-[1]">
             <div className="relative">
@@ -260,189 +284,195 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
               )}
             </div>
 
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => {
-                if (navigator.geolocation) {
-                  navigator.geolocation.getCurrentPosition((position) => {
-                    const loc = {
-                      lat: position.coords.latitude,
-                      lng: position.coords.longitude,
-                    };
-                    setMapCenter(loc);
-                    setMarkerPosition(loc);
-                    reverseGeocode(loc);
-                  });
-                }
-              }}
-              className="text-sm"
-            >
-              <LocateFixed className="h-4 w-4 mr-2" /> Use Current Location
-            </Button>
-
-            <GoogleMap
-              mapContainerStyle={mapContainerStyle}
-              center={mapCenter}
-              zoom={15}
-              options={{ clickableIcons: false }}
-            >
-              <Marker
-                position={markerPosition}
-                draggable
-                onDragEnd={(e) => {
-                  const newLoc = {
-                    lat: e.latLng?.lat() || 0,
-                    lng: e.latLng?.lng() || 0,
-                  };
-                  setMarkerPosition(newLoc);
-                  setMapCenter(newLoc);
-                  reverseGeocode(newLoc);
+            <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px]">
+              <GoogleMap
+                mapContainerStyle={{ width: "100%", height: "100%" }}
+                center={mapCenter}
+                zoom={18}
+                options={{
+                  clickableIcons: false,
+                  gestureHandling: "greedy",
+                  mapTypeControl: false,
+                  streetViewControl: false,
                 }}
-              />
-            </GoogleMap>
-
-            {!isServiceAvailable && (
-              <p className="text-red-500 text-sm mt-2">
-                We are not providing services in this location yet. Stay tuned!
-              </p>
-            )}
+              >
+                <Marker
+                  position={markerPosition}
+                  draggable
+                  onDragEnd={(e) => {
+                    const latLng = e.latLng;
+                    if (!latLng) return;
+                    const newLoc = {
+                      lat: latLng.lat(),
+                      lng: latLng.lng(),
+                    };
+                    setMarkerPosition(newLoc);
+                    setMapCenter(newLoc);
+                    reverseGeocode(newLoc);
+                  }}
+                />
+              </GoogleMap>
+            </div>
           </div>
 
-          {/* Address Form Section */}
-          <div className="space-y-4">
-            <form
-              id="address-form"
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleAddressFormSubmit(e);
-              }}
-              className="space-y-4"
-            >
-              <div className="flex flex-wrap gap-2">
-                {["Home", "Office", "Hotel", "Others"].map((label) => (
-                  <Button
-                    key={label}
-                    type="button"
-                    className="w-full sm:w-auto"
-                    variant={addressType === label ? "default" : "outline"}
-                    onClick={() => setAddressType(label)}
-                  >
-                    {label}
-                  </Button>
-                ))}
-                <input type="hidden" name="addressName" value={addressType} />
-              </div>
+          {!isServiceAvailable ? (
+            <div className="flex items-center justify-center h-48 bg-yellow-50 rounded-lg shadow-md m-auto">
+              <p className="text-yellow-800 text-xl font-semibold text-center px-6">
+                📍⏳ We’re not serving this location yet — but we’re working on
+                it! 🚀
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <form
+                id="address-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target as HTMLFormElement);
+                  const addressData = {
+                    name: formData.get("addressName") as string,
+                    phone: formData.get("phone") as string,
+                    addressLine1: formData.get("addressLine1") as string,
+                    addressLine2:
+                      (formData.get("addressLine2") as string) || undefined,
+                    city: formData.get("city") as string,
+                    state: formData.get("state") as string,
+                    pincode: formData.get("pincode") as string,
+                    isDefault: Boolean(formData.get("isDefault")),
+                    userName: formData.get("userName") as string,
+                    latitude: markerPosition.lat,
+                    longitude: markerPosition.lng,
+                  };
 
-              <div>
-                <Label>Phone Number</Label>
-                <Input
-                  className="w-full"
-                  name="phone"
-                  placeholder="10-digit mobile number"
-                  defaultValue={editingAddress?.phone || ""}
-                  required
-                />
-              </div>
+                  handleAddressFormSubmit(addressData);
+                }}
+                className="space-y-4"
+              >
+                <div className="flex flex-wrap gap-2">
+                  {["Home", "Office", "Hotel", "Others"].map((label) => (
+                    <Button
+                      key={label}
+                      type="button"
+                      className="w-full sm:w-auto"
+                      variant={addressType === label ? "default" : "outline"}
+                      onClick={() => setAddressType(label)}
+                    >
+                      {label}
+                    </Button>
+                  ))}
+                  <input type="hidden" name="addressName" value={addressType} />
+                </div>
 
-              <div>
-                <Label>Name</Label>
-                <Input
-                  className="w-full"
-                  name="userName"
-                  placeholder="Your name"
-                  defaultValue={
-                    editingAddress?.userName || user?.username || ""
-                  }
-                  required
-                />
-              </div>
-
-              <div>
-                <Label>Address Line 1</Label>
-                <Input
-                  className="w-full"
-                  name="addressLine1"
-                  placeholder="House/Flat No., Street, Locality"
-                  defaultValue={editingAddress?.addressLine1 || ""}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label>Landmark</Label>
-                <Input
-                  className="w-full"
-                  name="addressLine2"
-                  placeholder="Landmark, Area, etc."
-                  value={addressDetails.landmark}
-                  onChange={(e) =>
-                    setAddressDetails((prev) => ({
-                      ...prev,
-                      landmark: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
-                  <Label>City</Label>
+                  <Label>Phone Number</Label>
                   <Input
-                    name="city"
-                    value={addressDetails.city}
-                    readOnly
+                    className="w-full"
+                    name="phone"
+                    placeholder="10-digit mobile number"
+                    defaultValue={editingAddress?.phone || ""}
                     required
                   />
                 </div>
+
                 <div>
-                  <Label>State</Label>
+                  <Label>Name</Label>
                   <Input
-                    name="state"
-                    value={addressDetails.state}
-                    readOnly
+                    className="w-full"
+                    name="userName"
+                    placeholder="Your name"
+                    defaultValue={
+                      editingAddress?.userName || user?.username || ""
+                    }
                     required
                   />
                 </div>
+
                 <div>
-                  <Label>Pincode</Label>
+                  <Label>Address Line 1</Label>
                   <Input
-                    name="pincode"
-                    value={addressDetails.pincode}
-                    onChange={(e) => {
-                      const newPincode = e.target.value;
+                    className="w-full"
+                    name="addressLine1"
+                    placeholder="House/Flat No., Street, Locality"
+                    defaultValue={editingAddress?.addressLine1 || ""}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label>Landmark</Label>
+                  <Input
+                    className="w-full"
+                    name="addressLine2"
+                    placeholder="Landmark, Area, etc."
+                    value={addressDetails.landmark}
+                    onChange={(e) =>
                       setAddressDetails((prev) => ({
                         ...prev,
-                        pincode: newPincode,
-                      }));
-                      if (/^\d{6}$/.test(newPincode)) {
-                        geocodePincode(newPincode);
-                      }
-                    }}
-                    required
+                        landmark: e.target.value,
+                      }))
+                    }
                   />
                 </div>
-              </div>
 
-              <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-auto"
-                  onClick={() => setAddressModalOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="submit"
-                  className="w-full sm:w-auto"
-                  disabled={!isServiceAvailable}
-                >
-                  Save Address
-                </Button>
-              </DialogFooter>
-            </form>
-          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <Label>City</Label>
+                    <Input
+                      name="city"
+                      value={addressDetails.city}
+                      readOnly
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label>State</Label>
+                    <Input
+                      name="state"
+                      value={addressDetails.state}
+                      readOnly
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label>Pincode</Label>
+                    <Input
+                      name="pincode"
+                      value={addressDetails.pincode}
+                      onChange={(e) => {
+                        const newPincode = e.target.value;
+                        setAddressDetails((prev) => ({
+                          ...prev,
+                          pincode: newPincode,
+                        }));
+                        if (/^\d{6}$/.test(newPincode)) {
+                          geocodePincode(newPincode);
+                        }
+                      }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full sm:w-auto"
+                    onClick={() => setAddressModalOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="w-full sm:w-auto"
+                    disabled={!isServiceAvailable}
+                  >
+                    Save Address
+                  </Button>
+                </DialogFooter>
+              </form>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>

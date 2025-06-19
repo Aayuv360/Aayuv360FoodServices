@@ -157,7 +157,7 @@ export interface AddressDocument extends Document {
   createdAt: Date;
   updatedAt: Date;
   latitude: number;
-  langtiude: number;
+  longitude: number;
 }
 
 export interface LocationDocument extends Document {
@@ -324,7 +324,7 @@ const addressSchema = new Schema<AddressDocument>({
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
   latitude: { type: Number, required: true },
-  langtiude: { type: Number, required: true },
+  longitude: { type: Number, required: true },
 });
 
 const locationSchema = new Schema<LocationDocument>({

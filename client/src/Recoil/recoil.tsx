@@ -20,3 +20,8 @@ export const mealsQueryState = atom<MealsQueryState>({
     error: null,
   },
 });
+
+export const mapLoadState = atom<boolean>({
+  key: "mapLoadState",
+  default: false,
+});
