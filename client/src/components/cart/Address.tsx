@@ -21,9 +21,7 @@ export const Address: React.FC<AddressProps> = ({
               Delivering to {selectedAddress?.name}
             </span>
             <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
-              {selectedAddress?.addressLine1}, {selectedAddress?.addressLine2},{" "}
-              {selectedAddress?.city}, {selectedAddress?.state} -{" "}
-              {selectedAddress?.pincode}
+              {selectedAddress?.addressLine1}, {selectedAddress?.addressLine2}
             </p>
             <p className="text-xs sm:text-sm text-gray-600">
               Phone: {selectedAddress?.phone}

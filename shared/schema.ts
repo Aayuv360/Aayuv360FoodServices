@@ -165,9 +165,9 @@ export const addressSchema = z.object({
   userName: z.string(),
   addressLine1: z.string(),
   addressLine2: z.string().optional(),
-  city: z.string(),
-  state: z.string(),
-  pincode: z.string(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().optional(),
   isDefault: z.boolean().default(false),
   createdAt: z
     .date()
@@ -175,7 +175,7 @@ export const addressSchema = z.object({
     .default(() => new Date()),
   latitude: z.number(),
   longitude: z.number(),
-  nearbyLandmark: z.number().optional(),
+  nearbyLandmark: z.string().optional(),
 });
 
 export const reviewSchema = z.object({
