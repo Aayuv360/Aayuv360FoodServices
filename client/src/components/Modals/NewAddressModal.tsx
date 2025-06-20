@@ -3,9 +3,11 @@ import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
-import { LocateFixed } from "lucide-react";
+import { LocateFixed, Loader2, AlertCircle } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import { useServiceArea } from "@/hooks/use-service-area";
 
 const libraries = ["places"];
 
@@ -44,10 +46,17 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   >([]);
   const [mapCenter, setMapCenter] = useState(centerHyderabad);
   const [markerPosition, setMarkerPosition] = useState(centerHyderabad);
-  const [isServiceAvailable, setIsServiceAvailable] = useState(true);
   const [addressType, setAddressType] = useState(
     editingAddress?.name || "Home",
   );
+  
+  const { coords, isLoading: geoLoading, getCurrentPosition, error: geoError } = useGeolocation();
+  const { 
+    isWithinServiceArea, 
+    checkServiceAvailability, 
+    getServiceMessage,
+    isLoading: serviceLoading 
+  } = useServiceArea();
 
   const [addressDetails, setAddressDetails] = useState({
     landmark: "",
@@ -69,6 +78,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         };
         setMapCenter(loc);
         setMarkerPosition(loc);
+        checkServiceAvailability(loc);
 
         // Reverse geocode to get formatted address
         const geocoder = new window.google.maps.Geocoder();
@@ -82,27 +92,24 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           landmark: editingAddress.addressLine2 || "",
         });
         setAddressType(editingAddress.name || "Home");
-      } else if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const loc = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude,
-            };
-            setMapCenter(loc);
-            setMarkerPosition(loc);
-            reverseGeocode(loc);
-          },
-          (error) => {
-            console.error("Failed to get current location:", error);
-          },
-          { enableHighAccuracy: true },
-        );
+      } else {
+        // Automatically get current location for new addresses
+        getCurrentPosition();
       }
     };
 
     initializeFromEditingAddress();
-  }, [isLoaded, editingAddress]);
+  }, [isLoaded, editingAddress, getCurrentPosition, checkServiceAvailability]);
+
+  // Update map when geolocation coords are available
+  useEffect(() => {
+    if (coords && !editingAddress) {
+      setMapCenter(coords);
+      setMarkerPosition(coords);
+      reverseGeocode(coords);
+      checkServiceAvailability(coords);
+    }
+  }, [coords, editingAddress, checkServiceAvailability]);
 
   const reverseGeocode = (location: { lat: number; lng: number }) => {
     if (!window.google) return;
@@ -177,18 +184,22 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         setMapCenter(loc);
         setMarkerPosition(loc);
         reverseGeocode(loc);
+        checkServiceAvailability(loc);
         setLocationSearch(description);
         setSuggestions([]);
       }
     });
   };
+  
   useEffect(() => {
     if (!addressModalOpen) {
       setLocationSearch("");
       fetchSuggestions("");
     }
   }, [addressModalOpen]);
+  
   if (!isLoaded) return <div>Loading map...</div>;
+  
   function haversineDistance(
     loc1: { lat: number; lng: number },
     loc2: { lat: number; lng: number },
@@ -206,20 +217,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
+  
   const handleGetCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        };
-        setMapCenter(coords);
-        setMarkerPosition(coords);
-        reverseGeocode(coords);
-      });
-    } else {
-      alert("Geolocation is not supported by this browser.");
-    }
+    getCurrentPosition();
   };
 
   return (
@@ -237,8 +237,17 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             variant="link"
             onClick={handleGetCurrentLocation}
             className="text-sm"
+            disabled={geoLoading}
           >
-            <LocateFixed className="h-5 w-5" /> Use Current Location
+            {geoLoading ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" /> Getting location...
+              </>
+            ) : (
+              <>
+                <LocateFixed className="h-5 w-5" /> Use Current Location
+              </>
+            )}
           </Button>
         </div>
 
@@ -302,6 +311,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     setMarkerPosition(newLoc);
                     setMapCenter(newLoc);
                     reverseGeocode(newLoc);
+                    checkServiceAvailability(newLoc);
                   }}
                 />
               </GoogleMap>
@@ -309,15 +319,41 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             <div className="w-full absolute bottom-0 bg-white text-white p-8"></div>
           </div>
 
-          {!isServiceAvailable ? (
-            <div className="flex items-center justify-center h-48 bg-yellow-50 rounded-lg shadow-md m-auto">
-              <p className="text-yellow-800 text-xl font-semibold text-center px-6">
-                📍⏳ We’re not serving this location yet — but we’re working on
-                it! 🚀
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4">
+          <div className="space-y-4">
+            {/* Service availability status */}
+            {(serviceLoading || geoError) && (
+              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+                <div className="flex items-center gap-2">
+                  {serviceLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+                  {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
+                  <span className="text-sm">
+                    {serviceLoading && "Checking service availability..."}
+                    {geoError && geoError}
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {markerPosition !== centerHyderabad && (
+              <div className={`p-3 rounded-lg border ${
+                isWithinServiceArea 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">{getServiceMessage()}</span>
+                </div>
+              </div>
+            )}
+
+            {!isWithinServiceArea && markerPosition !== centerHyderabad ? (
+              <div className="flex items-center justify-center h-32 bg-yellow-50 rounded-lg border border-yellow-200">
+                <p className="text-yellow-800 text-center px-4">
+                  We're not serving this location yet, but we're working on expanding our coverage area.
+                </p>
+              </div>
+            ) : (
               <form
                 id="address-form"
                 onSubmit={(e) => {
@@ -430,14 +466,21 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                   <Button
                     type="submit"
                     className="w-full sm:w-auto"
-                    disabled={!isServiceAvailable}
+                    disabled={!isWithinServiceArea || serviceLoading || geoLoading}
                   >
-                    Save Address
+                    {serviceLoading || geoLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Checking...
+                      </>
+                    ) : (
+                      'Save Address'
+                    )}
                   </Button>
                 </DialogFooter>
               </form>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

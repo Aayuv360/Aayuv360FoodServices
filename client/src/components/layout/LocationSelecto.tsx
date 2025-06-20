@@ -9,9 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MapPin } from "lucide-react";
+import { MapPin, Loader2 } from "lucide-react";
 import { useRecoilValue } from "recoil";
 import { mapLoadState } from "@/Recoil/recoil";
+import { useGeolocation } from "@/hooks/use-geolocation";
+import { useServiceArea } from "@/hooks/use-service-area";
 
 const libraries: "places"[] = [];
 
@@ -20,14 +22,37 @@ const LocationSelector = () => {
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
     libraries,
   });
-  // const isLoaded = useRecoilValue(mapLoadState);
 
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
   >([]);
-
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+  const [locationFetched, setLocationFetched] = useState(false);
+
+  const { coords, isLoading: geoLoading, getCurrentPosition } = useGeolocation();
+  const { checkServiceAvailability, isWithinServiceArea, getServiceMessage } = useServiceArea();
+
+  // Auto-fetch user location on component mount
+  useEffect(() => {
+    if (isLoaded && !locationFetched && !selectedAddress) {
+      getCurrentPosition();
+      setLocationFetched(true);
+    }
+  }, [isLoaded, locationFetched, selectedAddress, getCurrentPosition]);
+
+  // Update selected address when location is obtained
+  useEffect(() => {
+    if (coords && window.google && !selectedAddress) {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ location: coords }, (results, status) => {
+        if (status === "OK" && results && results.length > 0) {
+          setSelectedAddress(results[0].formatted_address);
+          checkServiceAvailability(coords);
+        }
+      });
+    }
+  }, [coords, selectedAddress, checkServiceAvailability]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -70,37 +95,24 @@ const LocationSelector = () => {
       (place, status) => {
         if (status === "OK" && place && place.geometry?.location) {
           const location = place.geometry.location;
+          const coords = {
+            lat: location.lat(),
+            lng: location.lng(),
+          };
 
           setSelectedAddress(place.formatted_address ?? "Unknown address");
           setSuggestions([]);
           setInput("");
+          checkServiceAvailability(coords);
         }
       },
     );
   };
 
   const handleUseCurrentLocation = () => {
-    if (!navigator.geolocation) return;
-
-    navigator.geolocation.getCurrentPosition((position) => {
-      const coords = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
-      setSuggestions([]);
-      setInput("");
-
-      if (window.google) {
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ location: coords }, (results, status) => {
-          if (status === "OK" && results && results.length > 0) {
-            setSelectedAddress(results[0].formatted_address);
-          } else {
-            setSelectedAddress("Unknown Location");
-          }
-        });
-      }
-    });
+    setSuggestions([]);
+    setInput("");
+    getCurrentPosition();
   };
 
   if (!isLoaded) return <div>Loading Map...</div>;
@@ -110,14 +122,24 @@ const LocationSelector = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
-            <MapPin className="h-5 w-5 hover:text-primary" />
+            {geoLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <MapPin className={`h-5 w-5 hover:text-primary ${!isWithinServiceArea && selectedAddress ? 'text-red-500' : ''}`} />
+            )}
             <div className="whitespace-normal break-words">
-              {selectedAddress ? selectedAddress : "Select Location"}
+              {geoLoading ? "Getting location..." : selectedAddress ? selectedAddress : "Select Location"}
             </div>
           </div>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent className="w-64 p-2">
+        <DropdownMenuContent className="w-80 p-2">
+          {selectedAddress && (
+            <div className={`mb-2 p-2 rounded text-xs ${isWithinServiceArea ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+              {getServiceMessage()}
+            </div>
+          )}
+          
           <div className="mb-2">
             <input
               type="text"
@@ -144,10 +166,15 @@ const LocationSelector = () => {
           <DropdownMenuItem
             className="cursor-pointer mt-1"
             onClick={handleUseCurrentLocation}
+            disabled={geoLoading}
           >
-            <span className="flex items-center text-primary ">
-              <MapPin className="h-4 w-4 mr-2" />
-              Use My Current Location
+            <span className="flex items-center text-primary">
+              {geoLoading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <MapPin className="h-4 w-4 mr-2" />
+              )}
+              {geoLoading ? "Getting location..." : "Use My Current Location"}
             </span>
           </DropdownMenuItem>
         </DropdownMenuContent>
