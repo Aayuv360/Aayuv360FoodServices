@@ -134,19 +134,6 @@ const Header = () => {
             {isMobile && (
               <div className="flex items-center gap-2">
                 {user && <SimpleDeliveryNotifications />}
-                
-                <button
-                  className="hover:text-primary relative p-2"
-                  onClick={toggleCart}
-                  disabled={!cartItems.length}
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {cartItems.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5 min-w-[20px] h-5 flex items-center justify-center">
-                      {cartItems.length}
-                    </span>
-                  )}
-                </button>
 
                 <button
                   className="hover:text-primary p-2"
