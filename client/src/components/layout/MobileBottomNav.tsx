@@ -1,13 +1,16 @@
 import { ShoppingCart, ArrowRight } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { useLocation } from "wouter";
+import { useState } from "react";
+import CartSidebar from "@/components/cart/CartSidebar";
 
 const MobileBottomNav = () => {
   const { cartItems } = useCart();
   const [, navigate] = useLocation();
+  const [cartOpen, setCartOpen] = useState(false);
 
   const handleCartClick = () => {
-    navigate("/checkout");
+    setCartOpen(true);
   };
 
   if (cartItems.length === 0) {
@@ -41,6 +44,7 @@ const MobileBottomNav = () => {
           <ArrowRight className="w-5 h-5" />
         </button>
       </div>
+      <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
     </div>
   );
 };
