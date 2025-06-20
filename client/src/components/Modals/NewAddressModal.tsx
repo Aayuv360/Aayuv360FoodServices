@@ -206,6 +206,21 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
+  const handleGetCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const coords = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+        };
+        setMapCenter(coords);
+        setMarkerPosition(coords);
+        reverseGeocode(coords);
+      });
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+  };
 
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
@@ -220,21 +235,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           <Button
             type="button"
             variant="link"
-            onClick={() => {
-              if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition((position) => {
-                  const loc = {
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude,
-                  };
-                  setMapCenter(loc);
-                  setMarkerPosition(loc);
-                  reverseGeocode(loc);
-                });
-              } else {
-                alert("Geolocation is not supported by your browser.");
-              }
-            }}
+            onClick={handleGetCurrentLocation}
             className="text-sm"
           >
             <LocateFixed className="h-5 w-5" /> Use Current Location
@@ -243,7 +244,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Map + Search Section */}
-          <div className="space-y-2 relative z-[1]">
+          <div className="relative space-y-2 relative z-[1]">
             <div className="relative">
               <Input
                 className="w-full"
@@ -305,6 +306,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                 />
               </GoogleMap>
             </div>
+            <div className="w-full absolute bottom-0 bg-white text-white p-8"></div>
           </div>
 
           {!isServiceAvailable ? (
@@ -331,6 +333,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     userName: formData.get("userName") as string,
                     latitude: markerPosition.lat,
                     longitude: markerPosition.lng,
+                    nearbyLandmark: formData.get("nearbyLandmark") as string,
                   };
 
                   handleAddressFormSubmit(addressData);
@@ -342,7 +345,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     <Button
                       key={label}
                       type="button"
-                      className="w-full sm:w-auto"
+                      className={`w-full sm:w-auto rounded-2xl ${addressType !== label && "bg-white hover:text-gray-700 hover:bg-orange-100"}`}
                       variant={addressType === label ? "default" : "outline"}
                       onClick={() => setAddressType(label)}
                     >
@@ -353,17 +356,46 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                 </div>
 
                 <div>
-                  <Label>Phone Number</Label>
+                  <Label>Flat No. / House / Building name</Label>
                   <Input
                     className="w-full"
-                    name="phone"
-                    placeholder="10-digit mobile number"
-                    defaultValue={editingAddress?.phone || ""}
+                    name="addressLine1"
+                    placeholder="Flat No./House/Building name"
+                    defaultValue={editingAddress?.addressLine1 || ""}
                     required
                   />
                 </div>
 
                 <div>
+                  <Label>Area / Locality</Label>
+                  <Input
+                    className="w-full"
+                    name="addressLine2"
+                    placeholder="Landmark, Area, Locality, etc."
+                    value={addressDetails.landmark}
+                    onChange={(e) =>
+                      setAddressDetails((prev) => ({
+                        ...prev,
+                        landmark: e.target.value,
+                      }))
+                    }
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <Label>Near by landmark</Label>
+                  <Input
+                    className="w-full"
+                    name="nearbyLandmark"
+                    placeholder="Near by landmark"
+                    defaultValue={editingAddress?.nearbyLandmark || ""}
+                  />
+                </div>
+
+                <div className="text-primary">
+                  Provide your information for delivery
+                </div>
+                <div className="!mt-1">
                   <Label>Name</Label>
                   <Input
                     className="w-full"
@@ -375,31 +407,14 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     required
                   />
                 </div>
-
                 <div>
-                  <Label>Address Line 1</Label>
+                  <Label>Phone Number</Label>
                   <Input
                     className="w-full"
-                    name="addressLine1"
-                    placeholder="House/Flat No., Street, Locality"
-                    defaultValue={editingAddress?.addressLine1 || ""}
+                    name="phone"
+                    placeholder="10-digit mobile number"
+                    defaultValue={editingAddress?.phone || ""}
                     required
-                  />
-                </div>
-
-                <div>
-                  <Label>Landmark</Label>
-                  <Input
-                    className="w-full"
-                    name="addressLine2"
-                    placeholder="Landmark, Area, etc."
-                    value={addressDetails.landmark}
-                    onChange={(e) =>
-                      setAddressDetails((prev) => ({
-                        ...prev,
-                        landmark: e.target.value,
-                      }))
-                    }
                   />
                 </div>
 
