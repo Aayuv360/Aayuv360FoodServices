@@ -31,14 +31,17 @@ async function connectToDatabase() {
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
-      throw new Error("MONGODB_URI must be set");
+      console.warn("MONGODB_URI not set - running without database connection");
+      return true; // Allow app to start without database in development
     }
     
     await mongoose.connect(uri);
+    console.log('Successfully connected to MongoDB');
     return true;
   } catch (error) {
     console.error('MongoDB connection error:', error);
-    return false;
+    console.warn('Continuing without database connection');
+    return true; // Allow app to continue without database
   }
 }
 
@@ -46,11 +49,7 @@ async function connectToDatabase() {
 (async () => {
   try {
     // Connect to database
-    const connected = await connectToDatabase();
-    if (!connected) {
-      console.error('Failed to connect to MongoDB');
-      process.exit(1);
-    }
+    await connectToDatabase();
     
     // Initialize scheduled tasks
     try {

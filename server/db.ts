@@ -14,7 +14,8 @@ export async function connectToMongoDB() {
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
-      throw new Error("MONGODB_URI environment variable is not set");
+      console.warn("MONGODB_URI not set - skipping database connection");
+      return { db: null };
     }
 
     console.log("Connecting to MongoDB...");

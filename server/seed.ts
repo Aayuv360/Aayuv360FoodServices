@@ -16,7 +16,12 @@ async function hashPassword(password: string) {
 export async function seedDatabase() {
   try {
     console.log("Starting database seeding...");
-    await connectToMongoDB();
+    const dbConnection = await connectToMongoDB();
+    
+    if (!dbConnection.db) {
+      console.log("Skipping database seeding - no database connection");
+      return;
+    }
 
     const adminUser = await UserModel.findOne({ username: "admin" });
 

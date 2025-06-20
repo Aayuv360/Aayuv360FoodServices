@@ -11,17 +11,17 @@ interface RazorpaySubscriptionRequest {
   start_at?: number;
   notes: Record<string, string>;
 }
-console.log(process.env.RAZORPAY_KEY_ID);
-if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-  throw new Error(
-    "Missing required environment variables: RAZORPAY_KEY_ID and/or RAZORPAY_KEY_SECRET",
-  );
-}
+// Initialize Razorpay only if keys are provided
+let razorpay: Razorpay | null = null;
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID,
-  key_secret: process.env.RAZORPAY_KEY_SECRET,
-});
+if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+  razorpay = new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
+  });
+} else {
+  console.warn("Razorpay keys not found - payment features will be disabled");
+}
 
 export const orderPaymentMap = new Map<
   number,
@@ -49,6 +49,10 @@ export interface CreateOrderOptions {
 }
 
 export async function createOrder(options: CreateOrderOptions) {
+  if (!razorpay) {
+    throw new Error("Razorpay not initialized - payment keys required");
+  }
+  
   const { amount, currency = "INR", receipt, notes = {} } = options;
 
   const amountInPaise = amount * 100;
@@ -70,6 +74,10 @@ export async function createPlan(options: {
   interval: "weekly" | "monthly" | "yearly";
   intervalCount?: number;
 }) {
+  if (!razorpay) {
+    throw new Error("Razorpay not initialized - payment keys required");
+  }
+  
   const { name, description, amount, interval, intervalCount = 1 } = options;
 
   const amountInPaisa = Math.round(amount * 100);
@@ -95,6 +103,10 @@ export async function createSubscription(options: {
   startAt?: number;
   notes?: Record<string, string>;
 }) {
+  if (!razorpay) {
+    throw new Error("Razorpay not initialized - payment keys required");
+  }
+  
   const { planId, customerId, totalCount, startAt, notes = {} } = options;
 
   const subscriptionData: RazorpaySubscriptionRequest = {
