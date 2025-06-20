@@ -150,9 +150,9 @@ export interface AddressDocument extends Document {
   userName: string;
   addressLine1: string;
   addressLine2?: string;
-  city: string;
-  state: string;
-  pincode: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
   isDefault: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -317,9 +317,9 @@ const addressSchema = new Schema<AddressDocument>({
   phone: { type: String, required: true },
   addressLine1: { type: String, required: true },
   addressLine2: String,
-  city: { type: String, required: true },
-  state: { type: String, required: true },
-  pincode: { type: String, required: true },
+  city: { type: String, required: false },
+  state: { type: String, required: false },
+  pincode: { type: String, required: false },
   isDefault: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },

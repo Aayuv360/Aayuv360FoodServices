@@ -47,17 +47,7 @@ interface Address {
   phone: string;
   addressLine1: string;
   addressLine2?: string;
-  city: string;
-  state: string;
-  pincode: string;
   isDefault: boolean;
-}
-
-interface Location {
-  id: number;
-  area: string;
-  pincode: string;
-  deliveryFee: number;
 }
 
 type CheckoutStep = "cart" | "delivery" | "payment" | "success";
@@ -321,7 +311,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         phoneNumber: selectedAddress.phone,
         completeAddress: selectedAddress.addressLine1,
         nearbyLandmark: selectedAddress.addressLine2 || "",
-        zipCode: selectedAddress.pincode,
         addressType: selectedAddress.name.toLowerCase().includes("home")
           ? "home"
           : selectedAddress.name.toLowerCase().includes("work")
@@ -330,7 +319,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         deliveryType,
       };
 
-      const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}, ${selectedAddress.city}, ${selectedAddress.state} - ${selectedAddress.pincode}`;
+      const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}`;
 
       const total =
         calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;

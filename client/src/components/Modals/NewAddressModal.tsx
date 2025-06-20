@@ -1,28 +1,15 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { LocateFixed } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { mapLoadState } from "@/Recoil/recoil";
-import { useRecoilValue } from "recoil";
 
 const libraries = ["places"];
-const mapContainerStyle = {
-  width: "100%",
-  height: "100%",
-};
+
 const centerHyderabad = { lat: 17.385044, lng: 78.486671 };
-const allowedPostalCodes = ["500075"];
 
 interface Address {
   name?: string;
@@ -30,9 +17,6 @@ interface Address {
   userName?: string;
   addressLine1?: string;
   addressLine2?: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
   latitude?: number;
   longitude?: number;
   isDefault?: boolean;
@@ -54,7 +38,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   addressModalAction,
 }) => {
   const { user } = useAuth();
-  // const isLoaded = useRecoilValue(mapLoadState);
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
@@ -67,9 +50,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   );
 
   const [addressDetails, setAddressDetails] = useState({
-    city: "Hyderabad",
-    state: "Telangana",
-    pincode: "",
     landmark: "",
   });
 
@@ -99,9 +79,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         });
 
         setAddressDetails({
-          city: editingAddress.city || "Hyderabad",
-          state: editingAddress.state || "Telangana",
-          pincode: editingAddress.pincode || "",
           landmark: editingAddress.addressLine2 || "",
         });
         setAddressType(editingAddress.name || "Home");
@@ -137,8 +114,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         const getComponent = (type: string) =>
           addressComponents.find((c) => c.types.includes(type))?.long_name ||
           "";
-        const pincode = getComponent("postal_code");
-        const isAllowed = allowedPostalCodes.includes(pincode);
         const landmarkParts: string[] = [];
 
         const priorityTypes = [
@@ -160,31 +135,11 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
         const landmark = landmarkParts.join(", ");
 
-        setIsServiceAvailable(isAllowed);
         const locationSearchValue = results[0].formatted_address;
         setLocationSearch(locationSearchValue);
         setAddressDetails({
-          city: getComponent("locality") || "Hyderabad",
-          state: getComponent("administrative_area_level_1") || "Telangana",
-          pincode,
           landmark,
         });
-      }
-    });
-  };
-
-  const geocodePincode = (pincode: string) => {
-    const geocoder = new window.google.maps.Geocoder();
-    geocoder.geocode({ address: pincode }, (results, status) => {
-      if (status === "OK" && results?.[0]) {
-        const location = results[0].geometry.location;
-        const loc = {
-          lat: location.lat(),
-          lng: location.lng(),
-        };
-        setMapCenter(loc);
-        setMarkerPosition(loc);
-        reverseGeocode(loc);
       }
     });
   };
@@ -372,9 +327,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     addressLine1: formData.get("addressLine1") as string,
                     addressLine2:
                       (formData.get("addressLine2") as string) || undefined,
-                    city: formData.get("city") as string,
-                    state: formData.get("state") as string,
-                    pincode: formData.get("pincode") as string,
                     isDefault: Boolean(formData.get("isDefault")),
                     userName: formData.get("userName") as string,
                     latitude: markerPosition.lat,
@@ -449,45 +401,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                       }))
                     }
                   />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div>
-                    <Label>City</Label>
-                    <Input
-                      name="city"
-                      value={addressDetails.city}
-                      readOnly
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>State</Label>
-                    <Input
-                      name="state"
-                      value={addressDetails.state}
-                      readOnly
-                      required
-                    />
-                  </div>
-                  <div>
-                    <Label>Pincode</Label>
-                    <Input
-                      name="pincode"
-                      value={addressDetails.pincode}
-                      onChange={(e) => {
-                        const newPincode = e.target.value;
-                        setAddressDetails((prev) => ({
-                          ...prev,
-                          pincode: newPincode,
-                        }));
-                        if (/^\d{6}$/.test(newPincode)) {
-                          geocodePincode(newPincode);
-                        }
-                      }}
-                      required
-                    />
-                  </div>
                 </div>
 
                 <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">

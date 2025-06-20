@@ -100,9 +100,6 @@ const addressSchema = z.object({
   phone: z.string().min(10, "Valid phone number is required"),
   addressLine1: z.string().min(5, "Address line 1 is required"),
   addressLine2: z.string().optional(),
-  city: z.string().min(2, "City is required"),
-  state: z.string().min(2, "State is required"),
-  pincode: z.string().min(6, "Valid pincode is required"),
   isDefault: z.boolean().default(false),
 });
 
@@ -936,9 +933,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                             </p>
                             {exictingAdrs?.addressLine2 && (
                               <p className="text-sm text-gray-600">
-                                {exictingAdrs?.addressLine2},{" "}
-                                {exictingAdrs?.city}, {exictingAdrs?.state} -{" "}
-                                {exictingAdrs?.pincode}
+                                {exictingAdrs?.addressLine2}
                               </p>
                             )}
 
@@ -1149,8 +1144,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                             </p>
                             {address?.addressLine2 && (
                               <p className="text-sm text-gray-600">
-                                {address?.addressLine2}, {address?.city},{" "}
-                                {address?.state} - {address?.pincode}
+                                {address?.addressLine2}, {address?.city}
                               </p>
                             )}
 
@@ -1208,8 +1202,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                               </p>
                               {address?.addressLine2 && (
                                 <p className="text-sm text-gray-600">
-                                  {address.addressLine2}, {address.city},{" "}
-                                  {address.state} - {address.pincode}
+                                  {address.addressLine2}
                                 </p>
                               )}
                               <p className="text-sm text-gray-600">
