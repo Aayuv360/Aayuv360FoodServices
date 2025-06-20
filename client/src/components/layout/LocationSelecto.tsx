@@ -10,8 +10,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MapPin } from "lucide-react";
-import { useRecoilValue } from "recoil";
-import { mapLoadState } from "@/Recoil/recoil";
 
 const libraries: "places"[] = [];
 
@@ -20,7 +18,6 @@ const LocationSelector = () => {
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
     libraries,
   });
-  // const isLoaded = useRecoilValue(mapLoadState);
 
   const [input, setInput] = useState("");
   const [suggestions, setSuggestions] = useState<
@@ -69,8 +66,6 @@ const LocationSelector = () => {
       },
       (place, status) => {
         if (status === "OK" && place && place.geometry?.location) {
-          const location = place.geometry.location;
-
           setSelectedAddress(place.formatted_address ?? "Unknown address");
           setSuggestions([]);
           setInput("");
@@ -145,7 +140,7 @@ const LocationSelector = () => {
             className="cursor-pointer mt-1"
             onClick={handleUseCurrentLocation}
           >
-            <span className="flex items-center text-primary ">
+            <span className="flex items-center">
               <MapPin className="h-4 w-4 mr-2" />
               Use My Current Location
             </span>

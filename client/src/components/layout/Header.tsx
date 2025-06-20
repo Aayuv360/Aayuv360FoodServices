@@ -55,10 +55,9 @@ const Header = () => {
                 Aayuv
               </h1>
             </Link>
-            {/* <LocationSelector /> */}
+            <LocationSelector />
           </div>
 
-          {/* Icons Row */}
           <div className="flex items-center flex-nowrap justify-end gap-2 sm:gap-4 w-full md:w-auto overflow-hidden">
             <button
               onClick={() => navigate("/menu")}
