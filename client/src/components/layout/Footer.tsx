@@ -12,9 +12,9 @@ import {
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-50 pt-12 pb-6 border-t border-gray-200">
+    <footer className="hidden sm:block bg-gray-50 pt-12 pb-6 border-t border-gray-200">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
           {/* Brand Column */}
           <div>
             <div className="flex items-center mb-4">
@@ -188,7 +188,7 @@ const Footer = () => {
                   className="text-orange-500 mr-2 mt-1 flex-shrink-0"
                 />
                 <span className="text-gray-600">
-                  123 Food Street, Hyderabad, Telangana, India
+                  123 Food Street, Hyderabad
                 </span>
               </li>
               <li className="flex items-center">

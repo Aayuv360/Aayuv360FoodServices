@@ -306,8 +306,8 @@ const subscriptionSchema = new Schema<SubscriptionDocument>({
   updatedAt: { type: Date, default: Date.now },
   timeSlot: { type: String, required: true },
   deliveryAddressId: { type: Number, required: true },
-  increasedPrice: { type: Number, required: true },
-  walletPrice: { type: Number, required: true },
+  increasedPrice: { type: Number, required: false },
+  walletPrice: { type: Number, required: false },
 });
 
 const addressSchema = new Schema<AddressDocument>({
@@ -370,8 +370,8 @@ const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({
   updatedAt: { type: Date, default: Date.now },
   timeSlot: { type: String, required: true },
   deliveryAddressId: { type: Number, required: true },
-  increasedPrice: { type: Number, required: true },
-  walletPrice: { type: Number, required: true },
+  increasedPrice: { type: Number, required: false },
+  walletPrice: { type: Number, required: false },
 });
 
 // Create and export models

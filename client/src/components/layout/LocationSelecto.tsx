@@ -25,6 +25,11 @@ const LocationSelector = () => {
   >([]);
 
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
+  // useEffect(() => {
+  //   if (isLoaded && !selectedAddress) {
+  //     handleUseCurrentLocation();
+  //   }
+  // }, [isLoaded]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {

@@ -145,7 +145,7 @@ export function SimpleDeliveryNotifications() {
         >
           <Truck className="h-5 w-5" />
           {deliveryUpdates.length > 0 && (
-            <Badge className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0">
+            <Badge className="absolute -top-[0.2rem] -right-3 h-5 w-5 flex items-center justify-center p-0">
               {deliveryUpdates.length}
             </Badge>
           )}
