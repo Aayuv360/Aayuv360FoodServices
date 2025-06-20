@@ -30,10 +30,14 @@ const LocationSelector = () => {
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [locationFetched, setLocationFetched] = useState(false);
 
-  const { coords, isLoading: geoLoading, getCurrentPosition } = useGeolocation();
-  const { checkServiceAvailability, isWithinServiceArea, getServiceMessage } = useServiceArea();
+  const {
+    coords,
+    isLoading: geoLoading,
+    getCurrentPosition,
+  } = useGeolocation();
+  const { checkServiceAvailability, isWithinServiceArea, getServiceMessage } =
+    useServiceArea();
 
-  // Auto-fetch user location on component mount
   useEffect(() => {
     if (isLoaded && !locationFetched && !selectedAddress) {
       getCurrentPosition();
@@ -41,7 +45,6 @@ const LocationSelector = () => {
     }
   }, [isLoaded, locationFetched, selectedAddress, getCurrentPosition]);
 
-  // Update selected address when location is obtained
   useEffect(() => {
     if (coords && window.google && !selectedAddress) {
       const geocoder = new window.google.maps.Geocoder();
@@ -125,21 +128,29 @@ const LocationSelector = () => {
             {geoLoading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <MapPin className={`h-5 w-5 hover:text-primary ${!isWithinServiceArea && selectedAddress ? 'text-red-500' : ''}`} />
+              <MapPin
+                className={`h-5 w-5 hover:text-primary ${!isWithinServiceArea && selectedAddress ? "text-red-500" : ""}`}
+              />
             )}
             <div className="whitespace-normal break-words">
-              {geoLoading ? "Getting location..." : selectedAddress ? selectedAddress : "Select Location"}
+              {geoLoading
+                ? "Getting location..."
+                : selectedAddress
+                  ? selectedAddress
+                  : "Select Location"}
             </div>
           </div>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="w-80 p-2">
           {selectedAddress && (
-            <div className={`mb-2 p-2 rounded text-xs ${isWithinServiceArea ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+            <div
+              className={`mb-2 p-2 rounded text-xs ${isWithinServiceArea ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
+            >
               {getServiceMessage()}
             </div>
           )}
-          
+
           <div className="mb-2">
             <input
               type="text"
@@ -168,13 +179,9 @@ const LocationSelector = () => {
             onClick={handleUseCurrentLocation}
             disabled={geoLoading}
           >
-            <span className="flex items-center text-primary">
-              {geoLoading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <MapPin className="h-4 w-4 mr-2" />
-              )}
-              {geoLoading ? "Getting location..." : "Use My Current Location"}
+            <span className="flex items-center">
+              <MapPin className="h-4 w-4 mr-2" />
+              Use My Current Location
             </span>
           </DropdownMenuItem>
         </DropdownMenuContent>

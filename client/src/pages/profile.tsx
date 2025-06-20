@@ -12,6 +12,7 @@ import {
   LogOut,
   ChevronRight,
   Truck,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -137,10 +138,6 @@ const Profile = () => {
     updateProfileMutation.mutate(values);
   };
 
-  const getSubscriptionStatusClass = (isActive: boolean) => {
-    return isActive ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800";
-  };
-
   const getOrderStatusClass = (status: string) => {
     switch (status) {
       case "pending":
@@ -155,13 +152,39 @@ const Profile = () => {
         return "bg-gray-100 text-gray-800";
     }
   };
+  function getSubscriptionStatusClass(status: string) {
+    switch (status.toLowerCase()) {
+      case "active":
+        return "bg-green-100 text-green-800";
+      case "inactive":
+        return "bg-gray-100 text-gray-800";
+      case "completed":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-200 text-gray-600";
+    }
+  }
+  function capitalizeFirstLetter(word: string) {
+    return word.charAt(0).toUpperCase() + word.slice(1);
+  }
+  const determineAction = (status: string): string => {
+    let action = "NONE / DEFAULT";
+
+    if (status === "active" || status === "inactive") {
+      action = "Manage";
+    } else if (status === "completed") {
+      action = "Renew";
+    }
+
+    return action;
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-light py-6 sm:py-12 min-h-screen bg-gray-50">
-      <div className="container mx-auto px-3 sm:px-4">
+    <div className="min-h-screen bg-neutral-light py-3 sm:py-6 min-h-screen bg-gray-50">
+      <div className="container mx-auto max-w-6xl px-5 py-6">
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
-          <div className="w-full md:w-64 space-y-3 sm:space-y-4">
-            <Card>
+          <div className="hidden md:block w-full md:w-64 space-y-3 sm:space-y-4">
+            <Card className="bg-white border rounded-xl shadow">
               <CardContent className="p-3 sm:p-4">
                 <div className="flex flex-col items-center space-y-3 sm:space-y-4 py-4 sm:py-6">
                   <UserCircle className="h-16 w-16 sm:h-20 sm:w-20 text-primary" />
@@ -210,17 +233,7 @@ const Profile = () => {
                     <History className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Order History
                   </Button>
-                  <Button
-                    variant={currentTab === "deliveries" ? "default" : "ghost"}
-                    className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                    onClick={() => {
-                      setCurrentTab("deliveries");
-                      navigate("/profile?tab=deliveries", { replace: true });
-                    }}
-                  >
-                    <Truck className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    Deliveries
-                  </Button>
+
                   <Button
                     variant="ghost"
                     className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
@@ -236,427 +249,331 @@ const Profile = () => {
 
           <div className="flex-1">
             {currentTab === "profile" && (
-              <Card>
-                <CardHeader className="py-4 sm:py-6">
-                  <CardTitle className="text-lg sm:text-xl">
-                    Your Profile
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Manage your account information and delivery address
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="px-3 sm:px-6">
-                  <Form {...form}>
-                    <form
-                      onSubmit={form.handleSubmit(onSubmit)}
-                      className="space-y-4 sm:space-y-6"
-                    >
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">
-                              Full Name
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                className="text-xs sm:text-sm h-8 sm:h-10"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
+              <div className="w-full">
+                <div className="mx-auto space-y-5">
+                  <div>
+                    <h1 className="text-2xl font-semibold mb-2">
+                      Your Profile
+                    </h1>
+                    <p className="text-gray-600 mb-6">
+                      Manage your account information address and wallet
+                    </p>
+                  </div>
+                  <Card className="bg-white border rounded-xl shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-center justify-between">
+                        <span className="text-lg font-medium">
+                          Wallet Balance
+                        </span>
+                        <div className="flex items-center space-x-2">
+                          <Wallet className="w-5 h-5 text-green-500" />
+                          <span className="text-xl font-bold text-green-600">
+                            ₹ 120.00
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
 
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">
-                              Email
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                className="text-xs sm:text-sm h-8 sm:h-10"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
+                  <Card className="bg-white border rounded-xl shadow">
+                    <CardContent className="p-6">
+                      <Form {...form}>
+                        <form
+                          onSubmit={form.handleSubmit(onSubmit)}
+                          className="space-y-1"
+                        >
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs sm:text-sm">
+                                  Full Name
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    className="text-xs sm:text-sm h-8 sm:h-10"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="email"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs sm:text-sm">
+                                  Email
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    className="text-xs sm:text-sm h-8 sm:h-10"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs sm:text-sm">
+                                  Phone Number
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    className="text-xs sm:text-sm h-8 sm:h-10"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                              </FormItem>
+                            )}
+                          />
 
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">
-                              Phone Number
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                className="text-xs sm:text-sm h-8 sm:h-10"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
+                          <div>
+                            <Button
+                              type="submit"
+                              className="bg-primary hover:bg-primary/90 text-xs sm:text-sm mt-4"
+                              disabled={updateProfileMutation.isPending}
+                            >
+                              {" "}
+                              {updateProfileMutation.isPending ? (
+                                <Loader2 className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                              ) : null}{" "}
+                              {updateProfileMutation.isPending
+                                ? "Saving..."
+                                : "Save Changes"}{" "}
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </CardContent>
+                  </Card>
 
-                      <FormField
-                        control={form.control}
-                        name="address"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs sm:text-sm">
-                              Delivery Address
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                className="text-xs sm:text-sm h-8 sm:h-10"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-
-                      <Button
-                        type="submit"
-                        className="bg-primary hover:bg-primary/90 text-xs sm:text-sm h-auto py-1.5 sm:py-2 mt-2 sm:mt-4"
-                        disabled={updateProfileMutation.isPending}
-                      >
-                        {updateProfileMutation.isPending ? (
-                          <Loader2 className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                        ) : null}
-                        {updateProfileMutation.isPending
-                          ? "Saving..."
-                          : "Save Changes"}
+                  <Card className="bg-white border rounded-xl shadow">
+                    <CardContent className="p-6">
+                      <span className="text-lg font-medium text-red-600 mb-2">
+                        Danger Zone
+                      </span>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Request to delete your account. This action is
+                        irreversible.
+                      </p>
+                      <Button variant="destructive">
+                        Request Account Deletion
                       </Button>
-                    </form>
-                  </Form>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             )}
 
             {currentTab === "subscriptions" && (
               <Card>
-                <CardHeader className="py-4 sm:py-6">
-                  <CardTitle className="text-lg sm:text-xl">
-                    Your Subscriptions
-                  </CardTitle>
-                  <CardDescription className="text-xs sm:text-sm">
-                    Manage your active meal plans and subscriptions
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="px-3 sm:px-6">
-                  {isLoadingSubscriptions ? (
-                    <div className="flex justify-center py-6 sm:py-8">
-                      <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
-                    </div>
-                  ) : !subscriptions || subscriptions.length === 0 ? (
-                    <div className="text-center py-6 sm:py-8 bg-neutral-light rounded-lg">
-                      <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">
-                        No active subscriptions
-                      </h3>
-                      <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
-                        You don't have any active subscriptions yet.
-                      </p>
-                      <Button
-                        asChild
-                        className="bg-primary hover:bg-primary/90 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                      >
-                        <a href="/subscription">Browse Plans</a>
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 sm:space-y-4">
-                      {subscriptions.map((subscription: any) => (
-                        <div
-                          key={subscription.id}
-                          className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
+                <div>
+                  <h1 className="text-2xl font-semibold mb-2 sm:mb-3">
+                    Your Subscription
+                  </h1>
+                  <p className="text-gray-600 mb-4 sm:mb-6">
+                    Manage your active meal plan and subscription
+                  </p>
+
+                  <CardContent className="bg-white border rounded-xl shadow p-4 sm:p-4">
+                    {isLoadingSubscriptions ? (
+                      <div className="flex justify-center py-6 sm:py-8">
+                        <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 animate-spin text-primary" />
+                      </div>
+                    ) : !subscriptions || subscriptions.length === 0 ? (
+                      <div className="text-center py-6 sm:py-8 bg-neutral-light rounded-lg px-4">
+                        <h3 className="text-base sm:text-lg font-medium mb-1.5 sm:mb-2">
+                          No active subscription
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4">
+                          You don't have any active subscription yet.
+                        </p>
+                        <Button
+                          asChild
+                          className="bg-primary hover:bg-primary/90 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                         >
-                          {/* Subscription Header - Always Visible */}
-                          <div
-                            className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-4 cursor-pointer"
-                            onClick={() =>
-                              toggleSubscriptionDetails(subscription.id)
-                            }
-                          >
-                            <div>
-                              <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2">
-                                <h3 className="text-base sm:text-lg font-bold capitalize">
-                                  {subscription.plan} Plan
-                                </h3>
-                                <span
-                                  className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(
-                                    subscription.isActive,
-                                  )}`}
-                                >
-                                  {subscription.status.toUpperCase()}
-                                </span>
-                              </div>
-                              <p className="text-xs sm:text-sm text-gray-600 mb-1.5 sm:mb-2">
-                                {subscription.mealsPerMonth} meals per month
-                              </p>
-                              <div className="text-xs sm:text-sm text-gray-500">
-                                <p>
-                                  Started:{" "}
-                                  {format(
-                                    new Date(subscription.startDate),
-                                    "MMM d, yyyy",
-                                  )}
-                                </p>
-                                {subscription.endDate && (
+                          <a href="/subscription">Browse Plans</a>
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-6 sm:space-y-8">
+                        {subscriptions.map((subscription: any) => (
+                          <div key={subscription.id} className="space-y-4">
+                            <div className="flex flex-col md:flex-row justify-between md:items-start gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                                  <h3 className="text-base sm:text-lg font-bold capitalize">
+                                    {subscription.plan} Plan
+                                  </h3>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(subscription.status)}`}
+                                  >
+                                    {capitalizeFirstLetter(subscription.status)}
+                                  </span>
+                                </div>
+
+                                <div className="text-xs sm:text-sm text-gray-500 space-y-1">
+                                  <p className="text-xs sm:text-sm text-gray-600">
+                                    {subscription.mealsPerMonth} meals per month
+                                  </p>
                                   <p>
-                                    Ends:{" "}
+                                    Started:{" "}
                                     {format(
-                                      new Date(subscription.endDate),
+                                      new Date(subscription.startDate),
                                       "MMM d, yyyy",
                                     )}
                                   </p>
-                                )}
+                                  {subscription.endDate && (
+                                    <p>
+                                      Ends:{" "}
+                                      {format(
+                                        new Date(subscription.endDate),
+                                        "MMM d, yyyy",
+                                      )}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-3 items-start md:items-end">
+                                <p className="text-base sm:text-xl font-bold text-primary">
+                                  {formatPrice(subscription.price)}
+                                  <span className="text-xs sm:text-sm text-gray-500 ml-1">
+                                    /month
+                                  </span>
+                                </p>
+                                <Button
+                                  variant="default"
+                                  onClick={() => navigate(`/subscription`)}
+                                  className="w-full md:w-auto"
+                                >
+                                  {determineAction(subscription.status)}
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex flex-row sm:flex-col justify-between sm:justify-center items-center sm:items-end mt-2 sm:mt-0">
-                              <p className="text-base sm:text-xl font-bold text-primary mb-0 sm:mb-2">
-                                {formatPrice(subscription.price)}
-                                <span className="text-xs sm:text-sm text-gray-500">
-                                  /month
-                                </span>
-                              </p>
-                              <div className="flex items-center gap-1.5 sm:gap-2">
-                                <ChevronRight
-                                  className={`h-4 w-4 sm:h-5 sm:w-5 text-gray-400 transition-transform ${expandedSubscriptionId === subscription.id ? "rotate-90" : ""}`}
-                                />
+
+                            {/* Subscription Details + Plan Benefits */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 border-t pt-6">
+                              {/* Subscription Details */}
+                              <div>
+                                <h4 className="font-medium mb-3">
+                                  Subscription Details
+                                </h4>
+                                <div className="bg-neutral-50 p-4 rounded-md space-y-3 text-sm">
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Subscription ID:
+                                    </span>
+                                    <span className="font-medium break-all">
+                                      {subscription.id}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Status:
+                                    </span>
+                                    <span
+                                      className={`text-xs px-2 py-0.5 rounded-full ${getSubscriptionStatusClass(subscription.status)}`}
+                                    >
+                                      {capitalizeFirstLetter(
+                                        subscription.status,
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Plan Type:
+                                    </span>
+                                    <span className="font-medium capitalize">
+                                      {subscription.plan}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Next Billing:
+                                    </span>
+                                    <span className="font-medium">
+                                      {format(
+                                        new Date(
+                                          subscription.nextBillingDate ||
+                                            new Date(
+                                              subscription.startDate,
+                                            ).setMonth(
+                                              new Date(
+                                                subscription.startDate,
+                                              ).getMonth() + 1,
+                                            ),
+                                        ),
+                                        "MMMM d, yyyy",
+                                      )}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">
+                                      Payment Method:
+                                    </span>
+                                    <span className="font-medium capitalize">
+                                      {subscription.paymentMethod ||
+                                        "Credit Card"}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Plan Benefits */}
+                              <div>
+                                <h4 className="font-medium mb-3">
+                                  Plan Benefits
+                                </h4>
+                                <div className="bg-neutral-50 p-4 rounded-md space-y-3 text-sm">
+                                  {[
+                                    `${subscription.mealsPerMonth} meals per month`,
+                                    "Free delivery on all orders",
+                                    "Customize meal plan options",
+                                    "Priority customer support",
+                                  ].map((benefit, index) => (
+                                    <div
+                                      key={index}
+                                      className="flex items-center gap-2"
+                                    >
+                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg
+                                          xmlns="http://www.w3.org/2000/svg"
+                                          width="12"
+                                          height="12"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          className="text-green-600"
+                                        >
+                                          <polyline points="20 6 9 17 4 12" />
+                                        </svg>
+                                      </span>
+                                      <span>{benefit}</span>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
-
-                          {expandedSubscriptionId === subscription.id && (
-                            <div className="border-t mt-3 sm:mt-4 pt-3 sm:pt-4">
-                              {/* Subscription Details */}
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                                {/* Left Column */}
-                                <div>
-                                  <h4 className="font-medium mb-3">
-                                    Subscription Details
-                                  </h4>
-                                  <div className="bg-neutral-50 p-4 rounded-md space-y-3">
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">
-                                        Subscription ID:
-                                      </span>
-                                      <span className="font-medium">
-                                        {subscription.id}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">
-                                        Status:
-                                      </span>
-                                      <span
-                                        className={`font-medium ${subscription.isActive ? "text-green-600" : "text-red-600"}`}
-                                      >
-                                        {subscription.status.toUpperCase()}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">
-                                        Plan Type:
-                                      </span>
-                                      <span className="font-medium capitalize">
-                                        {subscription.plan}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">
-                                        Next Billing:
-                                      </span>
-                                      <span className="font-medium">
-                                        {format(
-                                          new Date(
-                                            subscription.nextBillingDate ||
-                                              new Date(
-                                                subscription.startDate,
-                                              ).setMonth(
-                                                new Date(
-                                                  subscription.startDate,
-                                                ).getMonth() + 1,
-                                              ),
-                                          ),
-                                          "MMMM d, yyyy",
-                                        )}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-gray-600">
-                                        Payment Method:
-                                      </span>
-                                      <span className="font-medium capitalize">
-                                        {subscription.paymentMethod ||
-                                          "Credit Card"}
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Right Column */}
-                                <div>
-                                  <h4 className="font-medium mb-3">
-                                    Plan Benefits
-                                  </h4>
-                                  <div className="bg-neutral-50 p-4 rounded-md space-y-3">
-                                    <div className="flex items-center gap-2">
-                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          className="text-green-600"
-                                        >
-                                          <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                      </span>
-                                      <span>
-                                        {subscription.mealsPerMonth} meals per
-                                        month
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          className="text-green-600"
-                                        >
-                                          <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                      </span>
-                                      <span>Free delivery on all orders</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          className="text-green-600"
-                                        >
-                                          <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                      </span>
-                                      <span>Customize meal plan options</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                      <span className="h-5 w-5 rounded-full bg-green-100 flex items-center justify-center">
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          width="12"
-                                          height="12"
-                                          viewBox="0 0 24 24"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          strokeWidth="2"
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          className="text-green-600"
-                                        >
-                                          <polyline points="20 6 9 17 4 12" />
-                                        </svg>
-                                      </span>
-                                      <span>Priority customer support</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {subscription.isActive && (
-                                <div className="mt-6">
-                                  <h4 className="font-medium mb-3">
-                                    Upcoming Deliveries
-                                  </h4>
-                                  <div className="border rounded-md overflow-hidden">
-                                    <div className="bg-gray-50 p-3 border-b">
-                                      <div className="grid grid-cols-3 font-medium">
-                                        <div>Date</div>
-                                        <div>Status</div>
-                                        <div>Actions</div>
-                                      </div>
-                                    </div>
-                                    <div className="divide-y">
-                                      {/* Generate next 2 upcoming deliveries */}
-                                      {[...Array(2)].map((_, index) => {
-                                        const deliveryDate = new Date();
-                                        deliveryDate.setDate(
-                                          deliveryDate.getDate() +
-                                            (index + 1) * 7,
-                                        );
-
-                                        return (
-                                          <div
-                                            key={index}
-                                            className="p-3 grid grid-cols-3 items-center"
-                                          >
-                                            <div>
-                                              {format(
-                                                deliveryDate,
-                                                "MMMM d, yyyy",
-                                              )}
-                                            </div>
-                                            <div>
-                                              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">
-                                                Scheduled
-                                              </span>
-                                            </div>
-                                            <div>
-                                              <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 px-2 text-primary"
-                                              >
-                                                Customize
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </div>
               </Card>
             )}
 
@@ -695,7 +612,7 @@ const Profile = () => {
                       {orders.map((order: any) => (
                         <div
                           key={order.id}
-                          className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow"
+                          className="p-3 sm:p-4 hover:shadow-md transition-shadow bg-white border rounded-xl shadow"
                         >
                           <div
                             className="flex flex-col sm:flex-row justify-between mb-3 sm:mb-4 gap-2 cursor-pointer"

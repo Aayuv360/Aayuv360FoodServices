@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { AuthModal } from "@/components/auth/AuthModal";
-import LocationSelector from "./LocationSelecto";
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
@@ -105,7 +104,10 @@ const Header = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuItem asChild>
-                        <Link href="/profile?tab=subscriptions" className="w-full">
+                        <Link
+                          href="/profile?tab=subscriptions"
+                          className="w-full"
+                        >
                           Subscriptions
                         </Link>
                       </DropdownMenuItem>
@@ -115,7 +117,10 @@ const Header = () => {
                         </Link>
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={logout}>Sign out</DropdownMenuItem>
+
+                      <DropdownMenuItem onClick={logout}>
+                        Sign out
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
@@ -163,23 +168,25 @@ const Header = () => {
 
                 {user ? (
                   <>
-                    <Link 
-                      href="/profile" 
+                    <Link
+                      href="/profile"
                       className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 rounded-md"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <User className="w-5 h-5" />
                       <span>Your Profile</span>
                     </Link>
-                    <Link 
-                      href="/profile?tab=subscriptions" 
+
+                    <Link
+                      href="/profile?tab=subscriptions"
                       className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 rounded-md"
                       onClick={() => setMobileMenuOpen(false)}
                     >
                       <span>Subscriptions</span>
                     </Link>
-                    <Link 
-                      href="/profile?tab=orders" 
+
+                    <Link
+                      href="/profile?tab=orders"
                       className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 rounded-md"
                       onClick={() => setMobileMenuOpen(false)}
                     >
