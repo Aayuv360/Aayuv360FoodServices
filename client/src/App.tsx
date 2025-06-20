@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import TopNav from "@/components/layout/TopNav";
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import Home from "@/pages/home";
 import Menu from "@/pages/menu";
 import Profile from "@/pages/profile";
@@ -33,7 +34,7 @@ function Router() {
       <div className="font-sans min-h-screen flex flex-col bg-gradient-to-b from-orange-50 to-amber-50">
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.1),rgba(249,115,22,0))] pointer-events-none"></div>
         <Header />
-        <main className="flex-grow relative">
+        <main className="flex-grow relative pb-20 md:pb-0">
           <Switch>
             <Route path="/" component={Home} />
             <Route path="/menu" component={Menu} />
@@ -72,6 +73,7 @@ function Router() {
         </main>
 
         <Footer />
+        <MobileBottomNav />
       </div>
     </div>
   );
