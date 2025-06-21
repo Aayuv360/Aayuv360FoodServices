@@ -6,7 +6,6 @@ import CartSidebar from "@/components/cart/CartSidebar";
 
 const MobileBottomNav = () => {
   const { cartItems } = useCart();
-  const [, navigate] = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
 
   const handleCartClick = () => {
@@ -18,14 +17,14 @@ const MobileBottomNav = () => {
   }
 
   return (
-    <div className="fixed bottom-2 left-0 right-0 bg-white border-t border-gray-200 shadow-xl z-50 md:hidden sticky rounded-xl m-2">
+    <div
+      className="fixed bottom-2 left-0 right-0 bg-white border-t border-gray-200 shadow-xl z-50 md:hidden sticky rounded-xl m-2"
+      onClick={handleCartClick}
+    >
       <div className="flex items-center justify-between px-4 py-3 safe-area-inset-bottom">
         <div className="flex items-center gap-3">
           <div className="relative">
             <ShoppingCart className="w-6 h-6 text-primary" />
-            <span className="absolute -top-2 -right-2 bg-primary text-white text-xs rounded-full px-2 py-0.5 min-w-[20px] h-5 flex items-center justify-center font-medium">
-              {cartItems.length}
-            </span>
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-medium text-gray-900">

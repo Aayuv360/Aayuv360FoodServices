@@ -1079,6 +1079,7 @@ const Subscription = () => {
         isOpen={authModalOpen}
         onOpenChange={setAuthModalOpen}
         redirectUrl={`/subscription?plan=${selectedPlan?.planType}`}
+        mode="subscribe"
       />
       <DeleteAddressDialog
         open={!!deletingAddress}
