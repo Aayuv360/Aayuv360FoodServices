@@ -13,11 +13,14 @@ interface RazorpaySubscriptionRequest {
 }
 // Initialize Razorpay only if keys are provided
 let razorpay: Razorpay | null = null;
-
-if (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET) {
+const env = {
+  RAZORPAY_KEY_ID: "rzp_test_UxXBzl98ySixq7",
+  RAZORPAY_KEY_SECRET: "n78QX7ZaxGndqCdRryofDbNU",
+};
+if (env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET) {
   razorpay = new Razorpay({
-    key_id: process.env.RAZORPAY_KEY_ID,
-    key_secret: process.env.RAZORPAY_KEY_SECRET,
+    key_id: env.RAZORPAY_KEY_ID,
+    key_secret: env.RAZORPAY_KEY_SECRET,
   });
 } else {
   console.warn("Razorpay keys not found - payment features will be disabled");
@@ -132,7 +135,7 @@ export function verifyPaymentSignature(
   signature: string,
 ) {
   const generatedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+    .createHmac("sha256", env.RAZORPAY_KEY_SECRET!)
     .update(`${razorpayOrderId}|${razorpayPaymentId}`)
     .digest("hex");
 
@@ -257,7 +260,7 @@ export async function handleWebhookEvent(event: any, signature: string) {
 
 function verifyWebhookSignature(payload: string, signature: string) {
   const expectedSignature = crypto
-    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+    .createHmac("sha256", env.RAZORPAY_KEY_SECRET!)
     .update(payload)
     .digest("hex");
 

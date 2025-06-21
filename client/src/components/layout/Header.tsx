@@ -3,7 +3,15 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { User, ShoppingCart, MapPin, LogIn, Search, Menu } from "lucide-react";
+import {
+  User,
+  ShoppingCart,
+  ChefHat,
+  ClipboardList,
+  LogIn,
+  Search,
+  Menu,
+} from "lucide-react";
 import { SimpleDeliveryNotifications } from "@/components/notifications/SimpleDeliveryNotifications";
 import {
   DropdownMenu,
@@ -14,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import CartSidebar from "@/components/cart/CartSidebar";
 import { AuthModal } from "@/components/auth/AuthModal";
+import LocationSelector from "./LocationSelecto";
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
@@ -59,6 +68,8 @@ const Header = () => {
               </h1>
             </Link>
 
+            <LocationSelector />
+
             {/* Desktop Navigation */}
             {!isMobile && (
               <div className="flex items-center gap-4">
@@ -71,8 +82,8 @@ const Header = () => {
                   <span>Search</span>
                 </button>
 
-                {user && <SimpleDeliveryNotifications />}
-
+                {/* {user && <SimpleDeliveryNotifications />}
+                 */}
                 <button
                   className="hover:text-primary relative flex items-center gap-2 px-2 py-1 text-sm"
                   onClick={toggleCart}
@@ -138,8 +149,8 @@ const Header = () => {
             {/* Mobile Navigation */}
             {isMobile && (
               <div className="flex items-center gap-2">
-                {user && <SimpleDeliveryNotifications />}
-
+                {/* {user && <SimpleDeliveryNotifications />}
+                 */}
                 <button
                   className="hover:text-primary p-2"
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -155,7 +166,7 @@ const Header = () => {
           {isMobile && mobileMenuOpen && (
             <div className="mt-3 pt-3 border-t border-gray-200">
               <div className="flex flex-col space-y-3">
-                <button
+                {/* <button
                   onClick={() => {
                     navigate("/menu");
                     setMobileMenuOpen(false);
@@ -164,7 +175,7 @@ const Header = () => {
                 >
                   <Search className="w-5 h-5" />
                   <span>Search Menu</span>
-                </button>
+                </button> */}
 
                 {user ? (
                   <>
@@ -182,6 +193,7 @@ const Header = () => {
                       className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 rounded-md"
                       onClick={() => setMobileMenuOpen(false)}
                     >
+                      <ChefHat className="w-5 h-5" />
                       <span>Subscriptions</span>
                     </Link>
 
@@ -190,6 +202,7 @@ const Header = () => {
                       className="flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 rounded-md"
                       onClick={() => setMobileMenuOpen(false)}
                     >
+                      <ClipboardList className="w-5 h-5" />
                       <span>Order History</span>
                     </Link>
                     <button

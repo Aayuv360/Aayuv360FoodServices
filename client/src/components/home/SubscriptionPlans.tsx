@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Plan {
   id: string;
@@ -19,7 +20,7 @@ interface Plan {
 const SubscriptionPlans = () => {
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
   const [_, navigate] = useLocation();
-
+  const isMobile = useIsMobile();
   const { data: apiPlans, isLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
     queryFn: async () => {

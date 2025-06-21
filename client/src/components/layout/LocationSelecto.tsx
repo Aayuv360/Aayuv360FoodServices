@@ -30,32 +30,9 @@ const LocationSelector = () => {
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [locationFetched, setLocationFetched] = useState(false);
 
-  const {
-    coords,
-    isLoading: geoLoading,
-    getCurrentPosition,
-  } = useGeolocation();
+  const { isLoading: geoLoading, getCurrentPosition } = useGeolocation();
   const { checkServiceAvailability, isWithinServiceArea, getServiceMessage } =
     useServiceArea();
-
-  useEffect(() => {
-    if (isLoaded && !locationFetched && !selectedAddress) {
-      getCurrentPosition();
-      setLocationFetched(true);
-    }
-  }, [isLoaded, locationFetched, selectedAddress, getCurrentPosition]);
-
-  useEffect(() => {
-    if (coords && window.google && !selectedAddress) {
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ location: coords }, (results, status) => {
-        if (status === "OK" && results && results.length > 0) {
-          setSelectedAddress(results[0].formatted_address);
-          checkServiceAvailability(coords);
-        }
-      });
-    }
-  }, [coords, selectedAddress, checkServiceAvailability]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {
@@ -106,7 +83,7 @@ const LocationSelector = () => {
           setSelectedAddress(place.formatted_address ?? "Unknown address");
           setSuggestions([]);
           setInput("");
-          checkServiceAvailability(coords);
+          //checkServiceAvailability(coords);
         }
       },
     );
@@ -117,6 +94,7 @@ const LocationSelector = () => {
     setInput("");
     getCurrentPosition();
   };
+  console.log()
 
   if (!isLoaded) return <div>Loading Map...</div>;
 
@@ -125,32 +103,14 @@ const LocationSelector = () => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <div className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px]">
-            {geoLoading ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <MapPin
-                className={`h-5 w-5 hover:text-primary ${!isWithinServiceArea && selectedAddress ? "text-red-500" : ""}`}
-              />
-            )}
+            <MapPin className={`h-5 w-5 hover:text-primary`} />
             <div className="whitespace-normal break-words">
-              {geoLoading
-                ? "Getting location..."
-                : selectedAddress
-                  ? selectedAddress
-                  : "Select Location"}
+              {selectedAddress ? selectedAddress : "Select Location"}
             </div>
           </div>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="w-80 p-2">
-          {selectedAddress && (
-            <div
-              className={`mb-2 p-2 rounded text-xs ${isWithinServiceArea ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"}`}
-            >
-              {getServiceMessage()}
-            </div>
-          )}
-
           <div className="mb-2">
             <input
               type="text"

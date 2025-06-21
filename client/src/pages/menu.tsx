@@ -6,6 +6,7 @@ import { Meal } from "@shared/schema";
 import NutritionModal from "@/components/menu/NutritionModal";
 import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import { useDebounce } from "use-debounce";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const tabs = [
   { id: "all", name: "All Meals" },
@@ -24,6 +25,7 @@ const Menu = () => {
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
   const [mealData, setMealData] = useState<any>();
   const [scrolled, setScrolled] = useState(false);
+  const isMobile = useIsMobile();
 
   const {
     data: meals,
@@ -79,9 +81,8 @@ const Menu = () => {
 
   return (
     <div className="py-0 bg-neutral-light min-h-screen bg-gray-50">
-      {/* ✅ Sticky Header */}
       <div
-        className={`sticky top-[72px] z-40 bg-gray-50 transition-shadow ${scrolled ? "shadow-sm border-b border-gray-200" : ""}`}
+        className={`${!isMobile && "sticky"} top-[72px] z-40 bg-gray-50 transition-shadow ${scrolled ? "shadow-sm border-b border-gray-200" : ""}`}
       >
         <div className="container mx-auto px-3 sm:px-4 py-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
@@ -119,7 +120,6 @@ const Menu = () => {
             </form>
           </div>
 
-          {/* ✅ Filter Tabs */}
           <div className="flex flex-wrap gap-2 mt-4">
             {tabs.map((tab) => (
               <button
@@ -138,7 +138,6 @@ const Menu = () => {
         </div>
       </div>
 
-      {/* ✅ Main Content */}
       <div className="container mx-auto px-3 sm:px-4 pt-8 sm:pt-10 pb-12">
         {isLoading ? (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 sm:gap-5">

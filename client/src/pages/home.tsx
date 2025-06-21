@@ -5,13 +5,15 @@ import SubscriptionPlans from "@/components/home/SubscriptionPlans";
 import Testimonials from "@/components/home/Testimonials";
 import CallToAction from "@/components/home/CallToAction";
 import Menu from "@/pages/menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Home = () => {
+  const isMobile = useIsMobile();
   return (
     <>
       <HeroSection />
 
-      <HowItWorks />
+      {!isMobile && <HowItWorks />}
 
       <SubscriptionPlans />
       {/* <TodaysMenu />
