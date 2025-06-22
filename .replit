@@ -15,6 +15,10 @@ run = ["npm", "run", "start"]
 localPort = 5000
 externalPort = 80
 
+[[ports]]
+localPort = 5001
+externalPort = 3000
+
 
 [workflows]
 runButton = "Project"
@@ -41,6 +45,15 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
+waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Start Game"
+author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
