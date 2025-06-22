@@ -22,7 +22,9 @@ const MobileHeader = () => {
 
         <button
           className="hover:text-primary p-2"
-          onClick={() => setMobilePage(!mobilePage)}
+          onClick={() => {
+            setMobilePage(!mobilePage);
+          }}
           aria-label="Menu"
         >
           <Menu className="w-5 h-5" />

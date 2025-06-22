@@ -54,6 +54,7 @@ const MobileMenuPage = ({
   setMobilePage?: (val: boolean) => void;
 }) => {
   const { user, logout } = useAuth();
+  const [_, setLocation] = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"normal" | "subscribe">(
@@ -87,10 +88,12 @@ const MobileMenuPage = ({
               transition={{ delay: index * 0.05 }}
             >
               <MenuItem
-                href={item.href}
                 icon={item.icon}
                 text={item.text}
                 setMobilePage={setMobilePage}
+                click={() => {
+                  setLocation(item.href || "/");
+                }}
               />
             </motion.div>
           ))}
@@ -101,12 +104,7 @@ const MobileMenuPage = ({
             transition={{ delay: 0.4 }}
           >
             {user ? (
-              <MenuItem
-                href="/"
-                icon={<LogOut />}
-                text="Sign Out"
-                click={logout}
-              />
+              <MenuItem icon={<LogOut />} text="Sign Out" click={logout} />
             ) : (
               <MenuItem
                 icon={<LogIn />}

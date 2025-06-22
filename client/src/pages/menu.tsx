@@ -1,12 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
-import { format } from "date-fns";
-import { Meal } from "@shared/schema";
 import NutritionModal from "@/components/menu/NutritionModal";
+import { Meal } from "@shared/schema";
+import { format } from "date-fns";
 import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import { useDebounce } from "use-debounce";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 const tabs = [
   { id: "all", name: "All Meals" },
@@ -82,7 +83,9 @@ const Menu = () => {
   return (
     <div className="py-0 bg-neutral-light min-h-screen bg-gray-50">
       <div
-        className={`${!isMobile && "sticky"} top-[72px] z-40 bg-gray-50 transition-shadow ${scrolled ? "shadow-sm border-b border-gray-200" : ""}`}
+        className={`sticky top-[60px] z-40 bg-gray-50 transition-shadow ${
+          scrolled ? "shadow-sm border-b border-gray-200" : ""
+        }`}
       >
         <div className="container mx-auto px-3 sm:px-4 py-4">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">
@@ -120,11 +123,23 @@ const Menu = () => {
             </form>
           </div>
 
-          <div className="flex flex-wrap gap-2 mt-4">
-            {tabs.map((tab) => (
-              <button
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className={`mt-4 ${
+              isMobile
+                ? "flex gap-2 overflow-x-auto scrollbar-hide snap-x snap-mandatory px-1 -mx-1"
+                : "flex flex-wrap gap-2"
+            }`}
+          >
+            {tabs.map((tab, index) => (
+              <motion.button
                 key={tab.id}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05, duration: 0.3 }}
+                className={`snap-start shrink-0 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
                   filter === tab.id
                     ? "bg-orange-500 text-white"
                     : "bg-white text-gray-700 hover:bg-orange-100"
@@ -132,9 +147,9 @@ const Menu = () => {
                 onClick={() => setFilter(tab.id)}
               >
                 {tab.name}
-              </button>
+              </motion.button>
             ))}
-          </div>
+          </motion.div>
         </div>
       </div>
 
@@ -178,7 +193,6 @@ const Menu = () => {
         )}
       </div>
 
-      {/* ✅ Nutrition Modal */}
       {nutritionModalOpen && (
         <NutritionModal
           meal={mealData}
