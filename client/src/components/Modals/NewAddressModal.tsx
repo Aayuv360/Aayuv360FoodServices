@@ -42,7 +42,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 }) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const [currentStep, setCurrentStep] = useState<'map' | 'form'>('map');
+  const [currentStep, setCurrentStep] = useState<"map" | "form">("map");
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
@@ -52,13 +52,18 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   const [addressType, setAddressType] = useState(
     editingAddress?.name || "Home",
   );
-  
-  const { coords, isLoading: geoLoading, getCurrentPosition, error: geoError } = useGeolocation();
-  const { 
-    isWithinServiceArea, 
-    checkServiceAvailability, 
+
+  const {
+    coords,
+    isLoading: geoLoading,
+    getCurrentPosition,
+    error: geoError,
+  } = useGeolocation();
+  const {
+    isWithinServiceArea,
+    checkServiceAvailability,
     getServiceMessage,
-    isLoading: serviceLoading 
+    isLoading: serviceLoading,
   } = useServiceArea();
 
   const [addressDetails, setAddressDetails] = useState({
@@ -83,7 +88,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         setMarkerPosition(loc);
         checkServiceAvailability(loc);
 
-        // Reverse geocode to get formatted address
         const geocoder = new window.google.maps.Geocoder();
         geocoder.geocode({ location: loc }, (results, status) => {
           if (status === "OK" && results?.[0]) {
@@ -96,7 +100,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         });
         setAddressType(editingAddress.name || "Home");
       } else {
-        // Automatically get current location for new addresses
         getCurrentPosition();
       }
     };
@@ -104,7 +107,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     initializeFromEditingAddress();
   }, [isLoaded, editingAddress, getCurrentPosition, checkServiceAvailability]);
 
-  // Update map when geolocation coords are available
   useEffect(() => {
     if (coords && !editingAddress) {
       setMapCenter(coords);
@@ -118,16 +120,15 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     if (!addressModalOpen) {
       setLocationSearch("");
       fetchSuggestions("");
-      setCurrentStep('map'); // Reset to first step when modal closes
+      setCurrentStep("map");
     }
   }, [addressModalOpen]);
 
   useEffect(() => {
-    // For desktop, always show both map and form
     if (!isMobile) {
-      setCurrentStep('form');
+      setCurrentStep("form");
     } else {
-      setCurrentStep('map');
+      setCurrentStep("map");
     }
   }, [isMobile]);
 
@@ -210,29 +211,27 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       }
     });
   };
-  
+
   if (!isLoaded) return <div>Loading map...</div>;
-  
+
   const handleGetCurrentLocation = () => {
     getCurrentPosition();
   };
 
   const handleConfirmLocation = () => {
     if (isMobile && isWithinServiceArea) {
-      setCurrentStep('form');
+      setCurrentStep("form");
     }
   };
 
   const handleBackToMap = () => {
     if (isMobile) {
-      setCurrentStep('map');
+      setCurrentStep("map");
     }
   };
 
-  // Mobile Step 1: Map Selection
   const renderMapStep = () => (
     <div className="flex flex-col h-full">
-      {/* Header with close button */}
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div className="flex items-center gap-3">
           <Button
@@ -254,7 +253,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         >
           {geoLoading ? (
             <>
-              <Loader2 className="h-4 w-4 animate-spin" /> 
+              <Loader2 className="h-4 w-4 animate-spin" />
             </>
           ) : (
             <>
@@ -264,102 +263,106 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         </Button>
       </div>
 
-      {/* Content */}
       <div className="flex-1 p-4 space-y-4 overflow-y-auto">
         <div className="relative">
-        <Input
-          className="w-full"
-          placeholder="Search for your location"
-          value={locationSearch}
-          onChange={(e) => {
-            const val = e.target.value;
-            setLocationSearch(val);
-            fetchSuggestions(val);
-          }}
-        />
+          <Input
+            className="w-full"
+            placeholder="Search for your location"
+            value={locationSearch}
+            onChange={(e) => {
+              const val = e.target.value;
+              setLocationSearch(val);
+              fetchSuggestions(val);
+            }}
+          />
 
-        {locationSearch !== "" && suggestions.length > 0 && (
-          <div className="absolute z-50 w-full bg-white shadow-md border rounded-md max-h-[200px] overflow-y-auto mt-1">
-            {suggestions.map((suggestion) => (
-              <div
-                key={suggestion.place_id}
-                className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-                onClick={() =>
-                  handleSuggestionClick(
-                    suggestion.place_id,
-                    suggestion.description,
-                  )
-                }
-              >
-                {suggestion.description}
-              </div>
-            ))}
-          </div>
-        )}
+          {locationSearch !== "" && suggestions.length > 0 && (
+            <div className="absolute z-50 w-full bg-white shadow-md border rounded-md max-h-[200px] overflow-y-auto mt-1">
+              {suggestions.map((suggestion) => (
+                <div
+                  key={suggestion.place_id}
+                  className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                  onClick={() =>
+                    handleSuggestionClick(
+                      suggestion.place_id,
+                      suggestion.description,
+                    )
+                  }
+                >
+                  {suggestion.description}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="w-full h-[300px] rounded-lg overflow-hidden">
-        <GoogleMap
-          mapContainerStyle={{ width: "100%", height: "100%" }}
-          center={mapCenter}
-          zoom={18}
-          options={{
-            clickableIcons: false,
-            gestureHandling: "greedy",
-            mapTypeControl: false,
-            streetViewControl: false,
-          }}
-        >
-          <Marker
-            position={markerPosition}
-            draggable
-            onDragEnd={(e) => {
-              const latLng = e.latLng;
-              if (!latLng) return;
-              const newLoc = {
-                lat: latLng.lat(),
-                lng: latLng.lng(),
-              };
-              setMarkerPosition(newLoc);
-              setMapCenter(newLoc);
-              reverseGeocode(newLoc);
-              checkServiceAvailability(newLoc);
+          <GoogleMap
+            mapContainerStyle={{ width: "100%", height: "100%" }}
+            center={mapCenter}
+            zoom={18}
+            options={{
+              clickableIcons: false,
+              gestureHandling: "greedy",
+              mapTypeControl: false,
+              streetViewControl: false,
             }}
-          />
-        </GoogleMap>
+          >
+            <Marker
+              position={markerPosition}
+              draggable
+              onDragEnd={(e) => {
+                const latLng = e.latLng;
+                if (!latLng) return;
+                const newLoc = {
+                  lat: latLng.lat(),
+                  lng: latLng.lng(),
+                };
+                setMarkerPosition(newLoc);
+                setMapCenter(newLoc);
+                reverseGeocode(newLoc);
+                checkServiceAvailability(newLoc);
+              }}
+            />
+          </GoogleMap>
         </div>
 
-        {/* Service availability status */}
         {(serviceLoading || geoError) && (
-        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-          <div className="flex items-center gap-2">
-            {serviceLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-            {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
-            <span className="text-sm">
-              {serviceLoading && "Checking service availability..."}
-              {geoError && geoError}
-            </span>
+          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+            <div className="flex items-center gap-2">
+              {serviceLoading && (
+                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+              )}
+              {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
+              <span className="text-sm">
+                {serviceLoading && "Checking service availability..."}
+                {geoError && geoError}
+              </span>
+            </div>
           </div>
-        </div>
         )}
-        
+
         {markerPosition !== centerHyderabad && (
-        <div className={`p-3 rounded-lg border ${
-          isWithinServiceArea 
-            ? 'bg-green-50 border-green-200 text-green-800' 
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
-          <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{getServiceMessage()}</span>
+          <div
+            className={`p-3 rounded-lg border ${
+              isWithinServiceArea
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-red-50 border-red-200 text-red-800"
+            }`}
+          >
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              <span className="text-sm">{getServiceMessage()}</span>
+            </div>
           </div>
-        </div>
         )}
 
         <div className="flex justify-end pt-4">
           <Button
             onClick={handleConfirmLocation}
-            disabled={!isWithinServiceArea || markerPosition === centerHyderabad}
+            disabled={
+              !isWithinServiceArea || markerPosition === centerHyderabad
+            }
             className="w-full"
           >
             Confirm Location
@@ -369,10 +372,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     </div>
   );
 
-  // Mobile Step 2: Form with Selected Address
   const renderFormStep = () => (
     <div className="flex flex-col h-full">
-      {/* Header with back button */}
       <div className="flex items-center justify-between p-4 border-b bg-white">
         <div className="flex items-center gap-3">
           <Button
@@ -399,119 +400,115 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         </Button>
       </div>
 
-      {/* Content */}
       <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-
-        {/* Show selected location on mobile */}
         <div className="p-3 bg-gray-50 rounded-lg border">
           <div className="text-sm font-medium mb-1">Selected Location:</div>
           <div className="text-sm text-gray-600">{locationSearch}</div>
           {markerPosition && (
             <div className="text-xs text-gray-500 mt-1">
-              Lat: {markerPosition.lat.toFixed(4)}, Lng: {markerPosition.lng.toFixed(4)}
+              Lat: {markerPosition.lat.toFixed(4)}, Lng:{" "}
+              {markerPosition.lng.toFixed(4)}
             </div>
           )}
         </div>
 
-      <form
-        id="address-form"
-        onSubmit={(e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target as HTMLFormElement);
-          const addressData = {
-            name: formData.get("addressName") as string,
-            phone: formData.get("phone") as string,
-            addressLine1: formData.get("addressLine1") as string,
-            addressLine2:
-              (formData.get("addressLine2") as string) || undefined,
-            isDefault: Boolean(formData.get("isDefault")),
-            userName: formData.get("userName") as string,
-            latitude: markerPosition.lat,
-            longitude: markerPosition.lng,
-            nearbyLandmark: formData.get("nearbyLandmark") as string,
-          };
+        <form
+          id="address-form"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target as HTMLFormElement);
+            const addressData = {
+              name: formData.get("addressName") as string,
+              phone: formData.get("phone") as string,
+              addressLine1: formData.get("addressLine1") as string,
+              addressLine2:
+                (formData.get("addressLine2") as string) || undefined,
+              isDefault: Boolean(formData.get("isDefault")),
+              userName: formData.get("userName") as string,
+              latitude: markerPosition.lat,
+              longitude: markerPosition.lng,
+              nearbyLandmark: formData.get("nearbyLandmark") as string,
+            };
 
-          handleAddressFormSubmit(addressData);
-        }}
-        className="space-y-4"
-      >
-        <div className="flex flex-wrap gap-2">
-          {["Home", "Office", "Hotel", "Others"].map((label) => (
-            <Button
-              key={label}
-              type="button"
-              className={`w-full sm:w-auto rounded-2xl ${addressType !== label && "bg-white hover:text-gray-700 hover:bg-orange-100"}`}
-              variant={addressType === label ? "default" : "outline"}
-              onClick={() => setAddressType(label)}
-            >
-              {label}
-            </Button>
-          ))}
-          <input type="hidden" name="addressName" value={addressType} />
-        </div>
+            handleAddressFormSubmit(addressData);
+          }}
+          className="space-y-4"
+        >
+          <div className="flex flex-wrap gap-2">
+            {["Home", "Office", "Hotel", "Others"].map((label) => (
+              <Button
+                key={label}
+                type="button"
+                className={`w-full sm:w-auto rounded-2xl ${addressType !== label && "bg-white hover:text-gray-700 hover:bg-orange-100"}`}
+                variant={addressType === label ? "default" : "outline"}
+                onClick={() => setAddressType(label)}
+              >
+                {label}
+              </Button>
+            ))}
+            <input type="hidden" name="addressName" value={addressType} />
+          </div>
 
-        <div>
-          <Label>Flat No. / House / Building name</Label>
-          <Input
-            className="w-full"
-            name="addressLine1"
-            placeholder="Flat No./House/Building name"
-            defaultValue={editingAddress?.addressLine1 || ""}
-            required
-          />
-        </div>
+          <div>
+            <Label>Flat No. / House / Building name</Label>
+            <Input
+              className="w-full"
+              name="addressLine1"
+              placeholder="Flat No./House/Building name"
+              defaultValue={editingAddress?.addressLine1 || ""}
+              required
+            />
+          </div>
 
-        <div>
-          <Label>Area / Locality</Label>
-          <Input
-            className="w-full"
-            name="addressLine2"
-            placeholder="Landmark, Area, Locality, etc."
-            value={addressDetails.landmark}
-            onChange={(e) =>
-              setAddressDetails((prev) => ({
-                ...prev,
-                landmark: e.target.value,
-              }))
-            }
-            readOnly
-          />
-        </div>
-        <div>
-          <Label>Near by landmark</Label>
-          <Input
-            className="w-full"
-            name="nearbyLandmark"
-            placeholder="Near by landmark"
-            defaultValue={editingAddress?.nearbyLandmark || ""}
-          />
-        </div>
+          <div>
+            <Label>Area / Locality</Label>
+            <Input
+              className="w-full"
+              name="addressLine2"
+              placeholder="Landmark, Area, Locality, etc."
+              value={addressDetails.landmark}
+              onChange={(e) =>
+                setAddressDetails((prev) => ({
+                  ...prev,
+                  landmark: e.target.value,
+                }))
+              }
+              readOnly
+            />
+          </div>
+          <div>
+            <Label>Near by landmark</Label>
+            <Input
+              className="w-full"
+              name="nearbyLandmark"
+              placeholder="Near by landmark"
+              defaultValue={editingAddress?.nearbyLandmark || ""}
+            />
+          </div>
 
-        <div className="text-primary">
-          Provide your information for delivery
-        </div>
-        <div className="!mt-1">
-          <Label>Name</Label>
-          <Input
-            className="w-full"
-            name="userName"
-            placeholder="Your name"
-            defaultValue={
-              editingAddress?.userName || user?.username || ""
-            }
-            required
-          />
-        </div>
-        <div>
-          <Label>Phone Number</Label>
-          <Input
-            className="w-full"
-            name="phone"
-            placeholder="10-digit mobile number"
-            defaultValue={editingAddress?.phone || ""}
-            required
-          />
-        </div>
+          <div className="text-primary">
+            Provide your information for delivery
+          </div>
+          <div className="!mt-1">
+            <Label>Name</Label>
+            <Input
+              className="w-full"
+              name="userName"
+              placeholder="Your name"
+              defaultValue={editingAddress?.userName || user?.username || ""}
+              required
+            />
+          </div>
+          <div>
+            <Label>Phone Number</Label>
+            <Input
+              className="w-full"
+              name="phone"
+              placeholder="10-digit mobile number"
+              defaultValue={editingAddress?.phone || ""}
+              required
+            />
+          </div>
 
           <div className="flex justify-end pt-4">
             <Button
@@ -519,7 +516,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
               className="w-full"
               disabled={!isWithinServiceArea}
             >
-              {addressModalAction === "addressEdit" ? "Update Address" : "Save Address"}
+              {addressModalAction === "addressEdit"
+                ? "Update Address"
+                : "Save Address"}
             </Button>
           </div>
         </form>
@@ -527,7 +526,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     </div>
   );
 
-  // Desktop: Show both map and form side by side
   const renderDesktopLayout = () => (
     <div className="space-y-4">
       <div className="flex gap-2 items-center">
@@ -557,7 +555,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Map + Search Section */}
         <div className="relative space-y-2 relative z-[1]">
           <div className="relative">
             <Input
@@ -624,11 +621,12 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         </div>
 
         <div className="space-y-4">
-          {/* Service availability status */}
           {(serviceLoading || geoError) && (
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
               <div className="flex items-center gap-2">
-                {serviceLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+                {serviceLoading && (
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                )}
                 {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
                 <span className="text-sm">
                   {serviceLoading && "Checking service availability..."}
@@ -637,13 +635,15 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
               </div>
             </div>
           )}
-          
+
           {markerPosition !== centerHyderabad && (
-            <div className={`p-3 rounded-lg border ${
-              isWithinServiceArea 
-                ? 'bg-green-50 border-green-200 text-green-800' 
-                : 'bg-red-50 border-red-200 text-red-800'
-            }`}>
+            <div
+              className={`p-3 rounded-lg border ${
+                isWithinServiceArea
+                  ? "bg-green-50 border-green-200 text-green-800"
+                  : "bg-red-50 border-red-200 text-red-800"
+              }`}
+            >
               <div className="flex items-start gap-2">
                 <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <span className="text-sm">{getServiceMessage()}</span>
@@ -654,7 +654,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           {!isWithinServiceArea && markerPosition !== centerHyderabad ? (
             <div className="flex items-center justify-center h-32 bg-yellow-50 rounded-lg border border-yellow-200">
               <p className="text-yellow-800 text-center px-4">
-                We're not serving this location yet, but we're working on expanding our coverage area.
+                We're not serving this location yet, but we're working on
+                expanding our coverage area.
               </p>
             </div>
           ) : (
@@ -766,11 +767,10 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                 >
                   Cancel
                 </Button>
-                <Button
-                  type="submit"
-                  disabled={!isWithinServiceArea}
-                >
-                  {addressModalAction === "addressEdit" ? "Update Address" : "Save Address"}
+                <Button type="submit" disabled={!isWithinServiceArea}>
+                  {addressModalAction === "addressEdit"
+                    ? "Update Address"
+                    : "Save Address"}
                 </Button>
               </DialogFooter>
             </form>
@@ -780,17 +780,15 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     </div>
   );
 
-  // Mobile: Full page experience
   if (isMobile && addressModalOpen) {
     return (
       <div className="fixed inset-0 bg-white z-50 flex flex-col">
-        {currentStep === 'map' && renderMapStep()}
-        {currentStep === 'form' && renderFormStep()}
+        {currentStep === "map" && renderMapStep()}
+        {currentStep === "form" && renderFormStep()}
       </div>
     );
   }
 
-  // Desktop: Modal experience
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
       <DialogContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh] max-h-[70vh] overflow-y-auto">
