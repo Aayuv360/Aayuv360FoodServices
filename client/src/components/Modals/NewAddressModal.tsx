@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useServiceArea } from "@/hooks/use-service-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const libraries = ["places"];
 
@@ -40,6 +41,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   addressModalAction,
 }) => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
+  const [currentStep, setCurrentStep] = useState<'map' | 'form'>('map');
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
@@ -110,6 +113,23 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       checkServiceAvailability(coords);
     }
   }, [coords, editingAddress, checkServiceAvailability]);
+
+  useEffect(() => {
+    if (!addressModalOpen) {
+      setLocationSearch("");
+      fetchSuggestions("");
+      setCurrentStep('map'); // Reset to first step when modal closes
+    }
+  }, [addressModalOpen]);
+
+  useEffect(() => {
+    // For desktop, always show both map and form
+    if (!isMobile) {
+      setCurrentStep('form');
+    } else {
+      setCurrentStep('map');
+    }
+  }, [isMobile]);
 
   const reverseGeocode = (location: { lat: number; lng: number }) => {
     if (!window.google) return;
@@ -191,297 +211,556 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     });
   };
   
-  useEffect(() => {
-    if (!addressModalOpen) {
-      setLocationSearch("");
-      fetchSuggestions("");
-    }
-  }, [addressModalOpen]);
-  
   if (!isLoaded) return <div>Loading map...</div>;
-  
-  function haversineDistance(
-    loc1: { lat: number; lng: number },
-    loc2: { lat: number; lng: number },
-  ): number {
-    const toRad = (x: number) => (x * Math.PI) / 180;
-    const R = 6371; // Earth radius in km
-
-    const dLat = toRad(loc2.lat - loc1.lat);
-    const dLng = toRad(loc2.lng - loc1.lng);
-    const a =
-      Math.sin(dLat / 2) ** 2 +
-      Math.cos(toRad(loc1.lat)) *
-        Math.cos(toRad(loc2.lat)) *
-        Math.sin(dLng / 2) ** 2;
-
-    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
-  }
   
   const handleGetCurrentLocation = () => {
     getCurrentPosition();
   };
 
-  return (
-    <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
-      <DialogContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh] max-h-[70vh] overflow-y-auto">
-        <div className="flex gap-2 items-center">
-          <div className="font-bold text-xl">
-            {addressModalAction === "addressEdit"
-              ? "Edit Delivery Address"
-              : "Add New Delivery Address"}
-          </div>
+  const handleConfirmLocation = () => {
+    if (isMobile && isWithinServiceArea) {
+      setCurrentStep('form');
+    }
+  };
 
+  const handleBackToMap = () => {
+    if (isMobile) {
+      setCurrentStep('map');
+    }
+  };
+
+  // Mobile Step 1: Map Selection
+  const renderMapStep = () => (
+    <div className="space-y-4">
+      <div className="flex gap-2 items-center justify-between">
+        <div className="font-bold text-xl">Select Location</div>
+        <Button
+          type="button"
+          variant="link"
+          onClick={handleGetCurrentLocation}
+          className="text-sm"
+          disabled={geoLoading}
+        >
+          {geoLoading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" /> Getting location...
+            </>
+          ) : (
+            <>
+              <LocateFixed className="h-5 w-5" /> Use Current Location
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="relative">
+        <Input
+          className="w-full"
+          placeholder="Search for your location"
+          value={locationSearch}
+          onChange={(e) => {
+            const val = e.target.value;
+            setLocationSearch(val);
+            fetchSuggestions(val);
+          }}
+        />
+
+        {locationSearch !== "" && suggestions.length > 0 && (
+          <div className="absolute z-50 w-full bg-white shadow-md border rounded-md max-h-[200px] overflow-y-auto mt-1">
+            {suggestions.map((suggestion) => (
+              <div
+                key={suggestion.place_id}
+                className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                onClick={() =>
+                  handleSuggestionClick(
+                    suggestion.place_id,
+                    suggestion.description,
+                  )
+                }
+              >
+                {suggestion.description}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="w-full h-[300px] rounded-lg overflow-hidden">
+        <GoogleMap
+          mapContainerStyle={{ width: "100%", height: "100%" }}
+          center={mapCenter}
+          zoom={18}
+          options={{
+            clickableIcons: false,
+            gestureHandling: "greedy",
+            mapTypeControl: false,
+            streetViewControl: false,
+          }}
+        >
+          <Marker
+            position={markerPosition}
+            draggable
+            onDragEnd={(e) => {
+              const latLng = e.latLng;
+              if (!latLng) return;
+              const newLoc = {
+                lat: latLng.lat(),
+                lng: latLng.lng(),
+              };
+              setMarkerPosition(newLoc);
+              setMapCenter(newLoc);
+              reverseGeocode(newLoc);
+              checkServiceAvailability(newLoc);
+            }}
+          />
+        </GoogleMap>
+      </div>
+
+      {/* Service availability status */}
+      {(serviceLoading || geoError) && (
+        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+          <div className="flex items-center gap-2">
+            {serviceLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+            {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
+            <span className="text-sm">
+              {serviceLoading && "Checking service availability..."}
+              {geoError && geoError}
+            </span>
+          </div>
+        </div>
+      )}
+      
+      {markerPosition !== centerHyderabad && (
+        <div className={`p-3 rounded-lg border ${
+          isWithinServiceArea 
+            ? 'bg-green-50 border-green-200 text-green-800' 
+            : 'bg-red-50 border-red-200 text-red-800'
+        }`}>
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span className="text-sm">{getServiceMessage()}</span>
+          </div>
+        </div>
+      )}
+
+      <div className="flex justify-end pt-4">
+        <Button
+          onClick={handleConfirmLocation}
+          disabled={!isWithinServiceArea || markerPosition === centerHyderabad}
+          className="w-full"
+        >
+          Confirm Location
+        </Button>
+      </div>
+    </div>
+  );
+
+  // Mobile Step 2: Form with Selected Address
+  const renderFormStep = () => (
+    <div className="space-y-4">
+      <div className="flex gap-2 items-center justify-between">
+        <div className="font-bold text-xl">
+          {addressModalAction === "addressEdit"
+            ? "Edit Delivery Address"
+            : "Add New Delivery Address"}
+        </div>
+        {isMobile && (
           <Button
             type="button"
-            variant="link"
-            onClick={handleGetCurrentLocation}
-            className="text-sm"
-            disabled={geoLoading}
+            variant="outline"
+            size="sm"
+            onClick={handleBackToMap}
           >
-            {geoLoading ? (
-              <>
-                <Loader2 className="h-5 w-5 animate-spin" /> Getting location...
-              </>
-            ) : (
-              <>
-                <LocateFixed className="h-5 w-5" /> Use Current Location
-              </>
-            )}
+            Change Location
+          </Button>
+        )}
+      </div>
+
+      {/* Show selected location on mobile */}
+      {isMobile && (
+        <div className="p-3 bg-gray-50 rounded-lg border">
+          <div className="text-sm font-medium mb-1">Selected Location:</div>
+          <div className="text-sm text-gray-600">{locationSearch}</div>
+          {markerPosition && (
+            <div className="text-xs text-gray-500 mt-1">
+              Lat: {markerPosition.lat.toFixed(4)}, Lng: {markerPosition.lng.toFixed(4)}
+            </div>
+          )}
+        </div>
+      )}
+
+      <form
+        id="address-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target as HTMLFormElement);
+          const addressData = {
+            name: formData.get("addressName") as string,
+            phone: formData.get("phone") as string,
+            addressLine1: formData.get("addressLine1") as string,
+            addressLine2:
+              (formData.get("addressLine2") as string) || undefined,
+            isDefault: Boolean(formData.get("isDefault")),
+            userName: formData.get("userName") as string,
+            latitude: markerPosition.lat,
+            longitude: markerPosition.lng,
+            nearbyLandmark: formData.get("nearbyLandmark") as string,
+          };
+
+          handleAddressFormSubmit(addressData);
+        }}
+        className="space-y-4"
+      >
+        <div className="flex flex-wrap gap-2">
+          {["Home", "Office", "Hotel", "Others"].map((label) => (
+            <Button
+              key={label}
+              type="button"
+              className={`w-full sm:w-auto rounded-2xl ${addressType !== label && "bg-white hover:text-gray-700 hover:bg-orange-100"}`}
+              variant={addressType === label ? "default" : "outline"}
+              onClick={() => setAddressType(label)}
+            >
+              {label}
+            </Button>
+          ))}
+          <input type="hidden" name="addressName" value={addressType} />
+        </div>
+
+        <div>
+          <Label>Flat No. / House / Building name</Label>
+          <Input
+            className="w-full"
+            name="addressLine1"
+            placeholder="Flat No./House/Building name"
+            defaultValue={editingAddress?.addressLine1 || ""}
+            required
+          />
+        </div>
+
+        <div>
+          <Label>Area / Locality</Label>
+          <Input
+            className="w-full"
+            name="addressLine2"
+            placeholder="Landmark, Area, Locality, etc."
+            value={addressDetails.landmark}
+            onChange={(e) =>
+              setAddressDetails((prev) => ({
+                ...prev,
+                landmark: e.target.value,
+              }))
+            }
+            readOnly
+          />
+        </div>
+        <div>
+          <Label>Near by landmark</Label>
+          <Input
+            className="w-full"
+            name="nearbyLandmark"
+            placeholder="Near by landmark"
+            defaultValue={editingAddress?.nearbyLandmark || ""}
+          />
+        </div>
+
+        <div className="text-primary">
+          Provide your information for delivery
+        </div>
+        <div className="!mt-1">
+          <Label>Name</Label>
+          <Input
+            className="w-full"
+            name="userName"
+            placeholder="Your name"
+            defaultValue={
+              editingAddress?.userName || user?.username || ""
+            }
+            required
+          />
+        </div>
+        <div>
+          <Label>Phone Number</Label>
+          <Input
+            className="w-full"
+            name="phone"
+            placeholder="10-digit mobile number"
+            defaultValue={editingAddress?.phone || ""}
+            required
+          />
+        </div>
+
+        <div className="flex justify-end pt-4">
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={!isWithinServiceArea}
+          >
+            {addressModalAction === "addressEdit" ? "Update Address" : "Save Address"}
           </Button>
         </div>
+      </form>
+    </div>
+  );
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Map + Search Section */}
-          <div className="relative space-y-2 relative z-[1]">
-            <div className="relative">
-              <Input
-                className="w-full"
-                placeholder="Search for your location"
-                value={locationSearch}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setLocationSearch(val);
-                  fetchSuggestions(val);
+  // Desktop: Show both map and form side by side
+  const renderDesktopLayout = () => (
+    <div className="space-y-4">
+      <div className="flex gap-2 items-center">
+        <div className="font-bold text-xl">
+          {addressModalAction === "addressEdit"
+            ? "Edit Delivery Address"
+            : "Add New Delivery Address"}
+        </div>
+
+        <Button
+          type="button"
+          variant="link"
+          onClick={handleGetCurrentLocation}
+          className="text-sm"
+          disabled={geoLoading}
+        >
+          {geoLoading ? (
+            <>
+              <Loader2 className="h-5 w-5 animate-spin" /> Getting location...
+            </>
+          ) : (
+            <>
+              <LocateFixed className="h-5 w-5" /> Use Current Location
+            </>
+          )}
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Map + Search Section */}
+        <div className="relative space-y-2 relative z-[1]">
+          <div className="relative">
+            <Input
+              className="w-full"
+              placeholder="Search for your location"
+              value={locationSearch}
+              onChange={(e) => {
+                const val = e.target.value;
+                setLocationSearch(val);
+                fetchSuggestions(val);
+              }}
+            />
+
+            {locationSearch !== "" && suggestions.length > 0 && (
+              <div className="absolute z-50 w-full bg-white shadow-md border rounded-md max-h-[200px] overflow-y-auto mt-1">
+                {suggestions.map((suggestion) => (
+                  <div
+                    key={suggestion.place_id}
+                    className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    onClick={() =>
+                      handleSuggestionClick(
+                        suggestion.place_id,
+                        suggestion.description,
+                      )
+                    }
+                  >
+                    {suggestion.description}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px]">
+            <GoogleMap
+              mapContainerStyle={{ width: "100%", height: "100%" }}
+              center={mapCenter}
+              zoom={18}
+              options={{
+                clickableIcons: false,
+                gestureHandling: "greedy",
+                mapTypeControl: false,
+                streetViewControl: false,
+              }}
+            >
+              <Marker
+                position={markerPosition}
+                draggable
+                onDragEnd={(e) => {
+                  const latLng = e.latLng;
+                  if (!latLng) return;
+                  const newLoc = {
+                    lat: latLng.lat(),
+                    lng: latLng.lng(),
+                  };
+                  setMarkerPosition(newLoc);
+                  setMapCenter(newLoc);
+                  reverseGeocode(newLoc);
+                  checkServiceAvailability(newLoc);
                 }}
               />
-
-              {locationSearch !== "" && suggestions.length > 0 && (
-                <div className="absolute z-50 w-full bg-white shadow-md border rounded-md max-h-[200px] overflow-y-auto mt-1">
-                  {suggestions.map((suggestion) => (
-                    <div
-                      key={suggestion.place_id}
-                      className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-                      onClick={() =>
-                        handleSuggestionClick(
-                          suggestion.place_id,
-                          suggestion.description,
-                        )
-                      }
-                    >
-                      {suggestion.description}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px]">
-              <GoogleMap
-                mapContainerStyle={{ width: "100%", height: "100%" }}
-                center={mapCenter}
-                zoom={18}
-                options={{
-                  clickableIcons: false,
-                  gestureHandling: "greedy",
-                  mapTypeControl: false,
-                  streetViewControl: false,
-                }}
-              >
-                <Marker
-                  position={markerPosition}
-                  draggable
-                  onDragEnd={(e) => {
-                    const latLng = e.latLng;
-                    if (!latLng) return;
-                    const newLoc = {
-                      lat: latLng.lat(),
-                      lng: latLng.lng(),
-                    };
-                    setMarkerPosition(newLoc);
-                    setMapCenter(newLoc);
-                    reverseGeocode(newLoc);
-                    checkServiceAvailability(newLoc);
-                  }}
-                />
-              </GoogleMap>
-            </div>
-            <div className="w-full absolute bottom-0 bg-white text-white p-8"></div>
-          </div>
-
-          <div className="space-y-4">
-            {/* Service availability status */}
-            {(serviceLoading || geoError) && (
-              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-                <div className="flex items-center gap-2">
-                  {serviceLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
-                  {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
-                  <span className="text-sm">
-                    {serviceLoading && "Checking service availability..."}
-                    {geoError && geoError}
-                  </span>
-                </div>
-              </div>
-            )}
-            
-            {markerPosition !== centerHyderabad && (
-              <div className={`p-3 rounded-lg border ${
-                isWithinServiceArea 
-                  ? 'bg-green-50 border-green-200 text-green-800' 
-                  : 'bg-red-50 border-red-200 text-red-800'
-              }`}>
-                <div className="flex items-start gap-2">
-                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <span className="text-sm">{getServiceMessage()}</span>
-                </div>
-              </div>
-            )}
-
-            {!isWithinServiceArea && markerPosition !== centerHyderabad ? (
-              <div className="flex items-center justify-center h-32 bg-yellow-50 rounded-lg border border-yellow-200">
-                <p className="text-yellow-800 text-center px-4">
-                  We're not serving this location yet, but we're working on expanding our coverage area.
-                </p>
-              </div>
-            ) : (
-              <form
-                id="address-form"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.target as HTMLFormElement);
-                  const addressData = {
-                    name: formData.get("addressName") as string,
-                    phone: formData.get("phone") as string,
-                    addressLine1: formData.get("addressLine1") as string,
-                    addressLine2:
-                      (formData.get("addressLine2") as string) || undefined,
-                    isDefault: Boolean(formData.get("isDefault")),
-                    userName: formData.get("userName") as string,
-                    latitude: markerPosition.lat,
-                    longitude: markerPosition.lng,
-                    nearbyLandmark: formData.get("nearbyLandmark") as string,
-                  };
-
-                  handleAddressFormSubmit(addressData);
-                }}
-                className="space-y-4"
-              >
-                <div className="flex flex-wrap gap-2">
-                  {["Home", "Office", "Hotel", "Others"].map((label) => (
-                    <Button
-                      key={label}
-                      type="button"
-                      className={`w-full sm:w-auto rounded-2xl ${addressType !== label && "bg-white hover:text-gray-700 hover:bg-orange-100"}`}
-                      variant={addressType === label ? "default" : "outline"}
-                      onClick={() => setAddressType(label)}
-                    >
-                      {label}
-                    </Button>
-                  ))}
-                  <input type="hidden" name="addressName" value={addressType} />
-                </div>
-
-                <div>
-                  <Label>Flat No. / House / Building name</Label>
-                  <Input
-                    className="w-full"
-                    name="addressLine1"
-                    placeholder="Flat No./House/Building name"
-                    defaultValue={editingAddress?.addressLine1 || ""}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label>Area / Locality</Label>
-                  <Input
-                    className="w-full"
-                    name="addressLine2"
-                    placeholder="Landmark, Area, Locality, etc."
-                    value={addressDetails.landmark}
-                    onChange={(e) =>
-                      setAddressDetails((prev) => ({
-                        ...prev,
-                        landmark: e.target.value,
-                      }))
-                    }
-                    readOnly
-                  />
-                </div>
-                <div>
-                  <Label>Near by landmark</Label>
-                  <Input
-                    className="w-full"
-                    name="nearbyLandmark"
-                    placeholder="Near by landmark"
-                    defaultValue={editingAddress?.nearbyLandmark || ""}
-                  />
-                </div>
-
-                <div className="text-primary">
-                  Provide your information for delivery
-                </div>
-                <div className="!mt-1">
-                  <Label>Name</Label>
-                  <Input
-                    className="w-full"
-                    name="userName"
-                    placeholder="Your name"
-                    defaultValue={
-                      editingAddress?.userName || user?.username || ""
-                    }
-                    required
-                  />
-                </div>
-                <div>
-                  <Label>Phone Number</Label>
-                  <Input
-                    className="w-full"
-                    name="phone"
-                    placeholder="10-digit mobile number"
-                    defaultValue={editingAddress?.phone || ""}
-                    required
-                  />
-                </div>
-
-                <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full sm:w-auto"
-                    onClick={() => setAddressModalOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    className="w-full sm:w-auto"
-                    disabled={!isWithinServiceArea || serviceLoading || geoLoading}
-                  >
-                    {serviceLoading || geoLoading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Checking...
-                      </>
-                    ) : (
-                      'Save Address'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            )}
+            </GoogleMap>
           </div>
         </div>
+
+        <div className="space-y-4">
+          {/* Service availability status */}
+          {(serviceLoading || geoError) && (
+            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
+              <div className="flex items-center gap-2">
+                {serviceLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
+                {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
+                <span className="text-sm">
+                  {serviceLoading && "Checking service availability..."}
+                  {geoError && geoError}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {markerPosition !== centerHyderabad && (
+            <div className={`p-3 rounded-lg border ${
+              isWithinServiceArea 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <span className="text-sm">{getServiceMessage()}</span>
+              </div>
+            </div>
+          )}
+
+          {!isWithinServiceArea && markerPosition !== centerHyderabad ? (
+            <div className="flex items-center justify-center h-32 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-yellow-800 text-center px-4">
+                We're not serving this location yet, but we're working on expanding our coverage area.
+              </p>
+            </div>
+          ) : (
+            <form
+              id="address-form"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target as HTMLFormElement);
+                const addressData = {
+                  name: formData.get("addressName") as string,
+                  phone: formData.get("phone") as string,
+                  addressLine1: formData.get("addressLine1") as string,
+                  addressLine2:
+                    (formData.get("addressLine2") as string) || undefined,
+                  isDefault: Boolean(formData.get("isDefault")),
+                  userName: formData.get("userName") as string,
+                  latitude: markerPosition.lat,
+                  longitude: markerPosition.lng,
+                  nearbyLandmark: formData.get("nearbyLandmark") as string,
+                };
+
+                handleAddressFormSubmit(addressData);
+              }}
+              className="space-y-4"
+            >
+              <div className="flex flex-wrap gap-2">
+                {["Home", "Office", "Hotel", "Others"].map((label) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    className={`w-full sm:w-auto rounded-2xl ${addressType !== label && "bg-white hover:text-gray-700 hover:bg-orange-100"}`}
+                    variant={addressType === label ? "default" : "outline"}
+                    onClick={() => setAddressType(label)}
+                  >
+                    {label}
+                  </Button>
+                ))}
+                <input type="hidden" name="addressName" value={addressType} />
+              </div>
+
+              <div>
+                <Label>Flat No. / House / Building name</Label>
+                <Input
+                  className="w-full"
+                  name="addressLine1"
+                  placeholder="Flat No./House/Building name"
+                  defaultValue={editingAddress?.addressLine1 || ""}
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>Area / Locality</Label>
+                <Input
+                  className="w-full"
+                  name="addressLine2"
+                  placeholder="Landmark, Area, Locality, etc."
+                  value={addressDetails.landmark}
+                  onChange={(e) =>
+                    setAddressDetails((prev) => ({
+                      ...prev,
+                      landmark: e.target.value,
+                    }))
+                  }
+                  readOnly
+                />
+              </div>
+              <div>
+                <Label>Near by landmark</Label>
+                <Input
+                  className="w-full"
+                  name="nearbyLandmark"
+                  placeholder="Near by landmark"
+                  defaultValue={editingAddress?.nearbyLandmark || ""}
+                />
+              </div>
+
+              <div className="text-primary">
+                Provide your information for delivery
+              </div>
+              <div className="!mt-1">
+                <Label>Name</Label>
+                <Input
+                  className="w-full"
+                  name="userName"
+                  placeholder="Your name"
+                  defaultValue={
+                    editingAddress?.userName || user?.username || ""
+                  }
+                  required
+                />
+              </div>
+              <div>
+                <Label>Phone Number</Label>
+                <Input
+                  className="w-full"
+                  name="phone"
+                  placeholder="10-digit mobile number"
+                  defaultValue={editingAddress?.phone || ""}
+                  required
+                />
+              </div>
+
+              <DialogFooter className="flex flex-col sm:flex-row sm:justify-end gap-2 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setAddressModalOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={!isWithinServiceArea}
+                >
+                  {addressModalAction === "addressEdit" ? "Update Address" : "Save Address"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
+      <DialogContent className={`w-full ${isMobile ? 'sm:max-w-lg h-[80vh]' : 'sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh]'} max-h-[80vh] overflow-y-auto`}>
+        {isMobile && currentStep === 'map' && renderMapStep()}
+        {isMobile && currentStep === 'form' && renderFormStep()}
+        {!isMobile && renderDesktopLayout()}
       </DialogContent>
     </Dialog>
   );
