@@ -3,7 +3,7 @@ import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
-import { LocateFixed, Loader2, AlertCircle } from "lucide-react";
+import { LocateFixed, Loader2, AlertCircle, ArrowLeft, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -231,9 +231,20 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
   // Mobile Step 1: Map Selection
   const renderMapStep = () => (
-    <div className="space-y-4">
-      <div className="flex gap-2 items-center justify-between">
-        <div className="font-bold text-xl">Select Location</div>
+    <div className="flex flex-col h-full">
+      {/* Header with close button */}
+      <div className="flex items-center justify-between p-4 border-b bg-white">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setAddressModalOpen(false)}
+            className="p-2"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+          <div className="font-bold text-lg">Select Location</div>
+        </div>
         <Button
           type="button"
           variant="link"
@@ -243,17 +254,19 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         >
           {geoLoading ? (
             <>
-              <Loader2 className="h-5 w-5 animate-spin" /> Getting location...
+              <Loader2 className="h-4 w-4 animate-spin" /> 
             </>
           ) : (
             <>
-              <LocateFixed className="h-5 w-5" /> Use Current Location
+              <LocateFixed className="h-4 w-4" />
             </>
           )}
         </Button>
       </div>
 
-      <div className="relative">
+      {/* Content */}
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+        <div className="relative">
         <Input
           className="w-full"
           placeholder="Search for your location"
@@ -283,9 +296,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             ))}
           </div>
         )}
-      </div>
+        </div>
 
-      <div className="w-full h-[300px] rounded-lg overflow-hidden">
+        <div className="w-full h-[300px] rounded-lg overflow-hidden">
         <GoogleMap
           mapContainerStyle={{ width: "100%", height: "100%" }}
           center={mapCenter}
@@ -314,10 +327,10 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             }}
           />
         </GoogleMap>
-      </div>
+        </div>
 
-      {/* Service availability status */}
-      {(serviceLoading || geoError) && (
+        {/* Service availability status */}
+        {(serviceLoading || geoError) && (
         <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
           <div className="flex items-center gap-2">
             {serviceLoading && <Loader2 className="h-4 w-4 animate-spin text-blue-600" />}
@@ -328,9 +341,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             </span>
           </div>
         </div>
-      )}
-      
-      {markerPosition !== centerHyderabad && (
+        )}
+        
+        {markerPosition !== centerHyderabad && (
         <div className={`p-3 rounded-lg border ${
           isWithinServiceArea 
             ? 'bg-green-50 border-green-200 text-green-800' 
@@ -341,43 +354,55 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             <span className="text-sm">{getServiceMessage()}</span>
           </div>
         </div>
-      )}
+        )}
 
-      <div className="flex justify-end pt-4">
-        <Button
-          onClick={handleConfirmLocation}
-          disabled={!isWithinServiceArea || markerPosition === centerHyderabad}
-          className="w-full"
-        >
-          Confirm Location
-        </Button>
+        <div className="flex justify-end pt-4">
+          <Button
+            onClick={handleConfirmLocation}
+            disabled={!isWithinServiceArea || markerPosition === centerHyderabad}
+            className="w-full"
+          >
+            Confirm Location
+          </Button>
+        </div>
       </div>
     </div>
   );
 
   // Mobile Step 2: Form with Selected Address
   const renderFormStep = () => (
-    <div className="space-y-4">
-      <div className="flex gap-2 items-center justify-between">
-        <div className="font-bold text-xl">
-          {addressModalAction === "addressEdit"
-            ? "Edit Delivery Address"
-            : "Add New Delivery Address"}
-        </div>
-        {isMobile && (
+    <div className="flex flex-col h-full">
+      {/* Header with back button */}
+      <div className="flex items-center justify-between p-4 border-b bg-white">
+        <div className="flex items-center gap-3">
           <Button
-            type="button"
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={handleBackToMap}
+            className="p-2"
           >
-            Change Location
+            <ArrowLeft className="h-5 w-5" />
           </Button>
-        )}
+          <div className="font-bold text-lg">
+            {addressModalAction === "addressEdit"
+              ? "Edit Address"
+              : "Add Address"}
+          </div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setAddressModalOpen(false)}
+          className="p-2"
+        >
+          <X className="h-5 w-5" />
+        </Button>
       </div>
 
-      {/* Show selected location on mobile */}
-      {isMobile && (
+      {/* Content */}
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+
+        {/* Show selected location on mobile */}
         <div className="p-3 bg-gray-50 rounded-lg border">
           <div className="text-sm font-medium mb-1">Selected Location:</div>
           <div className="text-sm text-gray-600">{locationSearch}</div>
@@ -387,7 +412,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             </div>
           )}
         </div>
-      )}
 
       <form
         id="address-form"
@@ -489,16 +513,17 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           />
         </div>
 
-        <div className="flex justify-end pt-4">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={!isWithinServiceArea}
-          >
-            {addressModalAction === "addressEdit" ? "Update Address" : "Save Address"}
-          </Button>
-        </div>
-      </form>
+          <div className="flex justify-end pt-4">
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={!isWithinServiceArea}
+            >
+              {addressModalAction === "addressEdit" ? "Update Address" : "Save Address"}
+            </Button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 
@@ -755,12 +780,21 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     </div>
   );
 
+  // Mobile: Full page experience
+  if (isMobile && addressModalOpen) {
+    return (
+      <div className="fixed inset-0 bg-white z-50 flex flex-col">
+        {currentStep === 'map' && renderMapStep()}
+        {currentStep === 'form' && renderFormStep()}
+      </div>
+    );
+  }
+
+  // Desktop: Modal experience
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
-      <DialogContent className={`w-full ${isMobile ? 'sm:max-w-lg h-[80vh]' : 'sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh]'} max-h-[80vh] overflow-y-auto`}>
-        {isMobile && currentStep === 'map' && renderMapStep()}
-        {isMobile && currentStep === 'form' && renderFormStep()}
-        {!isMobile && renderDesktopLayout()}
+      <DialogContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh] max-h-[70vh] overflow-y-auto">
+        {renderDesktopLayout()}
       </DialogContent>
     </Dialog>
   );
