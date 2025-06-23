@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { User, ShoppingCart, Search, LogIn } from "lucide-react";
+import { LocationStatus } from "@/components/location/LocationStatus";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,8 +15,8 @@ const DesktopHeader = ({
   openAuthModal,
   toggleCart,
 }: {
-  openAuthModal: Function;
-  toggleCart: Function;
+  openAuthModal: () => void;
+  toggleCart: () => void;
 }) => {
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
@@ -31,6 +32,8 @@ const DesktopHeader = ({
       </Link>
 
       <div className="flex items-center gap-4">
+        <LocationStatus compact />
+        
         <button
           onClick={() => navigate("/menu")}
           className="hover:text-primary flex items-center gap-2 px-2 py-1 text-sm"
