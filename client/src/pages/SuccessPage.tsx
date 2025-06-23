@@ -2,10 +2,10 @@ import React, { useEffect } from "react";
 import { CheckCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 export default function SuccessPage() {
-  const [location, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     confetti({
@@ -59,7 +59,7 @@ export default function SuccessPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          onClick={() => setLocation("/profile?tab=subscriptions")}
+          onClick={() => navigate("/profile?tab=subscriptions")}
         >
           View My Subscriptions
         </motion.button>
@@ -70,7 +70,7 @@ export default function SuccessPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          onClick={() => setLocation("/")}
+          onClick={() => navigate("/")}
         >
           Return to Home
         </motion.button>
@@ -81,7 +81,7 @@ export default function SuccessPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.9 }}
-          onClick={() => setLocation("/menu")}
+          onClick={() => navigate("/menu")}
         >
           Explore Menu
         </motion.button>

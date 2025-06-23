@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import MobileMenuPage from "./MobileMenuPage";
@@ -10,7 +10,7 @@ const MobileHeader = () => {
     <>
       <div className="flex items-center justify-between">
         <Link
-          href="/"
+          to="/"
           className="flex items-center"
           onClick={() => setMobilePage(false)}
         >

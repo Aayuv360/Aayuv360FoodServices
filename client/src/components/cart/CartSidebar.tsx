@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import {
   Minus,
   Plus,
@@ -78,7 +78,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   } = useCart();
   const { user } = useAuth();
   const { toast } = useToast();
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
   const { initiatePayment } = useRazorpay();
   const selectedAddress = addresses.find(
     (addr) => addr.id === selectedAddressId,

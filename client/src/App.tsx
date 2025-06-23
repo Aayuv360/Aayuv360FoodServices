@@ -1,4 +1,4 @@
-import { Switch, Route, useLocation } from "wouter";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -35,41 +35,38 @@ function Router() {
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.1),rgba(249,115,22,0))] pointer-events-none"></div>
         <Header />
         <main className="flex-grow relative pb-20 md:pb-0">
-          <Switch>
-            <Route path="/" component={Home} />
-            <Route path="/menu" component={Menu} />
-            <Route path="/MealDetails/:mealId" component={ItemDetailsPage} />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/menu" element={<Menu />} />
+            <Route path="/MealDetails/:mealId" element={<ItemDetailsPage />} />
 
             {/* Protected routes */}
-            <ProtectedRoute path="/profile" component={Profile} />
-            <Route path="/subscription" component={SubscriptionManager} />
-            {/* <ProtectedRoute
+            <Route path="/profile" element={<ProtectedRoute component={Profile} />} />
+            <Route path="/subscription" element={<SubscriptionManager />} />
+            {/* <Route
               path="/subscription/:subscriptionId"
-              component={Subscription}
+              element={<ProtectedRoute component={Subscription} />}
             /> */}
-            <ProtectedRoute path="/checkout/:orderId" component={Checkout} />
-            <ProtectedRoute path="/payment-success" component={SuccessPage} />
-            <ProtectedRoute path="/meal-planner" component={MealPlanner} />
+            <Route path="/checkout/:orderId" element={<ProtectedRoute component={Checkout} />} />
+            <Route path="/payment-success" element={<ProtectedRoute component={SuccessPage} />} />
+            <Route path="/meal-planner" element={<ProtectedRoute component={MealPlanner} />} />
 
             {/* Admin routes */}
-            <ProtectedRoute path="/analytics" component={Analytics} adminOnly />
-            <ProtectedRoute
+            <Route path="/analytics" element={<ProtectedRoute component={Analytics} adminOnly />} />
+            <Route
               path="/order-management"
-              component={OrderManagement}
-              managerOnly
+              element={<ProtectedRoute component={OrderManagement} managerOnly />}
             />
-            <ProtectedRoute
+            <Route
               path="/admin-portal"
-              component={AdminPortal}
-              adminOnly
+              element={<ProtectedRoute component={AdminPortal} adminOnly />}
             />
-            <ProtectedRoute
+            <Route
               path="/make-admin"
-              component={MakeAdmin}
-              adminOnly
+              element={<ProtectedRoute component={MakeAdmin} adminOnly />}
             />
-            <Route component={NotFound} />
-          </Switch>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
         </main>
 
         <Footer />
@@ -86,8 +83,10 @@ function App() {
         <TooltipProvider>
           <AuthProvider>
             <CartProvider>
-              <Toaster />
-              <Router />
+              <BrowserRouter>
+                <Toaster />
+                <Router />
+              </BrowserRouter>
             </CartProvider>
           </AuthProvider>
         </TooltipProvider>

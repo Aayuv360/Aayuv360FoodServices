@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useRoute } from 'wouter';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 import { useRazorpay } from '@/hooks/use-razorpay';
 import { apiRequest } from '@/lib/queryClient';
@@ -51,21 +51,21 @@ interface Order {
 }
 
 const Checkout = () => {
-  const [match, params] = useRoute<{ orderId: string }>('/checkout/:orderId');
-  const [location, setLocation] = useLocation();
+  const { orderId } = useParams<{ orderId: string }>();
+  const navigate = useNavigate();
   const { user, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
   const { initiatePayment, isLoading: paymentLoading } = useRazorpay();
   
   // Fetch order details if we have an orderId
   const { data: order, isLoading: orderLoading } = useQuery<Order>({
-    queryKey: ['/api/orders', params?.orderId],
+    queryKey: ['/api/orders', orderId],
     queryFn: async () => {
-      if (!params?.orderId) return null;
-      const res = await apiRequest('GET', `/api/orders/${params.orderId}`);
+      if (!orderId) return null;
+      const res = await apiRequest('GET', `/api/orders/${orderId}`);
       return await res.json();
     },
-    enabled: !!params?.orderId && !!user,
+    enabled: !!orderId && !!user,
   });
 
   // Handle payment success
@@ -75,7 +75,7 @@ const Checkout = () => {
       description: 'Your order has been confirmed',
     });
     // Redirect to success page
-    setLocation(`/payment-success?orderId=${params?.orderId}`);
+    navigate(`/payment-success?orderId=${orderId}`);
   };
 
   // Handle payment failure
@@ -113,17 +113,17 @@ const Checkout = () => {
   if (!user) {
     // Redirect to login if not authenticated
     useEffect(() => {
-      setLocation('/auth');
-    }, [setLocation]);
+      navigate('/auth');
+    }, [navigate]);
     return null;
   }
 
-  if (!match || !order) {
+  if (!orderId || !order) {
     return (
       <div className="container mx-auto px-4 py-8 flex flex-col items-center">
         <h1 className="text-2xl font-bold mb-4">Invalid Order</h1>
         <p>The order you are trying to access does not exist or you don't have permission to view it.</p>
-        <Button className="mt-4" onClick={() => setLocation('/')}>
+        <Button className="mt-4" onClick={() => navigate('/')}>
           Return to Home
         </Button>
       </div>

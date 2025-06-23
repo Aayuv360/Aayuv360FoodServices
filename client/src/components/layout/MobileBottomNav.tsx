@@ -1,6 +1,6 @@
 import { ShoppingCart, ArrowRight } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
-import { useLocation } from "wouter";
+import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import CartSidebar from "@/components/cart/CartSidebar";
 

@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -46,13 +46,13 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-col gap-4 items-center">
-              <Link href="/menu">
+              <Link to="/menu">
                 <button className="bg-white text-orange-600 font-medium px-6 py-3 rounded-full hover:bg-orange-100 transition-all duration-300">
                   View Today's Menu
                 </button>
               </Link>
 
-              <Link href="/subscription">
+              <Link to="/subscription">
                 <button className="border-2 border-white/50 text-white font-medium px-6 py-3 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center">
                   Browse Meal Plans
                   <ArrowRight size={18} className="ml-2" />
@@ -88,7 +88,7 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link href="/menu">
+              <Link to="/menu">
                 <button className="group bg-white text-orange-600 font-medium px-8 py-4 rounded-full hover:bg-orange-50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl flex items-center justify-center">
                   <span className="transform transition-transform duration-300 group-hover:translate-z-10">
                     View Today's Menu
@@ -96,7 +96,7 @@ const HeroSection = () => {
                 </button>
               </Link>
 
-              <Link href="/subscription">
+              <Link to="/subscription">
                 <button className="group bg-transparent text-white border-2 border-white/50 font-medium px-8 py-4 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center justify-center">
                   <span className="transform transition-transform duration-300 group-hover:translate-z-10">
                     Browse Meal Plans

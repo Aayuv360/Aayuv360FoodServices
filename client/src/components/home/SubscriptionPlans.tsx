@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
@@ -19,7 +19,7 @@ interface Plan {
 
 const SubscriptionPlans = () => {
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
-  const [_, navigate] = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { data: apiPlans, isLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],

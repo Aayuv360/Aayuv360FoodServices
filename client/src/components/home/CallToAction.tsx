@@ -1,4 +1,4 @@
-import { Link } from "wouter";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 const CallToAction = () => {
@@ -19,7 +19,7 @@ const CallToAction = () => {
             variant="secondary"
             className="bg-white text-primary hover:bg-neutral-light font-medium"
           >
-            <Link href="/subscription">
+            <Link to="/subscription">
               Get Started Today
             </Link>
           </Button>
@@ -29,7 +29,7 @@ const CallToAction = () => {
             variant="outline"
             className="border-white text-white hover:bg-white/10 font-medium"
           >
-            <Link href="/menu">
+            <Link to="/menu">
               Learn More
             </Link>
           </Button>

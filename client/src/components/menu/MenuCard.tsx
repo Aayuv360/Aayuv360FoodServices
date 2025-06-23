@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { MealCardActions } from "./MealCardActions";
 import { Meal } from "@shared/schema";
 import { formatPrice } from "@/lib/utils";
-import { useLocation } from "wouter";
+import { useNavigate } from "react-router-dom";
 
 interface MenuCardProps {
   meal: Meal & {
@@ -19,10 +19,10 @@ const MenuCard = ({
   setNutritionModalOpen,
   setMealData,
 }: MenuCardProps) => {
-  const [_, setLocation] = useLocation();
+  const navigate = useNavigate();
 
   const handleCardClick = () => {
-    setLocation(`/MealDetails/${meal.id}`);
+    navigate(`/MealDetails/${meal.id}`);
   };
 
   const handleNutritionClick = (e: React.MouseEvent) => {

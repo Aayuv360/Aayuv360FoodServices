@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import {
   LogOut,
@@ -54,7 +54,7 @@ const MobileMenuPage = ({
   setMobilePage?: (val: boolean) => void;
 }) => {
   const { user, logout } = useAuth();
-  const [_, setLocation] = useLocation();
+  const navigate = useNavigate();
   const [cartOpen, setCartOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<"normal" | "subscribe">(
@@ -92,7 +92,7 @@ const MobileMenuPage = ({
                 text={item.text}
                 setMobilePage={setMobilePage}
                 click={() => {
-                  setLocation(item.href || "/");
+                  navigate(item.href || "/");
                 }}
               />
             </motion.div>
@@ -157,7 +157,7 @@ const MenuItem = ({
   );
 
   return href ? (
-    <Link href={href} onClick={handleClick}>
+    <Link to={href} onClick={handleClick}>
       {content}
     </Link>
   ) : (

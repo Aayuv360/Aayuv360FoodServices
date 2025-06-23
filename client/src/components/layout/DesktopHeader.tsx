@@ -1,4 +1,4 @@
-import { Link, useLocation } from "wouter";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { User, ShoppingCart, Search, LogIn } from "lucide-react";
@@ -19,11 +19,11 @@ const DesktopHeader = ({
 }) => {
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
-  const [, navigate] = useLocation();
+  const navigate = useNavigate();
 
   return (
     <div className="flex items-center justify-between">
-      <Link href="/" className="flex items-center">
+      <Link to="/" className="flex items-center">
         <div className="h-10 w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
           A
         </div>
@@ -66,17 +66,17 @@ const DesktopHeader = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="w-full">
+                <Link to="/profile" className="w-full">
                   Your Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/profile?tab=subscriptions" className="w-full">
+                <Link to="/profile?tab=subscriptions" className="w-full">
                   Subscriptions
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href="/profile?tab=orders" className="w-full">
+                <Link to="/profile?tab=orders" className="w-full">
                   Order History
                 </Link>
               </DropdownMenuItem>

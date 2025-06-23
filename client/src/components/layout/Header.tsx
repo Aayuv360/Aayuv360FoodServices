@@ -4,7 +4,7 @@ import CartSidebar from "@/components/cart/CartSidebar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import MobileHeader from "./MobileHeader";
 import DesktopHeader from "./DesktopHeader";
-import { useLocation } from "wouter";
+import { useLocation } from "react-router-dom";
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);

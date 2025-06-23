@@ -1,12 +1,12 @@
 import React from "react";
-import { useLocation } from "wouter";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { MealCardActions } from "@/components/menu/MealCardActions";
 
 export const ItemDetailsPage = () => {
-  const [location] = useLocation();
-  const id = location.split("/").pop();
+  const { mealId } = useParams();
+  const id = mealId;
   const {
     data: item,
     isLoading,

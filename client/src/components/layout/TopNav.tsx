@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, Link } from "wouter";
+import { useLocation, Link } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { 
@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 
 export default function TopNav() {
-  const [location] = useLocation();
+  const location = useLocation();
   const [activeLink, setActiveLink] = useState<string>("/");
   const { user } = useAuth();
   
   useEffect(() => {
-    setActiveLink(location);
+    setActiveLink(location.pathname);
   }, [location]);
   
   const navLinks = [
@@ -75,19 +75,16 @@ export default function TopNav() {
               return (
                 <Link 
                   key={link.href} 
-                  href={link.href}
+                  to={link.href}
+                  className={cn(
+                    "flex items-center space-x-0.5 sm:space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
+                    isActive 
+                      ? "bg-primary text-primary-foreground" 
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
                 >
-                  <a 
-                    className={cn(
-                      "flex items-center space-x-0.5 sm:space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
-                      isActive 
-                        ? "bg-primary text-primary-foreground" 
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                    )}
-                  >
-                    <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                    <span>{link.label}</span>
-                  </a>
+                  <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <span>{link.label}</span>
                 </Link>
               );
             })}
@@ -105,19 +102,16 @@ export default function TopNav() {
                 return (
                   <Link 
                     key={link.href} 
-                    href={link.href}
+                    to={link.href}
+                    className={cn(
+                      "flex items-center space-x-0.5 sm:space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
+                      isActive 
+                        ? "bg-amber-500 text-white" 
+                        : "text-amber-700 hover:text-amber-900 hover:bg-amber-200"
+                    )}
                   >
-                    <a 
-                      className={cn(
-                        "flex items-center space-x-0.5 sm:space-x-1 px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-colors whitespace-nowrap",
-                        isActive 
-                          ? "bg-amber-500 text-white" 
-                          : "text-amber-700 hover:text-amber-900 hover:bg-amber-200"
-                      )}
-                    >
-                      <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span>{link.label}</span>
-                    </a>
+                    <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
+                    <span>{link.label}</span>
                   </Link>
                 );
               })}
