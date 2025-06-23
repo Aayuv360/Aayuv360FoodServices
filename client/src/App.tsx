@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { CartProvider } from "@/hooks/use-cart";
 import { LocationProvider } from "@/contexts/LocationContext";
+import { UIProvider } from "@/contexts/UIContext";
 import { ProtectedRoute } from "@/components/protected-route";
 
 import Header from "@/components/layout/Header";
@@ -82,16 +83,18 @@ function App() {
     <RecoilRoot>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <LocationProvider>
-            <AuthProvider>
-              <CartProvider>
-                <BrowserRouter>
-                  <Toaster />
-                  <Router />
-                </BrowserRouter>
-              </CartProvider>
-            </AuthProvider>
-          </LocationProvider>
+          <UIProvider>
+            <LocationProvider>
+              <AuthProvider>
+                <CartProvider>
+                  <BrowserRouter>
+                    <Toaster />
+                    <Router />
+                  </BrowserRouter>
+                </CartProvider>
+              </AuthProvider>
+            </LocationProvider>
+          </UIProvider>
         </TooltipProvider>
       </QueryClientProvider>
     </RecoilRoot>

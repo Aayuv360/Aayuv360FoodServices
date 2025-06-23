@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { useServiceArea } from "@/hooks/use-service-area";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useUIContext } from "@/contexts/UIContext";
 
 const libraries = ["places"];
 
@@ -42,6 +43,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 }) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const { setIsAddressModalOpen } = useUIContext();
   const [currentStep, setCurrentStep] = useState<"map" | "form">("map");
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState<
@@ -117,12 +119,13 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   }, [coords, editingAddress, checkServiceAvailability]);
 
   useEffect(() => {
+    setIsAddressModalOpen(addressModalOpen);
     if (!addressModalOpen) {
       setLocationSearch("");
       fetchSuggestions("");
       setCurrentStep("map");
     }
-  }, [addressModalOpen]);
+  }, [addressModalOpen, setIsAddressModalOpen]);
 
   useEffect(() => {
     if (!isMobile) {
@@ -434,7 +437,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           }}
           className="space-y-4"
         >
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             {["Home", "Office", "Hotel", "Others"].map((label) => (
               <Button
                 key={label}
@@ -531,8 +534,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       <div className="flex gap-2 items-center">
         <div className="font-bold text-xl">
           {addressModalAction === "addressEdit"
-            ? "Edit Delivery Address"
-            : "Add New Delivery Address"}
+            ? "Edit Address"
+            : "Add Address"}
         </div>
 
         <Button

@@ -3,16 +3,18 @@ import { useCart } from "@/hooks/use-cart";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
 import CartSidebar from "@/components/cart/CartSidebar";
+import { useUIContext } from "@/contexts/UIContext";
 
 const MobileBottomNav = () => {
   const { cartItems } = useCart();
   const [cartOpen, setCartOpen] = useState(false);
+  const { isAddressModalOpen } = useUIContext();
 
   const handleCartClick = () => {
     setCartOpen(true);
   };
 
-  if (cartItems.length === 0) {
+  if (cartItems.length === 0 || isAddressModalOpen) {
     return null;
   }
 
