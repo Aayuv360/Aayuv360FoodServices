@@ -581,12 +581,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       </div>
     </div>
   );
+  // onInteractOutside={(e) => e.preventDefault()}
 
   return (
     <>
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent
-          {/* onInteractOutside={(e) => e.preventDefault()} */}
           className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl
  overflow-hidden"
         >
