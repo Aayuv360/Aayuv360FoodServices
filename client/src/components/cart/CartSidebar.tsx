@@ -127,13 +127,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       .then((res) => res.json())
       .then((data) => {
         if (isEditing) {
-          // Update the existing address in the list
           setAddresses((prev) =>
             prev.map((addr) => (addr.id === editingAddress.id ? data : addr)),
           );
           selectAddress(data.id);
         } else {
-          // Add the new address to the list
           setAddresses((prev) => [...prev, data]);
           selectAddress(data.id);
         }
@@ -165,10 +163,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     try {
       await apiRequest("DELETE", `/api/addresses/${addressId}`);
 
-      // Remove the address from the list
       setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
 
-      // If the deleted address was selected, clear the selection
       if (selectedAddressId === addressId) {
         setSelectedAddressId(null);
       }
@@ -590,7 +586,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     <>
       <Sheet open={open} onOpenChange={onClose}>
         <SheetContent
-          onInteractOutside={(e) => e.preventDefault()}
+          {/* onInteractOutside={(e) => e.preventDefault()} */}
           className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl
  overflow-hidden"
         >
