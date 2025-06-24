@@ -557,8 +557,20 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       </div>
 
       <div className="pb-5 border-t border-gray-200 animate-fade-in-up">
-        {<Address selectedAddress={selectedAddress} onEdit={addressChange} />}
-
+        {selectedAddress ? (
+          <Address selectedAddress={selectedAddress} onEdit={addressChange} />
+        ) : (
+          <div className="flex justify-end w-full mb-8 mt-1">
+            <Button
+              variant="link"
+              className="text-xs sm:text-sm flex items-center"
+              onClick={addressChange}
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              <span>Add Address</span>
+            </Button>
+          </div>
+        )}
         <Button
           onClick={handleNextStep}
           className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
@@ -621,7 +633,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     }}
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Add New Address</span>
+                    <span>Add Address</span>
                   </Button>
                 </div>
 

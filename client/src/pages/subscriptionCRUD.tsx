@@ -320,7 +320,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
           : (data?.plan?.price ?? 0);
       return new Promise((resolve, reject) => {
         initiatePayment({
-          amount: subscriptionPrice,
+          amount: Math.floor(subscriptionPrice),
           orderId: previousPlanId,
           type: subscriptionType,
           description: `${data.plan.name} Millet Meal Subscription`,
