@@ -83,7 +83,7 @@ const Menu = () => {
   return (
     <div className="py-0 bg-neutral-light min-h-screen bg-gray-50">
       <div
-        className={`sticky ${isMobile ? 'top-14' : 'top-16'} z-40 bg-gray-50 transition-shadow ${
+        className={`${isMobile ? "top-14" : "top-16"} z-40 bg-gray-50 transition-shadow ${
           scrolled ? "shadow-sm border-b border-gray-200" : ""
         }`}
       >
