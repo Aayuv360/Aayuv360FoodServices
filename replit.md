@@ -119,10 +119,19 @@ Required environment variables:
 - `RAZORPAY_KEY_ID` & `RAZORPAY_KEY_SECRET`: Payment processing
 - `SENDGRID_API_KEY`: Email notifications (optional)
 
+## Recent Changes
+- **June 25, 2025**: Initial project setup and migration from Replit Agent
+- **June 25, 2025**: Implemented image upload functionality for admin portal
+  - Added multer and sharp for image processing
+  - Created ImageUpload component replacing URL fields
+  - Images stored locally in `/uploads` directory with optimization
+  - Added server endpoints for image upload and static serving
+
 ## Changelog
 ```
 Changelog:
 - June 25, 2025. Initial setup
+- June 25, 2025. Added image upload system for meal management
 ```
 
 ## User Preferences
