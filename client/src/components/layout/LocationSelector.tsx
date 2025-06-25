@@ -56,8 +56,8 @@ const LocationSelector = () => {
           const defaultAddr = addresses.find((addr: any) => addr.isDefault) || addresses[0];
           const formattedAddr = {
             id: defaultAddr.id,
-            label: defaultAddr.label || "Address",
-            address: `${defaultAddr.addressLine1}, ${defaultAddr.addressLine2 || ""}, ${defaultAddr.city || ""}`.replace(/, ,/g, ",").replace(/,$/, ""),
+            label: defaultAddr.name || "Address",
+            address: `${defaultAddr.addressLine1}${defaultAddr.addressLine2 ? ', ' + defaultAddr.addressLine2 : ''}`,
             coords: {
               lat: defaultAddr.latitude || 0,
               lng: defaultAddr.longitude || 0,
@@ -95,7 +95,7 @@ const LocationSelector = () => {
     // If user is logged in and has API addresses, use the default one
     if (user && apiAddresses.length > 0 && !selectedAddress) {
       const defaultAddress = apiAddresses.find((addr: any) => addr.isDefault) || apiAddresses[0];
-      return defaultAddress.label || defaultAddress.addressLine1;
+      return defaultAddress.name || defaultAddress.addressLine1;
     }
     
     return "Select Location";
