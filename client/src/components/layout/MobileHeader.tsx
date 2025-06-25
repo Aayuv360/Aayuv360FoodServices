@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { useState } from "react";
 import MobileMenuPage from "./MobileMenuPage";
+import LocationSelector from "./LocationSelecto";
 
 const MobileHeader = () => {
   const [mobilePage, setMobilePage] = useState(false);
@@ -30,6 +31,12 @@ const MobileHeader = () => {
           <Menu className="w-5 h-5" />
         </button>
       </div>
+      
+      {/* Location selector for mobile */}
+      <div className="mt-2">
+        <LocationSelector />
+      </div>
+      
       {mobilePage && <MobileMenuPage setMobilePage={setMobilePage} />}
     </>
   );

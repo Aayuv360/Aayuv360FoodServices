@@ -28,7 +28,8 @@ import { useServiceArea } from "@/hooks/use-service-area";
 import { LocationCoords, SavedAddress } from "@/Recoil/recoil";
 import { useToast } from "@/hooks/use-toast";
 
-const libraries: "places"[] = ["places"];
+// Static libraries array to prevent reloading
+const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
 interface LocationModalProps {
   isOpen: boolean;
@@ -81,7 +82,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
-    libraries,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   // Debounced search for Google Places
@@ -105,7 +106,7 @@ export const LocationModal: React.FC<LocationModalProps> = ({
       {
         input,
         componentRestrictions: { country: "in" },
-        types: ["address", "establishment"],
+        types: ["address"],
       },
       (predictions, status) => {
         if (status === "OK" && predictions) {

@@ -16,13 +16,13 @@ const LocationSelector = () => {
     <>
       <button
         onClick={handleLocationClick}
-        className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-[8px] pl-[10px] sm:pl-[20px] max-w-[200px] sm:max-w-[300px]"
+        className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center py-2 px-2 sm:px-4 max-w-[200px] sm:max-w-[300px] rounded-md hover:bg-gray-50"
       >
-        <MapPin className="h-5 w-5 hover:text-primary flex-shrink-0" />
+        <MapPin className="h-4 w-4 sm:h-5 sm:w-5 hover:text-primary flex-shrink-0" />
         <div className="whitespace-nowrap overflow-hidden text-ellipsis">
           {displayText}
         </div>
-        <ChevronDown className="h-4 w-4 ml-1 flex-shrink-0" />
+        <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
       </button>
 
       <LocationModal

@@ -52,6 +52,10 @@ export const useLocationManager = () => {
   useEffect(() => {
     if (user) {
       loadSavedAddresses();
+    } else {
+      // Clear saved addresses when user logs out
+      setSavedAddresses([]);
+      setSelectedAddress(null);
     }
   }, [user]);
 
@@ -60,7 +64,7 @@ export const useLocationManager = () => {
     if (activeLocation) {
       checkLocationServiceArea(activeLocation);
     }
-  }, [activeLocation]);
+  }, [activeLocation, checkServiceAvailability]);
 
   const loadSavedAddresses = async () => {
     try {
@@ -128,7 +132,7 @@ export const useLocationManager = () => {
     }
   }, [setCurrentLocation, setIsLoading, setError]);
 
-  const checkLocationServiceArea = async (location: LocationCoords) => {
+  const checkLocationServiceArea = useCallback(async (location: LocationCoords) => {
     try {
       // Use the existing service area hook logic
       checkServiceAvailability(location);
@@ -148,7 +152,7 @@ export const useLocationManager = () => {
     } catch (error) {
       console.error("Failed to check service area:", error);
     }
-  };
+  }, [checkServiceAvailability, currentLocation, selectedAddress, getServiceMessage, setServiceArea]);
 
   const selectAddress = (address: SavedAddress) => {
     setSelectedAddress(address);

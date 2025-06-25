@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { CartProvider } from "@/hooks/use-cart";
 import { LocationProvider } from "@/contexts/LocationContext";
+import { MapProvider } from "@/hooks/MapProvider";
 import { UIProvider } from "@/contexts/UIContext";
 import { ProtectedRoute } from "@/components/protected-route";
 
