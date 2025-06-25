@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { User, ShoppingCart, Search, LogIn } from "lucide-react";
-import LocationSelector from "./LocationSelecto";
+import LocationSelector from "./LocationSelector";
 import {
   DropdownMenu,
   DropdownMenuContent,

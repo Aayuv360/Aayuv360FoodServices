@@ -250,12 +250,13 @@ export const useLocationManager = () => {
     serviceArea,
     
     // Actions
-    getCurrentLocationAsync,
+    getCurrentLocation: getCurrentLocationAsync,
     selectAddress,
     selectCurrentLocation,
-    addNewAddress,
+    saveAddress: addNewAddress,
     deleteAddress,
     loadSavedAddresses,
+    refreshSavedAddresses: loadSavedAddresses,
     clearError,
     checkLocationServiceArea,
   };
