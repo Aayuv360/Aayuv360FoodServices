@@ -47,7 +47,28 @@ const LocationSelector = () => {
         if (res.status === 401) return []; // User not authenticated
         throw new Error("Failed to fetch addresses");
       }
-      return await res.json();
+      const addresses = await res.json();
+      
+      // Auto-select default address if no address is currently selected
+      setTimeout(() => {
+        if (!selectedAddress && addresses.length > 0) {
+          const defaultAddr = addresses.find((addr: any) => addr.isDefault) || addresses[0];
+          const formattedAddr = {
+            id: defaultAddr.id,
+            label: defaultAddr.label || "Address",
+            address: `${defaultAddr.addressLine1}, ${defaultAddr.addressLine2 || ""}, ${defaultAddr.city || ""}`.replace(/, ,/g, ",").replace(/,$/, ""),
+            coords: {
+              lat: defaultAddr.latitude || 0,
+              lng: defaultAddr.longitude || 0,
+            },
+            pincode: defaultAddr.pincode || "",
+            isDefault: defaultAddr.isDefault || false,
+          };
+          selectAddress(formattedAddr);
+        }
+      }, 100);
+      
+      return addresses;
     },
     enabled: !!user, // Only run query when user is logged in
   });
@@ -58,13 +79,34 @@ const LocationSelector = () => {
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
-  const displayText = selectedAddress?.label || selectedAddress?.address || "Select Location";
+  // Display logic: prioritize selected address, then API addresses if user is logged in
+  const getDisplayText = () => {
+    // If we have a selected address from location manager
+    if (selectedAddress?.label && selectedAddress.label !== "Search Result") {
+      return selectedAddress.label;
+    }
+    if (selectedAddress?.address) {
+      // Truncate long addresses for display
+      const addr = selectedAddress.address;
+      return addr.length > 30 ? addr.substring(0, 30) + "..." : addr;
+    }
+    
+    // If user is logged in and has API addresses, use the default one
+    if (user && apiAddresses.length > 0 && !selectedAddress) {
+      const defaultAddress = apiAddresses.find((addr: any) => addr.isDefault) || apiAddresses[0];
+      return defaultAddress.label || defaultAddress.addressLine1;
+    }
+    
+    return "Select Location";
+  };
+
+  const displayText = getDisplayText();
 
   const handleAddressSelect = (address: any) => {
     selectAddress(address);
     toast({
       title: "Location Updated",
-      description: `Delivery location set to ${address.label}`,
+      description: `Delivery location set to ${address.label || address.address}`,
     });
   };
 
@@ -172,7 +214,7 @@ const LocationSelector = () => {
         <DropdownMenuTrigger asChild>
           <button className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center py-2 px-2 sm:px-4 max-w-[200px] sm:max-w-[300px] rounded-md hover:bg-gray-50">
             <MapPin className="h-4 w-4 sm:h-5 sm:w-5 hover:text-primary flex-shrink-0" />
-            <div className="whitespace-nowrap overflow-hidden text-ellipsis">
+            <div className="whitespace-nowrap overflow-hidden text-ellipsis font-medium">
               {displayText}
             </div>
             <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
