@@ -23,6 +23,7 @@ const LocationSelector = () => {
   const [isNewAddressModalOpen, setIsNewAddressModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
   const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
   const { user } = useAuth();
@@ -31,7 +32,7 @@ const LocationSelector = () => {
     savedAddresses, 
     selectAddress,
     getCurrentLocation,
-    isLoading,
+    isLoading: locationLoading,
     refreshSavedAddresses
   } = useLocationManager();
   const {
@@ -66,7 +67,7 @@ const LocationSelector = () => {
           };
           selectAddress(formattedAddr);
         }
-      }, 100);
+      }, 500);
       
       return addresses;
     },
@@ -112,17 +113,83 @@ const LocationSelector = () => {
 
   const handleCurrentLocation = async () => {
     try {
-      await getCurrentLocation();
-      toast({
-        title: "Location Updated",
-        description: "Using your current location",
+      setIsLoading(true);
+      
+      // Get current position using geolocation
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error("Geolocation is not supported"));
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        });
       });
+
+      const coords = {
+        lat: position.coords.latitude,
+        lng: position.coords.longitude,
+      };
+
+      // Reverse geocode to get address
+      if (window.google && window.google.maps) {
+        const geocoder = new window.google.maps.Geocoder();
+        const result = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
+          geocoder.geocode({ location: coords }, (results, status) => {
+            if (status === "OK" && results) {
+              resolve(results);
+            } else {
+              reject(new Error("Geocoding failed"));
+            }
+          });
+        });
+
+        if (result.length > 0) {
+          const address = result[0].formatted_address;
+          const currentLocationAddress = {
+            id: Date.now(),
+            label: "Current Location",
+            address: address,
+            coords,
+            pincode: "",
+            isDefault: false,
+          };
+
+          selectAddress(currentLocationAddress);
+          toast({
+            title: "Location Updated",
+            description: "Using your current location",
+          });
+        }
+      } else {
+        // Fallback without geocoding
+        const currentLocationAddress = {
+          id: Date.now(),
+          label: "Current Location",
+          address: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
+          coords,
+          pincode: "",
+          isDefault: false,
+        };
+
+        selectAddress(currentLocationAddress);
+        toast({
+          title: "Location Updated",
+          description: "Using your current location",
+        });
+      }
     } catch (error) {
+      console.error("Error getting current location:", error);
       toast({
         title: "Location Error",
-        description: "Could not get your current location",
+        description: "Could not get your current location. Please check permissions.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -197,6 +264,18 @@ const LocationSelector = () => {
     });
   };
 
+  // Auto-load current location if no address is selected and user is not logged in
+  useEffect(() => {
+    if (!user && !selectedAddress && isLoaded && !addressesLoading) {
+      const timer = setTimeout(() => {
+        if (!selectedAddress) {
+          handleCurrentLocation();
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, selectedAddress, isLoaded, addressesLoading]);
+
   const handleNewAddressAdded = (addressData: any) => {
     setIsNewAddressModalOpen(false);
     // Refresh both local state and API addresses
@@ -261,9 +340,9 @@ const LocationSelector = () => {
           <DropdownMenuSeparator />
           
           {/* Current Location Option */}
-          <DropdownMenuItem onClick={handleCurrentLocation} disabled={isLoading}>
+          <DropdownMenuItem onClick={handleCurrentLocation} disabled={isLoading || locationLoading}>
             <Navigation className="h-4 w-4 mr-2" />
-            <span>Use Current Location</span>
+            <span>{isLoading || locationLoading ? "Getting location..." : "Use Current Location"}</span>
           </DropdownMenuItem>
           
           <DropdownMenuSeparator />
