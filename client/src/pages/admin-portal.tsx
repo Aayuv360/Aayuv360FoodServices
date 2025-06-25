@@ -67,6 +67,7 @@ import {
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import AdminMealCard from "@/components/admin/AdminMealCard";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 export default function AdminPortalPage() {
   const { user } = useAuth();
@@ -81,6 +82,7 @@ export default function AdminPortalPage() {
   const [selectedMeal, setSelectedMeal] = useState<any>(null);
   const [selectedCurryOption, setSelectedCurryOption] = useState<any>(null);
   const [selectedMealIds, setSelectedMealIds] = useState<number[]>([]);
+  const [mealImageUrl, setMealImageUrl] = useState<string | null>(null);
 
   // Curry options parsing function removed - now handled by backend
 
@@ -414,11 +416,13 @@ export default function AdminPortalPage() {
   // Meal form handlers
   const handleAddMeal = () => {
     setSelectedMeal(null);
+    setMealImageUrl(null);
     setIsMealDialogOpen(true);
   };
 
   const handleEditMeal = (meal: any) => {
     setSelectedMeal(meal);
+    setMealImageUrl(meal.imageUrl || null);
     setIsMealDialogOpen(true);
   };
 
@@ -435,7 +439,7 @@ export default function AdminPortalPage() {
       available: formData.get("available") === "true",
       milletType: formData.get("milletType") as string,
       mealType: formData.get("mealType") as string,
-      imageUrl: formData.get("imageUrl") as string,
+      imageUrl: mealImageUrl || "/meal-placeholder.jpg",
 
       // Parse nutritional data
       calories: parseInt(formData.get("calories") as string, 10),
@@ -927,19 +931,11 @@ export default function AdminPortalPage() {
                         </Select>
                       </div>
 
-                      <div className="space-y-2">
-                        <label
-                          htmlFor="imageUrl"
-                          className="text-sm font-medium block"
-                        >
-                          Image URL
-                        </label>
-                        <Input
-                          id="imageUrl"
-                          name="imageUrl"
-                          defaultValue={
-                            selectedMeal?.imageUrl || "/meal-placeholder.jpg"
-                          }
+                      <div className="space-y-2 md:col-span-2">
+                        <ImageUpload
+                          currentImage={mealImageUrl}
+                          onImageChange={setMealImageUrl}
+                          label="Meal Image"
                         />
                       </div>
                     </div>

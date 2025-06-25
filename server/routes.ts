@@ -24,6 +24,7 @@ import {
 import { updateOrderDeliveryStatus } from "./delivery-status";
 import { deliveryScheduler } from "./delivery-scheduler";
 import { smsService } from "./sms-service";
+import { upload, processImage, deleteImage } from "./upload";
 import {
   insertSubscriptionSchema,
   insertAddressSchema,
@@ -1967,6 +1968,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Image upload endpoint
+  app.post("/api/admin/upload-image", isAuthenticated, isAdmin, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
+      }
+
+      const imageUrl = await processImage(req.file.buffer, req.file.originalname);
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
+
   app.post("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
       let mealData = { ...req.body };
@@ -2013,6 +2029,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         console.log(`Admin: Updating meal with ID ${mealId} in MongoDB...`);
 
+        // Get existing meal to check for old image
+        const existingMeal = await MealModel.findOne({ id: mealId }).lean();
+
         if (mealData.curryOptions && Array.isArray(mealData.curryOptions)) {
           mealData.curryOptions = mealData.curryOptions.map((option: any) => {
             if (
@@ -2035,6 +2054,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (!result) {
           console.log(`Admin: Meal with ID ${mealId} not found`);
           return res.status(404).json({ message: "Meal not found" });
+        }
+
+        // Delete old image if it was replaced with a new one
+        if (existingMeal?.imageUrl && 
+            mealData.imageUrl && 
+            existingMeal.imageUrl !== mealData.imageUrl &&
+            existingMeal.imageUrl.startsWith('/uploads/')) {
+          deleteImage(existingMeal.imageUrl);
         }
 
         const globalCurryOptions = await CurryOption.find().lean();
