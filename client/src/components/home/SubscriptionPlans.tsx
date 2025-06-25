@@ -79,15 +79,15 @@ const SubscriptionPlans = () => {
     <section className="pb-16 perspective-2000">
       <div className="container mx-auto px-4">
         <div className="text-center mb-12 transform transition-all duration-700 hover:translate-z-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 mb-4">
+          <h2 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 mb-1">
             Subscription Plans
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <p className="text-gray-600 max-w-2xl mx-auto text-m">
             Choose the perfect plan that suits your needs and lifestyle.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
           {sortedPlans.map((plan) => (
             <div
               key={plan.id}
@@ -109,16 +109,16 @@ const SubscriptionPlans = () => {
                 )}
 
                 <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-lg font-semibold mb-1 text-gray-900">
                     {plan.name === "Family" ? "Elite" : plan.name}
                   </h3>
-                  <div className="flex items-baseline mb-4">
-                    <span className="text-3xl font-bold bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent">
+                  <div className="flex items-baseline mb-2">
+                    <span className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-amber-500 bg-clip-text text-transparent">
                       ₹{plan.price}
                     </span>
-                    <span className="text-gray-500 ml-1">/month</span>
+                    <span className="text-gray-900 text-sm ml-1">/month</span>
                   </div>
-                  <p className="text-gray-600 mb-6">
+                  <p className="text-gray-900 text-sm mb-4">
                     {plan.id === "basic"
                       ? "Perfect for individuals looking to try our millet meals."
                       : plan.id === "premium"
@@ -126,7 +126,7 @@ const SubscriptionPlans = () => {
                         : "Complete solution for families seeking healthy millet meals."}
                   </p>
 
-                  <ul className="space-y-3 mb-6">
+                  <ul className="space-y-1 mb-6">
                     {plan.features.slice(0, 3).map((feature, index) => (
                       <li key={index} className="flex items-start group">
                         <div className="rounded-full p-1 bg-green-100 text-green-500 mr-2 mt-0.5 flex-shrink-0 transform transition-transform duration-300 group-hover:scale-110">
@@ -137,7 +137,7 @@ const SubscriptionPlans = () => {
                           )}
                         </div>
                         <span
-                          className={`text-gray-700 ${!feature.included ? "line-through text-gray-400" : ""}`}
+                          className={`text-gray-900 text-sm ${!feature.included ? "line-through text-gray-400" : ""}`}
                         >
                           {feature.text}
                         </span>

@@ -12,7 +12,7 @@ const HeroSection = () => {
   }, []);
 
   return (
-    <section className="relative overflow-hidden py-10 md:py-16">
+    <section className="relative overflow-hidden py-5 md:py-8">
       <div className="absolute inset-0 bg-gradient-to-r from-orange-500/90 to-amber-500/90"></div>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute w-96 h-96 -top-48 -left-48 bg-white/10 rounded-full animate-rotate-slow"></div>
@@ -54,7 +54,7 @@ const HeroSection = () => {
 
               <Link to="/subscription">
                 <button className="border-2 border-white/50 text-white font-medium px-6 py-3 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center">
-                  Browse Meal Plans
+                  Subscribe Meal Plans
                   <ArrowRight size={18} className="ml-2" />
                 </button>
               </Link>
@@ -99,7 +99,7 @@ const HeroSection = () => {
               <Link to="/subscription">
                 <button className="group bg-transparent text-white border-2 border-white/50 font-medium px-8 py-4 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center justify-center">
                   <span className="transform transition-transform duration-300 group-hover:translate-z-10">
-                    Browse Meal Plans
+                    Subscribe Meal Plans
                   </span>
                   <ArrowRight
                     size={18}
