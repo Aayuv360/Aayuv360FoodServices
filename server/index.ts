@@ -11,8 +11,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve uploaded images
-app.use('/uploads', express.static('uploads'));
+// Note: Images now served from MongoDB via /api/images/:id endpoint
 
 // Logging middleware
 app.use((req, res, next) => {

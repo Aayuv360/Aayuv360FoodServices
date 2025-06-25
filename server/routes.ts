@@ -24,7 +24,7 @@ import {
 import { updateOrderDeliveryStatus } from "./delivery-status";
 import { deliveryScheduler } from "./delivery-scheduler";
 import { smsService } from "./sms-service";
-import { upload, processImage, deleteImage } from "./upload";
+import { upload, processImage, deleteImage, serveImageFromMongoDB } from "./upload";
 import {
   insertSubscriptionSchema,
   insertAddressSchema,
@@ -1983,6 +1983,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Serve images from MongoDB
+  app.get("/api/images/:id", serveImageFromMongoDB);
+
   app.post("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
       let mealData = { ...req.body };
@@ -2060,8 +2063,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (existingMeal?.imageUrl && 
             mealData.imageUrl && 
             existingMeal.imageUrl !== mealData.imageUrl &&
-            existingMeal.imageUrl.startsWith('/uploads/')) {
-          deleteImage(existingMeal.imageUrl);
+            existingMeal.imageUrl.startsWith('/api/images/')) {
+          await deleteImage(existingMeal.imageUrl);
         }
 
         const globalCurryOptions = await CurryOption.find().lean();

@@ -124,8 +124,8 @@ Required environment variables:
 - **June 25, 2025**: Implemented image upload functionality for admin portal
   - Added multer and sharp for image processing
   - Created ImageUpload component replacing URL fields
-  - Images stored locally in `/uploads` directory with optimization
-  - Added server endpoints for image upload and static serving
+  - Images stored in MongoDB using GridFS with optimization
+  - Added server endpoints for image upload and serving from database
 
 ## Changelog
 ```
