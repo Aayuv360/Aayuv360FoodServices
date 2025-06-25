@@ -16,10 +16,12 @@ import { useServiceArea } from "./use-service-area";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "./use-auth";
 
-// Haversine formula to calculate distance
-const calculateDistance = (coord1: LocationCoords, coord2: LocationCoords): number => {
+const calculateDistance = (
+  coord1: LocationCoords,
+  coord2: LocationCoords,
+): number => {
   const toRad = (value: number) => (value * Math.PI) / 180;
-  const R = 6371; // Earth's radius in kilometers
+  const R = 6371;
 
   const dLat = toRad(coord2.lat - coord1.lat);
   const dLng = toRad(coord2.lng - coord1.lng);
@@ -36,9 +38,12 @@ const calculateDistance = (coord1: LocationCoords, coord2: LocationCoords): numb
 };
 
 export const useLocationManager = () => {
-  const [currentLocation, setCurrentLocation] = useRecoilState(currentLocationState);
-  const [selectedAddress, setSelectedAddress] = useRecoilState(selectedAddressState);
-  const [savedAddresses, setSavedAddresses] = useRecoilState(savedAddressesState);
+  const [currentLocation, setCurrentLocation] =
+    useRecoilState(currentLocationState);
+  const [selectedAddress, setSelectedAddress] =
+    useRecoilState(selectedAddressState);
+  const [savedAddresses, setSavedAddresses] =
+    useRecoilState(savedAddressesState);
   const [isLoading, setIsLoading] = useRecoilState(locationLoadingState);
   const [error, setError] = useRecoilState(locationErrorState);
   const [serviceArea, setServiceArea] = useRecoilState(serviceAreaState);
@@ -48,18 +53,15 @@ export const useLocationManager = () => {
   const { getCurrentPosition } = useGeolocation();
   const { checkServiceAvailability, getServiceMessage } = useServiceArea();
 
-  // Load saved addresses on component mount
   useEffect(() => {
     if (user) {
       loadSavedAddresses();
     } else {
-      // Clear saved addresses when user logs out
       setSavedAddresses([]);
       setSelectedAddress(null);
     }
   }, [user]);
 
-  // Check service area when active location changes
   useEffect(() => {
     if (activeLocation) {
       checkLocationServiceArea(activeLocation);
@@ -71,21 +73,24 @@ export const useLocationManager = () => {
       const response = await apiRequest("GET", "/api/addresses");
       if (response.ok) {
         const addresses = await response.json();
-        const formattedAddresses: SavedAddress[] = addresses.map((addr: any) => ({
-          id: addr.id,
-          label: addr.label || "Home",
-          address: addr.address,
-          coords: {
-            lat: addr.latitude,
-            lng: addr.longitude,
-          },
-          pincode: addr.pincode,
-          isDefault: addr.isDefault,
-        }));
+        const formattedAddresses: SavedAddress[] = addresses.map(
+          (addr: any) => ({
+            id: addr.id,
+            label: addr.label || "Home",
+            address: addr.address,
+            coords: {
+              lat: addr.latitude,
+              lng: addr.longitude,
+            },
+            pincode: addr.pincode,
+            isDefault: addr.isDefault,
+          }),
+        );
         setSavedAddresses(formattedAddresses);
-        
-        // Set default address if available
-        const defaultAddress = formattedAddresses.find(addr => addr.isDefault);
+
+        const defaultAddress = formattedAddresses.find(
+          (addr) => addr.isDefault,
+        );
         if (defaultAddress && !selectedAddress) {
           setSelectedAddress(defaultAddress);
         }
@@ -100,13 +105,15 @@ export const useLocationManager = () => {
     setError(null);
 
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000,
-        });
-      });
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000,
+          });
+        },
+      );
 
       const coords: LocationCoords = {
         lat: position.coords.latitude,
@@ -119,40 +126,47 @@ export const useLocationManager = () => {
     } catch (error: any) {
       let errorMessage = "Unable to get current location";
       if (error.code === 1) {
-        errorMessage = "Location access denied. Please enable location permissions.";
+        errorMessage =
+          "Location access denied. Please enable location permissions.";
       } else if (error.code === 2) {
         errorMessage = "Location information is unavailable.";
       } else if (error.code === 3) {
         errorMessage = "Location request timed out.";
       }
-      
+
       setError(errorMessage);
       setIsLoading(false);
       throw new Error(errorMessage);
     }
   }, [setCurrentLocation, setIsLoading, setError]);
 
-  const checkLocationServiceArea = useCallback(async (location: LocationCoords) => {
-    try {
-      // Use the existing service area hook logic
-      checkServiceAvailability(location);
-      
-      // Calculate distance from current location if available
-      let distanceFromCurrent = null;
-      if (currentLocation && selectedAddress) {
-        distanceFromCurrent = calculateDistance(currentLocation, location);
-      }
+  const checkLocationServiceArea = useCallback(
+    async (location: LocationCoords) => {
+      try {
+        checkServiceAvailability(location);
 
-      // Update service area state
-      setServiceArea({
-        isWithinServiceArea: true, // Will be updated by service area hook
-        distanceFromCurrent,
-        serviceMessage: getServiceMessage(),
-      });
-    } catch (error) {
-      console.error("Failed to check service area:", error);
-    }
-  }, [checkServiceAvailability, currentLocation, selectedAddress, getServiceMessage, setServiceArea]);
+        let distanceFromCurrent = null;
+        if (currentLocation && selectedAddress) {
+          distanceFromCurrent = calculateDistance(currentLocation, location);
+        }
+
+        setServiceArea({
+          isWithinServiceArea: true,
+          distanceFromCurrent,
+          serviceMessage: getServiceMessage(),
+        });
+      } catch (error) {
+        console.error("Failed to check service area:", error);
+      }
+    },
+    [
+      checkServiceAvailability,
+      currentLocation,
+      selectedAddress,
+      getServiceMessage,
+      setServiceArea,
+    ],
+  );
 
   const selectAddress = (address: SavedAddress) => {
     setSelectedAddress(address);
@@ -200,12 +214,12 @@ export const useLocationManager = () => {
           isDefault: newAddress.isDefault,
         };
 
-        setSavedAddresses(prev => [...prev, formattedAddress]);
-        
+        setSavedAddresses((prev) => [...prev, formattedAddress]);
+
         if (addressData.isDefault) {
           setSelectedAddress(formattedAddress);
         }
-        
+
         return formattedAddress;
       } else {
         throw new Error("Failed to save address");
@@ -218,10 +232,15 @@ export const useLocationManager = () => {
 
   const deleteAddress = async (addressId: number) => {
     try {
-      const response = await apiRequest("DELETE", `/api/addresses/${addressId}`);
+      const response = await apiRequest(
+        "DELETE",
+        `/api/addresses/${addressId}`,
+      );
       if (response.ok) {
-        setSavedAddresses(prev => prev.filter(addr => addr.id !== addressId));
-        
+        setSavedAddresses((prev) =>
+          prev.filter((addr) => addr.id !== addressId),
+        );
+
         // If deleted address was selected, clear selection
         if (selectedAddress?.id === addressId) {
           setSelectedAddress(null);
@@ -248,7 +267,7 @@ export const useLocationManager = () => {
     isLoading,
     error,
     serviceArea,
-    
+
     // Actions
     getCurrentLocation: getCurrentLocationAsync,
     selectAddress,

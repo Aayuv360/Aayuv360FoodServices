@@ -32,8 +32,8 @@ const DesktopHeader = ({
       </Link>
 
       <div className="flex items-center gap-4">
-        <LocationSelector />
-        
+        {/* <LocationSelector />
+         */}
         <button
           onClick={() => navigate("/menu")}
           className="hover:text-primary flex items-center gap-2 px-2 py-1 text-sm"

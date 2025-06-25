@@ -16,24 +16,25 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 
-// Static libraries array to prevent reloading
 const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
 const LocationSelector = () => {
   const [isNewAddressModalOpen, setIsNewAddressModalOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");
-  const [suggestions, setSuggestions] = useState<google.maps.places.AutocompletePrediction[]>([]);
+  const [suggestions, setSuggestions] = useState<
+    google.maps.places.AutocompletePrediction[]
+  >([]);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  
+
   const { user } = useAuth();
-  const { 
-    selectedAddress, 
-    savedAddresses, 
+  const {
+    selectedAddress,
+    savedAddresses,
     selectAddress,
     getCurrentLocation,
     isLoading: locationLoading,
-    refreshSavedAddresses
+    refreshSavedAddresses,
   } = useLocationManager();
   const {
     data: apiAddresses = [],
@@ -49,15 +50,15 @@ const LocationSelector = () => {
         throw new Error("Failed to fetch addresses");
       }
       const addresses = await res.json();
-      
-      // Auto-select default address if no address is currently selected
+
       setTimeout(() => {
         if (!selectedAddress && addresses.length > 0) {
-          const defaultAddr = addresses.find((addr: any) => addr.isDefault) || addresses[0];
+          const defaultAddr =
+            addresses.find((addr: any) => addr.isDefault) || addresses[0];
           const formattedAddr = {
             id: defaultAddr.id,
             label: defaultAddr.name || "Address",
-            address: `${defaultAddr.addressLine1}${defaultAddr.addressLine2 ? ', ' + defaultAddr.addressLine2 : ''}`,
+            address: `${defaultAddr.addressLine1}${defaultAddr.addressLine2 ? ", " + defaultAddr.addressLine2 : ""}`,
             coords: {
               lat: defaultAddr.latitude || 0,
               lng: defaultAddr.longitude || 0,
@@ -68,7 +69,7 @@ const LocationSelector = () => {
           selectAddress(formattedAddr);
         }
       }, 500);
-      
+
       return addresses;
     },
     enabled: !!user, // Only run query when user is logged in
@@ -80,24 +81,18 @@ const LocationSelector = () => {
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
-  // Display logic: prioritize selected address, then API addresses if user is logged in
   const getDisplayText = () => {
-    // If we have a selected address from location manager
-    if (selectedAddress?.label && selectedAddress.label !== "Search Result") {
-      return selectedAddress.label;
-    }
     if (selectedAddress?.address) {
-      // Truncate long addresses for display
       const addr = selectedAddress.address;
       return addr.length > 30 ? addr.substring(0, 30) + "..." : addr;
     }
-    
-    // If user is logged in and has API addresses, use the default one
+
     if (user && apiAddresses.length > 0 && !selectedAddress) {
-      const defaultAddress = apiAddresses.find((addr: any) => addr.isDefault) || apiAddresses[0];
+      const defaultAddress =
+        apiAddresses.find((addr: any) => addr.isDefault) || apiAddresses[0];
       return defaultAddress.name || defaultAddress.addressLine1;
     }
-    
+
     return "Select Location";
   };
 
@@ -114,38 +109,40 @@ const LocationSelector = () => {
   const handleCurrentLocation = async () => {
     try {
       setIsLoading(true);
-      
-      // Get current position using geolocation
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        if (!navigator.geolocation) {
-          reject(new Error("Geolocation is not supported"));
-          return;
-        }
-        
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
-        });
-      });
+
+      const position = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error("Geolocation is not supported"));
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 60000,
+          });
+        },
+      );
 
       const coords = {
         lat: position.coords.latitude,
         lng: position.coords.longitude,
       };
 
-      // Reverse geocode to get address
       if (window.google && window.google.maps) {
         const geocoder = new window.google.maps.Geocoder();
-        const result = await new Promise<google.maps.GeocoderResult[]>((resolve, reject) => {
-          geocoder.geocode({ location: coords }, (results, status) => {
-            if (status === "OK" && results) {
-              resolve(results);
-            } else {
-              reject(new Error("Geocoding failed"));
-            }
-          });
-        });
+        const result = await new Promise<google.maps.GeocoderResult[]>(
+          (resolve, reject) => {
+            geocoder.geocode({ location: coords }, (results, status) => {
+              if (status === "OK" && results) {
+                resolve(results);
+              } else {
+                reject(new Error("Geocoding failed"));
+              }
+            });
+          },
+        );
 
         if (result.length > 0) {
           const address = result[0].formatted_address;
@@ -165,7 +162,6 @@ const LocationSelector = () => {
           });
         }
       } else {
-        // Fallback without geocoding
         const currentLocationAddress = {
           id: Date.now(),
           label: "Current Location",
@@ -185,7 +181,8 @@ const LocationSelector = () => {
       console.error("Error getting current location:", error);
       toast({
         title: "Location Error",
-        description: "Could not get your current location. Please check permissions.",
+        description:
+          "Could not get your current location. Please check permissions.",
         variant: "destructive",
       });
     } finally {
@@ -193,7 +190,6 @@ const LocationSelector = () => {
     }
   };
 
-  // Google Places search
   const fetchSuggestions = async (input: string) => {
     if (!window.google || !input.trim()) {
       setSuggestions([]);
@@ -213,11 +209,10 @@ const LocationSelector = () => {
         } else {
           setSuggestions([]);
         }
-      }
+      },
     );
   };
 
-  // Debounced search for Google Places
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       if (searchInput && isLoaded) {
@@ -230,9 +225,11 @@ const LocationSelector = () => {
     return () => clearTimeout(timeoutId);
   }, [searchInput, isLoaded]);
 
-  const handlePlaceSelect = (suggestion: google.maps.places.AutocompletePrediction) => {
+  const handlePlaceSelect = (
+    suggestion: google.maps.places.AutocompletePrediction,
+  ) => {
     const service = new window.google.maps.places.PlacesService(
-      document.createElement("div")
+      document.createElement("div"),
     );
 
     service.getDetails({ placeId: suggestion.place_id }, (place, status) => {
@@ -242,9 +239,8 @@ const LocationSelector = () => {
           lng: place.geometry.location.lng(),
         };
 
-        // Create a temporary address object
         const tempAddress = {
-          id: Date.now(), // Temporary ID
+          id: Date.now(),
           label: "Search Result",
           address: suggestion.description,
           coords,
@@ -255,7 +251,7 @@ const LocationSelector = () => {
         selectAddress(tempAddress);
         setSearchInput("");
         setSuggestions([]);
-        
+
         toast({
           title: "Location Selected",
           description: "Location updated from search",
@@ -264,7 +260,6 @@ const LocationSelector = () => {
     });
   };
 
-  // Auto-load current location if no address is selected and user is not logged in
   useEffect(() => {
     if (!user && !selectedAddress && isLoaded && !addressesLoading) {
       const timer = setTimeout(() => {
@@ -278,7 +273,6 @@ const LocationSelector = () => {
 
   const handleNewAddressAdded = (addressData: any) => {
     setIsNewAddressModalOpen(false);
-    // Refresh both local state and API addresses
     refreshSavedAddresses();
     refetchAddresses();
     toast({
@@ -299,14 +293,13 @@ const LocationSelector = () => {
             <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
           </button>
         </DropdownMenuTrigger>
-        
+
         <DropdownMenuContent align="start" className="w-80">
           <div className="px-2 py-1.5 text-sm font-medium text-gray-700">
             Select Delivery Location
           </div>
           <DropdownMenuSeparator />
-          
-          {/* Google Places Search */}
+
           <div className="px-2 py-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -317,8 +310,7 @@ const LocationSelector = () => {
                 className="pl-10"
               />
             </div>
-            
-            {/* Search Suggestions */}
+
             {suggestions.length > 0 && (
               <div className="mt-2 max-h-32 overflow-y-auto">
                 {suggestions.map((suggestion) => (
@@ -336,48 +328,60 @@ const LocationSelector = () => {
               </div>
             )}
           </div>
-          
+
           <DropdownMenuSeparator />
-          
-          {/* Current Location Option */}
-          <DropdownMenuItem onClick={handleCurrentLocation} disabled={isLoading || locationLoading}>
+
+          <DropdownMenuItem
+            onClick={handleCurrentLocation}
+            disabled={isLoading || locationLoading}
+          >
             <Navigation className="h-4 w-4 mr-2" />
-            <span>{isLoading || locationLoading ? "Getting location..." : "Use Current Location"}</span>
+            <span>
+              {isLoading || locationLoading
+                ? "Getting location..."
+                : "Use Current Location"}
+            </span>
           </DropdownMenuItem>
-          
+
           <DropdownMenuSeparator />
-          
-          {/* Saved Addresses from API */}
+
           {apiAddresses.length > 0 ? (
             <>
               <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Saved Addresses
               </div>
               {apiAddresses.map((address: any) => (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   key={address.id}
-                  onClick={() => handleAddressSelect({
-                    id: address.id,
-                    label: address.label || "Address",
-                    address: `${address.addressLine1}, ${address.addressLine2 || ""}, ${address.city || ""}`,
-                    coords: {
-                      lat: address.latitude || 0,
-                      lng: address.longitude || 0,
-                    },
-                    pincode: address.pincode,
-                    isDefault: address.isDefault,
-                  })}
+                  onClick={() =>
+                    handleAddressSelect({
+                      id: address.id,
+                      label: address.label || "Address",
+                      address: `${address.addressLine1}, ${address.addressLine2 || ""}, ${address.city || ""}`,
+                      coords: {
+                        lat: address.latitude || 0,
+                        lng: address.longitude || 0,
+                      },
+                      pincode: address.pincode,
+                      isDefault: address.isDefault,
+                    })
+                  }
                   className="flex-col items-start py-2"
                 >
                   <div className="flex items-center w-full">
                     <MapPin className="h-4 w-4 mr-2 flex-shrink-0" />
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm">{address.label || "Address"}</div>
+                      <div className="font-medium text-sm">
+                        {address.label || "Address"}
+                      </div>
                       <div className="text-xs text-gray-500 truncate">
-                        {address.addressLine1}, {address.addressLine2 || ""}, {address.city || ""}
+                        {address.addressLine1}, {address.addressLine2 || ""},{" "}
+                        {address.city || ""}
                       </div>
                       {address.isDefault && (
-                        <div className="text-xs text-blue-600 font-medium">Default</div>
+                        <div className="text-xs text-blue-600 font-medium">
+                          Default
+                        </div>
                       )}
                     </div>
                   </div>
@@ -403,7 +407,7 @@ const LocationSelector = () => {
               <DropdownMenuSeparator />
             </>
           )}
-          
+
           {/* Add New Address - Only show when user is logged in */}
           {user && (
             <DropdownMenuItem onClick={() => setIsNewAddressModalOpen(true)}>

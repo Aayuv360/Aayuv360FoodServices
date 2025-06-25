@@ -31,12 +31,12 @@ const MobileHeader = () => {
           <Menu className="w-5 h-5" />
         </button>
       </div>
-      
+
       {/* Location selector for mobile */}
-      <div className="mt-2">
+      {/* <div className="mt-2">
         <LocationSelector />
-      </div>
-      
+      </div> */}
+
       {mobilePage && <MobileMenuPage setMobilePage={setMobilePage} />}
     </>
   );
