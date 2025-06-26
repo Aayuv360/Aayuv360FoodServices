@@ -6,10 +6,10 @@ hidden = [".config", ".git", "generated-icon.png", "node_modules", "dist"]
 channel = "stable-24_05"
 packages = ["jq", "openssl"]
 
-[deployment]
-deploymentTarget = "autoscale"
-build = ["npm", "run", "build"]
-run = ["npm", "run", "start"]
+# [deployment]
+# deploymentTarget = "autoscale"
+# build = ["npm", "run", "build"]
+# run = ["npm", "run", "start"]
 
 [[ports]]
 localPort = 5000
