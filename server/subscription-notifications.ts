@@ -20,9 +20,6 @@ interface SubscriptionDeliveryItem {
   notificationTime: string; // "6:00 PM"
 }
 
-/**
- * Get today's subscription deliveries that need notifications
- */
 export async function getTodaySubscriptionDeliveries(): Promise<
   SubscriptionDeliveryItem[]
 > {
@@ -39,7 +36,6 @@ export async function getTodaySubscriptionDeliveries(): Promise<
     const todayEnd = new Date(todayStart);
     todayEnd.setDate(todayStart.getDate() + 1);
 
-    // Get all active subscriptions
     const subscriptions = await mongoStorage.getAllSubscriptions();
     const activeSubscriptions = subscriptions.filter((sub: any) => {
       const startDate = new Date(sub.startDate);
@@ -61,18 +57,15 @@ export async function getTodaySubscriptionDeliveries(): Promise<
     const deliveryItems: SubscriptionDeliveryItem[] = [];
 
     for (const subscription of activeSubscriptions) {
-      // Get user details
       const user = await mongoStorage.getUser(subscription.userId);
       if (!user) continue;
 
-      // Calculate which day of the subscription this is
       const startDate = new Date(subscription.startDate);
       const dayDiff = Math.floor(
         (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
       );
       const dayOfWeek = dayDiff % 7; // 0-6 for 7 days cycle
 
-      // Get today's menu item
       const todayMenuItem = subscription.menuItems.find(
         (item: any) => item.day === dayOfWeek + 1,
       );
@@ -87,7 +80,7 @@ export async function getTodaySubscriptionDeliveries(): Promise<
           mainMeal: todayMenuItem.main,
           sides: todayMenuItem.sides || [],
           deliveryTime: "7:30 PM",
-          notificationTime: "6:00 PM",
+          notificationTime: "6:25 PM",
         });
       }
     }
@@ -177,7 +170,7 @@ export async function sendDailyDeliveryNotifications(): Promise<{
 export function scheduleDailyNotifications() {
   const now = new Date();
   const target = new Date();
-  target.setHours(14, 55, 0, 0);
+  target.setHours(18, 25, 0, 0);
 
   if (now > target) {
     target.setDate(target.getDate() + 1);
