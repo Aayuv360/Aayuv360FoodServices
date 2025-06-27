@@ -1,5 +1,4 @@
-// SMS Service for sending real SMS notifications
-// Supports multiple providers - currently set up for Twilio
+// smsService.ts
 
 interface SMSConfig {
   accountSid?: string;
@@ -24,13 +23,15 @@ class SMSService {
     };
 
     this.isConfigured = !!(
-      this.config.accountSid && 
-      this.config.authToken && 
+      this.config.accountSid &&
+      this.config.authToken &&
       this.config.phoneNumber
     );
 
     if (!this.isConfigured) {
-      console.log("SMS service not configured - SMS notifications will be logged only");
+      console.log(
+        "SMS service not configured - SMS notifications will be logged only",
+      );
     } else {
       console.log("SMS service configured and ready");
     }
@@ -40,19 +41,22 @@ class SMSService {
     try {
       if (!this.isConfigured) {
         console.log(`SMS would be sent to ${to}: ${message}`);
-        return true; // Return true for logging mode
+        return true;
       }
 
-      // Implement Twilio SMS sending
-      const twilio = require('twilio');
-      const client = twilio(this.config.accountSid, this.config.authToken);
-      
+      const twilio = await import("twilio");
+      const client = twilio.default(
+        this.config.accountSid!,
+        this.config.authToken!,
+      );
+      console.log("Using from number:", this.config.phoneNumber);
+
       const result = await client.messages.create({
         body: message,
         from: this.config.phoneNumber,
-        to: to
+        to: to,
       });
-      
+
       console.log(`SMS sent successfully to ${to}. SID: ${result.sid}`);
       return true;
     } catch (error) {
@@ -62,50 +66,52 @@ class SMSService {
   }
 
   async sendSubscriptionDeliveryNotification(
-    userPhone: string, 
-    userName: string, 
-    mainMeal: string, 
-    sides: string[], 
-    deliveryTime: string
+    userPhone: string,
+    userName: string,
+    mainMeal: string,
+    sides: string[],
+    deliveryTime: string,
   ): Promise<boolean> {
-    const sidesText = sides.length > 0 ? ` with ${sides.join(', ')}` : '';
+    const sidesText = sides.length > 0 ? ` with ${sides.join(", ")}` : "";
     const message = `Hi ${userName}! Your meal for today: ${mainMeal}${sidesText}. Delivery at ${deliveryTime}. - Millet Meals`;
-    
+
     return this.sendSMS(userPhone, message);
   }
 
   async sendOrderDeliveryNotification(
-    userPhone: string, 
-    userName: string, 
+    userPhone: string,
+    userName: string,
     orderId: number,
-    items: any[], 
-    deliveryTime: string
+    items: any[],
+    deliveryTime: string,
   ): Promise<boolean> {
-    const itemsText = items.map(item => `${item.quantity}x ${item.meal?.name || 'Item'}`).join(', ');
+    const itemsText = items
+      .map((item) => `${item.quantity}x ${item.meal?.name || "Item"}`)
+      .join(", ");
     const message = `Hi ${userName}! Your order #${orderId} is ready: ${itemsText}. Delivery at ${deliveryTime}. - Millet Meals`;
-    
+
     return this.sendSMS(userPhone, message);
   }
 
   async sendOrderStatusNotification(
-    userPhone: string, 
-    userName: string, 
+    userPhone: string,
+    userName: string,
     orderId: number,
     status: string,
-    estimatedTime?: string
+    estimatedTime?: string,
   ): Promise<boolean> {
-    const statusMessages = {
-      'preparing': 'is being prepared',
-      'in_transit': 'is on the way',
-      'out_for_delivery': 'is out for delivery',
-      'nearby': 'is nearby and will arrive soon',
-      'delivered': 'has been delivered'
+    const statusMessages: Record<string, string> = {
+      preparing: "is being prepared",
+      in_transit: "is on the way",
+      out_for_delivery: "is out for delivery",
+      nearby: "is nearby and will arrive soon",
+      delivered: "has been delivered",
     };
-    
+
     const statusText = statusMessages[status] || `status updated to ${status}`;
-    const timeText = estimatedTime ? ` ETA: ${estimatedTime}` : '';
+    const timeText = estimatedTime ? ` ETA: ${estimatedTime}` : "";
     const message = `Hi ${userName}! Your order #${orderId} ${statusText}.${timeText} - Millet Meals`;
-    
+
     return this.sendSMS(userPhone, message);
   }
 
@@ -114,17 +120,16 @@ class SMSService {
   }
 
   getStatus(): string {
-    if (this.isConfigured) {
-      return "SMS service ready with Twilio";
-    } else {
-      return "SMS service in logging mode - need Twilio credentials";
-    }
+    return this.isConfigured
+      ? "SMS service ready with Twilio"
+      : "SMS service in logging mode - need Twilio credentials";
   }
 }
 
+// Exporting the service instance
 export const smsService = new SMSService();
 
-// Enhanced notification function that actually sends SMS
+// Helper function for general-purpose SMS sending
 export async function sendRealSmsNotification(
   userPhone: string,
   userName: string,

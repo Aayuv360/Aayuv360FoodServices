@@ -7,13 +7,12 @@ import {
 } from "./notifications";
 import { sendSubscriptionDeliveryEmail } from "./email-service";
 import { smsService } from "./sms-service";
+import { DateTime } from "luxon";
 
 interface SubscriptionDeliveryItem {
   subscriptionId: number;
   userId: number;
-  userName: string;
   userEmail?: string;
-  userPhone?: string;
   mainMeal: string;
   sides: string[];
   deliveryTime: string; // "7:30 PM"
@@ -74,13 +73,11 @@ export async function getTodaySubscriptionDeliveries(): Promise<
         deliveryItems.push({
           subscriptionId: subscription.id,
           userId: subscription.userId,
-          userName: user.name || user.username,
           userEmail: user.email,
-          userPhone: user.phone,
           mainMeal: todayMenuItem.main,
           sides: todayMenuItem.sides || [],
-          deliveryTime: "7:30 PM",
-          notificationTime: "7:5 PM",
+          deliveryTime: "8:30 PM",
+          notificationTime: "11:14 PM",
         });
       }
     }
@@ -113,72 +110,39 @@ export async function sendDailyDeliveryNotifications(): Promise<{
           "Today's Meal Delivery",
           message,
         );
-
+        const subscription = await mongoStorage.getSubscription(
+          item.subscriptionId,
+        );
+        const deliveryAddress = await mongoStorage.getAddressById(
+          subscription.deliveryAddressId,
+        );
         if (item.userEmail) {
           await sendSubscriptionDeliveryEmail({
             userEmail: item.userEmail,
-            userName: item.userName,
+            userName: deliveryAddress.userName,
             mainMeal: item.mainMeal,
             sides: item.sides,
             deliveryTime: item.deliveryTime,
           });
         }
 
-        // Get subscription details for delivery address
-        const subscription = await mongoStorage.getSubscription(
-          item.subscriptionId,
-        );
-        const deliveryAddress =
-          subscription && subscription.deliveryAddressId
-            ? await mongoStorage.getAddressById(subscription.deliveryAddressId)
-            : null;
-        const deliveryPhone = deliveryAddress?.phone || item.userPhone;
-
-        // Console log address and time details
-        console.log(`\n=== DELIVERY DETAILS FOR USER ${item.userId} ===`);
-        console.log(`Subscription ID: ${item.subscriptionId}`);
-        console.log(`User Name: ${item.userName}`);
-        console.log(`Delivery Time: ${item.deliveryTime}`);
-        console.log(`Notification Time: ${item.notificationTime}`);
-        console.log(`Main Meal: ${item.mainMeal}`);
-        console.log(`Sides: ${item.sides.join(', ')}`);
-        
-        if (deliveryAddress) {
-          console.log(`Delivery Address:`);
-          console.log(`  Address Line 1: ${deliveryAddress.addressLine1 || 'N/A'}`);
-          console.log(`  Address Line 2: ${deliveryAddress.addressLine2 || 'N/A'}`);
-          console.log(`  Landmark: ${deliveryAddress.landmark || 'N/A'}`);
-          console.log(`  City: ${deliveryAddress.city || 'N/A'}`);
-          console.log(`  State: ${deliveryAddress.state || 'N/A'}`);
-          console.log(`  Pincode: ${deliveryAddress.pincode || 'N/A'}`);
-          console.log(`  Phone: ${deliveryAddress.phone || 'N/A'}`);
-        } else {
-          console.log(`Delivery Address: Not found or using default user phone`);
-        }
-        
-        console.log(`Delivery Phone: ${deliveryPhone || 'N/A'}`);
-        console.log(`Time Slot: ${subscription?.timeSlot || 'N/A'}`);
-        console.log(`=======================================\n`);
+        const deliveryPhone = deliveryAddress?.phone;
+        const formattedPhone = deliveryPhone.startsWith("+")
+          ? deliveryPhone
+          : `+91${deliveryPhone}`;
 
         if (deliveryPhone) {
           await smsService.sendSubscriptionDeliveryNotification(
-            deliveryPhone,
-            item.userName,
+            formattedPhone,
+            deliveryAddress.userName,
             item.mainMeal,
             item.sides,
             item.deliveryTime,
           );
         }
 
-        console.log(
-          `Sent delivery notification to user ${item.userId} for subscription ${item.subscriptionId}`,
-        );
         sent++;
       } catch (error) {
-        console.error(
-          `Failed to send notification for subscription ${item.subscriptionId}:`,
-          error,
-        );
         failed++;
       }
     }
@@ -194,47 +158,21 @@ export async function sendDailyDeliveryNotifications(): Promise<{
 }
 
 export function scheduleDailyNotifications() {
-  // Use Indian Standard Time (IST) - UTC+5:30
-  const now = new Date();
-  const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-  const istNow = new Date(now.getTime() + istOffset);
-  
-  const target = new Date(istNow);
-  target.setHours(19, 5, 0, 0);
+  const now = DateTime.utc();
+  const istNow = now.setZone("Asia/Kolkata");
+
+  let target = istNow.set({ hour: 23, minute: 14, second: 0, millisecond: 0 });
 
   if (istNow > target) {
-    target.setDate(target.getDate() + 1);
+    target = target.plus({ days: 1 });
   }
-  
-  // Convert back to UTC for setTimeout
-  const utcTarget = new Date(target.getTime() - istOffset);
 
-  const msUntilTarget = utcTarget.getTime() - now.getTime();
-
-  // Debug timezone and current time
-  console.log(`\n=== NOTIFICATION SCHEDULER DEBUG ===`);
-  console.log(`Server UTC time: ${now.toUTCString()}`);
-  console.log(`Indian Standard Time (IST): ${istNow.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
-  console.log(`IST Current hour: ${istNow.getHours()}:${istNow.getMinutes().toString().padStart(2, '0')}`);
-  console.log(`Target IST time: ${target.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
-  console.log(`Target UTC time: ${utcTarget.toUTCString()}`);
-  console.log(`Time until next notification: ${Math.floor(msUntilTarget / 1000 / 60)} minutes`);
-  console.log(`Has target time passed today in IST? ${istNow > target ? 'Yes - will trigger tomorrow' : 'No - will trigger today'}`);
-  console.log(`=====================================\n`);
-
-  console.log(
-    `Next daily notification scheduled for: ${target.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`,
-  );
+  const msUntilTarget = target.toUTC().toMillis() - now.toMillis();
 
   setTimeout(() => {
     sendDailyDeliveryNotifications();
 
-    setInterval(
-      () => {
-        sendDailyDeliveryNotifications();
-      },
-      24 * 60 * 60 * 1000,
-    );
+    setInterval(sendDailyDeliveryNotifications, 24 * 60 * 60 * 1000);
   }, msUntilTarget);
 }
 
