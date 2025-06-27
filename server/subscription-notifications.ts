@@ -6,6 +6,7 @@ import {
   sendWhatsAppNotification,
 } from "./notifications";
 import { sendSubscriptionDeliveryEmail } from "./email-service";
+import { smsService } from "./sms-service";
 
 interface SubscriptionDeliveryItem {
   subscriptionId: number;
@@ -135,11 +136,20 @@ export async function sendDailyDeliveryNotifications(): Promise<{
           });
         }
 
-        if (item.userPhone) {
-          await sendSmsNotification(
-            item.userId,
-            "Today's Meal Delivery",
-            message,
+        // Get subscription details for delivery address
+        const subscription = await mongoStorage.getSubscription(item.subscriptionId);
+        const deliveryAddress = subscription && subscription.deliveryAddressId 
+          ? await mongoStorage.getAddressById(subscription.deliveryAddressId) 
+          : null;
+        const deliveryPhone = deliveryAddress?.phone || item.userPhone;
+        
+        if (deliveryPhone) {
+          await smsService.sendSubscriptionDeliveryNotification(
+            deliveryPhone,
+            item.userName,
+            item.mainMeal,
+            item.sides,
+            item.deliveryTime
           );
         }
 

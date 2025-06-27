@@ -22,7 +22,7 @@ export interface DeliveryStatus {
 export async function getUserDeliveryStatusUpdates(userId: number): Promise<DeliveryStatus[]> {
   const { db } = await connectToMongoDB();
   if (!db) throw new Error("Failed to connect to MongoDB");
-  
+
   // Get user's recent orders (including recently delivered ones)
   const ordersCollection = db.collection("orders");
   const recentOrders = await ordersCollection
@@ -32,29 +32,29 @@ export async function getUserDeliveryStatusUpdates(userId: number): Promise<Deli
     })
     .sort({ createdAt: -1 })
     .toArray();
-  
+
   if (recentOrders.length === 0) {
     return [];
   }
-  
+
   const deliveryCollection = db.collection("deliveryStatus");
-  
+
   // Get latest delivery status for each recent order
   const latestUpdates: DeliveryStatus[] = [];
-  
+
   for (const order of recentOrders) {
     const latestStatus = await deliveryCollection
       .findOne(
         { orderId: order.id },
         { sort: { timestamp: -1 } }
       );
-    
+
     if (latestStatus) {
       // Show delivered status for orders delivered within the last 2 hours
       if (latestStatus.status === "delivered") {
         const deliveredTime = new Date(latestStatus.timestamp);
         const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
-        
+
         if (deliveredTime > twoHoursAgo) {
           latestUpdates.push(latestStatus as DeliveryStatus);
         }
@@ -70,7 +70,7 @@ export async function getUserDeliveryStatusUpdates(userId: number): Promise<Deli
       }
     }
   }
-  
+
   return latestUpdates;
 }
 
@@ -99,14 +99,14 @@ async function createDeliveryStatusForOrder(
 ): Promise<DeliveryStatus> {
   const { db } = await connectToMongoDB();
   if (!db) throw new Error("Failed to connect to MongoDB");
-  
+
   const deliveryCollection = db.collection("deliveryStatus");
   const maxIdDoc = await deliveryCollection.find().sort({ id: -1 }).limit(1).toArray();
   const nextId = maxIdDoc.length > 0 ? maxIdDoc[0].id + 1 : 1;
-  
+
   let message = "";
   let estimatedTime = "";
-  
+
   switch (status) {
     case 'preparing':
       message = "Your order is being prepared in our kitchen.";
@@ -128,7 +128,7 @@ async function createDeliveryStatusForOrder(
       message = "Your order has been delivered. Enjoy!";
       break;
   }
-  
+
   const statusUpdate: DeliveryStatus = {
     id: nextId,
     orderId,
@@ -138,7 +138,7 @@ async function createDeliveryStatusForOrder(
     estimatedTime,
     timestamp: new Date()
   };
-  
+
   await deliveryCollection.insertOne(statusUpdate);
   return statusUpdate;
 }
@@ -151,14 +151,14 @@ async function createDeliveryStatusForOrder(
 export async function getOrderDeliveryStatusUpdates(orderId: number): Promise<DeliveryStatus[]> {
   const { db } = await connectToMongoDB();
   if (!db) throw new Error("Failed to connect to MongoDB");
-  
+
   const deliveryCollection = db.collection("deliveryStatus");
-  
+
   const statusUpdates = await deliveryCollection
     .find({ orderId })
     .sort({ timestamp: -1 })
     .toArray();
-  
+
   return statusUpdates as DeliveryStatus[];
 }
 
@@ -174,46 +174,46 @@ export async function createDeliveryStatusUpdate(
 ): Promise<DeliveryStatus> {
   const { db } = await connectToMongoDB();
   if (!db) throw new Error("Failed to connect to MongoDB");
-  
+
   const deliveryCollection = db.collection("deliveryStatus");
-  
+
   // Find the highest ID in the collection
   const maxIdDoc = await deliveryCollection
     .find({})
     .sort({ id: -1 })
     .limit(1)
     .toArray();
-  
+
   const nextId = maxIdDoc.length > 0 ? maxIdDoc[0].id + 1 : 1;
-  
+
   const statusUpdate: DeliveryStatus = {
     id: nextId,
     ...statusData,
     timestamp: new Date()
   };
-  
+
   await deliveryCollection.insertOne(statusUpdate);
-  
+
   // Send notifications based on the selected methods
   try {
     // Create notification title based on status
     let title = `Order #${statusData.orderId} Update`;
-    
+
     if (notificationMethods.app) {
       await sendAppNotification(statusData.userId, title, statusData.message);
     }
-    
+
     if (notificationMethods.sms) {
       await sendSmsNotification(statusData.userId, title, statusData.message);
     }
-    
+
     if (notificationMethods.whatsapp) {
       await sendWhatsAppNotification(statusData.userId, title, statusData.message);
     }
   } catch (error) {
     console.error("Failed to send notifications:", error);
   }
-  
+
   return statusUpdate;
 }
 
@@ -234,7 +234,7 @@ export async function updateOrderDeliveryStatus(
   // Generate appropriate message based on status
   let message = customMessage;
   let estimatedTime: string | undefined;
-  
+
   if (!message) {
     switch (status) {
       case 'preparing':
@@ -258,7 +258,7 @@ export async function updateOrderDeliveryStatus(
         break;
     }
   }
-  
+
   // Create delivery status update
   return createDeliveryStatusUpdate(
     {
@@ -270,4 +270,73 @@ export async function updateOrderDeliveryStatus(
     },
     { app: true, sms: true, whatsapp: false } // Default to app and SMS, but not WhatsApp
   );
+}
+
+async function sendDeliveryNotifications(
+  deliveryStatus: DeliveryStatus,
+  options: { app?: boolean; sms?: boolean; whatsapp?: boolean } = {}
+): Promise<void> {
+  const { app = true, sms = true, whatsapp = false } = options;
+
+  try {
+    const { mongoStorage } = await import("./mongoStorage");
+    const { smsService } = await import("./sms-service");
+
+    // Get order and user details
+    const order = await mongoStorage.getOrder(deliveryStatus.orderId);
+    const user = await mongoStorage.getUser(deliveryStatus.userId);
+
+    if (app) {
+      await sendAppNotification(
+        deliveryStatus.userId,
+        `Order #${deliveryStatus.orderId} Update`,
+        deliveryStatus.message
+      );
+    }
+
+    if (sms && order && user) {
+      // Get delivery address phone number
+      let deliveryPhone = null;
+
+      if (order.deliveryAddress?.phone) {
+        deliveryPhone = order.deliveryAddress.phone;
+      } else if (order.deliveryAddressId) {
+        const deliveryAddress = await mongoStorage.getAddressById(order.deliveryAddressId);
+        deliveryPhone = deliveryAddress?.phone;
+      }
+
+      // Fallback to user phone if no delivery address phone
+      if (!deliveryPhone && user.phone) {
+        deliveryPhone = user.phone;
+      }
+
+      if (deliveryPhone) {
+        const userName = user.name || user.username || 'Customer';
+        await smsService.sendOrderStatusNotification(
+          deliveryPhone,
+          userName,
+          deliveryStatus.orderId,
+          deliveryStatus.status,
+          deliveryStatus.estimatedTime
+        );
+      }
+
+      // Also send app notification for SMS type
+      await sendSmsNotification(
+        deliveryStatus.userId,
+        `Order #${deliveryStatus.orderId} Update`,
+        deliveryStatus.message
+      );
+    }
+
+    if (whatsapp) {
+      await sendWhatsAppNotification(
+        deliveryStatus.userId,
+        `Order #${deliveryStatus.orderId} Update`,
+        deliveryStatus.message
+      );
+    }
+  } catch (error) {
+    console.error("Error sending delivery notifications:", error);
+  }
 }

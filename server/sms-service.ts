@@ -43,9 +43,17 @@ class SMSService {
         return true; // Return true for logging mode
       }
 
-      // For now, we'll implement Twilio when credentials are provided
-      // This can be extended to support other SMS providers
-      console.log(`SMS sent to ${to}: ${message}`);
+      // Implement Twilio SMS sending
+      const twilio = require('twilio');
+      const client = twilio(this.config.accountSid, this.config.authToken);
+      
+      const result = await client.messages.create({
+        body: message,
+        from: this.config.phoneNumber,
+        to: to
+      });
+      
+      console.log(`SMS sent successfully to ${to}. SID: ${result.sid}`);
       return true;
     } catch (error) {
       console.error("Error sending SMS:", error);
@@ -62,6 +70,41 @@ class SMSService {
   ): Promise<boolean> {
     const sidesText = sides.length > 0 ? ` with ${sides.join(', ')}` : '';
     const message = `Hi ${userName}! Your meal for today: ${mainMeal}${sidesText}. Delivery at ${deliveryTime}. - Millet Meals`;
+    
+    return this.sendSMS(userPhone, message);
+  }
+
+  async sendOrderDeliveryNotification(
+    userPhone: string, 
+    userName: string, 
+    orderId: number,
+    items: any[], 
+    deliveryTime: string
+  ): Promise<boolean> {
+    const itemsText = items.map(item => `${item.quantity}x ${item.meal?.name || 'Item'}`).join(', ');
+    const message = `Hi ${userName}! Your order #${orderId} is ready: ${itemsText}. Delivery at ${deliveryTime}. - Millet Meals`;
+    
+    return this.sendSMS(userPhone, message);
+  }
+
+  async sendOrderStatusNotification(
+    userPhone: string, 
+    userName: string, 
+    orderId: number,
+    status: string,
+    estimatedTime?: string
+  ): Promise<boolean> {
+    const statusMessages = {
+      'preparing': 'is being prepared',
+      'in_transit': 'is on the way',
+      'out_for_delivery': 'is out for delivery',
+      'nearby': 'is nearby and will arrive soon',
+      'delivered': 'has been delivered'
+    };
+    
+    const statusText = statusMessages[status] || `status updated to ${status}`;
+    const timeText = estimatedTime ? ` ETA: ${estimatedTime}` : '';
+    const message = `Hi ${userName}! Your order #${orderId} ${statusText}.${timeText} - Millet Meals`;
     
     return this.sendSMS(userPhone, message);
   }

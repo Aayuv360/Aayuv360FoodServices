@@ -1468,6 +1468,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Clear the cart after order is created
       await mongoStorage.clearCart(userId);
 
+      // Send SMS notification for order confirmation
+      try {
+        const user = await mongoStorage.getUser(userId);
+        if (user) {
+          let deliveryPhone = null;
+          
+          if (req.body.deliveryAddress?.phone) {
+            deliveryPhone = req.body.deliveryAddress.phone;
+          } else if (req.body.deliveryAddressId) {
+            const deliveryAddress = await mongoStorage.getAddressById(req.body.deliveryAddressId);
+            deliveryPhone = deliveryAddress?.phone;
+          }
+          
+          // Fallback to user phone if no delivery address phone
+          if (!deliveryPhone && user.phone) {
+            deliveryPhone = user.phone;
+          }
+          
+          if (deliveryPhone) {
+            const userName = user.name || user.username || 'Customer';
+            await smsService.sendOrderDeliveryNotification(
+              deliveryPhone,
+              userName,
+              order.id,
+              orderItems,
+              "Soon" // You can customize this based on your delivery schedule
+            );
+          }
+        }
+      } catch (smsError) {
+        console.error("Error sending order confirmation SMS:", smsError);
+        // Don't fail the order creation if SMS fails
+      }
+
       res.status(201).json(order);
     } catch (err) {
       if (err instanceof z.ZodError) {
