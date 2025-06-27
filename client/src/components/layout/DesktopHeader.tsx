@@ -21,7 +21,19 @@ const DesktopHeader = ({
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
   const navigate = useNavigate();
+  const scrollToMenuSection = () => {
+    const menuSection = document.getElementById("menu-section");
+    if (menuSection) {
+      const headerOffset = 80;
+      const elementPosition = menuSection.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - headerOffset;
 
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
   return (
     <div className="flex items-center justify-between">
       <Link to="/" className="flex items-center">
@@ -35,7 +47,7 @@ const DesktopHeader = ({
         {/* <LocationSelector />
          */}
         <button
-          onClick={() => navigate("/menu")}
+          onClick={() => scrollToMenuSection()}
           className="hover:text-primary flex items-center gap-2 px-2 py-1 text-sm"
           aria-label="Search"
         >

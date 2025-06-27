@@ -25,12 +25,12 @@ const getMenuItems = (user: boolean): MenuItemType[] => {
     ...(user
       ? [{ href: "/profile", icon: <User />, text: "Your Profile" }]
       : []),
-    { href: "/menu", icon: <Utensils />, text: "Today's Menu" },
-    {
-      href: "/subscription",
-      icon: <CalendarCheck />,
-      text: "Subscription Plans",
-    },
+    // { href: "/menu", icon: <Utensils />, text: "Today's Menu" },
+    // {
+    //   href: "/subscription",
+    //   icon: <CalendarCheck />,
+    //   text: "Subscription Plans",
+    // },
     ...(user
       ? [
           {
