@@ -134,6 +134,32 @@ export async function sendDailyDeliveryNotifications(): Promise<{
             : null;
         const deliveryPhone = deliveryAddress?.phone || item.userPhone;
 
+        // Console log address and time details
+        console.log(`\n=== DELIVERY DETAILS FOR USER ${item.userId} ===`);
+        console.log(`Subscription ID: ${item.subscriptionId}`);
+        console.log(`User Name: ${item.userName}`);
+        console.log(`Delivery Time: ${item.deliveryTime}`);
+        console.log(`Notification Time: ${item.notificationTime}`);
+        console.log(`Main Meal: ${item.mainMeal}`);
+        console.log(`Sides: ${item.sides.join(', ')}`);
+        
+        if (deliveryAddress) {
+          console.log(`Delivery Address:`);
+          console.log(`  Address Line 1: ${deliveryAddress.addressLine1 || 'N/A'}`);
+          console.log(`  Address Line 2: ${deliveryAddress.addressLine2 || 'N/A'}`);
+          console.log(`  Landmark: ${deliveryAddress.landmark || 'N/A'}`);
+          console.log(`  City: ${deliveryAddress.city || 'N/A'}`);
+          console.log(`  State: ${deliveryAddress.state || 'N/A'}`);
+          console.log(`  Pincode: ${deliveryAddress.pincode || 'N/A'}`);
+          console.log(`  Phone: ${deliveryAddress.phone || 'N/A'}`);
+        } else {
+          console.log(`Delivery Address: Not found or using default user phone`);
+        }
+        
+        console.log(`Delivery Phone: ${deliveryPhone || 'N/A'}`);
+        console.log(`Time Slot: ${subscription?.timeSlot || 'N/A'}`);
+        console.log(`=======================================\n`);
+
         if (deliveryPhone) {
           await smsService.sendSubscriptionDeliveryNotification(
             deliveryPhone,
@@ -177,6 +203,19 @@ export function scheduleDailyNotifications() {
   }
 
   const msUntilTarget = target.getTime() - now.getTime();
+
+  // Debug timezone and current time
+  console.log(`\n=== NOTIFICATION SCHEDULER DEBUG ===`);
+  console.log(`Server current time: ${now.toString()}`);
+  console.log(`Server local time: ${now.toLocaleString()}`);
+  console.log(`Server UTC time: ${now.toUTCString()}`);
+  console.log(`Server timezone offset: ${now.getTimezoneOffset()} minutes`);
+  console.log(`Target notification time: ${target.toLocaleString()}`);
+  console.log(`Time until next notification: ${Math.floor(msUntilTarget / 1000 / 60)} minutes`);
+  console.log(`Current hour: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
+  console.log(`Target hour: 19:05 (7:05 PM)`);
+  console.log(`Has target time passed today? ${now > target ? 'Yes - will trigger tomorrow' : 'No - will trigger today'}`);
+  console.log(`=====================================\n`);
 
   console.log(
     `Next daily notification scheduled for: ${target.toLocaleString()}`,
