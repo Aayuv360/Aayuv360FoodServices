@@ -46,8 +46,7 @@ export async function getTodaySubscriptionDeliveries(): Promise<
       const endDate = sub.endDate
         ? new Date(sub.endDate)
         : new Date(
-            startDate.getTime() +
-              (sub.plan?.duration || 30) * 24 * 60 * 60 * 1000,
+            startDate.getTime() + sub.mealsPerMonth * 24 * 60 * 60 * 1000,
           );
 
       return (
@@ -79,21 +78,17 @@ export async function getTodaySubscriptionDeliveries(): Promise<
       );
 
       if (todayMenuItem) {
-        // Get meal details
-        const meal = await mongoStorage.getMeal(todayMenuItem.mealId);
-        if (meal) {
-          deliveryItems.push({
-            subscriptionId: subscription.id,
-            userId: subscription.userId,
-            userName: user.name || user.username,
-            userEmail: user.email,
-            userPhone: user.phone,
-            mainMeal: meal.name,
-            sides: todayMenuItem.sides || [],
-            deliveryTime: "7:30 PM",
-            notificationTime: "6:00 PM",
-          });
-        }
+        deliveryItems.push({
+          subscriptionId: subscription.id,
+          userId: subscription.userId,
+          userName: user.name || user.username,
+          userEmail: user.email,
+          userPhone: user.phone,
+          mainMeal: todayMenuItem.main,
+          sides: todayMenuItem.sides || [],
+          deliveryTime: "7:30 PM",
+          notificationTime: "6:00 PM",
+        });
       }
     }
 
@@ -137,19 +132,22 @@ export async function sendDailyDeliveryNotifications(): Promise<{
         }
 
         // Get subscription details for delivery address
-        const subscription = await mongoStorage.getSubscription(item.subscriptionId);
-        const deliveryAddress = subscription && subscription.deliveryAddressId 
-          ? await mongoStorage.getAddressById(subscription.deliveryAddressId) 
-          : null;
+        const subscription = await mongoStorage.getSubscription(
+          item.subscriptionId,
+        );
+        const deliveryAddress =
+          subscription && subscription.deliveryAddressId
+            ? await mongoStorage.getAddressById(subscription.deliveryAddressId)
+            : null;
         const deliveryPhone = deliveryAddress?.phone || item.userPhone;
-        
+
         if (deliveryPhone) {
           await smsService.sendSubscriptionDeliveryNotification(
             deliveryPhone,
             item.userName,
             item.mainMeal,
             item.sides,
-            item.deliveryTime
+            item.deliveryTime,
           );
         }
 
