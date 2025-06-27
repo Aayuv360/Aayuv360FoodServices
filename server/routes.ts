@@ -33,6 +33,7 @@ import {
 } from "@shared/schema";
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
+import { sendDailyDeliveryNotifications } from "./subscription-notifications";
 
 const insertUserPreferencesSchema = z.object({
   userId: z.number(),
@@ -121,7 +122,7 @@ function calculateSubscriptionStatus(subscription: any) {
         status: "inactive",
         endDate: null,
         daysRemaining: 0,
-      };
+        };
     }
 
     // Reset time components for accurate date comparison
@@ -1473,19 +1474,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const user = await mongoStorage.getUser(userId);
         if (user) {
           let deliveryPhone = null;
-          
+
           if (req.body.deliveryAddress?.phone) {
             deliveryPhone = req.body.deliveryAddress.phone;
           } else if (req.body.deliveryAddressId) {
             const deliveryAddress = await mongoStorage.getAddressById(req.body.deliveryAddressId);
             deliveryPhone = deliveryAddress?.phone;
           }
-          
+
           // Fallback to user phone if no delivery address phone
           if (!deliveryPhone && user.phone) {
             deliveryPhone = user.phone;
           }
-          
+
           if (deliveryPhone) {
             const userName = user.name || user.username || 'Customer';
             await smsService.sendOrderDeliveryNotification(
@@ -2048,7 +2049,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : [],
       };
 
-      res.status(201).json(responseData);
+      res.status(201).json(```text
+responseData);
     } catch (err) {
       console.error("Error creating meal:", err);
       res.status(500).json({ message: "Error creating meal" });
@@ -2914,6 +2916,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // Get all deliveries (admin only)
+  app.get("/api/deliveries", isAuthenticated, async (req, res) => {
+    try {
+      const user = await mongoStorage.getUser(req.user!.id);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const deliveries = await mongoStorage.getAllDeliveries();
+      res.json(deliveries);
+    } catch (error) {
+      console.error("Error fetching deliveries:", error);
+      res.status(500).json({ error: "Failed to fetch deliveries" });
+    }
+  });
+
+  // Test daily notifications endpoint (admin only)
+  app.post("/api/test-daily-notifications", isAuthenticated, async (req, res) => {
+    try {
+      const user = await mongoStorage.getUser(req.user!.id);
+      if (!user?.isAdmin) {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      console.log("🧪 Manual test of daily notifications triggered...");
+      const result = await sendDailyDeliveryNotifications();
+      res.json({ 
+        message: "Test notifications sent", 
+        result,
+        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST'
+      });
+    } catch (error) {
+      console.error("Error testing daily notifications:", error);
+      res.status(500).json({ error: "Failed to test notifications" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;

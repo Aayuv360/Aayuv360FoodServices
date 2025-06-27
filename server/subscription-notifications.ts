@@ -194,31 +194,36 @@ export async function sendDailyDeliveryNotifications(): Promise<{
 }
 
 export function scheduleDailyNotifications() {
+  // Use Indian Standard Time (IST) - UTC+5:30
   const now = new Date();
-  const target = new Date();
+  const istOffset = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+  const istNow = new Date(now.getTime() + istOffset);
+  
+  const target = new Date(istNow);
   target.setHours(19, 5, 0, 0);
 
-  if (now > target) {
+  if (istNow > target) {
     target.setDate(target.getDate() + 1);
   }
+  
+  // Convert back to UTC for setTimeout
+  const utcTarget = new Date(target.getTime() - istOffset);
 
-  const msUntilTarget = target.getTime() - now.getTime();
+  const msUntilTarget = utcTarget.getTime() - now.getTime();
 
   // Debug timezone and current time
   console.log(`\n=== NOTIFICATION SCHEDULER DEBUG ===`);
-  console.log(`Server current time: ${now.toString()}`);
-  console.log(`Server local time: ${now.toLocaleString()}`);
   console.log(`Server UTC time: ${now.toUTCString()}`);
-  console.log(`Server timezone offset: ${now.getTimezoneOffset()} minutes`);
-  console.log(`Target notification time: ${target.toLocaleString()}`);
+  console.log(`Indian Standard Time (IST): ${istNow.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
+  console.log(`IST Current hour: ${istNow.getHours()}:${istNow.getMinutes().toString().padStart(2, '0')}`);
+  console.log(`Target IST time: ${target.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
+  console.log(`Target UTC time: ${utcTarget.toUTCString()}`);
   console.log(`Time until next notification: ${Math.floor(msUntilTarget / 1000 / 60)} minutes`);
-  console.log(`Current hour: ${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`);
-  console.log(`Target hour: 19:05 (7:05 PM)`);
-  console.log(`Has target time passed today? ${now > target ? 'Yes - will trigger tomorrow' : 'No - will trigger today'}`);
+  console.log(`Has target time passed today in IST? ${istNow > target ? 'Yes - will trigger tomorrow' : 'No - will trigger today'}`);
   console.log(`=====================================\n`);
 
   console.log(
-    `Next daily notification scheduled for: ${target.toLocaleString()}`,
+    `Next daily notification scheduled for: ${target.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST`,
   );
 
   setTimeout(() => {
