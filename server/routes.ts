@@ -2049,8 +2049,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           : [],
       };
 
-      res.status(201).json(```text
-responseData);
+      res.status(201).json(responseData);
     } catch (err) {
       console.error("Error creating meal:", err);
       res.status(500).json({ message: "Error creating meal" });
