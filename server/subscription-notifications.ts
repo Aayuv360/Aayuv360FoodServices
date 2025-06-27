@@ -6,6 +6,7 @@ import {
   sendWhatsAppNotification,
 } from "./notifications";
 import { sendSubscriptionDeliveryEmail } from "./email-service";
+import { smsService, sendRealSmsNotification } from "./sms-service";
 
 interface SubscriptionDeliveryItem {
   subscriptionId: number;
@@ -13,15 +14,13 @@ interface SubscriptionDeliveryItem {
   userName: string;
   userEmail?: string;
   userPhone?: string;
+  deliveryAddressId?: number;
   mainMeal: string;
   sides: string[];
-  deliveryTime: string; // "7:30 PM"
-  notificationTime: string; // "6:00 PM"
+  deliveryTime: string;
+  notificationTime: string;
 }
 
-/**
- * Get today's subscription deliveries that need notifications
- */
 export async function getTodaySubscriptionDeliveries(): Promise<
   SubscriptionDeliveryItem[]
 > {
@@ -38,15 +37,13 @@ export async function getTodaySubscriptionDeliveries(): Promise<
     const todayEnd = new Date(todayStart);
     todayEnd.setDate(todayStart.getDate() + 1);
 
-    // Get all active subscriptions
     const subscriptions = await mongoStorage.getAllSubscriptions();
     const activeSubscriptions = subscriptions.filter((sub: any) => {
       const startDate = new Date(sub.startDate);
       const endDate = sub.endDate
         ? new Date(sub.endDate)
         : new Date(
-            startDate.getTime() +
-              (sub.plan?.duration || 30) * 24 * 60 * 60 * 1000,
+            startDate.getTime() + sub.mealsPerMonth * 24 * 60 * 60 * 1000,
           );
 
       return (
@@ -61,40 +58,39 @@ export async function getTodaySubscriptionDeliveries(): Promise<
     const deliveryItems: SubscriptionDeliveryItem[] = [];
 
     for (const subscription of activeSubscriptions) {
-      // Get user details
       const user = await mongoStorage.getUser(subscription.userId);
       if (!user) continue;
 
-      // Calculate which day of the subscription this is
       const startDate = new Date(subscription.startDate);
       const dayDiff = Math.floor(
         (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
       );
-      const dayOfWeek = dayDiff % 7; // 0-6 for 7 days cycle
+      const dayOfWeek = dayDiff % 7;
 
-      // Get today's menu item
-      const todayMenuItem = subscription.menuItems.find(
-        (item: any) => item.day === dayOfWeek + 1,
-      );
+      // Handle edge cases for day calculation
+      const adjustedDay = dayOfWeek >= 0 ? dayOfWeek + 1 : 1;
 
-      if (todayMenuItem) {
-        // Get meal details
-        const meal = await mongoStorage.getMeal(todayMenuItem.mealId);
-        if (meal) {
-          deliveryItems.push({
-            subscriptionId: subscription.id,
-            userId: subscription.userId,
-            userName: user.name || user.username,
-            userEmail: user.email,
-            userPhone: user.phone,
-            mainMeal: meal.name,
-            sides: todayMenuItem.sides || [],
-            deliveryTime: "7:30 PM",
-            notificationTime: "6:00 PM",
-          });
-        }
+      const todayMenuItem =
+        subscription.menuItems && subscription.menuItems.length > 0
+          ? subscription.menuItems.find((item: any) => item.day === adjustedDay)
+          : null;
+
+      if (todayMenuItem && todayMenuItem.main) {
+        deliveryItems.push({
+          subscriptionId: subscription.id,
+          userId: subscription.userId,
+          userName: user.name || user.username,
+          userEmail: user.email,
+          userPhone: user.phone,
+          deliveryAddressId: subscription.deliveryAddressId,
+          mainMeal: todayMenuItem.main,
+          sides: todayMenuItem.sides || [],
+          deliveryTime: "7:30 PM",
+          notificationTime: "6:00 PM",
+        });
       }
     }
+    console.log("deliveryItems", deliveryItems);
 
     return deliveryItems;
   } catch (error) {
@@ -136,11 +132,43 @@ export async function sendDailyDeliveryNotifications(): Promise<{
         }
 
         if (item.userPhone) {
+          // Send database notification
           await sendSmsNotification(
             item.userId,
             "Today's Meal Delivery",
             message,
           );
+        }
+
+        // Send SMS to delivery address if available
+        if (item.deliveryAddressId) {
+          try {
+            const deliveryAddress = await mongoStorage.getAddressById(
+              item.deliveryAddressId,
+            );
+            if (deliveryAddress && deliveryAddress.phone) {
+              await smsService.sendSubscriptionDeliveryNotification(
+                deliveryAddress.phone,
+                deliveryAddress.userName || item.userName,
+                item.mainMeal,
+                item.sides,
+                item.deliveryTime,
+                {
+                  subscriptionId: item.subscriptionId,
+                  userId: item.userId,
+                },
+              );
+            } else {
+              console.warn(
+                `No phone number found for delivery address ${item.deliveryAddressId}`,
+              );
+            }
+          } catch (error) {
+            console.error(
+              `Error sending SMS to delivery address for subscription ${item.subscriptionId}:`,
+              error,
+            );
+          }
         }
 
         console.log(
@@ -169,7 +197,7 @@ export async function sendDailyDeliveryNotifications(): Promise<{
 export function scheduleDailyNotifications() {
   const now = new Date();
   const target = new Date();
-  target.setHours(14, 55, 0, 0);
+  target.setHours(19, 20, 0, 0);
 
   if (now > target) {
     target.setDate(target.getDate() + 1);
