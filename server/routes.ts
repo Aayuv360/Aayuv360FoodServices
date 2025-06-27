@@ -24,12 +24,7 @@ import {
 import { updateOrderDeliveryStatus } from "./delivery-status";
 import { deliveryScheduler } from "./delivery-scheduler";
 import { smsService } from "./sms-service";
-import {
-  upload,
-  processImage,
-  deleteImage,
-  serveImageFromMongoDB,
-} from "./upload";
+import { upload, processImage, deleteImage, serveImageFromMongoDB } from "./upload";
 import {
   insertSubscriptionSchema,
   insertAddressSchema,
@@ -148,7 +143,7 @@ function calculateSubscriptionStatus(subscription: any) {
 
     let status = "inactive";
     if (current < start) {
-      status = "pending"; // Keep pending if subscription hasn't started yet
+      status = "inactive";
     } else if (current.getTime() === end.getTime()) {
       status = "completed";
     } else if (current >= start && current < end) {
@@ -901,6 +896,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
+  // Test endpoint to verify MongoDB data (temporary)
+  app.get("/api/test/subscription-plans", async (req, res) => {
+    try {
+      const plans = await mongoStorage.getAllSubscriptionPlans();
+      res.json({
+        success: true,
+        count: plans.length,
+        plans: plans,
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.get("/api/subscription-plans", async (req, res) => {
     try {
       const activePlans = await mongoStorage.getAllSubscriptionPlans();
@@ -1100,17 +1109,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Calculate status for the subscription
       const subscriptionWithStatus = calculateSubscriptionStatus(subscription);
-
-      // Update status in database if it has changed
-      if (subscriptionWithStatus.status !== subscription.status) {
-        await mongoStorage.updateSubscription(subscriptionId, {
-          status: subscriptionWithStatus.status,
-          updatedAt: new Date(),
-        });
-        console.log(
-          `Auto-updated subscription ${subscriptionId} status from ${subscription.status} to ${subscriptionWithStatus.status}`,
-        );
-      }
 
       res.json(subscriptionWithStatus);
     } catch (err) {
@@ -1853,22 +1851,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
               updatedOrder.userId,
               deliveryStatus,
             );
-
-            // Also send SMS to delivery address if available
-            if (updatedOrder.deliveryAddress) {
-              // Try to extract delivery address ID from order
-              // You might need to modify this based on how you store delivery address info
-              const { sendDeliveryStatusToAddress } = await import(
-                "./delivery-status"
-              );
-
-              // If you have deliveryAddressId stored in the order, use it
-              // Otherwise, you might need to parse the address or store it differently
-              console.log(
-                "Attempting to send SMS to delivery address for order:",
-                updatedOrder.id,
-              );
-            }
           }
         } catch (err) {
           console.error("Failed to send delivery notification:", err);
@@ -1987,28 +1969,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Image upload endpoint
-  app.post(
-    "/api/admin/upload-image",
-    isAuthenticated,
-    isAdmin,
-    upload.single("image"),
-    async (req, res) => {
-      try {
-        if (!req.file) {
-          return res.status(400).json({ message: "No image file provided" });
-        }
-
-        const imageUrl = await processImage(
-          req.file.buffer,
-          req.file.originalname,
-        );
-        res.json({ imageUrl });
-      } catch (error) {
-        console.error("Error uploading image:", error);
-        res.status(500).json({ message: "Failed to upload image" });
+  app.post("/api/admin/upload-image", isAuthenticated, isAdmin, upload.single('image'), async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ message: "No image file provided" });
       }
-    },
-  );
+
+      const imageUrl = await processImage(req.file.buffer, req.file.originalname);
+      res.json({ imageUrl });
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      res.status(500).json({ message: "Failed to upload image" });
+    }
+  });
 
   // Serve images from MongoDB
   app.get("/api/images/:id", serveImageFromMongoDB);
@@ -2087,12 +2060,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Delete old image if it was replaced with a new one
-        if (
-          existingMeal?.imageUrl &&
-          mealData.imageUrl &&
-          existingMeal.imageUrl !== mealData.imageUrl &&
-          existingMeal.imageUrl.startsWith("/api/images/")
-        ) {
+        if (existingMeal?.imageUrl && 
+            mealData.imageUrl && 
+            existingMeal.imageUrl !== mealData.imageUrl &&
+            existingMeal.imageUrl.startsWith('/api/images/')) {
           await deleteImage(existingMeal.imageUrl);
         }
 
@@ -2826,33 +2797,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Manual subscription status update endpoint
-  app.post(
-    "/api/admin/update-subscription-statuses",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const { updateAllSubscriptionStatuses } = await import(
-          "./subscription-status-updater"
-        );
-        const result = await updateAllSubscriptionStatuses();
-
-        res.json({
-          message: "Subscription statuses updated",
-          updated: result.updated,
-          errors: result.errors,
-          timestamp: new Date().toISOString(),
-        });
-      } catch (err) {
-        console.error("Error updating subscription statuses:", err);
-        res
-          .status(500)
-          .json({ message: "Error updating subscription statuses" });
-      }
-    },
-  );
-
   // Get today's subscription deliveries (for admin view)
   app.get(
     "/api/notifications/today-subscriptions",
@@ -2933,193 +2877,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       } catch (err) {
         console.error("Error sending status notification:", err);
         res.status(500).json({ message: "Error sending status notification" });
-      }
-    },
-  );
-
-  // SMS service status endpoint
-  app.get("/api/sms/status", isAuthenticated, isManagerOrAdmin, (req, res) => {
-    res.json({
-      isConfigured: smsService.isReady(),
-      status: smsService.getStatus(),
-      hasCredentials: !!(
-        process.env.TWILIO_ACCOUNT_SID &&
-        process.env.TWILIO_AUTH_TOKEN &&
-        process.env.TWILIO_PHONE_NUMBER
-      ),
-    });
-  });
-
-  // Get SMS logs
-  app.get(
-    "/api/sms/logs",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const { getSMSLogs } = await import("./sms-tracking");
-        const {
-          userId,
-          subscriptionId,
-          orderId,
-          status,
-          type,
-          startDate,
-          endDate,
-          limit,
-        } = req.query;
-
-        const filters: any = {};
-        if (userId) filters.userId = parseInt(userId as string);
-        if (subscriptionId)
-          filters.subscriptionId = parseInt(subscriptionId as string);
-        if (orderId) filters.orderId = parseInt(orderId as string);
-        if (status) filters.status = status as string;
-        if (type) filters.type = type as string;
-        if (startDate) filters.startDate = new Date(startDate as string);
-        if (endDate) filters.endDate = new Date(endDate as string);
-
-        const logs = await getSMSLogs(
-          filters,
-          limit ? parseInt(limit as string) : 50,
-        );
-        res.json(logs);
-      } catch (error) {
-        console.error("Error getting SMS logs:", error);
-        res.status(500).json({ message: "Error getting SMS logs" });
-      }
-    },
-  );
-
-  // Get SMS statistics
-  app.get(
-    "/api/sms/stats",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const { getSMSStats } = await import("./sms-tracking");
-        const { startDate, endDate } = req.query;
-
-        const stats = await getSMSStats(
-          startDate ? new Date(startDate as string) : undefined,
-          endDate ? new Date(endDate as string) : undefined,
-        );
-
-        res.json(stats);
-      } catch (error) {
-        console.error("Error getting SMS stats:", error);
-        res.status(500).json({ message: "Error getting SMS stats" });
-      }
-    },
-  );
-
-  // Test SMS endpoint
-  app.post(
-    "/api/sms/test",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const { phone, message } = req.body;
-
-        if (!phone || !message) {
-          return res
-            .status(400)
-            .json({ message: "Phone and message are required" });
-        }
-
-        const success = await smsService.sendSMS(phone, message);
-
-        res.json({
-          success,
-          message: success ? "SMS sent successfully" : "Failed to send SMS",
-          timestamp: new Date().toISOString(),
-        });
-      } catch (error) {
-        console.error("Error in test SMS:", error);
-        res.status(500).json({ message: "Error sending test SMS" });
-      }
-    },
-  );
-
-  // Send SMS to delivery address
-  app.post(
-    "/api/sms/delivery-address",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const { deliveryAddressId, message, userName } = req.body;
-
-        if (!deliveryAddressId || !message) {
-          return res
-            .status(400)
-            .json({ message: "Delivery address ID and message are required" });
-        }
-
-        const success = await smsService.sendDeliveryAddressSMS(
-          parseInt(deliveryAddressId),
-          message,
-          userName,
-        );
-
-        res.json({
-          success,
-          message: success
-            ? "SMS sent to delivery address successfully"
-            : "Failed to send SMS to delivery address",
-          timestamp: new Date().toISOString(),
-        });
-      } catch (error) {
-        console.error("Error sending SMS to delivery address:", error);
-        res
-          .status(500)
-          .json({ message: "Error sending SMS to delivery address" });
-      }
-    },
-  );
-
-  // Send order status SMS to delivery address
-  app.post(
-    "/api/sms/order-status-delivery",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const { orderId, deliveryAddressId, status, estimatedTime } = req.body;
-
-        if (!orderId || !deliveryAddressId || !status) {
-          return res.status(400).json({
-            message: "Order ID, delivery address ID, and status are required",
-          });
-        }
-
-        const { sendDeliveryStatusToAddress } = await import(
-          "./delivery-status"
-        );
-
-        await sendDeliveryStatusToAddress(
-          parseInt(orderId),
-          parseInt(deliveryAddressId),
-          status,
-          undefined,
-          estimatedTime,
-        );
-
-        res.json({
-          success: true,
-          message: "Order status SMS sent to delivery address successfully",
-          timestamp: new Date().toISOString(),
-        });
-      } catch (error) {
-        console.error(
-          "Error sending order status SMS to delivery address:",
-          error,
-        );
-        res.status(500).json({
-          message: "Error sending order status SMS to delivery address",
-        });
       }
     },
   );
