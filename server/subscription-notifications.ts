@@ -80,11 +80,11 @@ export async function getTodaySubscriptionDeliveries(): Promise<
           mainMeal: todayMenuItem.main,
           sides: todayMenuItem.sides || [],
           deliveryTime: "7:30 PM",
-          notificationTime: "6:25 PM",
+          notificationTime: "7:5 PM",
         });
       }
     }
-
+    console.log(deliveryItems);
     return deliveryItems;
   } catch (error) {
     console.error("Error getting today's subscription deliveries:", error);
@@ -170,7 +170,7 @@ export async function sendDailyDeliveryNotifications(): Promise<{
 export function scheduleDailyNotifications() {
   const now = new Date();
   const target = new Date();
-  target.setHours(18, 25, 0, 0);
+  target.setHours(19, 5, 0, 0);
 
   if (now > target) {
     target.setDate(target.getDate() + 1);
