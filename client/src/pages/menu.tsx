@@ -81,7 +81,10 @@ const Menu = () => {
   }, [meals, filter, debouncedSearch]);
 
   return (
-    <div className="py-0 bg-neutral-light min-h-screen bg-gray-50">
+    <div
+      id="menu-section"
+      className="py-0 bg-neutral-light min-h-screen bg-gray-50"
+    >
       <div
         className={`${isMobile ? "top-14" : "top-16"} z-40 bg-gray-50 transition-shadow ${
           scrolled ? "shadow-sm border-b border-gray-200" : ""

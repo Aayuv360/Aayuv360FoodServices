@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import React, { useEffect, useState } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -6,10 +6,23 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
   const isMobile = useIsMobile();
-
+  const navigate = useNavigate();
   useEffect(() => {
     setIsVisible(true);
   }, []);
+  const scrollToMenuSection = () => {
+    const menuSection = document.getElementById("menu-section");
+    if (menuSection) {
+      const headerOffset = 80;
+      const elementPosition = menuSection.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.scrollY - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
 
   return (
     <section className="relative overflow-hidden py-5 md:py-8">
@@ -46,18 +59,24 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-col gap-4 items-center">
-              <Link to="/menu">
-                <button className="bg-white text-orange-600 font-medium px-6 py-3 rounded-full hover:bg-orange-100 transition-all duration-300">
-                  View Today's Menu
-                </button>
-              </Link>
+              <button
+                className="bg-white text-orange-600 font-medium px-6 py-3 rounded-full hover:bg-orange-100 transition-all duration-300"
+                onClick={() => {
+                  scrollToMenuSection();
+                }}
+              >
+                View Today's Menu
+              </button>
 
-              <Link to="/subscription">
-                <button className="border-2 border-white/50 text-white font-medium px-6 py-3 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center">
-                  Subscribe Meal Plans
-                  <ArrowRight size={18} className="ml-2" />
-                </button>
-              </Link>
+              <button
+                className="border-2 border-white/50 text-white font-medium px-6 py-3 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center"
+                onClick={() => {
+                  navigate("/subscription");
+                }}
+              >
+                Subscribe Meal Plans
+                <ArrowRight size={18} className="ml-2" />
+              </button>
             </div>
           </div>
         ) : (
@@ -88,25 +107,31 @@ const HeroSection = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/menu">
-                <button className="group bg-white text-orange-600 font-medium px-8 py-4 rounded-full hover:bg-orange-50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl flex items-center justify-center">
-                  <span className="transform transition-transform duration-300 group-hover:translate-z-10">
-                    View Today's Menu
-                  </span>
-                </button>
-              </Link>
+              <button
+                className="group bg-white text-orange-600 font-medium px-8 py-4 rounded-full hover:bg-orange-50 transition-all duration-300 transform hover:-translate-y-1 hover:shadow-xl flex items-center justify-center"
+                onClick={() => {
+                  scrollToMenuSection();
+                }}
+              >
+                <span className="transform transition-transform duration-300 group-hover:translate-z-10">
+                  View Today's Menu
+                </span>
+              </button>
 
-              <Link to="/subscription">
-                <button className="group bg-transparent text-white border-2 border-white/50 font-medium px-8 py-4 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center justify-center">
-                  <span className="transform transition-transform duration-300 group-hover:translate-z-10">
-                    Subscribe Meal Plans
-                  </span>
-                  <ArrowRight
-                    size={18}
-                    className="ml-2 transition-transform duration-300 group-hover:translate-x-1"
-                  />
-                </button>
-              </Link>
+              <button
+                className="group bg-transparent text-white border-2 border-white/50 font-medium px-8 py-4 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center justify-center"
+                onClick={() => {
+                  navigate("/subscription");
+                }}
+              >
+                <span className="transform transition-transform duration-300 group-hover:translate-z-10">
+                  Subscribe Meal Plans
+                </span>
+                <ArrowRight
+                  size={18}
+                  className="ml-2 transition-transform duration-300 group-hover:translate-x-1"
+                />
+              </button>
             </div>
           </div>
         )}
