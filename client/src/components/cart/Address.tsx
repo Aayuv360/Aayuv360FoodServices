@@ -18,10 +18,10 @@ export const Address: React.FC<AddressProps> = ({
           <MapPin className="text-orange-600 mt-0.5" size={30} />
           <div className="flex flex-col">
             <span className="font-semibold   text-base sm:text-sm">
-              Delivering to {selectedAddress?.name}
+              Delivering to {selectedAddress?.label}
             </span>
             <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
-              {selectedAddress?.addressLine1}, {selectedAddress?.addressLine2}
+              {selectedAddress?.address}
             </p>
             <p className="text-xs sm:text-sm text-gray-600">
               Phone: {selectedAddress?.phone}

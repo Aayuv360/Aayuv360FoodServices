@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRecoilState, useRecoilValue, useSetRecoilState } from "recoil";
 import {
   currentLocationState,
@@ -15,6 +15,7 @@ import { useGeolocation } from "./use-geolocation";
 import { useServiceArea } from "./use-service-area";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "./use-auth";
+import { toast } from "./use-toast";
 
 const calculateDistance = (
   coord1: LocationCoords,
@@ -50,7 +51,6 @@ export const useLocationManager = () => {
   const activeLocation = useRecoilValue(activeLocationState);
 
   const { user } = useAuth();
-  const { getCurrentPosition } = useGeolocation();
   const { checkServiceAvailability, getServiceMessage } = useServiceArea();
 
   useEffect(() => {
@@ -73,30 +73,37 @@ export const useLocationManager = () => {
       const response = await apiRequest("GET", "/api/addresses");
       if (response.ok) {
         const addresses = await response.json();
+
         const formattedAddresses: SavedAddress[] = addresses.map(
           (addr: any) => ({
             id: addr.id,
-            label: addr.label || "Home",
-            address: addr.address,
+            label: addr.name || "Saved",
+            address: [addr.addressLine1, addr.addressLine2]
+              .filter(Boolean)
+              .join(", "),
             coords: {
               lat: addr.latitude,
               lng: addr.longitude,
             },
-            pincode: addr.pincode,
             isDefault: addr.isDefault,
+            phone: addr.phone,
+            ...addr,
           }),
         );
+
         setSavedAddresses(formattedAddresses);
 
-        const defaultAddress = formattedAddresses.find(
-          (addr) => addr.isDefault,
-        );
-        if (defaultAddress && !selectedAddress) {
+        const defaultAddress =
+          formattedAddresses.find((a) => a.isDefault) || formattedAddresses[0];
+        if (defaultAddress) {
           setSelectedAddress(defaultAddress);
         }
+      } else {
+        const errorText = await response.text();
+        console.error("Failed to load addresses:", errorText);
       }
     } catch (error) {
-      console.error("Failed to load saved addresses:", error);
+      console.error("Error loading saved addresses:", error);
     }
   };
 
@@ -176,58 +183,98 @@ export const useLocationManager = () => {
   const selectCurrentLocation = async () => {
     try {
       const coords = await getCurrentLocationAsync();
-      setSelectedAddress(null); // Clear selected address to use current location
+      setSelectedAddress(null);
       return coords;
     } catch (error) {
       throw error;
     }
   };
 
-  const addNewAddress = async (addressData: {
-    label: string;
-    address: string;
-    coords: LocationCoords;
-    pincode?: string;
-    isDefault?: boolean;
-  }) => {
-    try {
-      const response = await apiRequest("POST", "/api/addresses", {
-        label: addressData.label,
-        address: addressData.address,
-        latitude: addressData.coords.lat,
-        longitude: addressData.coords.lng,
-        pincode: addressData.pincode,
-        isDefault: addressData.isDefault,
-      });
+  const addNewAddress = async (
+    editingAddress: any,
+    setAddressModalOpen: any,
+    setEditingAddress: any,
+    addressData: {
+      addressLine1: string;
+      addressLine2?: string;
+      city?: string;
+      state?: string;
+      pincode?: string;
+      isDefault?: boolean;
+      nearbyLandmark?: string;
+      phone: string;
+      name: string;
+      userName: string;
+      latitude: number;
+      longitude: number;
+    },
+  ) => {
+    const isEditing = editingAddress !== null;
+    const method = isEditing ? "PATCH" : "POST";
+    const url = isEditing
+      ? `/api/addresses/${editingAddress.id}`
+      : "/api/addresses";
 
-      if (response.ok) {
-        const newAddress = await response.json();
+    apiRequest(method, url, {
+      name: addressData.name,
+      phone: addressData.phone,
+      userName: addressData.userName,
+      addressLine1: addressData.addressLine1,
+      addressLine2: addressData.addressLine2,
+      isDefault: addressData.isDefault,
+      latitude: addressData.latitude,
+      longitude: addressData.longitude,
+      nearbyLandmark: addressData.nearbyLandmark,
+    })
+      .then((res) => res.json())
+      .then((data) => {
         const formattedAddress: SavedAddress = {
-          id: newAddress.id,
-          label: newAddress.label,
-          address: newAddress.address,
+          id: data.id,
+          label: data.name || "Saved",
+          address: [data.addressLine1, data.addressLine2]
+            .filter(Boolean)
+            .join(", "),
           coords: {
-            lat: newAddress.latitude,
-            lng: newAddress.longitude,
+            lat: data.latitude,
+            lng: data.longitude,
           },
-          pincode: newAddress.pincode,
-          isDefault: newAddress.isDefault,
+          isDefault: data.isDefault,
+          phone: data.phone,
+          ...data,
         };
 
-        setSavedAddresses((prev) => [...prev, formattedAddress]);
+        if (isEditing) {
+          setSavedAddresses((prev) =>
+            prev.map((addr) =>
+              addr.id === editingAddress.id ? formattedAddress : addr,
+            ),
+          );
+        } else {
+          setSavedAddresses((prev) => [...prev, formattedAddress]);
+        }
 
-        if (addressData.isDefault) {
+        if (data.isDefault) {
           setSelectedAddress(formattedAddress);
         }
 
-        return formattedAddress;
-      } else {
-        throw new Error("Failed to save address");
-      }
-    } catch (error) {
-      console.error("Failed to add new address:", error);
-      throw error;
-    }
+        setAddressModalOpen(false);
+        setEditingAddress(null);
+
+        toast({
+          title: isEditing ? "Address updated" : "Address added",
+          description: isEditing
+            ? "Your delivery address has been updated successfully."
+            : "Your new delivery address has been added successfully.",
+          variant: "default",
+        });
+      })
+      .catch((error) => {
+        toast({
+          title: "Error",
+          description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
+          variant: "destructive",
+        });
+      });
   };
 
   const deleteAddress = async (addressId: number) => {
@@ -245,11 +292,21 @@ export const useLocationManager = () => {
         if (selectedAddress?.id === addressId) {
           setSelectedAddress(null);
         }
+        toast({
+          title: "Address deleted",
+          description: "Your delivery address has been deleted successfully.",
+          variant: "default",
+        });
       } else {
         throw new Error("Failed to delete address");
       }
     } catch (error) {
       console.error("Failed to delete address:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete address. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -272,7 +329,7 @@ export const useLocationManager = () => {
     getCurrentLocation: getCurrentLocationAsync,
     selectAddress,
     selectCurrentLocation,
-    saveAddress: addNewAddress,
+    addNewAddress,
     deleteAddress,
     loadSavedAddresses,
     refreshSavedAddresses: loadSavedAddresses,

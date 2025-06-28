@@ -35,6 +35,7 @@ import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 import { Meal } from "@shared/schema";
 import { Address } from "./Address";
 import DeleteAddressDialog from "../Modals/DeleteAddressDialog";
+import { useLocationManager } from "@/hooks/use-location-manager";
 
 interface CartSidebarProps {
   open: boolean;
@@ -60,13 +61,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [customizingMeal, setCustomizingMeal] = useState<any | null>(null);
   const [addressModalAction, setAddressModalAction] = useState<string>("");
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [selectedAddressId, setSelectedAddressId] = useState<number | null>(
-    null,
-  );
   const [addressModalOpen, setAddressModalOpen] = useState(false);
-  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [deletingAddress, setDeletingAddress] = useState<Address | null>(null);
+  const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [deletingAddress, setDeletingAddress] = useState<any>(null);
 
   const {
     cartItems,
@@ -80,108 +77,30 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { initiatePayment } = useRazorpay();
-  const selectedAddress = addresses.find(
-    (addr) => addr.id === selectedAddressId,
-  );
+  const {
+    addNewAddress,
+    savedAddresses,
+    selectAddress,
+    deleteAddress,
+    selectedAddress,
+  } = useLocationManager();
+  console.log(selectedAddress);
   useEffect(() => {
     if (open) {
       setCurrentStep("cart");
     }
   }, [open]);
 
-  useEffect(() => {
-    if (user && open) {
-      apiRequest("GET", "/api/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          setAddresses(data);
-          const defaultAddress = data.find((addr: Address) => addr.isDefault);
-          if (defaultAddress) {
-            setSelectedAddressId(defaultAddress.id);
-          } else if (data.length > 0) {
-            setSelectedAddressId(data[0].id);
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching addresses:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load addresses",
-            variant: "destructive",
-          });
-        });
-    }
-  }, [user, open, toast]);
-
-  const selectAddress = (addressId: number) => {
-    setSelectedAddressId(addressId);
-  };
   const handleAddressFormSubmit = (addressData: any) => {
-    const isEditing = editingAddress !== null;
-    const method = isEditing ? "PATCH" : "POST";
-    const url = isEditing
-      ? `/api/addresses/${editingAddress.id}`
-      : "/api/addresses";
-
-    apiRequest(method, url, addressData)
-      .then((res) => res.json())
-      .then((data) => {
-        if (isEditing) {
-          setAddresses((prev) =>
-            prev.map((addr) => (addr.id === editingAddress.id ? data : addr)),
-          );
-          selectAddress(data.id);
-        } else {
-          setAddresses((prev) => [...prev, data]);
-          selectAddress(data.id);
-        }
-
-        setAddressModalOpen(false);
-        setEditingAddress(null);
-
-        toast({
-          title: isEditing ? "Address updated" : "Address added",
-          description: isEditing
-            ? "Your delivery address has been updated successfully."
-            : "Your new delivery address has been added successfully.",
-          variant: "default",
-        });
-      })
-      .catch((error) => {
-        console.error(
-          `Error ${isEditing ? "updating" : "creating"} address:`,
-          error,
-        );
-        toast({
-          title: "Error",
-          description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
-          variant: "destructive",
-        });
-      });
+    addNewAddress(
+      editingAddress,
+      setAddressModalOpen,
+      setEditingAddress,
+      addressData,
+    );
   };
   const handleDeleteAddress = async (addressId: number) => {
-    try {
-      await apiRequest("DELETE", `/api/addresses/${addressId}`);
-
-      setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
-
-      if (selectedAddressId === addressId) {
-        setSelectedAddressId(null);
-      }
-
-      toast({
-        title: "Address deleted",
-        description: "Your delivery address has been deleted successfully.",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error deleting address:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete address. Please try again.",
-        variant: "destructive",
-      });
-    }
+    deleteAddress(addressId);
   };
 
   const calculateCartTotal = (): number => {
@@ -282,7 +201,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       return;
     }
 
-    if (!selectedAddressId) {
+    if (!selectedAddress?.id) {
       toast({
         title: "Address required",
         description: "Please select an existing address or add a new one",
@@ -294,28 +213,24 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     try {
       setIsCreatingOrder(true);
 
-      const selectedAddress = addresses.find(
-        (addr) => addr.id === selectedAddressId,
-      );
-
       if (!selectedAddress) {
         throw new Error("Selected address not found");
       }
 
       const deliveryDetails = {
-        name: selectedAddress.name,
+        name: selectedAddress.label,
         phoneNumber: selectedAddress.phone,
-        completeAddress: selectedAddress.addressLine1,
-        nearbyLandmark: selectedAddress.addressLine2 || "",
-        addressType: selectedAddress.name.toLowerCase().includes("home")
+        completeAddress: selectedAddress.address,
+        nearbyLandmark: selectedAddress.address || "",
+        addressType: selectedAddress.label.toLowerCase().includes("home")
           ? "home"
-          : selectedAddress.name.toLowerCase().includes("work")
+          : selectedAddress.label.toLowerCase().includes("work")
             ? "work"
             : "other",
         deliveryType,
       };
 
-      const formattedAddress = `${selectedAddress.addressLine1}${selectedAddress.addressLine2 ? ", " + selectedAddress.addressLine2 : ""}`;
+      const formattedAddress = `${selectedAddress.address}`;
 
       const total =
         calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;
@@ -638,22 +553,22 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 </div>
 
                 {/* Address List */}
-                {addresses.length > 0 ? (
+                {savedAddresses.length > 0 ? (
                   <div className="space-y-2 sm:space-y-3 mt-4">
-                    {addresses.map((address) => (
+                    {savedAddresses.map((address) => (
                       <div
                         key={address.id}
                         className={`border rounded-xl p-3 sm:p-4 cursor-pointer transition hover:shadow-sm ${
-                          selectedAddressId === address.id
+                          selectedAddress?.id === address.id
                             ? "border-primary bg-primary/5"
                             : ""
                         }`}
-                        onClick={() => setSelectedAddressId(address.id)}
+                        onClick={() => selectAddress(address)}
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-2">
                             <div className="font-semibold   text-base sm:text-sm">
-                              {address.name}
+                              {address.label}
                             </div>
                             {address.isDefault && (
                               <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
@@ -679,19 +594,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                                 setDeletingAddress(address);
                               }}
                             />
-                            {selectedAddressId === address.id && (
+                            {selectedAddress?.id === address.id && (
                               <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                             )}
                           </div>
                         </div>
 
                         <div className="text-xs sm:text-sm text-gray-600 space-y-0.5">
-                          <p className="line-clamp-1">{address.addressLine1}</p>
-                          {address.addressLine2 && (
-                            <p className="line-clamp-1">
-                              {address.addressLine2}
-                            </p>
-                          )}
+                          <p className="line-clamp-1">{address.address}</p>
+
                           <p>Phone: {address.phone}</p>
                         </div>
                       </div>

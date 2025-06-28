@@ -19,6 +19,8 @@ export interface SavedAddress {
   coords: LocationCoords;
   pincode?: string;
   isDefault?: boolean;
+  phone: number;
+  userName?: string;
 }
 
 export interface LocationState {
@@ -95,7 +97,7 @@ export const activeLocationState = selector<LocationCoords | null>({
   get: ({ get }) => {
     const selectedAddress = get(selectedAddressState);
     const currentLocation = get(currentLocationState);
-    
+
     return selectedAddress?.coords || currentLocation;
   },
 });
@@ -105,11 +107,11 @@ export const locationDisplayTextState = selector<string>({
   key: "locationDisplayTextState",
   get: ({ get }) => {
     const selectedAddress = get(selectedAddressState);
-    
+
     if (selectedAddress) {
       return selectedAddress.address;
     }
-    
+
     return "Select Location";
   },
 });
