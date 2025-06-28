@@ -65,6 +65,7 @@ import { Address } from "@shared/schema";
 import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SuccessPage from "./SuccessPage";
+import { useLocationManager } from "@/hooks/use-location-manager";
 
 const plansEmoji = [
   {
@@ -132,7 +133,6 @@ const subscriptionSchema = z.object({
   useNewAddress: z.boolean().default(false),
   newAddress: addressSchema.optional(),
   timeSlot: z.string().optional(),
-  selectedAddressId: z.number().optional(),
 });
 
 type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
@@ -154,14 +154,17 @@ const Subscription = () => {
   const [defaulMealModalOpen, setDefaulMealModalOpen] =
     useState<boolean>(false);
   const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
-  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
-  const [deletingAddress, setDeletingAddress] = useState<Address | null>(null);
-  const [locationSearch, setLocationSearch] = useState<string>("");
-  const [filteredLocations, setFilteredLocations] = useState<any[]>([]);
-  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [editingAddress, setEditingAddress] = useState<any>(null);
+  const [deletingAddress, setDeletingAddress] = useState<any>(null);
   const [filteredPlans, setFilteredPlans] = useState<any>([]);
   const [addressModalAction, setAddressModalAction] = useState<string>("");
-
+  const {
+    addNewAddress,
+    savedAddresses,
+    selectAddress,
+    deleteAddress,
+    selectedAddress,
+  } = useLocationManager();
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
     queryFn: async () => {
@@ -187,7 +190,6 @@ const Subscription = () => {
   const diet = form.watch("dietaryPreference");
   const selectedPlan = form.watch("plan");
   const subscriptionType = form.watch("subscriptionType");
-  const deliveryAddressId = form.watch("selectedAddressId");
   const subscriptionMutation = useMutation({
     mutationFn: async (data: SubscriptionFormValues) => {
       const payload = {
@@ -202,7 +204,7 @@ const Subscription = () => {
         paymentMethod: "razorpay",
         menuItems: data.plan.menuItems,
         timeSlot: data.timeSlot,
-        deliveryAddressId: deliveryAddressId,
+        deliveryAddressId: selectedAddress?.id,
       };
 
       const response = await apiRequest(
@@ -278,7 +280,6 @@ const Subscription = () => {
       });
     },
   });
-
   const goToNextStep = () => {
     if (formStep === "plan") {
       setFormStep("payment");
@@ -291,87 +292,21 @@ const Subscription = () => {
     }
   };
 
-  const selectAddress = (addressId: number) => {
-    form.setValue("selectedAddressId", addressId);
-    form.setValue("useNewAddress", false);
-  };
-
   const handleAddressFormSubmit = (addressData: any) => {
-    const isEditing = editingAddress !== null;
-    const method = isEditing ? "PATCH" : "POST";
-    const url = isEditing
-      ? `/api/addresses/${editingAddress.id}`
-      : "/api/addresses";
-
-    apiRequest(method, url, addressData)
-      .then((res) => res.json())
-      .then((data) => {
-        if (isEditing) {
-          // Update the existing address in the list
-          setAddresses((prev) =>
-            prev.map((addr) => (addr.id === editingAddress.id ? data : addr)),
-          );
-          selectAddress(data.id);
-        } else {
-          // Add the new address to the list
-          setAddresses((prev) => [...prev, data]);
-          selectAddress(data.id);
-        }
-
-        setAddressModalOpen(false);
-        setEditingAddress(null);
-
-        toast({
-          title: isEditing ? "Address updated" : "Address added",
-          description: isEditing
-            ? "Your delivery address has been updated successfully."
-            : "Your new delivery address has been added successfully.",
-          variant: "default",
-        });
-      })
-      .catch((error) => {
-        console.error(
-          `Error ${isEditing ? "updating" : "creating"} address:`,
-          error,
-        );
-        toast({
-          title: "Error",
-          description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
-          variant: "destructive",
-        });
-      });
+    addNewAddress(
+      editingAddress,
+      setAddressModalOpen,
+      setEditingAddress,
+      addressData,
+    );
   };
-
   const handleDeleteAddress = async (addressId: number) => {
-    try {
-      await apiRequest("DELETE", `/api/addresses/${addressId}`);
-
-      // Remove the address from the list
-      setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
-
-      // If the deleted address was selected, clear the selection
-      if (form.watch("selectedAddressId") === addressId) {
-        form.setValue("selectedAddressId", undefined);
-      }
-
-      toast({
-        title: "Address deleted",
-        description: "Your delivery address has been deleted successfully.",
-        variant: "default",
-      });
-    } catch (error) {
-      console.error("Error deleting address:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete address. Please try again.",
-        variant: "destructive",
-      });
-    }
+    deleteAddress(addressId);
   };
 
   const onSubmit = (values: SubscriptionFormValues) => {
     if (formStep === "payment") {
-      if (!values.selectedAddressId && !values.useNewAddress) {
+      if (!selectedAddress?.id) {
         toast({
           title: "Address required",
           description: "Please select an existing address or add a new one",
@@ -414,54 +349,6 @@ const Subscription = () => {
       form.setValue("plan", defaultPlan);
     }
   }, [subscriptionPlans, diet]);
-
-  useEffect(() => {
-    if (user) {
-      apiRequest("GET", "/api/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          setAddresses(data);
-
-          // Set default address in form if available
-          const defaultAddress = data.find((addr: Address) => addr.isDefault);
-          if (defaultAddress) {
-            form.setValue("selectedAddressId", defaultAddress.id);
-          } else if (data.length > 0) {
-            form.setValue("selectedAddressId", data[0].id);
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching addresses:", error);
-          toast({
-            title: "Error",
-            description: "Failed to load addresses",
-            variant: "destructive",
-          });
-        });
-    }
-  }, [user, toast, form]);
-
-  const { data: locations } = useQuery({
-    queryKey: ["/api/locations", locationSearch],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (locationSearch) {
-        params.append("query", locationSearch);
-      }
-      const response = await fetch(`/api/locations?${params.toString()}`);
-      if (!response.ok) {
-        throw new Error("Failed to fetch locations");
-      }
-      return response.json();
-    },
-    enabled: locationSearch.length > 1,
-  });
-
-  useEffect(() => {
-    if (locations) {
-      setFilteredLocations(locations);
-    }
-  }, [locations]);
 
   const renderStepContent = () => {
     switch (formStep) {
@@ -794,7 +681,7 @@ const Subscription = () => {
             </div>
             <div>
               <div className="mb-6">
-                {addresses.length > 0 ? (
+                {savedAddresses.length > 0 ? (
                   <>
                     <div className="flex justify-end mb-4">
                       <Button
@@ -808,23 +695,24 @@ const Subscription = () => {
                       </Button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {addresses.map((address) => (
+                      {savedAddresses?.map((address) => (
                         <div
                           key={address.id}
                           className={`p-4 rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md ${
-                            form.watch("selectedAddressId") === address.id
+                            selectedAddress?.id === address.id
                               ? "border-primary"
                               : "border-gray-200 hover:border-primary/50"
                           }`}
                           onClick={() => {
-                            selectAddress(address.id),
-                              setAddressModalAction("addressAdd");
+                            selectAddress(address);
+                            form.setValue("useNewAddress", false);
+                            setAddressModalAction("addressAdd");
                           }}
                         >
                           <div className="flex justify-between">
                             <div className="flex gap-2 items-center">
                               <span className="text-xl font-bold text-gray-800 mb-1">
-                                {address.name}
+                                {address.label}
                               </span>
                               {address.isDefault && (
                                 <Badge variant="outline" className="text-xs">
@@ -859,21 +747,15 @@ const Subscription = () => {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                              {form.watch("selectedAddressId") ===
-                                address.id && (
+                              {selectedAddress?.id === address.id && (
                                 <Check className="h-5 w-5 text-primary" />
                               )}
                             </div>
                           </div>
                           <div className="flex flex-col">
                             <p className="text-sm text-gray-600">
-                              {address?.addressLine1}
+                              {address?.address}
                             </p>
-                            {address?.addressLine2 && (
-                              <p className="text-sm text-gray-600">
-                                {address?.addressLine2}
-                              </p>
-                            )}
 
                             <p className="text-sm text-gray-600">
                               Phone: {address?.phone}
@@ -893,8 +775,8 @@ const Subscription = () => {
                   <div className="flex flex-col gap-8">
                     <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
                       {(() => {
-                        const address = addresses.find(
-                          (address) => address.id === deliveryAddressId,
+                        const address = savedAddresses.find(
+                          (address) => address.id === selectedAddress?.id,
                         );
                         if (!address)
                           return (
@@ -925,13 +807,9 @@ const Subscription = () => {
                             </div>
                             <div className="flex flex-col">
                               <p className="text-sm text-gray-600">
-                                {address?.addressLine1}
+                                {address?.address}
                               </p>
-                              {address?.addressLine2 && (
-                                <p className="text-sm text-gray-600">
-                                  {address.addressLine2}
-                                </p>
-                              )}
+
                               <p className="text-sm text-gray-600">
                                 Phone: {address?.phone}
                               </p>

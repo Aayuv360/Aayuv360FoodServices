@@ -84,7 +84,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     deleteAddress,
     selectedAddress,
   } = useLocationManager();
-  console.log(selectedAddress);
   useEffect(() => {
     if (open) {
       setCurrentStep("cart");

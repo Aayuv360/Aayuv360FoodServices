@@ -29,19 +29,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 
-import { Input } from "@/components/ui/input";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -64,10 +61,10 @@ import { useRazorpay } from "@/hooks/use-razorpay";
 import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
-import { Address } from "@shared/schema";
 import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SuccessPage from "./SuccessPage";
+import { useLocationManager } from "@/hooks/use-location-manager";
 
 const plansEmoji = [
   {
@@ -136,7 +133,6 @@ const subscriptionSchema = z.object({
   startDate: z.date({
     required_error: "Please select a start date",
   }),
-  selectedAddressId: z.number().optional(),
   useNewAddress: z.boolean().default(false),
   newAddress: addressSchema.optional(),
   timeSlot: z.string().optional(),
@@ -162,13 +158,23 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const [defaulMealModalOpen, setDefaulMealModalOpen] =
     useState<boolean>(false);
   const [addressModalOpen, setAddressModalOpen] = useState<boolean>(false);
-  const [editingAddress, setEditingAddress] = useState<Address | null>(null);
+  const [editingAddress, setEditingAddress] = useState<any>(null);
   const [deletingAddress, setDeletingAddress] = useState<any>(null);
   const [addressModalAction, setAddressModalAction] = useState<string>("");
-  const [addresses, setAddresses] = useState<Address[]>([]);
   const [filteredPlans, setFilteredPlans] = useState<any>([]);
   const [determinedAction, setDeterminedAction] =
     useState<string>("NONE / DEFAULT");
+  const {
+    addNewAddress,
+    savedAddresses,
+    selectAddress,
+    deleteAddress,
+    selectedAddress,
+  } = useLocationManager();
+  const exictingAdrs = savedAddresses.find(
+    (item: any) => item.id === previousPlansData?.[0]?.deliveryAddressId,
+  );
+  console.log(exictingAdrs);
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
     queryFn: async () => {
@@ -176,7 +182,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       return res.json();
     },
   });
-  const [exictingAdrs, setExictingAdrs] = useState<Address | null>(null);
   const defaultValues: SubscriptionFormValues = {
     plan: undefined as any,
     dietaryPreference: "veg",
@@ -201,7 +206,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const modifydelivaryAdrs = form.watch("modifydelivaryAdrs");
   const dietaryPreference = form.watch("dietaryPreference");
   const personCount = form.watch("personCount") || 1;
-  const deliveryAddressId = form.watch("selectedAddressId");
   const basePrice = selectedPlan?.price;
   const totalPricePerPerson = basePrice;
   const totalPrice = totalPricePerPerson * personCount;
@@ -398,75 +402,17 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     }
   };
 
-  const selectAddress = (addressId: number) => {
-    form.setValue("selectedAddressId", addressId);
-    form.setValue("useNewAddress", false);
-  };
-
   const handleAddressFormSubmit = (addressData: any) => {
-    const isEditing = editingAddress !== null;
-    const method = isEditing ? "PATCH" : "POST";
-    const url = isEditing
-      ? `/api/addresses/${editingAddress.id}`
-      : "/api/addresses";
-
-    apiRequest(method, url, addressData)
-      .then((res) => res.json())
-      .then((data) => {
-        if (isEditing) {
-          setAddresses((prev) =>
-            prev.map((addr) => (addr.id === editingAddress.id ? data : addr)),
-          );
-          selectAddress(data.id);
-        } else {
-          setAddresses((prev) => [...prev, data]);
-          selectAddress(data.id);
-        }
-
-        setAddressModalOpen(false);
-        setEditingAddress(null);
-
-        toast({
-          title: isEditing ? "Address updated" : "Address added",
-          description: isEditing
-            ? "Your delivery address has been updated successfully."
-            : "Your new delivery address has been added successfully.",
-          variant: "default",
-        });
-      })
-      .catch((error) => {
-        toast({
-          title: "Error",
-          description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
-          variant: "destructive",
-        });
-      });
+    addNewAddress(
+      editingAddress,
+      setAddressModalOpen,
+      setEditingAddress,
+      addressData,
+    );
   };
-
   const handleDeleteAddress = async (addressId: number) => {
-    try {
-      await apiRequest("DELETE", `/api/addresses/${addressId}`);
-
-      setAddresses((prev) => prev.filter((addr) => addr.id !== addressId));
-
-      if (form.watch("selectedAddressId") === addressId) {
-        form.setValue("selectedAddressId", undefined);
-      }
-
-      toast({
-        title: "Address deleted",
-        description: "Your delivery address has been deleted successfully.",
-        variant: "default",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete address. Please try again.",
-        variant: "destructive",
-      });
-    }
+    deleteAddress(addressId);
   };
-
   useEffect(() => {
     const plans =
       subscriptionPlans?.find((group: any) => group.dietaryPreference === diet)
@@ -493,34 +439,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       form.setValue("startDate", date);
     }
   }, [determinedAction]);
-  useEffect(() => {
-    if (user) {
-      apiRequest("GET", "/api/addresses")
-        .then((res) => res.json())
-        .then((data) => {
-          setAddresses(data);
-          const exicting = data?.find(
-            (address: any) =>
-              address.id === previousPlansData[0]?.deliveryAddressId,
-          );
-          setExictingAdrs(exicting);
-          // Set default address in form if available
-          const defaultAddress = data.find((addr: Address) => addr.isDefault);
-          if (defaultAddress) {
-            form.setValue("selectedAddressId", defaultAddress.id);
-          } else if (data.length > 0) {
-            form.setValue("selectedAddressId", data[0].id);
-          }
-        })
-        .catch((error) => {
-          toast({
-            title: "Error",
-            description: "Failed to load addresses",
-            variant: "destructive",
-          });
-        });
-    }
-  }, [user, toast, form]);
 
   useEffect(() => {
     determineAction();
@@ -644,7 +562,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
           deliveryAddressId:
             modifydelivaryAdrs === "Yes"
               ? previousPlansData?.[0]?.deliveryAddressId
-              : deliveryAddressId,
+              : selectedAddress?.id,
           personCount: personCount,
         });
       } else if (determinedAction === "UPGRADE") {
@@ -671,7 +589,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
           deliveryAddressId:
             modifydelivaryAdrs === "Yes"
               ? previousPlansData?.[0]?.deliveryAddressId
-              : deliveryAddressId,
+              : selectedAddress?.id,
           personCount: personCount,
         });
       } else if (determinedAction === "UPGRADE") {
@@ -1066,7 +984,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
             </div>
             <div>
               <div className="mb-6">
-                {addresses.length > 0 ? (
+                {savedAddresses.length > 0 ? (
                   <>
                     <div className="flex justify-end mb-4">
                       <Button
@@ -1083,20 +1001,24 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                       </Button>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {addresses.map((address) => (
+                      {savedAddresses.map((address) => (
                         <div
                           key={address.id}
                           className={`p-4 rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md ${
-                            form.watch("selectedAddressId") === address.id
+                            selectedAddress?.id === address.id
                               ? "border-primary"
                               : "border-gray-200 hover:border-primary/50"
                           }`}
-                          onClick={() => selectAddress(address.id)}
+                          onClick={() => {
+                            selectAddress(address);
+                            form.setValue("useNewAddress", false);
+                            setAddressModalAction("addressAdd");
+                          }}
                         >
                           <div className="flex justify-between">
                             <div className="flex gap-2 items-center">
                               <span className="text-xl font-bold text-gray-800 mb-1">
-                                {address.name}
+                                {address.label}
                               </span>
                               {address.isDefault && (
                                 <Badge variant="outline" className="text-xs">
@@ -1131,21 +1053,15 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
-                              {form.watch("selectedAddressId") ===
-                                address.id && (
+                              {selectedAddress?.id === address.id && (
                                 <Check className="h-5 w-5 text-primary" />
                               )}
                             </div>
                           </div>
                           <div className="flex flex-col">
                             <p className="text-sm text-gray-600">
-                              {address?.addressLine1}
+                              {address?.address}
                             </p>
-                            {address?.addressLine2 && (
-                              <p className="text-sm text-gray-600">
-                                {address?.addressLine2}, {address?.city}
-                              </p>
-                            )}
 
                             <p className="text-sm text-gray-600">
                               Phone: {address?.phone}
@@ -1165,8 +1081,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   <div className="flex flex-col gap-8">
                     <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
                       {(() => {
-                        const address = addresses.find(
-                          (address) => address.id === deliveryAddressId,
+                        const address = savedAddresses.find(
+                          (address) => address.id === selectedAddress?.id,
                         );
                         if (!address)
                           return (
@@ -1197,13 +1113,9 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                             </div>
                             <div className="flex flex-col">
                               <p className="text-sm text-gray-600">
-                                {address?.addressLine1}
+                                {address?.address}
                               </p>
-                              {address?.addressLine2 && (
-                                <p className="text-sm text-gray-600">
-                                  {address.addressLine2}
-                                </p>
-                              )}
+
                               <p className="text-sm text-gray-600">
                                 Phone: {address?.phone}
                               </p>

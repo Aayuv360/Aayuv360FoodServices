@@ -21,6 +21,8 @@ export interface SavedAddress {
   isDefault?: boolean;
   phone: number;
   userName?: string;
+  addressLine1?: string;
+  addressLine2?: string;
 }
 
 export interface LocationState {
