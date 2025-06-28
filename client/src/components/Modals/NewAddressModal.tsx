@@ -13,7 +13,8 @@ import { useUIContext } from "@/contexts/UIContext";
 
 const libraries = ["places"];
 
-const centerHyderabad = { lat: 17.385044, lng: 78.486671 };
+const markerPosition = { lat: 17.385044, lng: 78.486671 };
+const mapCenter = { lat: 17.385044, lng: 78.486671 };
 
 interface NewAddressModalProps {
   addressModalOpen: boolean;
@@ -38,8 +39,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
   >([]);
-  const [mapCenter, setMapCenter] = useState(centerHyderabad);
-  const [markerPosition, setMarkerPosition] = useState(centerHyderabad);
+
   const [addressType, setAddressType] = useState(
     editingAddress?.name || "Home",
   );
@@ -72,11 +72,10 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     const initializeFromEditingAddress = async () => {
       if (editingAddress) {
         const loc = {
-          lat: editingAddress.latitude || centerHyderabad.lat,
-          lng: editingAddress.longitude || centerHyderabad.lng,
+          lat: editingAddress.latitude,
+          lng: editingAddress.longitude,
         };
-        setMapCenter(loc);
-        setMarkerPosition(loc);
+
         checkServiceAvailability(loc);
 
         const geocoder = new window.google.maps.Geocoder();
@@ -100,8 +99,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
   useEffect(() => {
     if (coords && !editingAddress) {
-      setMapCenter(coords);
-      setMarkerPosition(coords);
       reverseGeocode(coords);
       checkServiceAvailability(coords);
     }
@@ -194,8 +191,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
         };
-        setMapCenter(loc);
-        setMarkerPosition(loc);
+
         reverseGeocode(loc);
         checkServiceAvailability(loc);
         setLocationSearch(description);
@@ -310,8 +306,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                   lat: latLng.lat(),
                   lng: latLng.lng(),
                 };
-                setMarkerPosition(newLoc);
-                setMapCenter(newLoc);
+
                 reverseGeocode(newLoc);
                 checkServiceAvailability(newLoc);
               }}
@@ -334,27 +329,23 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           </div>
         )}
 
-        {markerPosition !== centerHyderabad && (
-          <div
-            className={`p-3 rounded-lg border ${
-              isWithinServiceArea
-                ? "bg-green-50 border-green-200 text-green-800"
-                : "bg-red-50 border-red-200 text-red-800"
-            }`}
-          >
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-              <span className="text-sm">{getServiceMessage()}</span>
-            </div>
+        <div
+          className={`p-3 rounded-lg border ${
+            isWithinServiceArea
+              ? "bg-green-50 border-green-200 text-green-800"
+              : "bg-red-50 border-red-200 text-red-800"
+          }`}
+        >
+          <div className="flex items-start gap-2">
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+            <span className="text-sm">{getServiceMessage()}</span>
           </div>
-        )}
+        </div>
 
         <div className="flex justify-end pt-4">
           <Button
             onClick={handleConfirmLocation}
-            disabled={
-              !isWithinServiceArea || markerPosition === centerHyderabad
-            }
+            disabled={!isWithinServiceArea}
             className="w-full"
           >
             Confirm Location
@@ -396,12 +387,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         <div className="p-3 bg-gray-50 rounded-lg border">
           <div className="text-sm font-medium mb-1">Selected Location:</div>
           <div className="text-sm text-gray-600">{locationSearch}</div>
-          {markerPosition && (
-            <div className="text-xs text-gray-500 mt-1">
-              Lat: {markerPosition.lat.toFixed(4)}, Lng:{" "}
-              {markerPosition.lng.toFixed(4)}
-            </div>
-          )}
         </div>
 
         <form
@@ -602,8 +587,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     lat: latLng.lat(),
                     lng: latLng.lng(),
                   };
-                  setMarkerPosition(newLoc);
-                  setMapCenter(newLoc);
+
                   reverseGeocode(newLoc);
                   checkServiceAvailability(newLoc);
                 }}
@@ -628,27 +612,20 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             </div>
           )}
 
-          {markerPosition !== centerHyderabad && (
-            <div
-              className={`p-3 rounded-lg border ${
-                isWithinServiceArea
-                  ? "bg-green-50 border-green-200 text-green-800"
-                  : "bg-red-50 border-red-200 text-red-800"
-              }`}
-            >
-              <div className="flex items-start gap-2">
-                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                <span className="text-sm">{getServiceMessage()}</span>
+          {!isWithinServiceArea ? (
+            <div className="m-auto">
+              <div
+                className={`p-3 rounded-lg border ${
+                  isWithinServiceArea
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-red-50 border-red-200 text-red-800"
+                }`}
+              >
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <span className="text-sm">{getServiceMessage()}</span>
+                </div>
               </div>
-            </div>
-          )}
-
-          {!isWithinServiceArea && markerPosition !== centerHyderabad ? (
-            <div className="flex items-center justify-center h-32 bg-yellow-50 rounded-lg border border-yellow-200">
-              <p className="text-yellow-800 text-center px-4">
-                We're not serving this location yet, but we're working on
-                expanding our coverage area.
-              </p>
             </div>
           ) : (
             <form
@@ -783,7 +760,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
   return (
     <Dialog open={addressModalOpen} onOpenChange={setAddressModalOpen}>
-      <DialogContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[70vh] max-h-[70vh] overflow-y-auto">
+      <DialogContent className="w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl h-[72vh] max-h-[72vh] overflow-y-auto">
         {renderDesktopLayout()}
       </DialogContent>
     </Dialog>

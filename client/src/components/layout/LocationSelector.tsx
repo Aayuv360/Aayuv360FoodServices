@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useServiceArea } from "@/hooks/use-service-area";
 
 const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
@@ -33,6 +34,12 @@ const LocationSelector = () => {
     isLoading: locationLoading,
     refreshSavedAddresses,
   } = useLocationManager();
+  const {
+    isWithinServiceArea,
+    checkServiceAvailability,
+    getServiceMessage,
+    isLoading: serviceLoading,
+  } = useServiceArea();
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
     libraries: GOOGLE_MAPS_LIBRARIES,
