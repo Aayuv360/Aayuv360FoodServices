@@ -15,17 +15,6 @@ const libraries = ["places"];
 
 const centerHyderabad = { lat: 17.385044, lng: 78.486671 };
 
-interface Address {
-  name?: string;
-  phone?: string;
-  userName?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-  latitude?: number;
-  longitude?: number;
-  isDefault?: boolean;
-}
-
 interface NewAddressModalProps {
   addressModalOpen: boolean;
   setAddressModalOpen: (open: boolean) => void;

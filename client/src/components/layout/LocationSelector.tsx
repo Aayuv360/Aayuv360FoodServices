@@ -12,8 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/use-auth";
 
 const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
@@ -32,50 +30,9 @@ const LocationSelector = () => {
     selectedAddress,
     savedAddresses,
     selectAddress,
-    getCurrentLocation,
     isLoading: locationLoading,
     refreshSavedAddresses,
   } = useLocationManager();
-  const {
-    data: apiAddresses = [],
-    isLoading: addressesLoading,
-    refetch: refetchAddresses,
-  } = useQuery({
-    queryKey: ["/api/addresses", user?.id],
-    queryFn: async () => {
-      if (!user) return [];
-      const res = await apiRequest("GET", "/api/addresses");
-      if (!res.ok) {
-        if (res.status === 401) return []; // User not authenticated
-        throw new Error("Failed to fetch addresses");
-      }
-      const addresses = await res.json();
-
-      setTimeout(() => {
-        if (!selectedAddress && addresses.length > 0) {
-          const defaultAddr =
-            addresses.find((addr: any) => addr.isDefault) || addresses[0];
-          const formattedAddr = {
-            id: defaultAddr.id,
-            label: defaultAddr.name || "Address",
-            address: `${defaultAddr.addressLine1}${defaultAddr.addressLine2 ? ", " + defaultAddr.addressLine2 : ""}`,
-            coords: {
-              lat: defaultAddr.latitude || 0,
-              lng: defaultAddr.longitude || 0,
-            },
-            pincode: defaultAddr.pincode || "",
-            isDefault: defaultAddr.isDefault || false,
-          };
-          selectAddress(formattedAddr);
-        }
-      }, 500);
-
-      return addresses;
-    },
-    enabled: !!user, // Only run query when user is logged in
-  });
-
-  // Google Maps script
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -86,13 +43,6 @@ const LocationSelector = () => {
       const addr = selectedAddress.address;
       return addr.length > 30 ? addr.substring(0, 30) + "..." : addr;
     }
-
-    if (user && apiAddresses.length > 0 && !selectedAddress) {
-      const defaultAddress =
-        apiAddresses.find((addr: any) => addr.isDefault) || apiAddresses[0];
-      return defaultAddress.name || defaultAddress.addressLine1;
-    }
-
     return "Select Location";
   };
 
@@ -248,7 +198,7 @@ const LocationSelector = () => {
           isDefault: false,
         };
 
-        selectAddress(tempAddress);
+        // selectAddress(tempAddress);
         setSearchInput("");
         setSuggestions([]);
 
@@ -261,7 +211,7 @@ const LocationSelector = () => {
   };
 
   useEffect(() => {
-    if (!user && !selectedAddress && isLoaded && !addressesLoading) {
+    if (!user && !selectedAddress && isLoaded) {
       const timer = setTimeout(() => {
         if (!selectedAddress) {
           handleCurrentLocation();
@@ -269,12 +219,11 @@ const LocationSelector = () => {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user, selectedAddress, isLoaded, addressesLoading]);
+  }, [user, selectedAddress, isLoaded]);
 
   const handleNewAddressAdded = (addressData: any) => {
     setIsNewAddressModalOpen(false);
     refreshSavedAddresses();
-    refetchAddresses();
     toast({
       title: "Address Added",
       description: "New address has been saved successfully",
@@ -345,12 +294,12 @@ const LocationSelector = () => {
 
           <DropdownMenuSeparator />
 
-          {apiAddresses.length > 0 ? (
+          {savedAddresses.length > 0 ? (
             <>
               <div className="px-2 py-1.5 text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Saved Addresses
               </div>
-              {apiAddresses.map((address: any) => (
+              {savedAddresses.map((address: any) => (
                 <DropdownMenuItem
                   key={address.id}
                   onClick={() =>
@@ -394,10 +343,6 @@ const LocationSelector = () => {
               {!user ? (
                 <div className="px-2 py-4 text-center text-sm text-gray-500">
                   Please login to see saved addresses
-                </div>
-              ) : addressesLoading ? (
-                <div className="px-2 py-4 text-center text-sm text-gray-500">
-                  Loading addresses...
                 </div>
               ) : (
                 <div className="px-2 py-4 text-center text-sm text-gray-500">

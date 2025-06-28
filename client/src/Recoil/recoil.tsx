@@ -19,7 +19,7 @@ export interface SavedAddress {
   coords: LocationCoords;
   pincode?: string;
   isDefault?: boolean;
-  phone: number;
+  phone?: number;
   userName?: string;
   addressLine1?: string;
   addressLine2?: string;

@@ -174,7 +174,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const exictingAdrs = savedAddresses.find(
     (item: any) => item.id === previousPlansData?.[0]?.deliveryAddressId,
   );
-  console.log(exictingAdrs);
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
     queryFn: async () => {
