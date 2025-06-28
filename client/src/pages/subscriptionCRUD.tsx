@@ -45,13 +45,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -65,24 +60,8 @@ import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
+import { SubscriptionPlanCards } from "./subscriptionPlanCards";
 
-const plansEmoji = [
-  {
-    id: "basic",
-    name: "Basic",
-    emoji: "🌱",
-  },
-  {
-    id: "premium",
-    name: "Premium",
-    emoji: "🌾",
-  },
-  {
-    id: "family",
-    name: "Family",
-    emoji: "👑",
-  },
-];
 const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
   { id: 2, time: "8:00 PM - 9:00 PM" },
@@ -152,6 +131,7 @@ interface RazorpayPaymentData {
 const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { initiatePayment } = useRazorpay();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -164,6 +144,9 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const [filteredPlans, setFilteredPlans] = useState<any>([]);
   const [determinedAction, setDeterminedAction] =
     useState<string>("NONE / DEFAULT");
+  const setSelectedPlan = (plan: any) => {
+    form.setValue("plan", plan);
+  };
   const {
     addNewAddress,
     savedAddresses,
@@ -604,11 +587,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         return (
           <div>
             <div className="mb-5 text-center">
-              <h1 className="text-4xl font-bold inline-flex items-center gap-2">
+              <h1 className="text-2xl font-bold inline-flex items-center gap-2">
                 <Sparkles className="text-orange-500" /> Manage Your
                 Subscription
               </h1>
-              <p className="text-lg text-gray-500 mt-2">
+              <p className="text-lg text-gray-500">
                 Custom millet meal plans tailored to your lifestyle
               </p>
             </div>
@@ -616,7 +599,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
               defaultValue="vegetarian"
               className="mb-5 flex flex-col items-center"
             >
-              <TabsList className="bg-white p-1 rounded-full shadow-md flex gap-4">
+              <TabsList className="bg-white p-2 rounded-full shadow-md flex gap-4">
                 <TabsTrigger
                   value="vegetarian"
                   onClick={() =>
@@ -626,7 +609,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                     )
                   }
                 >
-                  🌿 Vegetarian
+                  🌿 Veg
                 </TabsTrigger>
                 <TabsTrigger
                   value="egg"
@@ -653,70 +636,13 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
               </TabsList>
             </Tabs>
             <div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-                {filteredPlans?.map((plan: any) => (
-                  <Card
-                    key={plan.id}
-                    className={`rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md   ${
-                      selectedPlan?.planType === plan.planType
-                        ? "border-primary"
-                        : "border-gray-200 hover:border-primary/50"
-                    }`}
-                    onClick={() => form.setValue("plan", plan)}
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center w-full">
-                        <CardTitle className="text-lg font-bold">
-                          {
-                            plansEmoji.find(
-                              (item: any) => item.name === plan.name,
-                            )?.emoji
-                          }{" "}
-                          {plan.name === "Family" ? "Elite" : plan.name}
-                        </CardTitle>
-
-                        {selectedPlan?.planType === plan.planType && (
-                          <div className="flex items-center space-x-2 ml-auto">
-                            <span
-                              role="button"
-                              className="text-primary hover:underline cursor-pointer font-medium text-sm"
-                              onClick={() => {
-                                setDefaulMealModalOpen(true);
-                              }}
-                            >
-                              Meal info
-                            </span>
-                            <Check className="h-5 w-5 text-primary" />
-                          </div>
-                        )}
-                      </div>
-
-                      <CardDescription>{plan.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="text-2xl font-bold text-primary">
-                          {formatPrice(plan.price)}
-                          <span className="text-sm font-normal text-gray-600">
-                            /month
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {plan.features.map((feature: string, idx: number) => (
-                            <div
-                              key={idx}
-                              className="flex items-center gap-2 text-sm"
-                            >
-                              <Check className="h-4 w-4 text-green-600" />
-                              <span>{feature}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <SubscriptionPlanCards
+                filteredPlans={filteredPlans}
+                selectedPlan={selectedPlan}
+                setSelectedPlan={setSelectedPlan}
+                isMobile={isMobile}
+                setDefaulMealModalOpen={setDefaulMealModalOpen}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm ">
@@ -1276,9 +1202,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     <div className="bg-gray-50 min-h-screen">
       <div className="container mx-auto">
         <Form {...form}>
-          <div className="max-w-7xl mx-auto px-5 py-6">
-            {renderStepContent()}
-          </div>
+          <div className="max-w-7xl mx-auto py-6">{renderStepContent()}</div>
         </Form>
       </div>
 

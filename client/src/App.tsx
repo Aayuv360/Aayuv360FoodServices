@@ -37,28 +37,45 @@ function Router() {
       <div className="font-sans min-h-screen flex flex-col bg-gradient-to-b from-orange-50 to-amber-50">
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.1),rgba(249,115,22,0))] pointer-events-none"></div>
         <Header />
-        <main className="flex-grow relative pb-20 md:pb-0">
+        <main className="flex-grow relative md:pb-0">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/menu" element={<Menu />} />
             <Route path="/MealDetails/:mealId" element={<ItemDetailsPage />} />
 
             {/* Protected routes */}
-            <Route path="/profile" element={<ProtectedRoute component={Profile} />} />
+            <Route
+              path="/profile"
+              element={<ProtectedRoute component={Profile} />}
+            />
             <Route path="/subscription" element={<SubscriptionManager />} />
             {/* <Route
               path="/subscription/:subscriptionId"
               element={<ProtectedRoute component={Subscription} />}
             /> */}
-            <Route path="/checkout/:orderId" element={<ProtectedRoute component={Checkout} />} />
-            <Route path="/payment-success" element={<ProtectedRoute component={SuccessPage} />} />
-            <Route path="/meal-planner" element={<ProtectedRoute component={MealPlanner} />} />
+            <Route
+              path="/checkout/:orderId"
+              element={<ProtectedRoute component={Checkout} />}
+            />
+            <Route
+              path="/payment-success"
+              element={<ProtectedRoute component={SuccessPage} />}
+            />
+            <Route
+              path="/meal-planner"
+              element={<ProtectedRoute component={MealPlanner} />}
+            />
 
             {/* Admin routes */}
-            <Route path="/analytics" element={<ProtectedRoute component={Analytics} adminOnly />} />
+            <Route
+              path="/analytics"
+              element={<ProtectedRoute component={Analytics} adminOnly />}
+            />
             <Route
               path="/order-management"
-              element={<ProtectedRoute component={OrderManagement} managerOnly />}
+              element={
+                <ProtectedRoute component={OrderManagement} managerOnly />
+              }
             />
             <Route
               path="/admin-portal"

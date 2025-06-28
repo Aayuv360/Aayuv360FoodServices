@@ -52,9 +52,6 @@ const Profile = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
-  const [expandedSubscriptionId, setExpandedSubscriptionId] = useState<
-    number | null
-  >(null);
 
   // Parse the URL search params to get the active tab
   const urlParams = new URLSearchParams(window.location.search);
@@ -69,19 +66,13 @@ const Profile = () => {
     }
   };
 
-  const toggleSubscriptionDetails = (subscriptionId: number) => {
-    if (expandedSubscriptionId === subscriptionId) {
-      setExpandedSubscriptionId(null);
-    } else {
-      setExpandedSubscriptionId(subscriptionId);
-    }
-  };
-
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tabParam = urlParams.get("tab");
     if (tabParam) {
       setCurrentTab(tabParam);
+    } else {
+      setCurrentTab("profile");
     }
   }, [location]);
 
