@@ -364,7 +364,7 @@ const Subscription = () => {
               <h1 className="text-2xl font-bold inline-flex items-center gap-2">
                 <Sparkles className="text-orange-500" /> Subscribe to Aayuv
               </h1>
-              <p className="text-lg text-gray-500">
+              <p className="text-m text-gray-500">
                 Custom millet meal plans tailored to your lifestyle
               </p>
             </div>

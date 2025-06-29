@@ -57,10 +57,10 @@ const LocationSelector = () => {
 
   const handleAddressSelect = (address: any) => {
     selectAddress(address);
-    toast({
-      title: "Location Updated",
-      description: `Delivery location set to ${address.label || address.address}`,
-    });
+    // toast({
+    //   title: "Location Updated",
+    //   description: `Delivery location set to ${address.label || address.address}`,
+    // });
   };
 
   const handleCurrentLocation = async () => {
@@ -113,10 +113,10 @@ const LocationSelector = () => {
           };
 
           selectAddress(currentLocationAddress);
-          toast({
-            title: "Location Updated",
-            description: "Using your current location",
-          });
+          // toast({
+          //   title: "Location Updated",
+          //   description: "Using your current location",
+          // });
         }
       } else {
         const currentLocationAddress = {
@@ -129,19 +129,19 @@ const LocationSelector = () => {
         };
 
         selectAddress(currentLocationAddress);
-        toast({
-          title: "Location Updated",
-          description: "Using your current location",
-        });
+        // toast({
+        //   title: "Location Updated",
+        //   description: "Using your current location",
+        // });
       }
     } catch (error) {
       console.error("Error getting current location:", error);
-      toast({
-        title: "Location Error",
-        description:
-          "Could not get your current location. Please check permissions.",
-        variant: "destructive",
-      });
+      // toast({
+      //   title: "Location Error",
+      //   description:
+      //     "Could not get your current location. Please check permissions.",
+      //   variant: "destructive",
+      // });
     } finally {
       setIsLoading(false);
     }
@@ -206,13 +206,14 @@ const LocationSelector = () => {
         };
 
         // selectAddress(tempAddress);
+        console.log("tete", tempAddress);
         setSearchInput("");
         setSuggestions([]);
 
-        toast({
-          title: "Location Selected",
-          description: "Location updated from search",
-        });
+        // toast({
+        //   title: "Location Selected",
+        //   description: "Location updated from search",
+        // });
       }
     });
   };
@@ -231,10 +232,10 @@ const LocationSelector = () => {
   const handleNewAddressAdded = (addressData: any) => {
     setIsNewAddressModalOpen(false);
     refreshSavedAddresses();
-    toast({
-      title: "Address Added",
-      description: "New address has been saved successfully",
-    });
+    // toast({
+    //   title: "Address Added",
+    //   description: "New address has been saved successfully",
+    // });
   };
 
   return (

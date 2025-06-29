@@ -36,7 +36,7 @@ export function SubscriptionPlanCards({
 }: any) {
   const renderCard = (plan: any, isSelected: boolean) => (
     <Card
-      key={plan.id}
+      key={plan?.id}
       className={`rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 shadow-md bg-white ${
         isSelected
           ? "border-primary"
@@ -97,7 +97,7 @@ export function SubscriptionPlanCards({
   );
 
   return (
-    <section className="px-4 py-4 overflow-hidden">
+    <section className="py-4 overflow-hidden">
       {isMobile ? (
         <div className="relative flex flex-col items-center w-full overflow-hidden">
           <div className="absolute top-0 w-full flex justify-center gap-4 pointer-events-none z-10">

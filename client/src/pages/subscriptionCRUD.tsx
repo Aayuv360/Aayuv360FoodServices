@@ -591,8 +591,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 <Sparkles className="text-orange-500" /> Manage Your
                 Subscription
               </h1>
-              <p className="text-lg text-gray-500">
-                Custom millet meal plans tailored to your lifestyle
+              <p className="text-m text-gray-500">
+                Millet meal plans tailored to your lifestyle
               </p>
             </div>
             <Tabs

@@ -41,8 +41,8 @@ const HeroSection = () => {
                 : "translate-y-10 opacity-0"
             }`}
           >
-            <div className="inline-flex items-center bg-white/10 backdrop-blur-sm px-3 py-1 rounded-full text-white/90 mb-4">
-              <Sparkles size={14} className="mr-2 animate-pulse" />
+            <div className="inline-flex items-center bg-grey/10 backdrop-blur-sm px-3 py-1 rounded-full text-white/90 mb-4">
+              <Sparkles size={20} className="mr-1 animate-pulse" />
               <span>Experience the future of healthy eating</span>
             </div>
 
