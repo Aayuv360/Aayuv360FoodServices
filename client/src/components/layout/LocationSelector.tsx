@@ -79,7 +79,7 @@ const LocationSelector = () => {
             timeout: 10000,
             maximumAge: 60000,
           });
-        },
+        }
       );
 
       const coords = {
@@ -98,7 +98,7 @@ const LocationSelector = () => {
                 reject(new Error("Geocoding failed"));
               }
             });
-          },
+          }
         );
 
         if (result.length > 0) {
@@ -147,18 +147,14 @@ const LocationSelector = () => {
     }
   };
 
-  const fetchSuggestions = async (input: string) => {
-    if (!window.google || !input.trim()) {
-      setSuggestions([]);
-      return;
-    }
+  const fetchSuggestions = (input: string) => {
+    if (!window.google || !input) return;
 
     const service = new window.google.maps.places.AutocompleteService();
     service.getPlacePredictions(
       {
         input,
         componentRestrictions: { country: "in" },
-        types: ["address"],
       },
       (predictions, status) => {
         if (status === "OK" && predictions) {
@@ -166,27 +162,15 @@ const LocationSelector = () => {
         } else {
           setSuggestions([]);
         }
-      },
+      }
     );
   };
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchInput && isLoaded) {
-        fetchSuggestions(searchInput);
-      } else {
-        setSuggestions([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchInput, isLoaded]);
-
   const handlePlaceSelect = (
-    suggestion: google.maps.places.AutocompletePrediction,
+    suggestion: google.maps.places.AutocompletePrediction
   ) => {
     const service = new window.google.maps.places.PlacesService(
-      document.createElement("div"),
+      document.createElement("div")
     );
 
     service.getDetails({ placeId: suggestion.place_id }, (place, status) => {
@@ -205,8 +189,7 @@ const LocationSelector = () => {
           isDefault: false,
         };
 
-        // selectAddress(tempAddress);
-        console.log("tete", tempAddress);
+        selectAddress(tempAddress);
         setSearchInput("");
         setSuggestions([]);
 
@@ -263,7 +246,11 @@ const LocationSelector = () => {
               <Input
                 placeholder="Search for area, landmark..."
                 value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  fetchSuggestions(val);
+                  setSearchInput(val);
+                }}
                 className="pl-10"
               />
             </div>
