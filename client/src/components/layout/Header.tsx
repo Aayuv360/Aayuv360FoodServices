@@ -21,7 +21,7 @@ const Header = () => {
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
 
   const isMobile = useIsMobile();
-  const { selectedAddress, serviceArea } = useLocationManager();
+  const { selectedAddress } = useLocationManager();
   const { isWithinServiceArea, getServiceMessage } = useServiceArea();
 
   const openAuthModal = (
@@ -38,13 +38,14 @@ const Header = () => {
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-40">
-        {/* Service Status Banner */}
         {selectedAddress && (
-          <div className={`py-2 px-4 text-sm ${
-            isWithinServiceArea
-              ? "bg-green-100 text-green-800 border-b border-green-200"
-              : "bg-red-100 text-red-800 border-b border-red-200"
-          }`}>
+          <div
+            className={`py-2 px-4 text-sm ${
+              isWithinServiceArea
+                ? "bg-green-100 text-green-800 border-b border-green-200"
+                : "bg-red-100 text-red-800 border-b border-red-200"
+            }`}
+          >
             <div className="container mx-auto flex items-center justify-center gap-2">
               {isWithinServiceArea ? (
                 <CheckCircle className="h-4 w-4" />
@@ -55,7 +56,7 @@ const Header = () => {
             </div>
           </div>
         )}
-        
+
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           {isMobile ? (
             <MobileHeader />

@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, ChevronDown, Plus, Navigation, Search, AlertCircle } from "lucide-react";
+import {
+  MapPin,
+  ChevronDown,
+  Plus,
+  Navigation,
+  Search,
+  AlertCircle,
+} from "lucide-react";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { Input } from "@/components/ui/input";
@@ -15,7 +22,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useServiceArea } from "@/hooks/use-service-area";
 
-import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from "@/lib/location-constants";
+import {
+  GOOGLE_MAPS_API_KEY,
+  GOOGLE_MAPS_LIBRARIES,
+} from "@/lib/location-constants";
 
 const LocationSelector = () => {
   const [isNewAddressModalOpen, setIsNewAddressModalOpen] = useState(false);
@@ -35,16 +45,15 @@ const LocationSelector = () => {
     refreshSavedAddresses,
     getCurrentLocation,
     checkLocationServiceArea,
-    serviceArea,
   } = useLocationManager();
-  
+
   const {
     isWithinServiceArea,
     checkServiceAvailability,
     getServiceMessage,
     isLoading: serviceLoading,
   } = useServiceArea();
-  
+
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -62,10 +71,6 @@ const LocationSelector = () => {
 
   const handleAddressSelect = (address: any) => {
     selectAddress(address);
-    // toast({
-    //   title: "Location Updated",
-    //   description: `Delivery location set to ${address.label || address.address}`,
-    // });
   };
 
   const handleCurrentLocation = async () => {
@@ -73,7 +78,6 @@ const LocationSelector = () => {
       setIsLoading(true);
       const coords = await getCurrentLocation();
 
-      // Check service availability for current location
       await checkServiceAvailability(coords);
 
       if (window.google && window.google.maps) {
@@ -87,7 +91,7 @@ const LocationSelector = () => {
                 reject(new Error("Geocoding failed"));
               }
             });
-          }
+          },
         );
 
         if (result.length > 0) {
@@ -103,15 +107,6 @@ const LocationSelector = () => {
 
           selectAddress(currentLocationAddress);
           checkLocationServiceArea(coords);
-
-          // Show service message
-          if (!isWithinServiceArea) {
-            toast({
-              title: "Service Not Available",
-              description: getServiceMessage(),
-              variant: "destructive",
-            });
-          }
         }
       } else {
         const currentLocationAddress = {
@@ -125,23 +120,9 @@ const LocationSelector = () => {
 
         selectAddress(currentLocationAddress);
         checkLocationServiceArea(coords);
-
-        // Show service message
-        if (!isWithinServiceArea) {
-          toast({
-            title: "Service Not Available",
-            description: getServiceMessage(),
-            variant: "destructive",
-          });
-        }
       }
     } catch (error) {
       console.error("Error getting current location:", error);
-      toast({
-        title: "Location Error",
-        description: "Unable to get current location. Please try again.",
-        variant: "destructive",
-      });
     } finally {
       setIsLoading(false);
     }
@@ -162,51 +143,44 @@ const LocationSelector = () => {
         } else {
           setSuggestions([]);
         }
-      }
+      },
     );
   };
 
   const handlePlaceSelect = async (
-    suggestion: google.maps.places.AutocompletePrediction
+    suggestion: google.maps.places.AutocompletePrediction,
   ) => {
     const service = new window.google.maps.places.PlacesService(
-      document.createElement("div")
+      document.createElement("div"),
     );
 
-    service.getDetails({ placeId: suggestion.place_id }, async (place, status) => {
-      if (status === "OK" && place?.geometry?.location) {
-        const coords = {
-          lat: place.geometry.location.lat(),
-          lng: place.geometry.location.lng(),
-        };
+    service.getDetails(
+      { placeId: suggestion.place_id },
+      async (place, status) => {
+        if (status === "OK" && place?.geometry?.location) {
+          const coords = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+          };
 
-        // Check service availability for selected location
-        await checkServiceAvailability(coords);
+          await checkServiceAvailability(coords);
 
-        const tempAddress = {
-          id: Date.now(),
-          label: "Search Result",
-          address: suggestion.description,
-          coords,
-          pincode: "",
-          isDefault: false,
-        };
+          const tempAddress = {
+            id: Date.now(),
+            label: "Search Result",
+            address: suggestion.description,
+            coords,
+            pincode: "",
+            isDefault: false,
+          };
 
-        selectAddress(tempAddress);
-        checkLocationServiceArea(coords);
-        setSearchInput("");
-        setSuggestions([]);
-
-        // Show service message
-        if (!isWithinServiceArea) {
-          toast({
-            title: "Service Not Available",
-            description: getServiceMessage(),
-            variant: "destructive",
-          });
+          selectAddress(tempAddress);
+          checkLocationServiceArea(coords);
+          setSearchInput("");
+          setSuggestions([]);
         }
-      }
-    });
+      },
+    );
   };
 
   useEffect(() => {
@@ -223,10 +197,6 @@ const LocationSelector = () => {
   const handleNewAddressAdded = (addressData: any) => {
     setIsNewAddressModalOpen(false);
     refreshSavedAddresses();
-    // toast({
-    //   title: "Address Added",
-    //   description: "New address has been saved successfully",
-    // });
   };
 
   return (
@@ -252,11 +222,13 @@ const LocationSelector = () => {
           {selectedAddress && (
             <>
               <div className="px-2 py-2">
-                <div className={`p-2 rounded-lg border text-xs ${
-                  isWithinServiceArea
-                    ? "bg-green-50 border-green-200 text-green-800"
-                    : "bg-red-50 border-red-200 text-red-800"
-                }`}>
+                <div
+                  className={`p-2 rounded-lg border text-xs ${
+                    isWithinServiceArea
+                      ? "bg-green-50 border-green-200 text-green-800"
+                      : "bg-red-50 border-red-200 text-red-800"
+                  }`}
+                >
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-3 w-3 flex-shrink-0" />
                     <span>{getServiceMessage()}</span>
@@ -361,21 +333,9 @@ const LocationSelector = () => {
               <DropdownMenuSeparator />
             </>
           ) : (
-            <>
-              {!user ? (
-                <div className="px-2 py-4 text-center text-sm text-gray-500">
-                  Please login to see saved addresses
-                </div>
-              ) : (
-                <div className="px-2 py-4 text-center text-sm text-gray-500">
-                  No saved addresses yet
-                </div>
-              )}
-              <DropdownMenuSeparator />
-            </>
+            <></>
           )}
 
-          {/* Add New Address - Only show when user is logged in */}
           {user && (
             <DropdownMenuItem onClick={() => setIsNewAddressModalOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
