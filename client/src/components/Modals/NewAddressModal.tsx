@@ -10,8 +10,10 @@ import { useGeolocation } from "@/hooks/use-geolocation";
 import { useServiceArea } from "@/hooks/use-service-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUIContext } from "@/contexts/UIContext";
-
-const libraries = ["places"];
+import {
+  GOOGLE_MAPS_API_KEY,
+  GOOGLE_MAPS_LIBRARIES,
+} from "@/lib/location-constants";
 
 // Default coordinates for Hyderabad as fallback
 const DEFAULT_COORDS = { lat: 17.385044, lng: 78.486671 };
@@ -67,8 +69,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   }>(DEFAULT_COORDS);
 
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
-    libraries: libraries as any,
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
   useEffect(() => {
