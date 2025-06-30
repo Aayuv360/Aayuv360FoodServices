@@ -7,7 +7,7 @@ export interface Kitchen {
   name: string;
   lat: number;
   lng: number;
-  serviceRadius: number; // in kilometers
+  serviceRadius: number;
 }
 
 export interface ServiceAreaState {
@@ -55,32 +55,27 @@ export const useServiceArea = () => {
     const fetchKitchens = async () => {
       try {
         const response = await apiRequest("GET", "/api/locations");
-        const locations = await response.json();
 
-        // Transform locations to kitchen format
-        // For now, using Hyderabad center as default kitchen location
         const defaultKitchens: Kitchen[] = [
           {
             id: 1,
             name: "Hyderabad Central Kitchen",
             lat: 17.4034581,
             lng: 78.3146812,
-            serviceRadius: 10, // 10km radius
+            serviceRadius: 15,
           },
-          // Add more kitchens as needed
         ];
 
         setKitchens(defaultKitchens);
       } catch (error) {
         console.error("Failed to fetch kitchen locations:", error);
-        // Use default kitchen if API fails
         setKitchens([
           {
             id: 1,
             name: "Hyderabad Central Kitchen",
-            lat: 17.4065,
-            lng: 78.4772,
-            serviceRadius: 10,
+            lat: 17.4034581,
+            lng: 78.3146812,
+            serviceRadius: 15,
           },
         ]);
       }
@@ -108,7 +103,6 @@ export const useServiceArea = () => {
         let nearestKitchen: Kitchen | null = null;
         let minDistance = Infinity;
 
-        // Find the nearest kitchen and check if it's within service area
         kitchens.forEach((kitchen) => {
           const distance = calculateDistance(userLocation, {
             lat: kitchen.lat,
@@ -122,7 +116,7 @@ export const useServiceArea = () => {
         });
 
         const isWithinServiceArea = nearestKitchen
-          ? minDistance <= nearestKitchen.serviceRadius
+          ? minDistance <= nearestKitchen?.serviceRadius
           : false;
 
         setState({

@@ -53,7 +53,11 @@ const LocationSelector = () => {
     getServiceMessage,
     isLoading: serviceLoading,
   } = useServiceArea();
-
+  useEffect(() => {
+    if (selectedAddress?.coords) {
+      checkServiceAvailability(selectedAddress.coords);
+    }
+  }, [selectedAddress, checkServiceAvailability]);
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -212,13 +216,17 @@ const LocationSelector = () => {
           </button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent 
-          align="start" 
+        <DropdownMenuContent
+          align="start"
           side="bottom"
           sideOffset={4}
           alignOffset={isMobile ? -32 : 0}
-          className={`${isMobile ? 'w-[calc(100vw-2rem)] max-w-sm ml-0' : 'w-80'}`}
-          style={isMobile ? { left: '1rem !important', right: '1rem !important' } : {}}
+          className={`${isMobile ? "w-[calc(100vw-2rem)] max-w-sm ml-0" : "w-80"}`}
+          style={
+            isMobile
+              ? { left: "1rem !important", right: "1rem !important" }
+              : {}
+          }
         >
           <div className="px-3 py-2 text-sm font-medium text-gray-700 border-b">
             Select Delivery Location
@@ -228,7 +236,7 @@ const LocationSelector = () => {
           {/* Service Status Indicator */}
           {selectedAddress && (
             <>
-              <div className={`${isMobile ? 'px-3 py-2' : 'px-2 py-2'}`}>
+              <div className={`${isMobile ? "px-3 py-2" : "px-2 py-2"}`}>
                 <div
                   className={`p-2 rounded-lg border text-xs ${
                     isWithinServiceArea
@@ -238,7 +246,11 @@ const LocationSelector = () => {
                 >
                   <div className="flex items-center gap-2">
                     <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                    <span className={`${isMobile ? 'text-xs' : 'text-xs'} leading-tight`}>{getServiceMessage()}</span>
+                    <span
+                      className={`${isMobile ? "text-xs" : "text-xs"} leading-tight`}
+                    >
+                      {getServiceMessage()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -246,7 +258,7 @@ const LocationSelector = () => {
             </>
           )}
 
-          <div className={`${isMobile ? 'px-3 py-2' : 'px-2 py-2'}`}>
+          <div className={`${isMobile ? "px-3 py-2" : "px-2 py-2"}`}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -257,21 +269,27 @@ const LocationSelector = () => {
                   fetchSuggestions(val);
                   setSearchInput(val);
                 }}
-                className={`pl-10 ${isMobile ? 'text-sm' : ''}`}
+                className={`pl-10 ${isMobile ? "text-sm" : ""}`}
               />
             </div>
 
             {suggestions.length > 0 && (
-              <div className={`mt-2 ${isMobile ? 'max-h-40' : 'max-h-32'} overflow-y-auto`}>
+              <div
+                className={`mt-2 ${isMobile ? "max-h-40" : "max-h-32"} overflow-y-auto`}
+              >
                 {suggestions.map((suggestion) => (
                   <div
                     key={suggestion.place_id}
                     onClick={() => handlePlaceSelect(suggestion)}
-                    className={`${isMobile ? 'px-2 py-3' : 'px-2 py-2'} hover:bg-gray-100 cursor-pointer text-sm`}
+                    className={`${isMobile ? "px-2 py-3" : "px-2 py-2"} hover:bg-gray-100 cursor-pointer text-sm`}
                   >
                     <div className="flex items-start">
                       <MapPin className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0 mt-0.5" />
-                      <span className={`${isMobile ? 'text-sm leading-tight' : ''}`}>{suggestion.description}</span>
+                      <span
+                        className={`${isMobile ? "text-sm leading-tight" : ""}`}
+                      >
+                        {suggestion.description}
+                      </span>
                     </div>
                   </div>
                 ))}
@@ -297,7 +315,9 @@ const LocationSelector = () => {
 
           {savedAddresses.length > 0 ? (
             <>
-              <div className={`${isMobile ? 'px-3 py-2' : 'px-2 py-1.5'} text-xs font-medium text-gray-500 uppercase tracking-wide`}>
+              <div
+                className={`${isMobile ? "px-3 py-2" : "px-2 py-1.5"} text-xs font-medium text-gray-500 uppercase tracking-wide`}
+              >
                 Saved Addresses
               </div>
               {savedAddresses.map((address: any) => (
@@ -316,15 +336,19 @@ const LocationSelector = () => {
                       isDefault: address.isDefault,
                     })
                   }
-                  className={`flex-col items-start ${isMobile ? 'py-3 px-3' : 'py-2'}`}
+                  className={`flex-col items-start ${isMobile ? "py-3 px-3" : "py-2"}`}
                 >
                   <div className="flex items-start w-full">
                     <MapPin className="h-4 w-4 mr-2 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 min-w-0">
-                      <div className={`font-medium ${isMobile ? 'text-sm' : 'text-sm'}`}>
+                      <div
+                        className={`font-medium ${isMobile ? "text-sm" : "text-sm"}`}
+                      >
                         {address.label || "Address"}
                       </div>
-                      <div className={`text-xs text-gray-500 ${isMobile ? 'leading-tight' : 'truncate'}`}>
+                      <div
+                        className={`text-xs text-gray-500 ${isMobile ? "leading-tight" : "truncate"}`}
+                      >
                         {address.addressLine1}, {address.addressLine2 || ""},{" "}
                         {address.city || ""}
                       </div>
