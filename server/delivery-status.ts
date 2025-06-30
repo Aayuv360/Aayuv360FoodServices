@@ -340,3 +340,7 @@ async function sendDeliveryNotifications(
     console.error("Error sending delivery notifications:", error);
   }
 }
+
+// Export router for use in index.ts
+import express from 'express';
+export const router = express.Router();

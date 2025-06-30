@@ -131,3 +131,7 @@ export async function sendWhatsAppNotification(
     type: "whatsapp",
   });
 }
+
+// Export router for use in index.ts
+import express from 'express';
+export const router = express.Router();

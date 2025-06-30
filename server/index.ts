@@ -3,8 +3,8 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import deliveryRoutes from "./delivery-status";
-import notificationRoutes from "./notifications";
+import { router as deliveryRoutes } from "./delivery-status";
+import { router as notificationRoutes } from "./notifications";
 import contactRoutes from "./contact-routes";
 
 // Load environment variables
