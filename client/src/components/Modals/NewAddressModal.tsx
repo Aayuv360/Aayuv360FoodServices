@@ -60,10 +60,11 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   const [addressDetails, setAddressDetails] = useState({
     landmark: "",
   });
-  
-  const [currentMapLocation, setCurrentMapLocation] = useState<{ lat: number; lng: number }>(
-    DEFAULT_COORDS
-  );
+
+  const [currentMapLocation, setCurrentMapLocation] = useState<{
+    lat: number;
+    lng: number;
+  }>(DEFAULT_COORDS);
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
@@ -339,14 +340,14 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
         <div
           className={`p-3 rounded-lg border ${
-            serviceArea.isWithinServiceArea
+            !isWithinServiceArea
               ? "bg-green-50 border-green-200 text-green-800"
               : "bg-red-50 border-red-200 text-red-800"
           }`}
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{serviceArea.serviceMessage}</span>
+            <span className="text-sm">{getServiceMessage()}</span>
           </div>
         </div>
 
