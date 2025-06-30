@@ -24,6 +24,7 @@ const Header = () => {
   const { selectedAddress, serviceArea } = useLocationManager();
   const { isWithinServiceArea, getServiceMessage, checkServiceAvailability } =
     useServiceArea();
+    
   useEffect(() => {
     if (selectedAddress?.coords) {
       checkServiceAvailability(selectedAddress.coords);
