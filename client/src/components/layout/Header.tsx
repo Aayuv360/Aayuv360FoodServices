@@ -21,8 +21,15 @@ const Header = () => {
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
 
   const isMobile = useIsMobile();
-  const { selectedAddress } = useLocationManager();
-  const { isWithinServiceArea, getServiceMessage } = useServiceArea();
+  const { selectedAddress, serviceArea } = useLocationManager();
+  const { isWithinServiceArea, getServiceMessage, checkServiceAvailability } = useServiceArea();
+
+  // Check service availability when selectedAddress changes
+  useEffect(() => {
+    if (selectedAddress?.coords) {
+      checkServiceAvailability(selectedAddress.coords);
+    }
+  }, [selectedAddress, checkServiceAvailability]);
 
   const openAuthModal = (
     mode: "normal" | "subscribe" = "normal",
