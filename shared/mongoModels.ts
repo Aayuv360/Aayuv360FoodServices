@@ -471,3 +471,32 @@ export const ContactReview = mongoose.model(
   "ContactReview",
   contactReviewSchema,
 );
+export interface INewsletterEmail extends Document {
+  id: number;
+  email: string;
+  subscribedAt: Date;
+}
+
+const NewsletterEmailSchema: Schema<INewsletterEmail> = new Schema({
+  id: {
+    type: Number,
+    unique: true,
+    required: true,
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true,
+    trim: true,
+  },
+  subscribedAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const NewsletterEmail = mongoose.model<INewsletterEmail>(
+  "NewsletterEmail",
+  NewsletterEmailSchema,
+);

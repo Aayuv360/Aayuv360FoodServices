@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   PhoneCall,
@@ -17,9 +17,43 @@ import {
   Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { apiRequest } from "@/lib/queryClient";
 
 const Footer = () => {
   const navigate = useNavigate();
+  const [newsLetterEmail, setNewsLetterEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const newsLetterSubmit = async () => {
+    if (!newsLetterEmail.trim()) {
+      setEmailError("Email is required.");
+      return;
+    }
+
+    if (!validateEmail(newsLetterEmail)) {
+      setEmailError("Please enter a valid email address.");
+      return;
+    }
+
+    try {
+      setEmailError("");
+      await apiRequest("POST", "/api/newsletter", {
+        email: newsLetterEmail,
+      });
+      setNewsLetterEmail("");
+    } catch (err: any) {
+      const errorMessage =
+        err?.response?.data?.error || "Something went wrong. Please try again.";
+
+      setEmailError(errorMessage);
+    }
+  };
 
   return (
     <footer className="bg-gray-50 p-6 border-t border-gray-200">
@@ -77,7 +111,11 @@ const Footer = () => {
             </div>
             <ul className="space-y-3">
               {[
-                { label: "About Us", icon: <Users size={16} />, path: "/about-us" },
+                {
+                  label: "About Us",
+                  icon: <Users size={16} />,
+                  path: "/about-us",
+                },
                 {
                   label: "Terms",
                   icon: <ShieldCheck size={16} />,
@@ -88,7 +126,11 @@ const Footer = () => {
                   icon: <ShieldCheck size={16} />,
                   path: "/privacy-refund",
                 },
-                { label: "FAQs", icon: <HelpCircle size={16} />, path: "/faqs" },
+                {
+                  label: "FAQs",
+                  icon: <HelpCircle size={16} />,
+                  path: "/faqs",
+                },
               ].map(({ label, icon, path }, index) => (
                 <li key={index}>
                   <Button
@@ -135,15 +177,30 @@ const Footer = () => {
               Subscribe to get our latest updates and healthy tips.
             </p>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <input
+              <Input
                 type="email"
                 placeholder="Your email"
-                className="w-full px-3 py-2 border border-gray-300 rounded text-sm"
+                className={`w-full px-3 py-2 border ${
+                  emailError ? "border-red-500" : "border-gray-300"
+                } rounded text-sm`}
+                value={newsLetterEmail}
+                onChange={(e) => {
+                  setNewsLetterEmail(e.target.value);
+                  if (e.target.value.trim() === "") {
+                    setEmailError("");
+                  }
+                }}
               />
-              <Button className="bg-orange-500 hover:bg-orange-600 text-white text-sm">
+              <Button
+                className="bg-orange-500 hover:bg-orange-600 text-white text-sm"
+                onClick={newsLetterSubmit}
+              >
                 Subscribe
               </Button>
             </div>
+            {emailError && (
+              <p className="text-red-500 text-xs mt-1">{emailError}</p>
+            )}
           </div>
         </div>
 

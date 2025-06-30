@@ -2933,6 +2933,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/newsletter", async (req, res) => {
+    try {
+      const result = await mongoStorage.createNewsletterEmail(req.body);
+      return res
+        .status(201)
+        .json({ message: "Subscribed successfully", data: result });
+    } catch (error: any) {
+      console.error("Newsletter subscription error:", error.message);
+      const errorMsg = error.message || "Internal server error";
+
+      const statusCode =
+        errorMsg === "Email is required." ||
+        errorMsg === "Invalid email format."
+          ? 400
+          : errorMsg === "Email already subscribed."
+            ? 409
+            : 500;
+
+      return res.status(statusCode).json({ error: errorMsg });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -10,6 +10,7 @@ import {
   CurryOption,
   SubscriptionPlan,
   getNextSequence,
+  NewsletterEmail,
 } from "../shared/mongoModels";
 import { createSessionStore } from "./session-store";
 import expressSession from "express-session";
@@ -1272,6 +1273,32 @@ export class MongoDBStorage implements IStorage {
       return newPlan.toObject();
     } catch (error) {
       console.error("Error creating subscription plan:", error);
+      throw error;
+    }
+  }
+  async createNewsletterEmail(emailData: any): Promise<any> {
+    try {
+      const email = emailData.email?.trim();
+
+      if (!email) {
+        throw new Error("Email is required.");
+      }
+
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        throw new Error("Invalid email format.");
+      }
+
+      const nextId = await getNextSequence("newsletterEmailId");
+
+      const newEntry = new NewsletterEmail({
+        id: nextId,
+        email,
+      });
+
+      await newEntry.save();
+      return newEntry.toObject();
+    } catch (error) {
       throw error;
     }
   }
