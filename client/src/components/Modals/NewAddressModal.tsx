@@ -314,16 +314,16 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           </GoogleMap>
         </div>
 
-        {(serviceLoading || geoError) && (
+        {(locationLoading || locationError) && (
           <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
             <div className="flex items-center gap-2">
-              {serviceLoading && (
+              {locationLoading && (
                 <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
               )}
-              {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
+              {locationError && <AlertCircle className="h-4 w-4 text-red-600" />}
               <span className="text-sm">
-                {serviceLoading && "Checking service availability..."}
-                {geoError && geoError}
+                {locationLoading && "Checking service availability..."}
+                {locationError && locationError}
               </span>
             </div>
           </div>
@@ -331,14 +331,14 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
         <div
           className={`p-3 rounded-lg border ${
-            isWithinServiceArea
+            serviceArea.isWithinServiceArea
               ? "bg-green-50 border-green-200 text-green-800"
               : "bg-red-50 border-red-200 text-red-800"
           }`}
         >
           <div className="flex items-start gap-2">
             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{getServiceMessage()}</span>
+            <span className="text-sm">{serviceArea.serviceMessage}</span>
           </div>
         </div>
 
@@ -597,16 +597,16 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         </div>
 
         <div className="space-y-4">
-          {(serviceLoading || geoError) && (
+          {(locationLoading || locationError) && (
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
               <div className="flex items-center gap-2">
-                {serviceLoading && (
+                {locationLoading && (
                   <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
                 )}
-                {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
+                {locationError && <AlertCircle className="h-4 w-4 text-red-600" />}
                 <span className="text-sm">
-                  {serviceLoading && "Checking service availability..."}
-                  {geoError && geoError}
+                  {locationLoading && "Checking service availability..."}
+                  {locationError && locationError}
                 </span>
               </div>
             </div>

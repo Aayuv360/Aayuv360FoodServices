@@ -13,9 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
-import { useServiceArea } from "@/hooks/use-service-area";
 
-const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
+import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from "@/lib/location-constants";
 
 const LocationSelector = () => {
   const [isNewAddressModalOpen, setIsNewAddressModalOpen] = useState(false);
@@ -33,15 +32,11 @@ const LocationSelector = () => {
     selectAddress,
     isLoading: locationLoading,
     refreshSavedAddresses,
+    getCurrentLocation,
+    checkLocationServiceArea,
   } = useLocationManager();
-  const {
-    isWithinServiceArea,
-    checkServiceAvailability,
-    getServiceMessage,
-    isLoading: serviceLoading,
-  } = useServiceArea();
   const { isLoaded } = useLoadScript({
-    googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
@@ -66,26 +61,7 @@ const LocationSelector = () => {
   const handleCurrentLocation = async () => {
     try {
       setIsLoading(true);
-
-      const position = await new Promise<GeolocationPosition>(
-        (resolve, reject) => {
-          if (!navigator.geolocation) {
-            reject(new Error("Geolocation is not supported"));
-            return;
-          }
-
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 60000,
-          });
-        }
-      );
-
-      const coords = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
-      };
+      const coords = await getCurrentLocation();
 
       if (window.google && window.google.maps) {
         const geocoder = new window.google.maps.Geocoder();
@@ -113,10 +89,7 @@ const LocationSelector = () => {
           };
 
           selectAddress(currentLocationAddress);
-          // toast({
-          //   title: "Location Updated",
-          //   description: "Using your current location",
-          // });
+          checkLocationServiceArea(coords);
         }
       } else {
         const currentLocationAddress = {
@@ -129,19 +102,10 @@ const LocationSelector = () => {
         };
 
         selectAddress(currentLocationAddress);
-        // toast({
-        //   title: "Location Updated",
-        //   description: "Using your current location",
-        // });
+        checkLocationServiceArea(coords);
       }
     } catch (error) {
       console.error("Error getting current location:", error);
-      // toast({
-      //   title: "Location Error",
-      //   description:
-      //     "Could not get your current location. Please check permissions.",
-      //   variant: "destructive",
-      // });
     } finally {
       setIsLoading(false);
     }
@@ -190,13 +154,9 @@ const LocationSelector = () => {
         };
 
         selectAddress(tempAddress);
+        checkLocationServiceArea(coords);
         setSearchInput("");
         setSuggestions([]);
-
-        // toast({
-        //   title: "Location Selected",
-        //   description: "Location updated from search",
-        // });
       }
     });
   };
