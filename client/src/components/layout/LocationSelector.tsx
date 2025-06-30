@@ -216,8 +216,9 @@ const LocationSelector = () => {
           align="start" 
           side="bottom"
           sideOffset={4}
-          alignOffset={isMobile ? -16 : 0}
-          className={`${isMobile ? 'w-[calc(100vw-2rem)] max-w-sm' : 'w-80'}`}
+          alignOffset={isMobile ? -32 : 0}
+          className={`${isMobile ? 'w-[calc(100vw-2rem)] max-w-sm ml-0' : 'w-80'}`}
+          style={isMobile ? { left: '1rem !important', right: '1rem !important' } : {}}
         >
           <div className="px-3 py-2 text-sm font-medium text-gray-700 border-b">
             Select Delivery Location
