@@ -470,5 +470,4 @@ const contactReviewSchema = new mongoose.Schema({
 
 const ContactReview = mongoose.model("ContactReview", contactReviewSchema);
 
-// I am not sure where the DeliveryNotification is defined, so I am removing it from the export
-export { User, Meal, Order, CartItem, Location, SubscriptionPlan, Subscription, Address, ContactReview };
+export { ContactReview };
