@@ -2718,7 +2718,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Delivery status endpoint for users
   app.get("/api/delivery-status", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
@@ -2733,7 +2732,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Clear old delivery status data
   app.delete(
     "/api/admin/delivery-status/clear",
     isAuthenticated,

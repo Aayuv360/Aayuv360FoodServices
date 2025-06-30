@@ -1,9 +1,17 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Shield, RefreshCw, Eye, Lock, CreditCard, Clock, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Shield,
+  RefreshCw,
+  Eye,
+  Lock,
+  CreditCard,
+  Clock,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 
 const PrivacyRefund = () => {
   const [activeTab, setActiveTab] = useState<"privacy" | "refund">("privacy");
@@ -27,7 +35,7 @@ Usage Information:
 • Device and browser information
 • Location data for delivery purposes
 
-We only collect information that is necessary to provide our services effectively.`
+We only collect information that is necessary to provide our services effectively.`,
     },
     {
       id: "usage",
@@ -51,7 +59,7 @@ Service Improvement:
 • Analyze usage patterns
 • Improve our menu offerings
 • Enhance user experience
-• Develop new features`
+• Develop new features`,
     },
     {
       id: "sharing",
@@ -70,7 +78,7 @@ We MAY share information with:
 • Legal authorities (when required by law)
 • Service providers (under strict confidentiality agreements)
 
-All third parties are bound by privacy agreements and data protection standards.`
+All third parties are bound by privacy agreements and data protection standards.`,
     },
     {
       id: "security",
@@ -90,7 +98,7 @@ Operational Safeguards:
 • Regular security audits
 • Incident response procedures
 
-While we strive to protect your information, no method of transmission over the internet is 100% secure. We continuously work to improve our security measures.`
+While we strive to protect your information, no method of transmission over the internet is 100% secure. We continuously work to improve our security measures.`,
     },
     {
       id: "rights",
@@ -109,8 +117,8 @@ Control Rights:
 • Opt-out of marketing communications
 • Withdraw consent for data processing
 
-To exercise these rights, contact us at privacy@aayuv.in. We will respond within 30 days of receiving your request.`
-    }
+To exercise these rights, contact us at privacy@aayuv.in. We will respond within 30 days of receiving your request.`,
+    },
   ];
 
   const refundSections = [
@@ -132,7 +140,7 @@ Processing Time:
 • Amount credited within 5-7 business days
 • Refund method same as original payment
 
-Customer satisfaction is our priority, and we work to resolve all issues fairly.`
+Customer satisfaction is our priority, and we work to resolve all issues fairly.`,
     },
     {
       id: "subscription",
@@ -152,7 +160,7 @@ Refund Calculation:
 • Minimum 24-hour notice required
 • Delivery charges may be non-refundable
 
-Example: If you cancel a 30-day subscription after 20 days, you'll receive a refund for the remaining 10 days.`
+Example: If you cancel a 30-day subscription after 20 days, you'll receive a refund for the remaining 10 days.`,
     },
     {
       id: "quality",
@@ -172,7 +180,7 @@ Delivery Issues:
 • Missing items: Refund for missing items
 • Delivery location issues: Case-by-case review
 
-Our quality assurance team investigates all reported issues to prevent future occurrences.`
+Our quality assurance team investigates all reported issues to prevent future occurrences.`,
     },
     {
       id: "non-refundable",
@@ -192,7 +200,7 @@ Service-Related:
 • Consumed meals (partial consumption)
 • Promotional discounts and credits
 
-We review each case individually and may make exceptions in extraordinary circumstances.`
+We review each case individually and may make exceptions in extraordinary circumstances.`,
     },
     {
       id: "process",
@@ -218,24 +226,25 @@ Step 3: Review Process
 • Refund processed upon approval
 • Notification sent when completed
 
-We strive to make the refund process as smooth as possible.`
-    }
+We strive to make the refund process as smooth as possible.`,
+    },
   ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto py-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">
             Privacy & Refund Policy
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Your privacy and satisfaction are our top priorities. Learn about how we protect your data and our refund policies.
+          <p className="text-base text-gray-600 max-w-3xl mx-auto">
+            Your privacy and satisfaction are our top priorities. Learn about
+            how we protect your data and our refund policies.
           </p>
         </motion.div>
 
@@ -327,11 +336,12 @@ We strive to make the refund process as smooth as possible.`
         >
           <Card className="max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-purple-50">
             <CardContent className="p-8">
-              <h3 className="text-xl font-bold mb-4 text-gray-900">
+              <h3 className="text-xl font-bold mb-1 text-gray-900">
                 Need Help or Have Questions?
               </h3>
-              <p className="text-gray-600 mb-6">
-                Our customer support team is here to help with any privacy or refund related questions.
+              <p className="text-gray-600 mb-3">
+                Our customer support team is here to help with any privacy or
+                refund related questions.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
                 <div>

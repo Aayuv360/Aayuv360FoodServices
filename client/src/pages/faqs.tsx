@@ -193,17 +193,17 @@ const FAQs = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50">
-      <div className="container mx-auto px-4 py-12">
+      <div className="container mx-auto py-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
-          className="text-center mb-12"
+          className="text-center mb-6"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-yellow-600">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-yellow-600">
             Frequently Asked Questions
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+          <p className="text-base text-gray-600 max-w-3xl mx-auto">
             Find answers to common questions about Aayuv's millet-based meal
             delivery service. Can't find what you're looking for? Contact our
             support team.
@@ -211,12 +211,12 @@ const FAQs = () => {
         </motion.div>
 
         {/* Search and Filter */}
-        <div className="max-w-4xl mx-auto mb-8">
+        <div className="max-w-4xl mx-auto mb-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="mb-6"
+            className="mb-3"
           >
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -338,7 +338,7 @@ const FAQs = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           viewport={{ once: true }}
-          className="mt-16 text-center"
+          className="mt-8 text-center"
         >
           <Card className="max-w-2xl mx-auto bg-gradient-to-r from-orange-50 to-yellow-50">
             <CardContent className="p-8">

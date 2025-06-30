@@ -1,4 +1,3 @@
-
 import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,7 @@ const Terms = () => {
       id: "acceptance",
       title: "1. Acceptance of Terms",
       icon: <Shield className="h-6 w-6 text-orange-500" />,
-      content: `By accessing and using Aayuv's services, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.`
+      content: `By accessing and using Aayuv's services, you accept and agree to be bound by the terms and provision of this agreement. If you do not agree to abide by the above, please do not use this service.`,
     },
     {
       id: "services",
@@ -22,7 +21,7 @@ const Terms = () => {
       • Customized dietary options
       • Delivery scheduling and management
       
-      We reserve the right to modify, suspend, or discontinue any aspect of our services at any time.`
+      We reserve the right to modify, suspend, or discontinue any aspect of our services at any time.`,
     },
     {
       id: "user-obligations",
@@ -34,7 +33,7 @@ const Terms = () => {
       • Use our services only for lawful purposes
       • Respect intellectual property rights
       • Not interfere with the proper functioning of our platform
-      • Comply with all applicable local, state, and federal laws`
+      • Comply with all applicable local, state, and federal laws`,
     },
     {
       id: "subscription",
@@ -45,7 +44,7 @@ const Terms = () => {
       • Cancellation must be made at least 24 hours before the next billing cycle
       • Refunds are processed according to our refund policy
       • Subscription modifications may affect pricing
-      • We reserve the right to change subscription prices with 30 days notice`
+      • We reserve the right to change subscription prices with 30 days notice`,
     },
     {
       id: "delivery",
@@ -57,7 +56,7 @@ const Terms = () => {
       • Accurate delivery address and contact information
       • Someone being available to receive the delivery
       • Delivery time windows are estimates and may vary
-      • Failed deliveries due to incorrect information may incur additional charges`
+      • Failed deliveries due to incorrect information may incur additional charges`,
     },
     {
       id: "payment",
@@ -69,7 +68,7 @@ const Terms = () => {
       • We accept various payment methods as displayed on our platform
       • Failed payments may result in service suspension
       • Disputes must be reported within 7 days of the transaction
-      • Unauthorized use of payment methods is prohibited`
+      • Unauthorized use of payment methods is prohibited`,
     },
     {
       id: "privacy",
@@ -80,7 +79,7 @@ const Terms = () => {
       • We implement appropriate security measures
       • Data is not sold to third parties for marketing purposes
       • You have the right to access and correct your personal information
-      • Data retention follows applicable legal requirements`
+      • Data retention follows applicable legal requirements`,
     },
     {
       id: "limitation",
@@ -91,7 +90,7 @@ const Terms = () => {
       • Total liability shall not exceed the amount paid for services
       • We are not responsible for delays due to circumstances beyond our control
       • Food allergies and dietary restrictions are the customer's responsibility to communicate
-      • We make no warranties regarding uninterrupted service availability`
+      • We make no warranties regarding uninterrupted service availability`,
     },
     {
       id: "termination",
@@ -101,7 +100,7 @@ const Terms = () => {
       • Users can cancel their account at any time
       • We may suspend or terminate accounts for violations of these terms
       • Upon termination, all rights and obligations cease except those that survive termination
-      • Refunds will be processed according to our refund policy`
+      • Refunds will be processed according to our refund policy`,
     },
     {
       id: "changes",
@@ -111,8 +110,8 @@ const Terms = () => {
       • Changes will be posted on our website
       • Users will be notified of significant changes
       • Continued use of services constitutes acceptance of modified terms
-      • If you disagree with changes, you may terminate your account`
-    }
+      • If you disagree with changes, you may terminate your account`,
+    },
   ];
 
   return (
@@ -124,14 +123,15 @@ const Terms = () => {
           transition={{ duration: 0.8 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-blue-600">
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-blue-600">
             Terms of Service
           </h1>
-          <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            Please read these terms and conditions carefully before using Aayuv's services. 
-            These terms govern your use of our platform and services.
+          <p className="text-base text-gray-600 max-w-3xl mx-auto">
+            Please read these terms and conditions carefully before using
+            Aayuv's services. These terms govern your use of our platform and
+            services.
           </p>
-          <div className="mt-6 text-sm text-gray-500">
+          <div className="mt-3 text-sm text-gray-500">
             Last updated: {new Date().toLocaleDateString()}
           </div>
         </motion.div>
@@ -171,11 +171,12 @@ const Terms = () => {
         >
           <Card className="max-w-2xl mx-auto bg-gradient-to-r from-orange-50 to-amber-50">
             <CardContent className="p-8">
-              <h3 className="text-xl font-bold mb-4 text-gray-900">
+              <h3 className="text-xl font-bold mb-2 text-gray-900">
                 Questions About Our Terms?
               </h3>
-              <p className="text-gray-600 mb-4">
-                If you have any questions about these Terms of Service, please contact us.
+              <p className="text-gray-600 mb-2">
+                If you have any questions about these Terms of Service, please
+                contact us.
               </p>
               <div className="space-y-2 text-sm text-gray-600">
                 <p>Email: support@aayuv.in</p>
