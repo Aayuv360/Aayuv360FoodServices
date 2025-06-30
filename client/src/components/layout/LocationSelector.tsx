@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, ChevronDown, Plus, Navigation, Search } from "lucide-react";
+import { MapPin, ChevronDown, Plus, Navigation, Search, AlertCircle } from "lucide-react";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useServiceArea } from "@/hooks/use-service-area";
 
 import { GOOGLE_MAPS_API_KEY, GOOGLE_MAPS_LIBRARIES } from "@/lib/location-constants";
 
@@ -34,7 +35,16 @@ const LocationSelector = () => {
     refreshSavedAddresses,
     getCurrentLocation,
     checkLocationServiceArea,
+    serviceArea,
   } = useLocationManager();
+  
+  const {
+    isWithinServiceArea,
+    checkServiceAvailability,
+    getServiceMessage,
+    isLoading: serviceLoading,
+  } = useServiceArea();
+  
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -63,6 +73,9 @@ const LocationSelector = () => {
       setIsLoading(true);
       const coords = await getCurrentLocation();
 
+      // Check service availability for current location
+      await checkServiceAvailability(coords);
+
       if (window.google && window.google.maps) {
         const geocoder = new window.google.maps.Geocoder();
         const result = await new Promise<google.maps.GeocoderResult[]>(
@@ -90,6 +103,15 @@ const LocationSelector = () => {
 
           selectAddress(currentLocationAddress);
           checkLocationServiceArea(coords);
+
+          // Show service message
+          if (!isWithinServiceArea) {
+            toast({
+              title: "Service Not Available",
+              description: getServiceMessage(),
+              variant: "destructive",
+            });
+          }
         }
       } else {
         const currentLocationAddress = {
@@ -103,9 +125,23 @@ const LocationSelector = () => {
 
         selectAddress(currentLocationAddress);
         checkLocationServiceArea(coords);
+
+        // Show service message
+        if (!isWithinServiceArea) {
+          toast({
+            title: "Service Not Available",
+            description: getServiceMessage(),
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error("Error getting current location:", error);
+      toast({
+        title: "Location Error",
+        description: "Unable to get current location. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -130,19 +166,22 @@ const LocationSelector = () => {
     );
   };
 
-  const handlePlaceSelect = (
+  const handlePlaceSelect = async (
     suggestion: google.maps.places.AutocompletePrediction
   ) => {
     const service = new window.google.maps.places.PlacesService(
       document.createElement("div")
     );
 
-    service.getDetails({ placeId: suggestion.place_id }, (place, status) => {
+    service.getDetails({ placeId: suggestion.place_id }, async (place, status) => {
       if (status === "OK" && place?.geometry?.location) {
         const coords = {
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
         };
+
+        // Check service availability for selected location
+        await checkServiceAvailability(coords);
 
         const tempAddress = {
           id: Date.now(),
@@ -157,6 +196,15 @@ const LocationSelector = () => {
         checkLocationServiceArea(coords);
         setSearchInput("");
         setSuggestions([]);
+
+        // Show service message
+        if (!isWithinServiceArea) {
+          toast({
+            title: "Service Not Available",
+            description: getServiceMessage(),
+            variant: "destructive",
+          });
+        }
       }
     });
   };
@@ -199,6 +247,25 @@ const LocationSelector = () => {
             Select Delivery Location
           </div>
           <DropdownMenuSeparator />
+
+          {/* Service Status Indicator */}
+          {selectedAddress && (
+            <>
+              <div className="px-2 py-2">
+                <div className={`p-2 rounded-lg border text-xs ${
+                  isWithinServiceArea
+                    ? "bg-green-50 border-green-200 text-green-800"
+                    : "bg-red-50 border-red-200 text-red-800"
+                }`}>
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                    <span>{getServiceMessage()}</span>
+                  </div>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+            </>
+          )}
 
           <div className="px-2 py-2">
             <div className="relative">

@@ -5,6 +5,9 @@ import { AuthModal } from "@/components/auth/AuthModal";
 import MobileHeader from "./MobileHeader";
 import DesktopHeader from "./DesktopHeader";
 import { useLocation } from "react-router-dom";
+import { useLocationManager } from "@/hooks/use-location-manager";
+import { useServiceArea } from "@/hooks/use-service-area";
+import { AlertCircle, CheckCircle } from "lucide-react";
 
 const Header = () => {
   const [cartOpen, setCartOpen] = useState(false);
@@ -18,6 +21,8 @@ const Header = () => {
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
 
   const isMobile = useIsMobile();
+  const { selectedAddress, serviceArea } = useLocationManager();
+  const { isWithinServiceArea, getServiceMessage } = useServiceArea();
 
   const openAuthModal = (
     mode: "normal" | "subscribe" = "normal",
@@ -33,6 +38,24 @@ const Header = () => {
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-40">
+        {/* Service Status Banner */}
+        {selectedAddress && (
+          <div className={`py-2 px-4 text-sm ${
+            isWithinServiceArea
+              ? "bg-green-100 text-green-800 border-b border-green-200"
+              : "bg-red-100 text-red-800 border-b border-red-200"
+          }`}>
+            <div className="container mx-auto flex items-center justify-center gap-2">
+              {isWithinServiceArea ? (
+                <CheckCircle className="h-4 w-4" />
+              ) : (
+                <AlertCircle className="h-4 w-4" />
+              )}
+              <span className="text-center">{getServiceMessage()}</span>
+            </div>
+          </div>
+        )}
+        
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           {isMobile ? (
             <MobileHeader />
