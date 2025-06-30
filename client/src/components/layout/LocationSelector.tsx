@@ -18,9 +18,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useServiceArea } from "@/hooks/use-service-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 import {
   GOOGLE_MAPS_API_KEY,
@@ -34,7 +34,7 @@ const LocationSelector = () => {
     google.maps.places.AutocompletePrediction[]
   >([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const { user } = useAuth();
   const {
