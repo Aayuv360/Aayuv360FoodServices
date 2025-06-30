@@ -344,3 +344,93 @@ async function sendDeliveryNotifications(
 // Export router for use in index.ts
 import express from 'express';
 export const router = express.Router();
+
+// Import authentication middleware from your auth setup
+let isAuthenticated: any;
+(async () => {
+  try {
+    const authModule = await import('./auth');
+    isAuthenticated = authModule.isAuthenticated;
+  } catch (error) {
+    console.error('Failed to import auth middleware:', error);
+    isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
+      res.status(500).json({ error: 'Authentication not configured' });
+    };
+  }
+})();
+
+// Get delivery status updates for a user
+router.get('/api/delivery-status/user/:userId', isAuthenticated, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
+    }
+
+    const deliveryUpdates = await getUserDeliveryStatusUpdates(userId);
+    res.json(deliveryUpdates);
+  } catch (error) {
+    console.error('Error fetching delivery status:', error);
+    res.status(500).json({ error: 'Failed to fetch delivery status' });
+  }
+});
+
+// Get delivery status for a specific order
+router.get('/api/delivery-status/order/:orderId', isAuthenticated, async (req, res) => {
+  try {
+    const orderId = parseInt(req.params.orderId);
+    if (isNaN(orderId)) {
+      return res.status(400).json({ error: 'Invalid order ID' });
+    }
+
+    const deliveryUpdates = await getOrderDeliveryStatusUpdates(orderId);
+    res.json(deliveryUpdates);
+  } catch (error) {
+    console.error('Error fetching order delivery status:', error);
+    res.status(500).json({ error: 'Failed to fetch order delivery status' });
+  }
+});
+
+// Create/update delivery status (admin only)
+router.post('/api/delivery-status', isAuthenticated, async (req, res) => {
+  try {
+    // Add admin check here
+    const { orderId, userId, status, customMessage } = req.body;
+
+    if (!orderId || !userId || !status) {
+      return res.status(400).json({ error: 'orderId, userId, and status are required' });
+    }
+
+    const validStatuses = ['preparing', 'in_transit', 'out_for_delivery', 'nearby', 'delivered'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({ error: 'Invalid status' });
+    }
+
+    const deliveryStatus = await updateOrderDeliveryStatus(orderId, userId, status, customMessage);
+    res.json(deliveryStatus);
+  } catch (error) {
+    console.error('Error updating delivery status:', error);
+    res.status(500).json({ error: 'Failed to update delivery status' });
+  }
+});
+
+// Create delivery status update with custom notifications
+router.post('/api/delivery-status/create', isAuthenticated, async (req, res) => {
+  try {
+    const { orderId, userId, status, message, estimatedTime, notificationMethods } = req.body;
+
+    if (!orderId || !userId || !status || !message) {
+      return res.status(400).json({ error: 'orderId, userId, status, and message are required' });
+    }
+
+    const deliveryStatus = await createDeliveryStatusUpdate(
+      { orderId, userId, status, message, estimatedTime },
+      notificationMethods || { app: true }
+    );
+
+    res.json(deliveryStatus);
+  } catch (error) {
+    console.error('Error creating delivery status:', error);
+    res.status(500).json({ error: 'Failed to create delivery status' });
+  }
+});
