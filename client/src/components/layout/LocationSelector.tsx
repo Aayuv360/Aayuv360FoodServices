@@ -212,7 +212,13 @@ const LocationSelector = () => {
           </button>
         </DropdownMenuTrigger>
 
-        <DropdownMenuContent align="start" className={`${isMobile ? 'w-[calc(100vw-2rem)] max-w-sm' : 'w-80'}`}>
+        <DropdownMenuContent 
+          align="start" 
+          side="bottom"
+          sideOffset={4}
+          alignOffset={isMobile ? -16 : 0}
+          className={`${isMobile ? 'w-[calc(100vw-2rem)] max-w-sm' : 'w-80'}`}
+        >
           <div className="px-3 py-2 text-sm font-medium text-gray-700 border-b">
             Select Delivery Location
           </div>
