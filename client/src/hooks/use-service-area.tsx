@@ -54,7 +54,7 @@ export const useServiceArea = () => {
   useEffect(() => {
     const fetchKitchens = async () => {
       try {
-        const response = await apiRequest("GET", "/api/locations");
+        // const response = await apiRequest("GET", "/api/locations");
 
         const defaultKitchens: Kitchen[] = [
           {

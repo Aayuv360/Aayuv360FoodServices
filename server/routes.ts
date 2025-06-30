@@ -24,7 +24,12 @@ import {
 import { updateOrderDeliveryStatus } from "./delivery-status";
 import { deliveryScheduler } from "./delivery-scheduler";
 import { smsService } from "./sms-service";
-import { upload, processImage, deleteImage, serveImageFromMongoDB } from "./upload";
+import {
+  upload,
+  processImage,
+  deleteImage,
+  serveImageFromMongoDB,
+} from "./upload";
 import {
   insertSubscriptionSchema,
   insertAddressSchema,
@@ -34,6 +39,7 @@ import {
 import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
 import { sendDailyDeliveryNotifications } from "./subscription-notifications";
+import { ContactReview } from "../shared/mongoModels";
 
 const insertUserPreferencesSchema = z.object({
   userId: z.number(),
@@ -122,7 +128,7 @@ function calculateSubscriptionStatus(subscription: any) {
         status: "inactive",
         endDate: null,
         daysRemaining: 0,
-        };
+      };
     }
 
     // Reset time components for accurate date comparison
@@ -897,20 +903,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     });
 
-  // Test endpoint to verify MongoDB data (temporary)
-  app.get("/api/test/subscription-plans", async (req, res) => {
-    try {
-      const plans = await mongoStorage.getAllSubscriptionPlans();
-      res.json({
-        success: true,
-        count: plans.length,
-        plans: plans,
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  });
-
   app.get("/api/subscription-plans", async (req, res) => {
     try {
       const activePlans = await mongoStorage.getAllSubscriptionPlans();
@@ -1478,7 +1470,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           if (req.body.deliveryAddress?.phone) {
             deliveryPhone = req.body.deliveryAddress.phone;
           } else if (req.body.deliveryAddressId) {
-            const deliveryAddress = await mongoStorage.getAddressById(req.body.deliveryAddressId);
+            const deliveryAddress = await mongoStorage.getAddressById(
+              req.body.deliveryAddressId,
+            );
             deliveryPhone = deliveryAddress?.phone;
           }
 
@@ -1488,13 +1482,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           if (deliveryPhone) {
-            const userName = user.name || user.username || 'Customer';
+            const userName = user.name || user.username || "Customer";
             await smsService.sendOrderDeliveryNotification(
               deliveryPhone,
               userName,
               order.id,
               orderItems,
-              "Soon" // You can customize this based on your delivery schedule
+              "Soon", // You can customize this based on your delivery schedule
             );
           }
         }
@@ -2004,19 +1998,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Image upload endpoint
-  app.post("/api/admin/upload-image", isAuthenticated, isAdmin, upload.single('image'), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No image file provided" });
-      }
+  app.post(
+    "/api/admin/upload-image",
+    isAuthenticated,
+    isAdmin,
+    upload.single("image"),
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ message: "No image file provided" });
+        }
 
-      const imageUrl = await processImage(req.file.buffer, req.file.originalname);
-      res.json({ imageUrl });
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      res.status(500).json({ message: "Failed to upload image" });
-    }
-  });
+        const imageUrl = await processImage(
+          req.file.buffer,
+          req.file.originalname,
+        );
+        res.json({ imageUrl });
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        res.status(500).json({ message: "Failed to upload image" });
+      }
+    },
+  );
 
   // Serve images from MongoDB
   app.get("/api/images/:id", serveImageFromMongoDB);
@@ -2095,10 +2098,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         // Delete old image if it was replaced with a new one
-        if (existingMeal?.imageUrl && 
-            mealData.imageUrl && 
-            existingMeal.imageUrl !== mealData.imageUrl &&
-            existingMeal.imageUrl.startsWith('/api/images/')) {
+        if (
+          existingMeal?.imageUrl &&
+          mealData.imageUrl &&
+          existingMeal.imageUrl !== mealData.imageUrl &&
+          existingMeal.imageUrl.startsWith("/api/images/")
+        ) {
           await deleteImage(existingMeal.imageUrl);
         }
 
@@ -2805,34 +2810,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Test subscription notification
-  app.post(
-    "/api/notifications/test-subscription/:userId",
-    isAuthenticated,
-    isManagerOrAdmin,
-    async (req, res) => {
-      try {
-        const userId = parseInt(req.params.userId);
-        const { sendTestSubscriptionNotification } = await import(
-          "./subscription-notifications"
-        );
-        const success = await sendTestSubscriptionNotification(userId);
-
-        if (success) {
-          res.json({ message: "Test notification sent successfully" });
-        } else {
-          res
-            .status(404)
-            .json({ message: "User not found or notification failed" });
-        }
-      } catch (err) {
-        console.error("Error sending test subscription notification:", err);
-        res.status(500).json({ message: "Error sending test notification" });
-      }
-    },
-  );
-
-  // Get today's subscription deliveries (for admin view)
   app.get(
     "/api/notifications/today-subscriptions",
     isAuthenticated,
@@ -2858,29 +2835,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
-
-  // Test email notification (without auth for testing)
-  app.post("/api/test-email", async (req, res) => {
-    try {
-      const { sendTestEmail } = await import("./email-service");
-      const { email, name } = req.body;
-
-      if (!email || !name) {
-        return res.status(400).json({ message: "Email and name are required" });
-      }
-
-      const success = await sendTestEmail(email, name);
-
-      if (success) {
-        res.json({ message: "Test email sent successfully" });
-      } else {
-        res.status(500).json({ message: "Failed to send test email" });
-      }
-    } catch (err) {
-      console.error("Error sending test email:", err);
-      res.status(500).json({ message: "Error sending test email" });
-    }
-  });
 
   app.post(
     "/api/notifications/delivery-status",
@@ -2916,7 +2870,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     },
   );
 
-  // Get all deliveries (admin only)
   app.get("/api/deliveries", isAuthenticated, async (req, res) => {
     try {
       const user = await mongoStorage.getUser(req.user!.id);
@@ -2931,25 +2884,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to fetch deliveries" });
     }
   });
-
-  // Test daily notifications endpoint (admin only)
-  app.post("/api/test-daily-notifications", isAuthenticated, async (req, res) => {
+  app.post("/api/contact-review", async (req, res) => {
     try {
-      const user = await mongoStorage.getUser(req.user!.id);
-      if (!user?.isAdmin) {
-        return res.status(403).json({ error: "Admin access required" });
+      const { name, email, phone, message, rating } = req.body;
+
+      if (!name || !email || !message) {
+        return res.status(400).json({
+          error: "Name, email, and message are required",
+        });
       }
 
-      console.log("🧪 Manual test of daily notifications triggered...");
-      const result = await sendDailyDeliveryNotifications();
-      res.json({ 
-        message: "Test notifications sent", 
-        result,
-        timestamp: new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST'
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({
+          error: "Please provide a valid email address",
+        });
+      }
+
+      if (rating && (rating < 1 || rating > 5)) {
+        return res.status(400).json({
+          error: "Rating must be between 1 and 5",
+        });
+      }
+
+      const contactReview = new ContactReview({
+        name: name.trim(),
+        email: email.toLowerCase().trim(),
+        phone: phone?.trim() || null,
+        message: message.trim(),
+        rating: rating || 5,
+        submittedAt: new Date(),
+        status: "new",
+      });
+
+      await contactReview.save();
+
+      console.log(`New contact/review submitted by ${name} (${email})`);
+
+      res.status(201).json({
+        message: "Thank you for your feedback! We'll get back to you soon.",
+        id: contactReview._id,
       });
     } catch (error) {
-      console.error("Error testing daily notifications:", error);
-      res.status(500).json({ error: "Failed to test notifications" });
+      console.error("Error saving contact/review:", error);
+      res.status(500).json({
+        error: "Failed to submit your message. Please try again.",
+      });
     }
   });
 

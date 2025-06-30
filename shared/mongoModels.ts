@@ -1,6 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
 
-// Define interfaces for MongoDB documents
 export interface UserDocument extends Document {
   id: number;
   username: string;
