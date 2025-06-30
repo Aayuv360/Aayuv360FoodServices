@@ -22,9 +22,9 @@ const Header = () => {
 
   const isMobile = useIsMobile();
   const { selectedAddress, serviceArea } = useLocationManager();
-  const { isWithinServiceArea, getServiceMessage, checkServiceAvailability } = useServiceArea();
-
-  // Check service availability when selectedAddress changes
+  const { isWithinServiceArea, getServiceMessage, checkServiceAvailability } =
+    useServiceArea();
+  console.log(selectedAddress);
   useEffect(() => {
     if (selectedAddress?.coords) {
       checkServiceAvailability(selectedAddress.coords);
