@@ -13,8 +13,8 @@ import { useUIContext } from "@/contexts/UIContext";
 
 const libraries = ["places"];
 
-const markerPosition = { lat: 17.385044, lng: 78.486671 };
-const mapCenter = { lat: 17.385044, lng: 78.486671 };
+// Default coordinates for Hyderabad as fallback
+const DEFAULT_COORDS = { lat: 17.385044, lng: 78.486671 };
 
 interface NewAddressModalProps {
   addressModalOpen: boolean;
@@ -60,6 +60,10 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   const [addressDetails, setAddressDetails] = useState({
     landmark: "",
   });
+  
+  const [currentMapLocation, setCurrentMapLocation] = useState<{ lat: number; lng: number }>(
+    DEFAULT_COORDS
+  );
 
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI",
@@ -76,6 +80,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           lng: editingAddress.longitude,
         };
 
+        setCurrentMapLocation(loc);
         checkServiceAvailability(loc);
 
         const geocoder = new window.google.maps.Geocoder();
@@ -99,6 +104,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
   useEffect(() => {
     if (coords && !editingAddress) {
+      setCurrentMapLocation(coords);
       reverseGeocode(coords);
       checkServiceAvailability(coords);
     }
@@ -192,6 +198,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           lng: place.geometry.location.lng(),
         };
 
+        setCurrentMapLocation(loc);
         reverseGeocode(loc);
         checkServiceAvailability(loc);
         setLocationSearch(description);
@@ -287,7 +294,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         <div className="w-full h-[300px] rounded-lg overflow-hidden">
           <GoogleMap
             mapContainerStyle={{ width: "100%", height: "100%" }}
-            center={mapCenter}
+            center={currentMapLocation}
             zoom={18}
             options={{
               clickableIcons: false,
@@ -297,7 +304,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             }}
           >
             <Marker
-              position={markerPosition}
+              position={currentMapLocation}
               draggable
               onDragEnd={(e) => {
                 const latLng = e.latLng;
@@ -307,6 +314,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                   lng: latLng.lng(),
                 };
 
+                setCurrentMapLocation(newLoc);
                 reverseGeocode(newLoc);
                 checkServiceAvailability(newLoc);
               }}
@@ -402,8 +410,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                 (formData.get("addressLine2") as string) || undefined,
               isDefault: Boolean(formData.get("isDefault")),
               userName: formData.get("userName") as string,
-              latitude: markerPosition.lat,
-              longitude: markerPosition.lng,
+              latitude: currentMapLocation.lat,
+              longitude: currentMapLocation.lng,
               nearbyLandmark: formData.get("nearbyLandmark") as string,
             };
 
@@ -568,7 +576,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] lg:h-[450px]">
             <GoogleMap
               mapContainerStyle={{ width: "100%", height: "100%" }}
-              center={mapCenter}
+              center={currentMapLocation}
               zoom={18}
               options={{
                 clickableIcons: false,
@@ -578,7 +586,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
               }}
             >
               <Marker
-                position={markerPosition}
+                position={currentMapLocation}
                 draggable
                 onDragEnd={(e) => {
                   const latLng = e.latLng;
@@ -588,6 +596,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     lng: latLng.lng(),
                   };
 
+                  setCurrentMapLocation(newLoc);
                   reverseGeocode(newLoc);
                   checkServiceAvailability(newLoc);
                 }}
@@ -641,8 +650,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                     (formData.get("addressLine2") as string) || undefined,
                   isDefault: Boolean(formData.get("isDefault")),
                   userName: formData.get("userName") as string,
-                  latitude: markerPosition.lat,
-                  longitude: markerPosition.lng,
+                  latitude: currentMapLocation.lat,
+                  longitude: currentMapLocation.lng,
                   nearbyLandmark: formData.get("nearbyLandmark") as string,
                 };
 
