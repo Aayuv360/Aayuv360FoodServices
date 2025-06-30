@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
@@ -264,10 +263,9 @@ const FAQs = () => {
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
                         transition={{ duration: 0.3 }}
-                        className="px-6 pb-6"
-                      >
-                        <div className="pt-4 border-t border-gray-100">
-                          <p className="text-gray-700 leading-relaxed">
+                        className="px-4 sm:px-6 pb-4 sm:pb-6">
+                        <div className="pt-3 sm:pt-4 border-t border-gray-100">
+                          <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
                             {faq.answer}
                           </p>
                         </div>

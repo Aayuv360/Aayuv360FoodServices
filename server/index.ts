@@ -87,9 +87,9 @@ async function connectToDatabase() {
       serveStatic(app);
     }
 
-    app.use(deliveryRoutes);
-    app.use(notificationRoutes);
-    app.use(contactRoutes);
+    app.use("/", deliveryRoutes);
+    app.use("/", notificationRoutes);
+    app.use("/", contactRoutes);
 
     const preferredPort = process.env.PORT || 5000;
     let port = preferredPort;
