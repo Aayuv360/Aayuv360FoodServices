@@ -461,13 +461,14 @@ const contactReviewSchema = new mongoose.Schema({
   rating: { type: Number, min: 1, max: 5, default: 5 },
   submittedAt: { type: Date, default: Date.now },
   updatedAt: { type: Date },
-  status: { 
-    type: String, 
+  status: {
+    type: String,
     enum: ["new", "in_progress", "resolved", "closed"],
-    default: "new"
-  }
+    default: "new",
+  },
 });
 
-const ContactReview = mongoose.model("ContactReview", contactReviewSchema);
-
-export { ContactReview };
+export const ContactReview = mongoose.model(
+  "ContactReview",
+  contactReviewSchema,
+);
