@@ -77,19 +77,18 @@ const Footer = () => {
             </div>
             <ul className="space-y-3">
               {[
-                { label: "About Us", icon: <Users size={16} />, path: "/" },
-                // { label: "Contact Us", icon: <Mail size={16} />, path: "/" },
+                { label: "About Us", icon: <Users size={16} />, path: "/about-us" },
                 {
                   label: "Terms",
                   icon: <ShieldCheck size={16} />,
-                  path: "/",
+                  path: "/terms",
                 },
                 {
                   label: "Privacy & Refund",
                   icon: <ShieldCheck size={16} />,
-                  path: "/",
+                  path: "/privacy-refund",
                 },
-                { label: "FAQs", icon: <HelpCircle size={16} />, path: "/" },
+                { label: "FAQs", icon: <HelpCircle size={16} />, path: "/faqs" },
               ].map(({ label, icon, path }, index) => (
                 <li key={index}>
                   <Button

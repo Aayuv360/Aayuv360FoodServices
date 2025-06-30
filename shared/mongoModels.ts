@@ -69,7 +69,7 @@ export interface MealDocument extends Document {
   calories?: number;
   protein?: number;
   carbs?: number;
-  fat?: number;
+  fat: number;
   fiber?: number;
   curryOptions?: CurryOption[];
   createdAt: Date;
@@ -451,3 +451,24 @@ export async function getNextSequence(name: string): Promise<number> {
   );
   return counter.seq;
 }
+
+// Contact Review Schema
+const contactReviewSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: { type: String },
+  message: { type: String, required: true },
+  rating: { type: Number, min: 1, max: 5, default: 5 },
+  submittedAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date },
+  status: { 
+    type: String, 
+    enum: ["new", "in_progress", "resolved", "closed"],
+    default: "new"
+  }
+});
+
+const ContactReview = mongoose.model("ContactReview", contactReviewSchema);
+
+// I am not sure where the DeliveryNotification is defined, so I am removing it from the export
+export { User, Meal, Order, CartItem, Location, SubscriptionPlan, Subscription, Address, ContactReview };

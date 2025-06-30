@@ -3,6 +3,9 @@ import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import deliveryRoutes from "./delivery-status";
+import notificationRoutes from "./notifications";
+import contactRoutes from "./contact-routes";
 
 // Load environment variables
 dotenv.config();
@@ -36,7 +39,7 @@ async function connectToDatabase() {
       console.warn("MONGODB_URI not set - running without database connection");
       return true; // Allow app to start without database in development
     }
-    
+
     await mongoose.connect(uri);
     console.log('Successfully connected to MongoDB');
     return true;
@@ -52,7 +55,7 @@ async function connectToDatabase() {
   try {
     // Connect to database
     await connectToDatabase();
-    
+
     // Initialize scheduled tasks
     try {
       const { scheduleDailyNotifications } = await import("./subscription-notifications");
@@ -64,30 +67,34 @@ async function connectToDatabase() {
 
     // Register API routes BEFORE Vite middleware
     const server = await registerRoutes(app);
-    
+
     // Ensure API routes are handled before Vite
     app.use('/api/*', (req, res, next) => {
       // If we reach here, the API route wasn't found
       res.status(404).json({ error: 'API endpoint not found' });
     });
-    
+
     app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
       const status = err.status || err.statusCode || 500;
       const message = err.message || "Internal Server Error";
       res.status(status).json({ message });
       console.error(err);
     });
-    
+
     if (app.get("env") === "development") {
       await setupVite(app, server);
     } else {
       serveStatic(app);
     }
-    
+
+    app.use(deliveryRoutes);
+    app.use(notificationRoutes);
+    app.use(contactRoutes);
+
     const preferredPort = process.env.PORT || 5000;
     let port = preferredPort;
     let retries = 0;
-    
+
     const startServer = () => {
       server.listen({
         port,
@@ -106,7 +113,7 @@ async function connectToDatabase() {
         }
       });
     };
-    
+
     startServer();
   } catch (error) {
     console.error('Failed to start server:', error);

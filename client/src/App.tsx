@@ -31,6 +31,11 @@ import { RecoilRoot } from "recoil";
 import { ItemDetailsPage } from "./pages/ItemDetailsPage";
 import SubscriptionManager from "./pages/subscriptionManager";
 import SuccessPage from "./pages/SuccessPage";
+import AuthPage from "./pages/auth-page";
+import AboutUs from "./pages/about-us";
+import Terms from "./pages/terms";
+import PrivacyRefund from "./pages/privacy-refund";
+import FAQs from "./pages/faqs";
 function Router() {
   return (
     <div className="flex flex-col min-h-screen">
@@ -85,6 +90,12 @@ function Router() {
               path="/make-admin"
               element={<ProtectedRoute component={MakeAdmin} adminOnly />}
             />
+ <Route path="/success" element={<SuccessPage />} />
+            <Route path="/auth" element={<AuthPage />} />
+            <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/privacy-refund" element={<PrivacyRefund />} />
+            <Route path="/faqs" element={<FAQs />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
