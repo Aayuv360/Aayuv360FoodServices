@@ -19,7 +19,7 @@ const Testimonials = () => {
       duration: "6 months",
       rating: 5,
       image: "https://randomuser.me/api/portraits/men/32.jpg",
-      text: "As someone with diabetes, finding tasty low-glycemic meals was a challenge until I discovered MealMillet. Their millet-based dishes have helped me manage my blood sugar while enjoying delicious food.",
+      text: "As someone with diabetes, finding tasty low-glycemic meals was a challenge until I discovered Aayuv. Their millet-based dishes have helped me manage my blood sugar while enjoying delicious food.",
     },
     {
       id: 2,
@@ -28,7 +28,7 @@ const Testimonials = () => {
       duration: "3 months",
       rating: 5,
       image: "https://randomuser.me/api/portraits/women/28.jpg",
-      text: "My kids were picky eaters until we tried MealMillet's family plan. The variety keeps mealtime exciting, and my children actually love the millet-based dishes! Plus, I feel good knowing they're eating nutritiously.",
+      text: "My kids were picky eaters until we tried Aayuv's family plan. The variety keeps mealtime exciting, and my children actually love the millet-based dishes! Plus, I feel good knowing they're eating nutritiously.",
     },
     {
       id: 3,

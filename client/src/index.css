@@ -17,7 +17,7 @@
   --ring: 20 14.3% 4.1%;
   --radius: 0.5rem;
 
-  /* MealMillet colors */
+  /* Aayuv colors */
   --primary: 25 95% 53%;
   /* #E27D60 - Coral */
   --primary-foreground: 0 0% 100%;
@@ -93,7 +93,9 @@
   }
 
   .card-shadow {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.1);
+    box-shadow:
+      0 4px 6px rgba(0, 0, 0, 0.05),
+      0 1px 3px rgba(0, 0, 0, 0.1);
   }
 }
 
@@ -134,8 +136,6 @@
     /* Firefox */
   }
 }
-
-
 
 @layer base {
   html {
@@ -235,7 +235,6 @@
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translateY(0);

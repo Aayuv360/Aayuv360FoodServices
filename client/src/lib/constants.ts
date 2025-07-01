@@ -139,22 +139,3 @@ export const DIETARY_PREFERENCES = [
   { id: "vegan", name: "Vegan", color: "bg-emerald-100 text-emerald-800" },
   { id: "spicy", name: "Spicy", color: "bg-red-100 text-red-800" },
 ];
-
-export const SOCIAL_LINKS = {
-  facebook: "https://facebook.com/mealmillet",
-  instagram: "https://instagram.com/mealmillet",
-  twitter: "https://twitter.com/mealmillet",
-};
-
-export const COMPANY_INFO = {
-  name: "MealMillet",
-  address: "123 Food Street, Hyderabad, Telangana, India",
-  email: "support@mealmillet.com",
-  phone: "+91 9876543210",
-  bankAccount: {
-    name: "MealMillet Services",
-    accountNumber: "1234567890",
-    ifscCode: "MEAL0001234",
-    bank: "Millet Bank",
-  },
-};
