@@ -61,7 +61,7 @@ const SubscriptionPlans = () => {
   ].filter(Boolean) as Plan[];
 
   const handleSelectPlan = (plan: Plan) => {
-    navigate(`/subscription?plan=${plan.id}`);
+    navigate(`/subscription?plan=${plan.planType}`);
   };
 
   if (isLoading) {

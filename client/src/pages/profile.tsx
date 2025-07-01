@@ -53,28 +53,22 @@ const Profile = () => {
   const { user, logout } = useAuth();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
-  // Parse the URL search params to get the active tab
-  const urlParams = new URLSearchParams(window.location.search);
-  const tabParam = urlParams.get("tab");
-  const [currentTab, setCurrentTab] = useState(tabParam || "profile");
+  const searchParams = new URLSearchParams(location.search);
+const initialTab = searchParams.get("tab") || "profile";
+const [currentTab, setCurrentTab] = useState(initialTab);
 
-  const toggleOrderDetails = (orderId: number) => {
-    if (expandedOrderId === orderId) {
-      setExpandedOrderId(null);
-    } else {
-      setExpandedOrderId(orderId);
-    }
-  };
+const toggleOrderDetails = (orderId: number) => {
+  setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+};
 
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const tabParam = urlParams.get("tab");
-    if (tabParam) {
-      setCurrentTab(tabParam);
-    } else {
-      setCurrentTab("profile");
-    }
-  }, [location]);
+useEffect(() => {
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get("tab");
+  setCurrentTab(tabParam || "profile");
+}, [location.search]);
+
+
+
 
   if (!user) {
     navigate("/login");

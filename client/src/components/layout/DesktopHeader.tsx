@@ -41,11 +41,10 @@ const DesktopHeader = ({
           A
         </div>
         <h1 className="text-2xl font-bold text-primary">Aayuv</h1>
+        <LocationSelector />
       </Link>
 
       <div className="flex items-center gap-4">
-        <LocationSelector />
-
         <button
           onClick={() => scrollToMenuSection()}
           className="hover:text-primary flex items-center gap-2 px-2 py-1 text-sm"
@@ -102,7 +101,7 @@ const DesktopHeader = ({
         ) : (
           <button
             className="hover:text-primary flex items-center gap-2 px-2 py-1 text-sm"
-            onClick={() => openAuthModal("normal", "")}
+            onClick={() => openAuthModal()}
           >
             <LogIn className="w-5 h-5" />
             <span>Login</span>

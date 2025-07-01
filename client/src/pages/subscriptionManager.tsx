@@ -20,8 +20,7 @@ const SubscriptionManager = () => {
 
       enabled: !!user,
     });
-
-  const hasActiveSubscription = subscriptions.length > 0;
+  const hasActiveSubscription = user && subscriptions.length > 0;
 
   return isLoadingSubscriptions ? (
     <div className="flex items-center justify-center h-screen">

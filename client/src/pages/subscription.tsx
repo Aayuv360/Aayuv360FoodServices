@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,useLocation } from "react-router-dom";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -69,23 +69,7 @@ import { useLocationManager } from "@/hooks/use-location-manager";
 import { SubscriptionPlanCards } from "./subscriptionPlanCards";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const plansEmoji = [
-  {
-    id: "basic",
-    name: "Basic",
-    emoji: "🌱",
-  },
-  {
-    id: "premium",
-    name: "Premium",
-    emoji: "🌾",
-  },
-  {
-    id: "family",
-    name: "Family",
-    emoji: "👑",
-  },
-];
+
 const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
   { id: 2, time: "8:00 PM - 9:00 PM" },
@@ -151,6 +135,9 @@ const Subscription = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialPlan = searchParams.get("plan") || "basic";
   const { initiatePayment } = useRazorpay();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -348,12 +335,12 @@ const Subscription = () => {
     setFilteredPlans(sortedPlans);
 
     const defaultPlan = sortedPlans?.find(
-      (plan: any) => plan.planType === "basic",
+      (plan: any) => plan.planType === initialPlan,
     );
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
     }
-  }, [subscriptionPlans, diet]);
+  }, [subscriptionPlans, diet,location.search]);
 
   const renderStepContent = () => {
     switch (formStep) {
