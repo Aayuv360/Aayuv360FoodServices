@@ -17,7 +17,7 @@ interface Plan {
   planType: string;
 }
 
-const SubscriptionPlans = () => {
+const SubscriptionPlans = ({ previousPlansData }: any) => {
   const [hoveredPlan, setHoveredPlan] = useState<string | null>(null);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
@@ -35,7 +35,7 @@ const SubscriptionPlans = () => {
   const plans: Plan[] = apiPlans
     ? (() => {
         const vegGroup = apiPlans.find(
-          (group: any) => group.dietaryPreference === "veg",
+          (group: any) => group.dietaryPreference === "veg"
         );
         return (
           vegGroup?.plans?.map((plan: any) => ({

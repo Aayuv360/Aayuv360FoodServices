@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate,useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -68,7 +68,6 @@ import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { SubscriptionPlanCards } from "./subscriptionPlanCards";
 import { useIsMobile } from "@/hooks/use-mobile";
-
 
 const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
@@ -201,7 +200,7 @@ const Subscription = () => {
 
       const response = await apiRequest(
         "POST",
-        "/api/subscriptions/generate-id",
+        "/api/subscriptions/generate-id"
       );
 
       const { id: subscriptionId } = await response.json();
@@ -226,7 +225,7 @@ const Subscription = () => {
                   razorpayPaymentId: paymentData.razorpay_payment_id,
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
-                },
+                }
               );
 
               toast({
@@ -289,7 +288,7 @@ const Subscription = () => {
       editingAddress,
       setAddressModalOpen,
       setEditingAddress,
-      addressData,
+      addressData
     );
   };
   const handleDeleteAddress = async (addressId: number) => {
@@ -335,12 +334,12 @@ const Subscription = () => {
     setFilteredPlans(sortedPlans);
 
     const defaultPlan = sortedPlans?.find(
-      (plan: any) => plan.planType === initialPlan,
+      (plan: any) => plan.planType === initialPlan
     );
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
     }
-  }, [subscriptionPlans, diet,location.search]);
+  }, [subscriptionPlans, diet, location.search]);
 
   const renderStepContent = () => {
     switch (formStep) {
@@ -365,7 +364,7 @@ const Subscription = () => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "veg" as "veg" | "veg_with_egg" | "nonveg",
+                      "veg" as "veg" | "veg_with_egg" | "nonveg"
                     )
                   }
                 >
@@ -376,7 +375,7 @@ const Subscription = () => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "veg_with_egg" as "veg" | "veg_with_egg" | "nonveg",
+                      "veg_with_egg" as "veg" | "veg_with_egg" | "nonveg"
                     )
                   }
                 >
@@ -387,7 +386,7 @@ const Subscription = () => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "nonveg" as "veg" | "veg_with_egg" | "nonveg",
+                      "nonveg" as "veg" | "veg_with_egg" | "nonveg"
                     )
                   }
                 >
@@ -531,7 +530,7 @@ const Subscription = () => {
                                 onClick={() =>
                                   form.setValue(
                                     "personCount",
-                                    Math.max(1, field.value - 1),
+                                    Math.max(1, field.value - 1)
                                   )
                                 }
                                 disabled={field.value <= 1}
@@ -550,7 +549,7 @@ const Subscription = () => {
                                 onClick={() =>
                                   form.setValue(
                                     "personCount",
-                                    Math.min(10, field.value + 1),
+                                    Math.min(10, field.value + 1)
                                   )
                                 }
                                 disabled={field.value >= 10}
@@ -711,7 +710,7 @@ const Subscription = () => {
                     <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
                       {(() => {
                         const address = savedAddresses.find(
-                          (address) => address.id === selectedAddress?.id,
+                          (address) => address.id === selectedAddress?.id
                         );
                         if (!address)
                           return (
@@ -889,7 +888,6 @@ const Subscription = () => {
       <AuthModal
         isOpen={authModalOpen}
         onOpenChange={setAuthModalOpen}
-        redirectUrl={`/subscription?plan=${selectedPlan?.planType}`}
         mode="subscribe"
       />
       <DeleteAddressDialog
