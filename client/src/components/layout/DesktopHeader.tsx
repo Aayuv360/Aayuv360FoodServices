@@ -1,7 +1,16 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
-import { User, ShoppingCart, Search, LogIn } from "lucide-react";
+import {
+  User,
+  ShoppingCart,
+  Search,
+  LogIn,
+  ChefHat,
+  ClipboardList,
+  LogOut,
+  CircleUser,
+} from "lucide-react";
 import LocationSelector from "./LocationSelector";
 import {
   DropdownMenu,
@@ -10,6 +19,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 const DesktopHeader = ({
   openAuthModal,
@@ -71,31 +81,35 @@ const DesktopHeader = ({
         {user ? (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="hover:text-primary flex items-center gap-2 px-2 py-1 text-sm">
-                <User className="w-5 h-5" />
+              <button className="flex items-center gap-2 px-2 py-1 text-sm">
+                <CircleUser className="w-5 h-5" />
                 <span className="max-w-[100px] truncate">
                   {(user.name || user.username || "User").split(" ")[0]}
                 </span>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent align="center" className="space-y-3">
               <DropdownMenuItem asChild>
                 <Link to="/profile" className="w-full">
+                  <User className="w-5 h-5" />
                   Your Profile
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/profile?tab=subscriptions" className="w-full">
-                  Subscriptions
+                  <ChefHat className="w-5 h-5" /> Subscriptions
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link to="/profile?tab=orders" className="w-full">
-                  Order History
+                  <ClipboardList className="w-5 h-5" /> Order History
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>
+                <LogOut className="w-5 h-5 ml-1" />
+                Sign out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (

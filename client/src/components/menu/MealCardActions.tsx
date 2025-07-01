@@ -145,7 +145,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
 
   const handleAddToCurry = async (
     selectedMeal: Meal,
-    selectedCurryOption: any,
+    selectedCurryOption: any
   ) => {
     try {
       if (!user) {

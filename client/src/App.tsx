@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { CartProvider } from "@/hooks/use-cart";
 import { LocationProvider } from "@/contexts/LocationContext";
-import { MapProvider } from "@/hooks/MapProvider";
 import { UIProvider } from "@/contexts/UIContext";
 import { ProtectedRoute } from "@/components/protected-route";
 
@@ -90,7 +89,7 @@ function Router() {
               path="/make-admin"
               element={<ProtectedRoute component={MakeAdmin} adminOnly />}
             />
- <Route path="/success" element={<SuccessPage />} />
+            <Route path="/success" element={<SuccessPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/terms" element={<Terms />} />
