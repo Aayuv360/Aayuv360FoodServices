@@ -64,7 +64,7 @@ const Footer = () => {
               <div className="h-10 w-10 rounded-full bg-orange-500 text-white flex items-center justify-center text-xl font-bold">
                 A
               </div>
-              <span className="ml-2 text-xl font-bold text-orange-600">
+              <span className="ml-2 text-xl font-bold text-orange-500">
                 Aayuv
               </span>
             </div>
