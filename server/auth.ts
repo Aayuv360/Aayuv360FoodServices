@@ -6,6 +6,12 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import {
+  sanitizeInput,
+  validateEmail,
+  validatePassword,
+  validatePhone,
+} from "./security-middleware";
 
 declare global {
   namespace Express {
@@ -69,7 +75,7 @@ export function setupAuth(app: Express) {
       } catch (err) {
         return done(err);
       }
-    }),
+    })
   );
 
   passport.serializeUser((user: any, done) => {
@@ -86,50 +92,57 @@ export function setupAuth(app: Express) {
   });
 
   // Authentication routes
-  app.post("/api/auth/register", async (req, res) => {
-    try {
-      const { username, password, email, name, phone, address } = req.body;
+  app.post(
+    "/api/auth/register",
+    sanitizeInput,
+    validateEmail,
+    validatePassword,
+    validatePhone,
+    async (req, res) => {
+      try {
+        const { username, password, email, name, phone, address } = req.body;
 
-      // Check if user already exists
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "Username already exists" });
-      }
-
-      const existingEmail = await storage.getUserByEmail(email);
-      if (existingEmail) {
-        return res.status(400).json({ message: "Email already exists" });
-      }
-
-      // Hash password
-      const hashedPassword = await hashPassword(password);
-
-      // Create user with hashed password
-      const user = await storage.createUser({
-        username,
-        password: hashedPassword,
-        email,
-        name,
-        phone,
-        address,
-      });
-
-      // Remove password from response
-      const { password: _, ...userWithoutPassword } = user;
-
-      req.login(user, (err) => {
-        if (err) {
-          return res
-            .status(500)
-            .json({ message: "Error logging in after registration" });
+        // Check if user already exists
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser) {
+          return res.status(400).json({ message: "Username already exists" });
         }
-        res.status(201).json(userWithoutPassword);
-      });
-    } catch (err) {
-      console.error("Registration error:", err);
-      res.status(500).json({ message: "Error creating user" });
+
+        const existingEmail = await storage.getUserByEmail(email);
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+
+        // Hash password
+        const hashedPassword = await hashPassword(password);
+
+        // Create user with hashed password
+        const user = await storage.createUser({
+          username,
+          password: hashedPassword,
+          email,
+          name,
+          phone,
+          address,
+        });
+
+        // Remove password from response
+        const { password: _, ...userWithoutPassword } = user;
+
+        req.login(user, (err) => {
+          if (err) {
+            return res
+              .status(500)
+              .json({ message: "Error logging in after registration" });
+          }
+          res.status(201).json(userWithoutPassword);
+        });
+      } catch (err) {
+        console.error("Registration error:", err);
+        res.status(500).json({ message: "Error creating user" });
+      }
     }
-  });
+  );
 
   app.post("/api/auth/login", (req, res, next) => {
     passport.authenticate("local", (err: any, user: any, info: any) => {

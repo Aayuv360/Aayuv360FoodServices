@@ -40,6 +40,14 @@ import { seedDatabase } from "./seed";
 import { setupAuth } from "./auth";
 import { sendDailyDeliveryNotifications } from "./subscription-notifications";
 import { ContactReview } from "../shared/mongoModels";
+import express, { NextFunction } from "express";
+import mongoose from "mongoose";
+import dotenv from "dotenv";
+import { router as deliveryRoutes } from "./delivery-status";
+import { router as notificationRoutes } from "./notifications";
+import contactRoutes from "./contact-routes";
+import CacheService from "./cache";
+import { logAPIRequest } from "./logger";
 
 const insertUserPreferencesSchema = z.object({
   userId: z.number(),
@@ -96,7 +104,7 @@ function calculateSubscriptionStatus(subscription: any) {
         "Invalid start date for subscription:",
         subscription.id,
         "Date value:",
-        subscription.startDate || subscription.start_date,
+        subscription.startDate || subscription.start_date
       );
       return {
         ...subscription,
@@ -121,7 +129,7 @@ function calculateSubscriptionStatus(subscription: any) {
     if (isNaN(endDate.getTime())) {
       console.log(
         "Invalid end date calculation for subscription:",
-        subscription.id,
+        subscription.id
       );
       return {
         ...subscription,
@@ -135,17 +143,17 @@ function calculateSubscriptionStatus(subscription: any) {
     const current = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      currentDate.getDate(),
+      currentDate.getDate()
     );
     const start = new Date(
       startDate.getFullYear(),
       startDate.getMonth(),
-      startDate.getDate(),
+      startDate.getDate()
     );
     const end = new Date(
       endDate.getFullYear(),
       endDate.getMonth(),
-      endDate.getDate(),
+      endDate.getDate()
     );
 
     let status = "inactive";
@@ -178,7 +186,7 @@ function calculateSubscriptionStatus(subscription: any) {
     console.error(
       "Error calculating subscription status for subscription:",
       subscription.id,
-      error,
+      error
     );
     return {
       ...subscription,
@@ -244,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Update the subscription plan in MongoDB
         const updatedPlan = await mongoStorage.updateSubscriptionPlan(
           planId,
-          updateData,
+          updateData
         );
 
         if (!updatedPlan) {
@@ -269,7 +277,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           message: "Failed to update subscription plan",
         });
       }
-    },
+    }
   );
 
   registerMealRoutes(app);
@@ -293,8 +301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ]);
         } else {
           const mealSpecificOptions = globalCurryOptions.filter(
-            (option: any) =>
-              option.mealId === null || option.mealId === meal.id,
+            (option: any) => option.mealId === null || option.mealId === meal.id
           );
 
           curryOptionsArray = mealSpecificOptions.map((option: any) => [
@@ -399,7 +406,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const locations = await mongoStorage.getLocations();
       if (!locations || locations.length === 0) {
         console.log(
-          "No locations found in database, seeding default locations",
+          "No locations found in database, seeding default locations"
         );
         const defaultLocations = [
           { id: 1, area: "Gachibowli", pincode: "500032", deliveryFee: 30 },
@@ -452,7 +459,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...item,
             meal: mealWithCurryOption,
           };
-        }),
+        })
       );
 
       res.json(enrichedCartItems);
@@ -544,7 +551,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedItem = await mongoStorage.updateCartItemQuantity(
         itemId,
-        quantity,
+        quantity
       );
       const meal = await mongoStorage.getMeal(updatedItem.mealId);
 
@@ -708,7 +715,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedAddress = await mongoStorage.updateAddress(
         addressId,
-        req.body,
+        req.body
       );
       res.json(updatedAddress);
     } catch (err) {
@@ -801,7 +808,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       const updatedPreferences = await mongoStorage.updateUserPreferences(
         userId,
-        req.body,
+        req.body
       );
       res.json(updatedPreferences);
     } catch (err) {
@@ -825,7 +832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             dietaryPreference: "veg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg",
+              (plan) => plan.dietaryPreference === "veg"
             ),
             extraPrice: 0,
             id: 1,
@@ -833,7 +840,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             dietaryPreference: "veg_with_egg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg_with_egg",
+              (plan) => plan.dietaryPreference === "veg_with_egg"
             ),
             extraPrice: 0,
             id: 2,
@@ -841,7 +848,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             dietaryPreference: "nonveg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "nonveg",
+              (plan) => plan.dietaryPreference === "nonveg"
             ),
             extraPrice: 0,
             id: 3,
@@ -871,7 +878,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("🚀 Updating subscription plan:", planId, planData);
           const updatedPlan = await mongoStorage.updateSubscriptionPlan(
             planId,
-            planData,
+            planData
           );
 
           res.json({
@@ -883,7 +890,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.log("🚀 Deleting subscription plan:", planId);
           const updatedPlan = await mongoStorage.updateSubscriptionPlan(
             planId,
-            { isActive: false },
+            { isActive: false }
           );
 
           res.json({
@@ -904,70 +911,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
 
   app.get("/api/subscription-plans", async (req, res) => {
+    const startTime = Date.now();
     try {
-      const activePlans = await mongoStorage.getAllSubscriptionPlans();
-      const plansWithMenuItems = activePlans.map((plan) => {
-        if (!plan.menuItems || plan.menuItems.length === 0) {
-          console.warn(`Plan ${plan.id} missing menuItems, adding default`);
-          const defaultMenuItems = [
-            { day: 1, main: "Ragi Dosa", sides: ["Coconut Chutney", "Sambar"] },
-            { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
-            { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
-            {
-              day: 4,
-              main: "Foxtail Millet Lemon Rice",
-              sides: ["Boondi Raita"],
-            },
-            {
-              day: 5,
-              main: "Little Millet Pongal",
-              sides: ["Coconut Chutney"],
-            },
-            {
-              day: 6,
-              main: "Barnyard Millet Khichdi",
-              sides: ["Pickle", "Curd"],
-            },
-            {
-              day: 7,
-              main: "Pearl Millet Roti",
-              sides: ["Dal", "Vegetable Curry"],
-            },
-          ];
-          return { ...plan, menuItems: defaultMenuItems };
-        }
-        return plan;
-      });
+      // Check cache first
+      let subscriptionPlans = CacheService.getSubscriptionPlans();
 
-      const groupedPlans = [
-        {
-          dietaryPreference: "veg",
-          plans: plansWithMenuItems.filter(
-            (plan) => plan.dietaryPreference === "veg",
-          ),
-          extraPrice: 0,
-          id: 1,
-        },
-        {
-          dietaryPreference: "veg_with_egg",
-          plans: plansWithMenuItems.filter(
-            (plan) => plan.dietaryPreference === "veg_with_egg",
-          ),
-          extraPrice: 0,
-          id: 2,
-        },
-        {
-          dietaryPreference: "nonveg",
-          plans: plansWithMenuItems.filter(
-            (plan) => plan.dietaryPreference === "nonveg",
-          ),
-          extraPrice: 0,
-          id: 3,
-        },
-      ].filter((group) => group.plans.length > 0);
-      res.json(groupedPlans);
+      if (!subscriptionPlans) {
+        console.log("📋 Fetching subscription plans from MongoDB");
+        const activePlans = await mongoStorage.getAllSubscriptionPlans();
+        const plansWithMenuItems = activePlans.map((plan) => {
+          if (!plan.menuItems || plan.menuItems.length === 0) {
+            console.warn(`Plan ${plan.id} missing menuItems, adding default`);
+            const defaultMenuItems = [
+              {
+                day: 1,
+                main: "Ragi Dosa",
+                sides: ["Coconut Chutney", "Sambar"],
+              },
+              { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+              { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
+              {
+                day: 4,
+                main: "Foxtail Millet Lemon Rice",
+                sides: ["Boondi Raita"],
+              },
+              {
+                day: 5,
+                main: "Little Millet Pongal",
+                sides: ["Coconut Chutney"],
+              },
+              {
+                day: 6,
+                main: "Barnyard Millet Khichdi",
+                sides: ["Pickle", "Curd"],
+              },
+              {
+                day: 7,
+                main: "Pearl Millet Roti",
+                sides: ["Dal", "Vegetable Curry"],
+              },
+            ];
+            return { ...plan, menuItems: defaultMenuItems };
+          }
+          return plan;
+        });
+
+        const groupedPlans = [
+          {
+            dietaryPreference: "veg",
+            plans: plansWithMenuItems.filter(
+              (plan) => plan.dietaryPreference === "veg"
+            ),
+            extraPrice: 0,
+            id: 1,
+          },
+          {
+            dietaryPreference: "veg_with_egg",
+            plans: plansWithMenuItems.filter(
+              (plan) => plan.dietaryPreference === "veg_with_egg"
+            ),
+            extraPrice: 0,
+            id: 2,
+          },
+          {
+            dietaryPreference: "nonveg",
+            plans: plansWithMenuItems.filter(
+              (plan) => plan.dietaryPreference === "nonveg"
+            ),
+            extraPrice: 0,
+            id: 3,
+          },
+        ].filter((group) => group.plans.length > 0);
+        subscriptionPlans = groupedPlans;
+
+        console.log(
+          `📋 Retrieved ${subscriptionPlans.length} subscription plans from MongoDB`
+        );
+
+        // Cache the results
+        CacheService.setSubscriptionPlans(subscriptionPlans);
+      } else {
+        console.log(
+          `📋 Retrieved ${subscriptionPlans.length} subscription plans from cache`
+        );
+      }
+
+      const duration = Date.now() - startTime;
+      logAPIRequest(
+        "GET",
+        "/api/subscription-plans",
+        200,
+        duration,
+        req.user?.id
+      );
+
+      res.json(subscriptionPlans);
     } catch (error) {
+      const duration = Date.now() - startTime;
       console.error("Error fetching subscription plans:", error);
+      logAPIRequest(
+        "GET",
+        "/api/subscription-plans",
+        500,
+        duration,
+        req.user?.id
+      );
       res.status(500).json({ message: "Failed to fetch subscription plans" });
     }
   });
@@ -1017,7 +1065,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           dietaryPreference: "veg",
           plans: plansWithMenuItems.filter(
-            (plan) => plan.dietaryPreference === "veg",
+            (plan) => plan.dietaryPreference === "veg"
           ),
           extraPrice: 0,
           id: 1,
@@ -1025,7 +1073,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           dietaryPreference: "veg_with_egg",
           plans: plansWithMenuItems.filter(
-            (plan) => plan.dietaryPreference === "veg_with_egg",
+            (plan) => plan.dietaryPreference === "veg_with_egg"
           ),
           extraPrice: 0,
           id: 2,
@@ -1033,7 +1081,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         {
           dietaryPreference: "nonveg",
           plans: plansWithMenuItems.filter(
-            (plan) => plan.dietaryPreference === "nonveg",
+            (plan) => plan.dietaryPreference === "nonveg"
           ),
           extraPrice: 0,
           id: 3,
@@ -1041,7 +1089,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       ].filter((group) => group.plans.length > 0);
 
       console.log(
-        `📋 Retrieved ${plans.length} subscription plans for public API`,
+        `📋 Retrieved ${plans.length} subscription plans for public API`
       );
       res.json(groupedPlans);
     } catch (error) {
@@ -1063,7 +1111,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           console.error(
             "Failed to calculate status for subscription:",
             subscription.id,
-            statusError,
+            statusError
           );
           // Return subscription with default status to prevent complete failure
           return {
@@ -1120,7 +1168,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error generating subscription ID:", error);
         res.status(500).json({ message: "Failed to generate subscription ID" });
       }
-    },
+    }
   );
 
   app.post("/api/subscriptions", isAuthenticated, async (req, res) => {
@@ -1183,7 +1231,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (typeof planDuration !== "number" || planDuration <= 0) {
           console.error(
             "Invalid or missing plan duration for subscription:",
-            planDuration,
+            planDuration
           );
           return res.status(400).json({
             message: "Invalid or missing plan duration for the subscription.",
@@ -1196,8 +1244,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const deliveredDays = Math.max(
           0,
           Math.floor(
-            (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
-          ) + 1,
+            (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
+          ) + 1
         );
 
         const remainingDays = planDuration - deliveredDays;
@@ -1230,7 +1278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const updatedSubscription = await mongoStorage.updateSubscription(
           subscriptionId,
-          updates,
+          updates
         );
 
         if (!updatedSubscription) {
@@ -1249,7 +1297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .status(500)
           .json({ message: "Error modifying subscription" });
       }
-    },
+    }
   );
 
   app.patch("/api/subscriptions/:id", isAuthenticated, async (req, res) => {
@@ -1272,7 +1320,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const updatedSubscription = await mongoStorage.updateSubscription(
         subscriptionId,
-        req.body,
+        req.body
       );
       res.json(updatedSubscription);
     } catch (err) {
@@ -1311,7 +1359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ...plan,
               meal,
             };
-          }),
+          })
         );
 
         res.json(enrichedMealPlans);
@@ -1319,7 +1367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching custom meal plans:", err);
         res.status(500).json({ message: "Error fetching custom meal plans" });
       }
-    },
+    }
   );
 
   app.post(
@@ -1368,7 +1416,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           res.status(500).json({ message: "Error creating custom meal plan" });
         }
       }
-    },
+    }
   );
 
   app.delete(
@@ -1406,7 +1454,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error deleting custom meal plan:", err);
         res.status(500).json({ message: "Error deleting custom meal plan" });
       }
-    },
+    }
   );
 
   app.post("/api/orders", isAuthenticated, async (req, res) => {
@@ -1471,7 +1519,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             deliveryPhone = req.body.deliveryAddress.phone;
           } else if (req.body.deliveryAddressId) {
             const deliveryAddress = await mongoStorage.getAddressById(
-              req.body.deliveryAddressId,
+              req.body.deliveryAddressId
             );
             deliveryPhone = deliveryAddress?.phone;
           }
@@ -1488,7 +1536,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               userName,
               order.id,
               orderItems,
-              "Soon", // You can customize this based on your delivery schedule
+              "Soon" // You can customize this based on your delivery schedule
             );
           }
         }
@@ -1547,7 +1595,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...item,
             meal,
           };
-        }),
+        })
       );
 
       res.json({
@@ -1603,7 +1651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const isValid = verifyPaymentSignature(
           razorpayOrderId,
           razorpayPaymentId,
-          razorpaySignature,
+          razorpaySignature
         );
 
         if (!isValid) {
@@ -1627,16 +1675,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/analytics", isAuthenticated, isAdmin, async (req, res) => {
+  // Analytics API route with caching
+  app.get("/api/analytics", async (req, res) => {
+    const startTime = Date.now();
     try {
-      const dateRange = (req.query.range as AnalyticsDateRange) || "30days";
-      const analyticsData = await analyticsService.getAnalytics(dateRange);
+      // Check if user is admin
+      if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required" });
+      }
+
+      const { range = "30days" } = req.query;
+      const validRanges = ["7days", "30days", "90days", "year"];
+
+      if (!validRanges.includes(range as string)) {
+        return res.status(400).json({ error: "Invalid date range" });
+      }
+
+      // Check cache first
+      let analyticsData = CacheService.getAnalytics(range as string);
+
+      if (!analyticsData) {
+        analyticsData = await analyticsService.getAnalytics(range as any);
+        CacheService.setAnalytics(range as string, analyticsData);
+      }
+
+      const duration = Date.now() - startTime;
+      logAPIRequest(
+        "GET",
+        "/api/analytics",
+        200,
+        duration,
+        (req.user as any)?.id
+      );
 
       res.json(analyticsData);
-    } catch (err) {
-      console.error("Error fetching analytics:", err);
-      res.status(500).json({ message: "Error fetching analytics data" });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      console.error("Analytics error:", error);
+      logAPIRequest(
+        "GET",
+        "/api/analytics",
+        500,
+        duration,
+        (req.user as any)?.id
+      );
+      res.status(500).json({ error: "Failed to fetch analytics data" });
     }
+  });
+
+  // Cache management endpoints (Admin only)
+  app.post("/api/admin/cache/clear", (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const { type } = req.body;
+
+    switch (type) {
+      case "all":
+        CacheService.clearAll();
+        break;
+      case "menu":
+        CacheService.clearMenuCache();
+        break;
+      case "user":
+        CacheService.clearUserCache();
+        break;
+      default:
+        CacheService.clearAll();
+    }
+
+    res.json({ message: `${type || "all"} cache cleared successfully` });
+  });
+
+  app.get("/api/admin/cache/stats", (req, res) => {
+    if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
+    }
+
+    const stats = CacheService.getStats();
+    res.json(stats);
   });
 
   app.get(
@@ -1660,7 +1778,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   ...item,
                   meal: meal || { name: `Meal #${item.mealId}` },
                 };
-              }),
+              })
             );
 
             // Get proper user name - mongodb document may store it differently
@@ -1683,7 +1801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               userName,
               items: enrichedItems,
             };
-          }),
+          })
         );
 
         res.json(enrichedOrders);
@@ -1691,7 +1809,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching orders:", err);
         res.status(500).json({ message: "Error fetching orders" });
       }
-    },
+    }
   );
 
   app.get(
@@ -1729,7 +1847,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               ...subscriptionWithStatus,
               userName,
             };
-          }),
+          })
         );
 
         res.json(enrichedSubscriptions);
@@ -1737,7 +1855,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching subscriptions:", err);
         res.status(500).json({ message: "Error fetching subscriptions" });
       }
-    },
+    }
   );
 
   // Update subscription status
@@ -1755,7 +1873,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             status,
             updatedAt: new Date(),
-          },
+          }
         );
 
         if (!updatedSubscription) {
@@ -1767,7 +1885,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating subscription status:", err);
         res.status(500).json({ message: "Error updating subscription status" });
       }
-    },
+    }
   );
 
   // Extend subscription
@@ -1790,7 +1908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           ? new Date(subscription.endDate)
           : new Date(subscription.startDate);
         currentEndDate.setDate(
-          currentEndDate.getDate() + (subscription.duration || 30),
+          currentEndDate.getDate() + (subscription.duration || 30)
         );
         const newEndDate = new Date(currentEndDate);
         newEndDate.setDate(newEndDate.getDate() + days);
@@ -1800,7 +1918,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           {
             endDate: newEndDate,
             updatedAt: new Date(),
-          },
+          }
         );
 
         res.json(updatedSubscription);
@@ -1808,7 +1926,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error extending subscription:", err);
         res.status(500).json({ message: "Error extending subscription" });
       }
-    },
+    }
   );
 
   app.patch(
@@ -1837,7 +1955,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const updatedOrder = await mongoStorage.updateOrderStatus(
           orderId,
-          status,
+          status
         );
 
         if (!updatedOrder) {
@@ -1878,7 +1996,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             await updateOrderDeliveryStatus(
               updatedOrder.id,
               updatedOrder.userId,
-              deliveryStatus,
+              deliveryStatus
             );
           }
         } catch (err) {
@@ -1890,7 +2008,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating order status:", err);
         res.status(500).json({ message: "Error updating order status" });
       }
-    },
+    }
   );
 
   app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
@@ -1945,7 +2063,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating user:", err);
         res.status(500).json({ message: "Error updating user" });
       }
-    },
+    }
   );
 
   app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
@@ -1978,8 +2096,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           };
         } else {
           const mealSpecificOptions = globalCurryOptions.filter(
-            (option: any) =>
-              option.mealId === null || option.mealId === meal.id,
+            (option: any) => option.mealId === null || option.mealId === meal.id
           );
 
           return {
@@ -2011,14 +2128,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const imageUrl = await processImage(
           req.file.buffer,
-          req.file.originalname,
+          req.file.originalname
         );
         res.json({ imageUrl });
       } catch (error) {
         console.error("Error uploading image:", error);
         res.status(500).json({ message: "Failed to upload image" });
       }
-    },
+    }
   );
 
   // Serve images from MongoDB
@@ -2089,7 +2206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const result = await MealModel.findOneAndUpdate(
           { id: mealId },
           { $set: mealData },
-          { new: true },
+          { new: true }
         ).lean();
 
         if (!result) {
@@ -2123,7 +2240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                       option.mealIds.includes(mealId);
                     return legacyMatch || arrayMatch;
                   }),
-                  mealId,
+                  mealId
                 ),
         };
 
@@ -2133,7 +2250,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating meal:", err);
         res.status(500).json({ message: "Error updating meal" });
       }
-    },
+    }
   );
   app.post(
     "/api/admin/meals/:id/curry-options",
@@ -2145,7 +2262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const curryOptionData = req.body;
 
         console.log(
-          `Admin: Creating/updating curry option for meal ID ${mealId}`,
+          `Admin: Creating/updating curry option for meal ID ${mealId}`
         );
 
         const meal = await MealModel.findOne({ id: mealId }).lean();
@@ -2180,7 +2297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             curryOption = await CurryOption.findOneAndUpdate(
               { id: curryOptionData.id },
               { $set: curryOptionData },
-              { new: true },
+              { new: true }
             );
           } else {
             curryOption = await CurryOption.create(curryOptionData);
@@ -2194,17 +2311,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         console.log(
-          `Admin: Successfully created/updated curry option with ID ${curryOption.id}`,
+          `Admin: Successfully created/updated curry option with ID ${curryOption.id}`
         );
 
         const globalCurryOptions = await CurryOption.find().lean();
         const mealSpecificOptions = globalCurryOptions.filter(
-          (option: any) => option.mealId === null || option.mealId === mealId,
+          (option: any) => option.mealId === null || option.mealId === mealId
         );
 
         const formattedOptions = formatCurryOptions(
           mealSpecificOptions,
-          mealId,
+          mealId
         );
 
         res.status(201).json({
@@ -2218,7 +2335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .status(500)
           .json({ message: "Failed to create/update curry option" });
       }
-    },
+    }
   );
 
   app.get(
@@ -2237,12 +2354,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const globalCurryOptions = await CurryOption.find().lean();
 
         const mealSpecificOptions = globalCurryOptions.filter(
-          (option: any) => option.mealId === null || option.mealId === mealId,
+          (option: any) => option.mealId === null || option.mealId === mealId
         );
 
         const formattedOptions = formatCurryOptions(
           mealSpecificOptions,
-          mealId,
+          mealId
         );
 
         res.json(formattedOptions);
@@ -2250,7 +2367,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching curry options for meal:", error);
         res.status(500).json({ message: "Failed to fetch curry options" });
       }
-    },
+    }
   );
 
   app.delete(
@@ -2270,12 +2387,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const globalCurryOptions = await CurryOption.find().lean();
         const mealSpecificOptions = globalCurryOptions.filter(
-          (option: any) => option.mealId === null || option.mealId === mealId,
+          (option: any) => option.mealId === null || option.mealId === mealId
         );
 
         const formattedOptions = formatCurryOptions(
           mealSpecificOptions,
-          mealId,
+          mealId
         );
 
         res.json({
@@ -2286,7 +2403,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error deleting curry option:", error);
         res.status(500).json({ message: "Failed to delete curry option" });
       }
-    },
+    }
   );
 
   app.post(
@@ -2304,7 +2421,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const oldPrice = meal.price;
           const newPrice = Math.round(oldPrice / 100);
           console.log(
-            `Updating meal '${meal.name}': ${oldPrice} -> ${newPrice}`,
+            `Updating meal '${meal.name}': ${oldPrice} -> ${newPrice}`
           );
 
           meal.price = newPrice;
@@ -2322,7 +2439,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating meal prices:", err);
         res.status(500).json({ message: "Error updating meal prices" });
       }
-    },
+    }
   );
 
   app.post("/api/payments/create-order", isAuthenticated, async (req, res) => {
@@ -2465,7 +2582,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         razorpayPaymentId,
         razorpayOrderId,
         razorpaySignature,
-        type as "order" | "subscription",
+        type as "order" | "subscription"
       );
 
       res.json(result);
@@ -2548,7 +2665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching curry options:", error);
         res.status(500).json({ message: "Failed to fetch curry options" });
       }
-    },
+    }
   );
 
   app.post(
@@ -2560,7 +2677,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let mealIds = req.body.mealIds || [];
         if (mealIds && Array.isArray(mealIds)) {
           mealIds = mealIds.map((id) =>
-            typeof id === "string" ? parseInt(id) : id,
+            typeof id === "string" ? parseInt(id) : id
           );
         }
 
@@ -2580,7 +2697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error creating curry option:", error);
         res.status(500).json({ message: "Failed to create curry option" });
       }
-    },
+    }
   );
 
   app.put(
@@ -2597,7 +2714,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let mealIds = req.body.mealIds || [];
         if (mealIds && Array.isArray(mealIds)) {
           mealIds = mealIds.map((id) =>
-            typeof id === "string" ? parseInt(id) : id,
+            typeof id === "string" ? parseInt(id) : id
           );
         }
 
@@ -2609,7 +2726,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const updatedCurryOption = await storage.updateCurryOption(
           id,
-          updateData,
+          updateData
         );
 
         if (!updatedCurryOption) {
@@ -2621,7 +2738,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error updating curry option:", error);
         res.status(500).json({ message: "Failed to update curry option" });
       }
-    },
+    }
   );
 
   app.delete(
@@ -2642,7 +2759,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error deleting curry option:", error);
         res.status(500).json({ message: "Failed to delete curry option" });
       }
-    },
+    }
   );
 
   app.get("/api/meals/:mealId/curry-options", async (req, res) => {
@@ -2655,7 +2772,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const allCurryOptions = await storage.getCurryOptions();
       const mealCurryOptions = allCurryOptions.filter(
         (option: { mealId?: number | null }) =>
-          option.mealId === mealId || option.mealId === null,
+          option.mealId === mealId || option.mealId === null
       );
 
       res.json(mealCurryOptions);
@@ -2678,7 +2795,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching today's deliveries:", err);
         res.status(500).json({ message: "Error fetching delivery schedule" });
       }
-    },
+    }
   );
 
   app.get("/api/delivery/user/:userId", isAuthenticated, async (req, res) => {
@@ -2715,7 +2832,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error fetching delivery schedule:", err);
         res.status(500).json({ message: "Error fetching delivery schedule" });
       }
-    },
+    }
   );
 
   app.get("/api/delivery-status", isAuthenticated, async (req, res) => {
@@ -2755,7 +2872,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error clearing delivery status:", err);
         res.status(500).json({ message: "Error clearing delivery status" });
       }
-    },
+    }
   );
 
   // SMS notification endpoints
@@ -2779,7 +2896,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error sending delivery notifications:", err);
         res.status(500).json({ message: "Error sending notifications" });
       }
-    },
+    }
   );
 
   // Subscription daily notifications
@@ -2805,7 +2922,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .status(500)
           .json({ message: "Error sending subscription notifications" });
       }
-    },
+    }
   );
 
   app.get(
@@ -2831,7 +2948,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           .status(500)
           .json({ message: "Error fetching subscription deliveries" });
       }
-    },
+    }
   );
 
   app.post(
@@ -2851,7 +2968,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const success = await smsService.sendStatusUpdateNotification(
           userId,
           status,
-          estimatedTime,
+          estimatedTime
         );
 
         if (success) {
@@ -2865,7 +2982,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Error sending status notification:", err);
         res.status(500).json({ message: "Error sending status notification" });
       }
-    },
+    }
   );
 
   app.get("/api/deliveries", isAuthenticated, async (req, res) => {
