@@ -58,7 +58,7 @@ const Menu = () => {
         if (filter === "all") return true;
         const normalizedFilter = filter.toLowerCase();
         const matchesDietary = meal.dietaryPreferences?.some(
-          (pref) => pref?.toLowerCase() === normalizedFilter,
+          (pref) => pref?.toLowerCase() === normalizedFilter
         );
         const matchesCategory = meal.category
           ?.toLowerCase()
@@ -74,7 +74,7 @@ const Menu = () => {
           meal?.category?.toLowerCase()?.includes(query) ||
           meal?.price?.toString()?.includes(query) ||
           meal?.dietaryPreferences?.some((pref) =>
-            pref?.toLowerCase()?.includes(query),
+            pref?.toLowerCase()?.includes(query)
           )
         );
       });

@@ -76,18 +76,18 @@ const SubscriptionPlans = ({ previousPlansData }: any) => {
   }
 
   return (
-    <section className="pb-16 perspective-2000">
-      <div className="container mx-auto px-4">
-        <div className="text-center mb-12 transform transition-all duration-700 hover:translate-z-12">
-          <h2 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 mb-1">
+    <section className="py-10 md:pb-12 md:pt-0 perspective-2000">
+      <div className="container mx-auto">
+        <div className="text-center transform transition-all duration-700 hover:translate-z-12 mb-4 md:mb-8">
+          <h2 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500">
             Subscription Plans
           </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto text-m">
+          <p className="text-gray-600 max-w-2xl mx-auto text-base">
             Choose the perfect plan that suits your needs and lifestyle.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 sm:grid-cols-3 gap-12 max-w-5xl mx-auto">
           {sortedPlans.map((plan) => (
             <div
               key={plan.id}

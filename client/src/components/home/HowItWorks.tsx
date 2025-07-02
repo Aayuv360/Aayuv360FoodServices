@@ -31,7 +31,7 @@ const steps = [
 const HowItWorks = () => {
   return (
     <section className="py-10 relative overflow-hidden">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto">
         <div className="text-center mb-8">
           <h2 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-amber-500 mb-1">
             How Our Service Works

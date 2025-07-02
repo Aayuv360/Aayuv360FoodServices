@@ -15,7 +15,7 @@ const HeroSection = ({ subScrButName }: any) => {
   const scrollToMenuSection = () => {
     const menuSection = document.getElementById("menu-section");
     if (menuSection) {
-      const headerOffset = 100;
+      const headerOffset = 70;
       const elementPosition = menuSection.getBoundingClientRect().top;
       const offsetPosition = elementPosition + window.scrollY - headerOffset;
 
