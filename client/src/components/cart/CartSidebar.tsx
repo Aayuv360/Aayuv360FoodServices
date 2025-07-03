@@ -251,7 +251,20 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
       const res = await apiRequest("POST", "/api/orders", orderPayload);
       const orderData = await res.json();
-      setOrderId(orderData.id);
+
+      if (res.ok) {
+        setOrderId(orderData.id);
+        setCurrentStep("payment");
+
+        // Don't clear cart here - only clear after successful payment
+        // await clearCart();
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create order",
+          variant: "destructive",
+        });
+      }
 
       initiatePayment({
         amount: total,
@@ -281,6 +294,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           // onClose();
         },
         onFailure: (error) => {
+          // Don't clear cart or show error for user cancellation
+          if (error.error.code === 'BAD_REQUEST_ERROR') {
+              return; // Cart remains intact, user just cancelled
+          }
           toast({
             title: "Payment Failed",
             description:
