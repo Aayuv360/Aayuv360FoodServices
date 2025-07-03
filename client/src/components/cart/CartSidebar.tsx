@@ -268,9 +268,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
       setIsPaymentInProgress(true);
       
-      // Close cart to avoid z-index conflicts with Razorpay modal
-      handlePaymentStart();
-      
       initiatePayment({
         amount: total,
         orderId: orderData.id,
