@@ -80,6 +80,11 @@ const Checkout = () => {
 
   // Handle payment failure
   const handlePaymentFailure = (error: any) => {
+    // Don't show error toast for user cancellation
+    if (error.type === 'user_cancelled') {
+      return; // Cart remains intact, user just cancelled
+    }
+    
     toast({
       title: 'Payment Failed',
       description: error.message || 'Failed to process payment',

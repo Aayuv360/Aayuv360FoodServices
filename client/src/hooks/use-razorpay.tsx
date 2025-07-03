@@ -233,8 +233,13 @@ export const useRazorpay = () => {
                 description: "You cancelled the payment process",
               });
 
+              // Don't call onFailure for user cancellation
+              // The cart should remain intact when user cancels payment
               if (options.onFailure) {
-                options.onFailure({ message: "Payment cancelled by user" });
+                options.onFailure({ 
+                  message: "Payment cancelled by user", 
+                  type: "user_cancelled" 
+                });
               }
             },
           },

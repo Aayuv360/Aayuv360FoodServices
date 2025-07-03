@@ -244,14 +244,17 @@ const Subscription = () => {
             }
           },
 
-          onFailure: (error: Error) => {
-            toast({
-              title: "Payment Failed",
-              description:
-                error.message ||
-                "Failed to process your payment. Please try again.",
-              variant: "destructive",
-            });
+          onFailure: (error: any) => {
+            // Don't show error for user cancellation
+            if (error.type !== 'user_cancelled') {
+              toast({
+                title: "Payment Failed",
+                description:
+                  error.message ||
+                  "Failed to process your payment. Please try again.",
+                variant: "destructive",
+              });
+            }
             reject(error);
           },
         });
