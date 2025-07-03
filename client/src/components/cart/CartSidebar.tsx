@@ -559,8 +559,19 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     <>
       <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent
-          className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl
- overflow-hidden"
+          className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl overflow-hidden"
+          onPointerDownOutside={(e) => {
+            // Prevent closing when payment is in progress
+            if (isPaymentInProgress) {
+              e.preventDefault();
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            // Prevent closing when payment is in progress
+            if (isPaymentInProgress) {
+              e.preventDefault();
+            }
+          }}
         >
           <div className="flex-grow overflow-auto">
             {currentStep === "cart" && renderCartSummary()}
