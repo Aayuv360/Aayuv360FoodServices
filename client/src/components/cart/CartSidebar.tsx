@@ -14,6 +14,7 @@ import {
   Star,
   Info,
   ArrowLeft,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -64,6 +65,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [addressModalOpen, setAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [deletingAddress, setDeletingAddress] = useState<any>(null);
+  const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
 
   const {
     cartItems,
@@ -264,6 +266,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         return;
       }
 
+      setIsPaymentInProgress(true);
+      
       initiatePayment({
         amount: total,
         orderId: orderData.id,
@@ -271,6 +275,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         name: "Aayuv Millet Foods",
         theme: { color: "#9E6D38" },
         onSuccess: async (response) => {
+          setIsPaymentInProgress(false);
+          
           await apiRequest("PATCH", `/api/orders/${orderData.id}`, {
             status: "confirmed",
             razorpayPaymentId: response.razorpay_payment_id,
@@ -292,11 +298,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           // onClose();
         },
         onFailure: (error) => {
+          setIsPaymentInProgress(false);
+          
           // Don't show error for user cancellation
           if (error.type === 'user_cancelled') {
+            // Reset to payment step so user can try again
+            setCurrentStep("payment");
             return; // Cart remains intact, user just cancelled
           }
           
+          // For other errors, go back to cart step
+          setCurrentStep("cart");
           toast({
             title: "Payment Failed",
             description:
@@ -334,6 +346,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               <Star size={20} fill="currentColor" />
             </span>
           </SheetTitle>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full hover:bg-gray-100 flex-shrink-0 md:hidden touch-manipulation"
+            onClick={handleClose}
+            aria-label="Close cart"
+            disabled={isPaymentInProgress}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
       </SheetHeader>
       <div className="flex-grow overflow-y-auto">
@@ -504,10 +526,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         <Button
           onClick={handleNextStep}
           className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
-          disabled={loading || isCreatingOrder}
+          disabled={loading || isCreatingOrder || isPaymentInProgress}
         >
           {isCreatingOrder ? (
             <>Processing...</>
+          ) : isPaymentInProgress ? (
+            <>Payment in progress...</>
           ) : (
             <>
               {/* <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" /> */}
@@ -525,9 +549,24 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   );
   // onInteractOutside={(e) => e.preventDefault()}
 
+  // Enhanced close handler that prevents closing during payment or modal interactions
+  const handleClose = () => {
+    // Prevent closing during payment processing
+    if (isPaymentInProgress) {
+      return;
+    }
+    
+    // Prevent closing when modals are open
+    if (authModalOpen || addressModalOpen || customizingMeal || deletingAddress) {
+      return;
+    }
+    
+    onClose();
+  };
+
   return (
     <>
-      <Sheet open={open} onOpenChange={onClose}>
+      <Sheet open={open} onOpenChange={handleClose}>
         <SheetContent
           className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl
  overflow-hidden"
