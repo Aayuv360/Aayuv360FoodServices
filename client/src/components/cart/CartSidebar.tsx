@@ -349,12 +349,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 rounded-full hover:bg-gray-100 flex-shrink-0 md:hidden touch-manipulation"
-            onClick={handleClose}
+            className="h-10 w-10 rounded-full hover:bg-gray-100 flex-shrink-0 touch-manipulation z-10"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleClose();
+            }}
             aria-label="Close cart"
             disabled={isPaymentInProgress}
           >
-            <X className="h-5 w-5" />
+            <X className="h-6 w-6" />
           </Button>
         </div>
       </SheetHeader>
@@ -549,15 +552,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   );
   // onInteractOutside={(e) => e.preventDefault()}
 
-  // Enhanced close handler that prevents closing during payment or modal interactions
+  // Enhanced close handler that prevents closing only during critical operations
   const handleClose = () => {
-    // Prevent closing during payment processing
+    // Only prevent closing during payment processing
     if (isPaymentInProgress) {
-      return;
-    }
-    
-    // Prevent closing when modals are open
-    if (authModalOpen || addressModalOpen || customizingMeal || deletingAddress) {
       return;
     }
     
