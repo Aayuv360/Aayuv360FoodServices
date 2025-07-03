@@ -256,7 +256,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
       if (res.ok) {
         setOrderId(orderData.id);
-        setCurrentStep("payment");
+        // Don't change step - keep showing cart content during payment
       } else {
         toast({
           title: "Error",
@@ -293,22 +293,17 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             variant: "default",
           });
 
-          // navigate(`/payment-success?orderId=${orderData.id}`);
           setCurrentStep("success");
-          // onClose();
         },
         onFailure: (error) => {
           setIsPaymentInProgress(false);
           
-          // Don't show error for user cancellation
           if (error.type === 'user_cancelled') {
-            // Reset to payment step so user can try again
-            setCurrentStep("payment");
-            return; // Cart remains intact, user just cancelled
+            // User cancelled payment - cart stays as is
+            return;
           }
           
-          // For other errors, go back to cart step
-          setCurrentStep("cart");
+          // For real payment failures, show error but keep cart intact
           toast({
             title: "Payment Failed",
             description:
@@ -346,19 +341,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               <Star size={20} fill="currentColor" />
             </span>
           </SheetTitle>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 rounded-full hover:bg-gray-100 flex-shrink-0 touch-manipulation z-10"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleClose();
-            }}
-            aria-label="Close cart"
-            disabled={isPaymentInProgress}
-          >
-            <X className="h-6 w-6" />
-          </Button>
         </div>
       </SheetHeader>
       <div className="flex-grow overflow-y-auto">
