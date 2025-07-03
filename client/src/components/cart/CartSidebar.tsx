@@ -267,7 +267,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       }
 
       setIsPaymentInProgress(true);
-      
+
       initiatePayment({
         amount: total,
         orderId: orderData.id,
@@ -276,7 +276,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         theme: { color: "#9E6D38" },
         onSuccess: async (response) => {
           setIsPaymentInProgress(false);
-          
+
           await apiRequest("PATCH", `/api/orders/${orderData.id}`, {
             status: "confirmed",
             razorpayPaymentId: response.razorpay_payment_id,
@@ -298,8 +298,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         },
         onFailure: (error) => {
           setIsPaymentInProgress(false);
-          
-          if (error.type === 'user_cancelled') {
+
+          if (error.type === "user_cancelled") {
             // User cancelled payment - show a helpful message
             toast({
               title: "Payment Cancelled",
@@ -308,7 +308,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             });
             return;
           }
-          
+
           // For real payment failures, show error and reopen cart for retry
           toast({
             title: "Payment Failed",
@@ -538,41 +538,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       </div>
     </div>
   );
-  // onInteractOutside={(e) => e.preventDefault()}
-
-  // Enhanced close handler that prevents closing only during critical operations
-  const handleClose = () => {
-    // Only prevent closing during payment processing
-    if (isPaymentInProgress) {
-      return;
-    }
-    
-    onClose();
-  };
-
-  // Close cart when payment starts to avoid z-index conflicts with Razorpay modal
-  const handlePaymentStart = () => {
-    onClose();
-  };
 
   return (
     <>
-      <Sheet open={open} onOpenChange={handleClose}>
-        <SheetContent
-          className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl overflow-hidden"
-          onPointerDownOutside={(e) => {
-            // Prevent closing when payment is in progress
-            if (isPaymentInProgress) {
-              e.preventDefault();
-            }
-          }}
-          onEscapeKeyDown={(e) => {
-            // Prevent closing when payment is in progress
-            if (isPaymentInProgress) {
-              e.preventDefault();
-            }
-          }}
-        >
+      <Sheet open={open} onOpenChange={onClose}>
+        <SheetContent className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl overflow-hidden">
           <div className="flex-grow overflow-auto">
             {currentStep === "cart" && renderCartSummary()}
 
