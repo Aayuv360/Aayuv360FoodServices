@@ -1507,7 +1507,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // Clear the cart after order is created
-      await mongoStorage.clearCart(userId);
+      // await mongoStorage.clearCart(userId);
+      // Don't clear cart here - only clear after successful payment
+      // await db.collection("cart").deleteMany({ userId: user.id });
 
       // Send SMS notification for order confirmation
       try {
@@ -2066,7 +2068,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   );
 
-  app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
+  app.get("/api/admin/meals/:id", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const meals = await MealModel.find().lean();
 
