@@ -372,23 +372,21 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           <>
             <div className="py-3">
               {cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-4 mb-6 bg-white p-4 rounded-2xl shadow-lg "
-                >
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded overflow-hidden flex-shrink-0">
+                <div key={item.id} className="flex items-center gap-2 p-4">
+                  <div>
                     <img
                       src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
                       alt={item.meal?.name || "Meal item"}
-                      className="w-20 h-20 rounded-2xl object-cover shadow-md ring-2 ring-orange-300"
+                      className="w-16 h-16 rounded-2xl object-cover shadow-md"
                     />
                   </div>
                   <div className="flex-grow px-2 sm:px-3">
-                    <h4 className="font-bold text-lg text-gray-900">
-                      {item.meal?.name}
-                    </h4>
+                    <div className="font-semibold text-base">
+                      {" "}
+                      {item.meal?.name}{" "}
+                    </div>
                     {item?.meal?.selectedCurry && (
-                      <p className="text-[10px] sm:text-sm text-gray-600">
+                      <p className="text-sm text-gray-600">
                         with {item.meal?.selectedCurry?.name}
                         {item.meal?.selectedCurry?.priceAdjustment > 0 && (
                           <span className="text-primary ml-1">

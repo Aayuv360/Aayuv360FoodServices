@@ -155,7 +155,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     selectedAddress,
   } = useLocationManager();
   const exictingAdrs = savedAddresses.find(
-    (item: any) => item.id === previousPlansData?.[0]?.deliveryAddressId
+    (item: any) => item.id === previousPlansData?.[0]?.deliveryAddressId,
   );
   useEffect(() => {
     if (!exictingAdrs) {
@@ -235,8 +235,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       unitsConsumed = Math.max(
         0,
         Math.floor(
-          (now.getTime() - planStartDate.getTime()) / (1000 * 60 * 60 * 24)
-        )
+          (now.getTime() - planStartDate.getTime()) / (1000 * 60 * 60 * 24),
+        ),
       );
 
       if (unitsConsumed > mealsPerMonth) {
@@ -329,7 +329,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
                   ...payload,
-                }
+                },
               );
 
               toast({
@@ -394,7 +394,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       editingAddress,
       setAddressModalOpen,
       setEditingAddress,
-      addressData
+      addressData,
     );
   };
   const handleDeleteAddress = async (addressId: number) => {
@@ -414,7 +414,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     setFilteredPlans(sortedPlans);
 
     const defaultPlan = sortedPlans?.find(
-      (plan: any) => plan.planType === previousPlansData?.[0]?.plan
+      (plan: any) => plan.planType === previousPlansData?.[0]?.plan,
     );
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
@@ -433,11 +433,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
   const determineAction = () => {
     const previousActivePlan = previousPlansData?.find(
-      (p: any) => p.status === "active" || p.status === "inactive"
+      (p: any) => p.status === "active" || p.status === "inactive",
     );
 
     const previousCompletedPlan = previousPlansData?.find(
-      (p: any) => p.status === "completed"
+      (p: any) => p.status === "completed",
     );
 
     let action = "NONE / DEFAULT";
@@ -482,7 +482,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       const res = await apiRequest(
         "POST",
         `/api/subscriptions/${subscriptionId}/modify`,
-        payload
+        payload,
       );
 
       if (!res.ok) {
@@ -610,7 +610,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "veg" as "veg" | "veg_with_egg" | "nonveg"
+                      "veg" as "veg" | "veg_with_egg" | "nonveg",
                     )
                   }
                 >
@@ -621,7 +621,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "veg_with_egg" as "veg" | "veg_with_egg" | "nonveg"
+                      "veg_with_egg" as "veg" | "veg_with_egg" | "nonveg",
                     )
                   }
                 >
@@ -632,7 +632,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "nonveg" as "veg" | "veg_with_egg" | "nonveg"
+                      "nonveg" as "veg" | "veg_with_egg" | "nonveg",
                     )
                   }
                 >
@@ -836,7 +836,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                                 onClick={() =>
                                   form.setValue(
                                     "personCount",
-                                    Math.max(1, field.value - 1)
+                                    Math.max(1, field.value - 1),
                                   )
                                 }
                                 disabled={field.value <= 1}
@@ -855,7 +855,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                                 onClick={() =>
                                   form.setValue(
                                     "personCount",
-                                    Math.min(10, field.value + 1)
+                                    Math.min(10, field.value + 1),
                                   )
                                 }
                                 disabled={field.value >= 10}
@@ -908,7 +908,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
           <div>
             <div className="flex items-center justify-center mb-6">
               <ClipboardList className="h-8 w-8 text-orange-500 mr-3" />
-              <h1 className="text-3xl font-bold text-gray-800">
+              <h1 className="text-2xl font-bold text-gray-800">
                 Complete Your Subscription
               </h1>
             </div>
@@ -1012,7 +1012,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                     <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
                       {(() => {
                         const address = savedAddresses.find(
-                          (address) => address.id === selectedAddress?.id
+                          (address) => address.id === selectedAddress?.id,
                         );
                         if (!address)
                           return (
