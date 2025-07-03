@@ -268,6 +268,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
       setIsPaymentInProgress(true);
       
+      // Close cart to avoid z-index conflicts with Razorpay modal
+      handlePaymentStart();
+      
       initiatePayment({
         amount: total,
         orderId: orderData.id,
@@ -293,17 +296,23 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             variant: "default",
           });
 
-          setCurrentStep("success");
+          // Navigate to success page instead of showing in cart
+          navigate(`/profile?tab=orders`);
         },
         onFailure: (error) => {
           setIsPaymentInProgress(false);
           
           if (error.type === 'user_cancelled') {
-            // User cancelled payment - cart stays as is
+            // User cancelled payment - show a helpful message
+            toast({
+              title: "Payment Cancelled",
+              description: "You can try payment again from your cart.",
+              variant: "default",
+            });
             return;
           }
           
-          // For real payment failures, show error but keep cart intact
+          // For real payment failures, show error and reopen cart for retry
           toast({
             title: "Payment Failed",
             description:
@@ -541,6 +550,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       return;
     }
     
+    onClose();
+  };
+
+  // Close cart when payment starts to avoid z-index conflicts with Razorpay modal
+  const handlePaymentStart = () => {
     onClose();
   };
 
