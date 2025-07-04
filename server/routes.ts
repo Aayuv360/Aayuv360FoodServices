@@ -113,7 +113,7 @@ function calculateSubscriptionStatus(subscription: any) {
         "Invalid start date for subscription:",
         subscription.id,
         "Date value:",
-        subscription.startDate || subscription.start_date
+        subscription.startDate || subscription.start_date,
       );
       return {
         ...subscription,
@@ -138,7 +138,7 @@ function calculateSubscriptionStatus(subscription: any) {
     if (isNaN(endDate.getTime())) {
       console.log(
         "Invalid end date calculation for subscription:",
-        subscription.id
+        subscription.id,
       );
       return {
         ...subscription,
@@ -152,17 +152,17 @@ function calculateSubscriptionStatus(subscription: any) {
     const current = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      currentDate.getDate()
+      currentDate.getDate(),
     );
     const start = new Date(
       startDate.getFullYear(),
       startDate.getMonth(),
-      startDate.getDate()
+      startDate.getDate(),
     );
     const end = new Date(
       endDate.getFullYear(),
       endDate.getMonth(),
-      endDate.getDate()
+      endDate.getDate(),
     );
 
     let status = "inactive";
@@ -195,7 +195,7 @@ function calculateSubscriptionStatus(subscription: any) {
     console.error(
       "Error calculating subscription status for subscription:",
       subscription.id,
-      error
+      error,
     );
     return {
       ...subscription,
@@ -216,10 +216,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup auth middleware
   setupAuth(app);
 
-  // Register all route modules
   registerAuthRoutes(app);
-  registerMealRoutes(app); // Keep existing meal routes from meals-routes.ts
-  registerMealRoutesNew(app); // Add new meal routes
+  registerMealRoutes(app);
+  registerMealRoutesNew(app);
   registerCartRoutes(app);
   registerSubscriptionRoutes(app);
   registerOrderRoutes(app);
@@ -228,15 +227,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerLocationRoutes(app);
   registerMiscRoutes(app);
 
-  // Register additional routes that were missing
   app.use("/api/delivery", deliveryRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/contact", contactRoutes);
 
-  // Image serving route
   app.get("/api/images/:id", serveImageFromMongoDB);
 
-  // Address routes
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Authentication required" });
@@ -259,12 +255,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const userId = (req.user as any).id;
       const addressData = { ...req.body, userId };
-      
+
       const result = insertAddressSchema.safeParse(addressData);
       if (!result.success) {
-        return res.status(400).json({ 
-          message: "Invalid address data", 
-          errors: result.error.errors 
+        return res.status(400).json({
+          message: "Invalid address data",
+          errors: result.error.errors,
         });
       }
 
@@ -280,13 +276,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const addressId = parseInt(req.params.id);
       const userId = (req.user as any).id;
-      
+
       const address = await mongoStorage.getAddress(addressId);
       if (!address || address.userId !== userId) {
         return res.status(404).json({ message: "Address not found" });
       }
 
-      const updatedAddress = await mongoStorage.updateAddress(addressId, req.body);
+      const updatedAddress = await mongoStorage.updateAddress(
+        addressId,
+        req.body,
+      );
       res.json(updatedAddress);
     } catch (error) {
       console.error("Error updating address:", error);
@@ -298,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const addressId = parseInt(req.params.id);
       const userId = (req.user as any).id;
-      
+
       const address = await mongoStorage.getAddress(addressId);
       if (!address || address.userId !== userId) {
         return res.status(404).json({ message: "Address not found" });
@@ -316,69 +315,131 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const isAdmin = (req: Request, res: Response, next: Function) => {
     const user = req.user as any;
     if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Admin privileges required." });
+      return res
+        .status(403)
+        .json({ message: "Access denied. Admin privileges required." });
     }
     next();
   };
 
-  app.get("/api/admin/curry-options", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const curryOptions = await CurryOption.find().lean();
-      res.json(curryOptions);
-    } catch (error) {
-      console.error("Error fetching curry options:", error);
-      res.status(500).json({ message: "Error fetching curry options" });
-    }
-  });
-
-  app.post("/api/admin/curry-options", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const curryOption = await CurryOption.create(req.body);
-      res.status(201).json(curryOption);
-    } catch (error) {
-      console.error("Error creating curry option:", error);
-      res.status(500).json({ message: "Error creating curry option" });
-    }
-  });
-
-  app.patch("/api/admin/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { id } = req.params;
-      const { optionData } = req.body;
-      
-      const updatedOption = await CurryOption.findOneAndUpdate(
-        { id },
-        { $set: optionData },
-        { new: true }
-      );
-
-      if (!updatedOption) {
-        return res.status(404).json({ message: "Curry option not found" });
+  app.get(
+    "/api/admin/curry-options",
+    isAuthenticated,
+    isAdmin,
+    async (req, res) => {
+      try {
+        const curryOptions = await CurryOption.find().lean();
+        res.json(curryOptions);
+      } catch (error) {
+        console.error("Error fetching curry options:", error);
+        res.status(500).json({ message: "Error fetching curry options" });
       }
+    },
+  );
 
-      res.json(updatedOption);
-    } catch (error) {
-      console.error("Error updating curry option:", error);
-      res.status(500).json({ message: "Error updating curry option" });
-    }
-  });
-
-  app.delete("/api/admin/curry-options/:id", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const { id } = req.params;
-      
-      const deletedOption = await CurryOption.findOneAndDelete({ id });
-
-      if (!deletedOption) {
-        return res.status(404).json({ message: "Curry option not found" });
+  app.post(
+    "/api/admin/curry-options",
+    isAuthenticated,
+    isAdmin,
+    async (req, res) => {
+      try {
+        const curryOption = await CurryOption.create(req.body);
+        res.status(201).json(curryOption);
+      } catch (error) {
+        console.error("Error creating curry option:", error);
+        res.status(500).json({ message: "Error creating curry option" });
       }
+    },
+  );
+  app.put(
+    "/api/admin/curry-options/:id",
+    isAuthenticated,
+    isAdmin,
+    async (req, res) => {
+      try {
+        const id = req.params.id;
 
-      res.json({ message: "Curry option deleted successfully" });
-    } catch (error) {
-      console.error("Error deleting curry option:", error);
-      res.status(500).json({ message: "Error deleting curry option" });
-    }
-  });
+        if (!id || id === "undefined") {
+          return res.status(400).json({ message: "Invalid curry option ID" });
+        }
+        let mealIds = req.body.mealIds || [];
+        if (mealIds && Array.isArray(mealIds)) {
+          mealIds = mealIds.map((id) =>
+            typeof id === "string" ? parseInt(id) : id,
+          );
+        }
+
+        const updateData = {
+          ...req.body,
+          mealIds,
+          updatedAt: new Date(),
+        };
+
+        const updatedCurryOption = await storage.updateCurryOption(
+          id,
+          updateData,
+        );
+
+        if (!updatedCurryOption) {
+          return res.status(404).json({ message: "Curry option not found" });
+        }
+
+        res.json(updatedCurryOption);
+      } catch (error) {
+        console.error("Error updating curry option:", error);
+        res.status(500).json({ message: "Failed to update curry option" });
+      }
+    },
+  );
+
+  app.patch(
+    "/api/admin/curry-options/:id",
+    isAuthenticated,
+    isAdmin,
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+        const { optionData } = req.body;
+
+        const updatedOption = await CurryOption.findOneAndUpdate(
+          { id },
+          { $set: optionData },
+          { new: true },
+        );
+
+        if (!updatedOption) {
+          return res.status(404).json({ message: "Curry option not found" });
+        }
+
+        res.json(updatedOption);
+      } catch (error) {
+        console.error("Error updating curry option:", error);
+        res.status(500).json({ message: "Error updating curry option" });
+      }
+    },
+  );
+
+  app.delete(
+    "/api/admin/curry-options/:id",
+    isAuthenticated,
+    isAdmin,
+    async (req, res) => {
+      try {
+        const { id } = req.params;
+
+        const deletedOption = await CurryOption.findOneAndDelete({ id });
+
+        if (!deletedOption) {
+          return res.status(404).json({ message: "Curry option not found" });
+        }
+
+        res.json({ message: "Curry option deleted successfully" });
+      } catch (error) {
+        console.error("Error deleting curry option:", error);
+        res.status(500).json({ message: "Error deleting curry option" });
+      }
+    },
+  );
 
   const httpServer = createServer(app);
   return httpServer;

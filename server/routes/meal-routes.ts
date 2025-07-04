@@ -1,4 +1,3 @@
-
 import type { Express, Request, Response } from "express";
 import { Meal as MealModel, CurryOption } from "../../shared/mongoModels";
 import { formatCurryOptions } from "../curry-formatter";
@@ -15,7 +14,9 @@ export function registerMealRoutes(app: Express) {
   const isAdmin = (req: Request, res: Response, next: Function) => {
     const user = req.user as any;
     if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Admin privileges required." });
+      return res
+        .status(403)
+        .json({ message: "Access denied. Admin privileges required." });
     }
     next();
   };
@@ -37,7 +38,8 @@ export function registerMealRoutes(app: Express) {
           ]);
         } else {
           const mealSpecificOptions = globalCurryOptions.filter(
-            (option: any) => option.mealId === null || option.mealId === meal.id
+            (option: any) =>
+              option.mealId === null || option.mealId === meal.id,
           );
           curryOptionsArray = mealSpecificOptions.map((option: any) => [
             option.id,
@@ -134,9 +136,85 @@ export function registerMealRoutes(app: Express) {
   });
 
   // Admin meal routes
-  app.get("/api/admin/meals/:id", isAuthenticated, isAdmin, async (req, res) => {
+  app.get(
+    "/api/admin/meals/:id",
+    isAuthenticated,
+    isAdmin,
+    async (req, res) => {
+      try {
+        const meals = await MealModel.find().lean();
+        const globalCurryOptions = await CurryOption.find().lean();
+
+        const enhancedMeals = meals.map((meal) => {
+          if (meal.curryOptions && meal.curryOptions.length > 0) {
+            if (
+              typeof meal.curryOptions[0] === "object" &&
+              !Array.isArray(meal.curryOptions[0])
+            ) {
+              return meal;
+            }
+
+            return {
+              ...meal,
+              curryOptions: meal.curryOptions.map((option: any) => {
+                if (Array.isArray(option)) {
+                  return {
+                    id: option[0],
+                    name: option[1],
+                    priceAdjustment: option[2],
+                  };
+                }
+                return option;
+              }),
+            };
+          } else {
+            const mealSpecificOptions = globalCurryOptions.filter(
+              (option: any) =>
+                option.mealId === null || option.mealId === meal.id,
+            );
+
+            return {
+              ...meal,
+              curryOptions: formatCurryOptions(mealSpecificOptions, meal.id),
+            };
+          }
+        });
+
+        console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
+        res.json(enhancedMeals);
+      } catch (err) {
+        console.error("Error fetching meals:", err);
+        res.status(500).json({ message: "Error fetching meals" });
+      }
+    },
+  );
+
+  app.post(
+    "/api/admin/upload-image",
+    isAuthenticated,
+    isAdmin,
+    upload.single("image"),
+    async (req, res) => {
+      try {
+        if (!req.file) {
+          return res.status(400).json({ message: "No image file provided" });
+        }
+
+        const imageUrl = await processImage(
+          req.file.buffer,
+          req.file.originalname,
+        );
+        res.json({ imageUrl });
+      } catch (error) {
+        console.error("Error uploading image:", error);
+        res.status(500).json({ message: "Failed to upload image" });
+      }
+    },
+  );
+  app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
       const meals = await MealModel.find().lean();
+
       const globalCurryOptions = await CurryOption.find().lean();
 
       const enhancedMeals = meals.map((meal) => {
@@ -163,7 +241,8 @@ export function registerMealRoutes(app: Express) {
           };
         } else {
           const mealSpecificOptions = globalCurryOptions.filter(
-            (option: any) => option.mealId === null || option.mealId === meal.id
+            (option: any) =>
+              option.mealId === null || option.mealId === meal.id,
           );
 
           return {
@@ -180,21 +259,6 @@ export function registerMealRoutes(app: Express) {
       res.status(500).json({ message: "Error fetching meals" });
     }
   });
-
-  app.post("/api/admin/upload-image", isAuthenticated, isAdmin, upload.single("image"), async (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ message: "No image file provided" });
-      }
-
-      const imageUrl = await processImage(req.file.buffer, req.file.originalname);
-      res.json({ imageUrl });
-    } catch (error) {
-      console.error("Error uploading image:", error);
-      res.status(500).json({ message: "Failed to upload image" });
-    }
-  });
-
   app.post("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
     try {
       let mealData = { ...req.body };
@@ -230,73 +294,78 @@ export function registerMealRoutes(app: Express) {
     }
   });
 
-  app.put("/api/admin/meals/:id", isAuthenticated, isAdmin, async (req, res) => {
-    try {
-      const mealId = parseInt(req.params.id);
-      let mealData = { ...req.body };
+  app.put(
+    "/api/admin/meals/:id",
+    isAuthenticated,
+    isAdmin,
+    async (req, res) => {
+      try {
+        const mealId = parseInt(req.params.id);
+        let mealData = { ...req.body };
 
-      console.log(`Admin: Updating meal with ID ${mealId} in MongoDB...`);
+        console.log(`Admin: Updating meal with ID ${mealId} in MongoDB...`);
 
-      const existingMeal = await MealModel.findOne({ id: mealId }).lean();
+        const existingMeal = await MealModel.findOne({ id: mealId }).lean();
 
-      if (mealData.curryOptions && Array.isArray(mealData.curryOptions)) {
-        mealData.curryOptions = mealData.curryOptions.map((option: any) => {
-          if (
-            typeof option === "object" &&
-            !Array.isArray(option) &&
-            option.id
-          ) {
-            return [option.id, option.name, option.priceAdjustment];
-          }
-          return option;
-        });
+        if (mealData.curryOptions && Array.isArray(mealData.curryOptions)) {
+          mealData.curryOptions = mealData.curryOptions.map((option: any) => {
+            if (
+              typeof option === "object" &&
+              !Array.isArray(option) &&
+              option.id
+            ) {
+              return [option.id, option.name, option.priceAdjustment];
+            }
+            return option;
+          });
+        }
+
+        const result = await MealModel.findOneAndUpdate(
+          { id: mealId },
+          { $set: mealData },
+          { new: true },
+        ).lean();
+
+        if (!result) {
+          console.log(`Admin: Meal with ID ${mealId} not found`);
+          return res.status(404).json({ message: "Meal not found" });
+        }
+
+        if (
+          existingMeal?.imageUrl &&
+          mealData.imageUrl &&
+          existingMeal.imageUrl !== mealData.imageUrl &&
+          existingMeal.imageUrl.startsWith("/api/images/")
+        ) {
+          await deleteImage(existingMeal.imageUrl);
+        }
+
+        const globalCurryOptions = await CurryOption.find().lean();
+
+        const formattedResult = {
+          ...result,
+          curryOptions:
+            result.curryOptions && result.curryOptions.length > 0
+              ? formatCurryOptions(result.curryOptions, mealId)
+              : formatCurryOptions(
+                  globalCurryOptions.filter((option: any) => {
+                    const legacyMatch =
+                      option.mealId === null || option.mealId === mealId;
+                    const arrayMatch =
+                      Array.isArray(option.mealIds) &&
+                      option.mealIds.includes(mealId);
+                    return legacyMatch || arrayMatch;
+                  }),
+                  mealId,
+                ),
+        };
+
+        console.log(`Admin: Successfully updated meal with ID ${mealId}`);
+        res.json(formattedResult);
+      } catch (err) {
+        console.error("Error updating meal:", err);
+        res.status(500).json({ message: "Error updating meal" });
       }
-
-      const result = await MealModel.findOneAndUpdate(
-        { id: mealId },
-        { $set: mealData },
-        { new: true }
-      ).lean();
-
-      if (!result) {
-        console.log(`Admin: Meal with ID ${mealId} not found`);
-        return res.status(404).json({ message: "Meal not found" });
-      }
-
-      if (
-        existingMeal?.imageUrl &&
-        mealData.imageUrl &&
-        existingMeal.imageUrl !== mealData.imageUrl &&
-        existingMeal.imageUrl.startsWith("/api/images/")
-      ) {
-        await deleteImage(existingMeal.imageUrl);
-      }
-
-      const globalCurryOptions = await CurryOption.find().lean();
-
-      const formattedResult = {
-        ...result,
-        curryOptions:
-          result.curryOptions && result.curryOptions.length > 0
-            ? formatCurryOptions(result.curryOptions, mealId)
-            : formatCurryOptions(
-                globalCurryOptions.filter((option: any) => {
-                  const legacyMatch =
-                    option.mealId === null || option.mealId === mealId;
-                  const arrayMatch =
-                    Array.isArray(option.mealIds) &&
-                    option.mealIds.includes(mealId);
-                  return legacyMatch || arrayMatch;
-                }),
-                mealId
-              ),
-      };
-
-      console.log(`Admin: Successfully updated meal with ID ${mealId}`);
-      res.json(formattedResult);
-    } catch (err) {
-      console.error("Error updating meal:", err);
-      res.status(500).json({ message: "Error updating meal" });
-    }
-  });
+    },
+  );
 }
