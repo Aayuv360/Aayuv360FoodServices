@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import { router as deliveryRoutes } from "./delivery-status";
 import { router as notificationRoutes } from "./notifications";
+import { router as trackingRoutes } from "./real-time-tracking";
 import contactRoutes from "./contact-routes";
 
 // Load environment variables
@@ -87,6 +88,7 @@ async function connectToDatabase() {
       serveStatic(app);
     }
 
+    app.use("/api", trackingRoutes);
     app.use("/", deliveryRoutes);
     app.use("/", notificationRoutes);
     app.use("/", contactRoutes);

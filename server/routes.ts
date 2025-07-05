@@ -45,6 +45,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { router as deliveryRoutes } from "./delivery-status";
 import { router as notificationRoutes } from "./notifications";
+import { router as trackingRoutes } from "./real-time-tracking";
 import contactRoutes from "./contact-routes";
 import CacheService from "./cache";
 import { logAPIRequest } from "./logger";
@@ -440,6 +441,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
     },
   );
+
+  // Register tracking routes
+  app.use("/api", trackingRoutes);
 
   const httpServer = createServer(app);
   return httpServer;

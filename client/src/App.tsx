@@ -38,6 +38,7 @@ import AboutUs from "./pages/about-us";
 import Terms from "./pages/terms";
 import PrivacyRefund from "./pages/privacy-refund";
 import FAQs from "./pages/faqs";
+import OrderTrackingPage from "./pages/order-tracking";
 function Router() {
   useKeyboardNavigation();
   usePerformanceMonitoring();
@@ -96,6 +97,10 @@ function Router() {
             <Route
               path="/make-admin"
               element={<ProtectedRoute component={MakeAdmin} adminOnly />}
+            />
+            <Route
+              path="/orders/:orderId/tracking"
+              element={<ProtectedRoute component={OrderTrackingPage} />}
             />
             <Route path="/success" element={<SuccessPage />} />
             <Route path="/auth" element={<AuthPage />} />
