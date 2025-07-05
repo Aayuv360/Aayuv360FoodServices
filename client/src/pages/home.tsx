@@ -8,6 +8,7 @@ import Menu from "@/pages/menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
+import { ActiveOrderTracking } from "@/components/home/ActiveOrderTracking";
 
 const Home = () => {
   const isMobile = useIsMobile();
@@ -21,10 +22,11 @@ const Home = () => {
       }
       return res.json();
     },
-
     enabled: !!user,
   });
+  
   const hasActiveSubscription = user && subscriptions.length > 0;
+  
   return (
     <>
       <HeroSection
@@ -35,18 +37,16 @@ const Home = () => {
         }
       />
 
+      {/* Active Order Tracking - Shows after payment for recent orders */}
+      {user && <ActiveOrderTracking />}
+
       {!isMobile && !hasActiveSubscription && <HowItWorks />}
 
       {!hasActiveSubscription && (
         <SubscriptionPlans previousPlansData={subscriptions} />
       )}
-      {/* <TodaysMenu />
-       */}
+      
       <Menu />
-      {/* <div className="my-16">
-        <Testimonials />
-      </div> */}
-      {/* <CallToAction /> */}
     </>
   );
 };
