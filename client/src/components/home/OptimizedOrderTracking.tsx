@@ -387,29 +387,60 @@ export function OptimizedOrderTracking() {
                     position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
                     icon={{
                       url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
-                          <g transform="translate(10, 10) rotate(${currentLocation.heading}, 10, 10)">
-                            <!-- Bike body -->
-                            <rect x="6" y="8" width="8" height="3" fill="#F97316" rx="1"/>
-                            <!-- Handle bars -->
-                            <rect x="5" y="6" width="10" height="2" fill="#F97316" rx="1"/>
-                            <!-- Wheels -->
-                            <circle cx="4" cy="14" r="3" fill="#F97316" stroke="#ffffff" stroke-width="2"/>
-                            <circle cx="16" cy="14" r="3" fill="#F97316" stroke="#ffffff" stroke-width="2"/>
+                        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+                          <defs>
+                            <linearGradient id="bikeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" style="stop-color:#FB923C;stop-opacity:1" />
+                              <stop offset="100%" style="stop-color:#EA580C;stop-opacity:1" />
+                            </linearGradient>
+                            <linearGradient id="wheelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
+                              <stop offset="100%" style="stop-color:#111827;stop-opacity:1" />
+                            </linearGradient>
+                            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                              <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
+                            </filter>
+                          </defs>
+                          <g transform="translate(32, 32) rotate(${currentLocation.heading}, 0, 0)" filter="url(#shadow)">
+                            <!-- Back wheel -->
+                            <circle cx="-15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="-15" cy="8" r="5" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
+                            
+                            <!-- Front wheel -->
+                            <circle cx="15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="15" cy="8" r="5" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
+                            
+                            <!-- Main frame -->
+                            <path d="M -15 8 L -5 -5 L 5 -5 L 15 8" stroke="url(#bikeGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+                            <path d="M -5 -5 L -5 8" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                            <path d="M 5 -5 L -5 8" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                            
+                            <!-- Handlebars -->
+                            <path d="M 10 -5 L 20 -5" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+                            <circle cx="5" cy="-5" r="2" fill="url(#bikeGradient)" stroke="#ffffff" stroke-width="1"/>
+                            
                             <!-- Seat -->
-                            <rect x="8" y="5" width="4" height="2" fill="#F97316" rx="1"/>
-                            <!-- Rider -->
-                            <circle cx="10" cy="4" r="2" fill="#F97316"/>
-                            <!-- White outline for visibility -->
-                            <rect x="6" y="8" width="8" height="3" fill="none" stroke="#ffffff" stroke-width="1" rx="1"/>
-                            <rect x="5" y="6" width="10" height="2" fill="none" stroke="#ffffff" stroke-width="1" rx="1"/>
-                            <rect x="8" y="5" width="4" height="2" fill="none" stroke="#ffffff" stroke-width="1" rx="1"/>
-                            <circle cx="10" cy="4" r="2" fill="none" stroke="#ffffff" stroke-width="1"/>
+                            <ellipse cx="-8" cy="-8" rx="4" ry="2" fill="url(#bikeGradient)" stroke="#ffffff" stroke-width="1"/>
+                            
+                            <!-- Rider (3D effect) -->
+                            <ellipse cx="-3" cy="-12" rx="3" ry="4" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
+                            <circle cx="-3" cy="-16" r="3" fill="#FB923C" stroke="#ffffff" stroke-width="1"/>
+                            
+                            <!-- Pedals -->
+                            <circle cx="-5" cy="5" r="2" fill="#374151" stroke="#ffffff" stroke-width="1"/>
+                            
+                            <!-- Chain -->
+                            <path d="M -13 8 Q -5 5 3 8" stroke="#374151" stroke-width="1" fill="none"/>
+                            
+                            <!-- 3D highlights -->
+                            <circle cx="-15" cy="6" r="2" fill="#ffffff" opacity="0.3"/>
+                            <circle cx="15" cy="6" r="2" fill="#ffffff" opacity="0.3"/>
+                            <ellipse cx="-3" cy="-14" rx="1" ry="2" fill="#ffffff" opacity="0.4"/>
                           </g>
                         </svg>
                       `),
-                      scaledSize: new google.maps.Size(40, 40),
-                      anchor: new google.maps.Point(20, 20),
+                      scaledSize: new google.maps.Size(64, 64),
+                      anchor: new google.maps.Point(32, 32),
                     }}
                     title={`${trackingData.deliveryPerson.name} - ${trackingData.deliveryPerson.vehicleNumber}`}
                   />
