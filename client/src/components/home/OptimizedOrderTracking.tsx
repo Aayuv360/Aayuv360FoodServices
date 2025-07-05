@@ -363,16 +363,43 @@ export function OptimizedOrderTracking() {
                 zoom={14}
                 options={MAP_OPTIONS}
               >
-                {/* Customer Location */}
+                {/* Customer Location with Home Icon */}
                 <Marker
                   position={{ lat: trackingData.customerLocation.lat, lng: trackingData.customerLocation.lng }}
-                  title="Your Location"
+                  icon={{
+                    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                      <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="20" cy="20" r="18" fill="#10B981" stroke="#ffffff" stroke-width="4"/>
+                        <g transform="translate(10, 10)">
+                          <path d="M10 2L2 8v12h6v-6h4v6h6V8l-8-6z" fill="#ffffff"/>
+                        </g>
+                      </svg>
+                    `),
+                    scaledSize: new google.maps.Size(40, 40),
+                    anchor: new google.maps.Point(20, 20),
+                  }}
+                  title="Your Delivery Location"
                 />
 
-                {/* Delivery Person Location */}
+                {/* Delivery Person Location with Vehicle Icon */}
                 {currentLocation && (
                   <Marker
                     position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
+                    icon={{
+                      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+                        <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="24" cy="24" r="22" fill="#3B82F6" stroke="#ffffff" stroke-width="4"/>
+                          <g transform="translate(12, 16) rotate(${currentLocation.heading}, 12, 8)">
+                            <path d="M8 4h8l2 6H6l2-6z" fill="#ffffff"/>
+                            <circle cx="8" cy="12" r="2" fill="#ffffff"/>
+                            <circle cx="16" cy="12" r="2" fill="#ffffff"/>
+                            <rect x="6" y="6" width="12" height="4" fill="#ffffff"/>
+                          </g>
+                        </svg>
+                      `),
+                      scaledSize: new google.maps.Size(48, 48),
+                      anchor: new google.maps.Point(24, 24),
+                    }}
                     title={`${trackingData.deliveryPerson.name} - ${trackingData.deliveryPerson.vehicleNumber}`}
                   />
                 )}
