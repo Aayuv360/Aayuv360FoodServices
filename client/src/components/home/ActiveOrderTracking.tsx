@@ -21,7 +21,8 @@ import { cn } from '@/lib/utils';
 
 const mapContainerStyle = {
   width: '100%',
-  height: '400px'
+  height: '500px',
+  borderRadius: '8px'
 };
 
 const center = {
@@ -109,7 +110,7 @@ export function ActiveOrderTracking() {
     refetchInterval: 10000 // Refetch every 10 seconds
   });
 
-  // Get live delivery location
+  // Get live delivery location - Always fetch for active orders
   const { data: liveLocation } = useQuery<DeliveryLocation>({
     queryKey: [`/api/orders/${activeOrder?.id}/delivery-location`],
     queryFn: async () => {
@@ -117,7 +118,7 @@ export function ActiveOrderTracking() {
       if (!res.ok) throw new Error('Failed to fetch delivery location');
       return res.json();
     },
-    enabled: !!activeOrder && (trackingData?.status === 'out_for_delivery' || trackingData?.status === 'in_transit'),
+    enabled: !!activeOrder && !!trackingData,
     refetchInterval: 15000 // Refetch every 15 seconds for live tracking
   });
 
@@ -156,9 +157,25 @@ export function ActiveOrderTracking() {
     });
   }, [isLoaded, liveLocation, trackingData]);
 
-  // Don't show if no active order
-  if (!user || !activeOrder || !trackingData) {
+  // Show debug info and don't hide component for testing
+  if (!user) {
     return null;
+  }
+  
+  // Show a loading state if data is still loading
+  if (!activeOrder || !trackingData) {
+    return (
+      <div className="w-full max-w-7xl mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-blue-600" />
+              <span>Checking for active orders...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
   }
 
   const getStatusProgress = (status: string) => {
@@ -261,9 +278,8 @@ export function ActiveOrderTracking() {
         </CardContent>
       </Card>
 
-      {/* Map Section */}
-      {(trackingData.status === 'out_for_delivery' || trackingData.status === 'in_transit') && (
-        <Card>
+      {/* Map Section - Show for all active orders */}
+      <Card className="mt-6">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
@@ -362,7 +378,6 @@ export function ActiveOrderTracking() {
             )}
           </CardContent>
         </Card>
-      )}
 
       {/* Timeline */}
       <Card className="mt-6">
