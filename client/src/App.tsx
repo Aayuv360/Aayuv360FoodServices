@@ -39,7 +39,7 @@ import Terms from "./pages/terms";
 import PrivacyRefund from "./pages/privacy-refund";
 import FAQs from "./pages/faqs";
 import OrderTrackingPage from "./pages/order-tracking";
-import TrackingDemo from "./pages/tracking-demo";
+
 function Router() {
   useKeyboardNavigation();
   usePerformanceMonitoring();
@@ -103,10 +103,7 @@ function Router() {
               path="/orders/:orderId/tracking"
               element={<ProtectedRoute component={OrderTrackingPage} />}
             />
-            <Route
-              path="/tracking-demo"
-              element={<ProtectedRoute component={TrackingDemo} adminOnly />}
-            />
+
             <Route path="/success" element={<SuccessPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/about-us" element={<AboutUs />} />

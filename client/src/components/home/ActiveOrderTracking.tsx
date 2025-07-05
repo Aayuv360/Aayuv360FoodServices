@@ -157,25 +157,9 @@ export function ActiveOrderTracking() {
     });
   }, [isLoaded, liveLocation, trackingData]);
 
-  // Show debug info and don't hide component for testing
-  if (!user) {
+  // Don't show if no user or active order
+  if (!user || !activeOrder || !trackingData) {
     return null;
-  }
-  
-  // Show a loading state if data is still loading
-  if (!activeOrder || !trackingData) {
-    return (
-      <div className="w-full max-w-7xl mx-auto px-4 py-8">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-blue-600" />
-              <span>Checking for active orders...</span>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
   }
 
   const getStatusProgress = (status: string) => {
