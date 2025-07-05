@@ -203,54 +203,56 @@ const PerformantOrderTrackingComponent = () => {
     }
   }, [liveLocation, trackingData?.customerLocation, calculateDirections]);
 
-  // Early return for performance
+  // Memoized vehicle icon
+  const vehicleIcon = useMemo(() => {
+    if (!liveLocation) return undefined;
+    
+    return {
+      url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
+        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="bikeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#FB923C;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#EA580C;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="wheelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#111827;stop-opacity:1" />
+            </linearGradient>
+            <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+              <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
+            </filter>
+          </defs>
+          <g transform="translate(32, 32) rotate(${liveLocation.heading || 0}, 0, 0)" filter="url(#shadow)">
+            <circle cx="-15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
+            <circle cx="-15" cy="8" r="5" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
+            <circle cx="15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
+            <circle cx="15" cy="8" r="5" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
+            <path d="M -15 8 L -5 -5 L 5 -5 L 15 8" stroke="url(#bikeGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
+            <path d="M -5 -5 L -5 8" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M 5 -5 L -5 8" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <path d="M 10 -5 L 20 -5" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
+            <circle cx="5" cy="-5" r="2" fill="url(#bikeGradient)" stroke="#ffffff" stroke-width="1"/>
+            <ellipse cx="-8" cy="-8" rx="4" ry="2" fill="url(#bikeGradient)" stroke="#ffffff" stroke-width="1"/>
+            <ellipse cx="-3" cy="-12" rx="3" ry="4" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
+            <circle cx="-3" cy="-16" r="3" fill="#FB923C" stroke="#ffffff" stroke-width="1"/>
+            <circle cx="-5" cy="5" r="2" fill="#374151" stroke="#ffffff" stroke-width="1"/>
+            <path d="M -13 8 Q -5 5 3 8" stroke="#374151" stroke-width="1" fill="none"/>
+            <circle cx="-15" cy="6" r="2" fill="#ffffff" opacity="0.3"/>
+            <circle cx="15" cy="6" r="2" fill="#ffffff" opacity="0.3"/>
+            <ellipse cx="-3" cy="-14" rx="1" ry="2" fill="#ffffff" opacity="0.4"/>
+          </g>
+        </svg>
+      `),
+      scaledSize: new google.maps.Size(64, 64),
+      anchor: new google.maps.Point(32, 32),
+    };
+  }, [liveLocation?.heading]);
+
+  // Early return after all hooks
   if (!user || !activeOrder || !trackingData) {
     return null;
   }
-
-  const currentLocation = liveLocation;
-
-  // Memoized vehicle icon
-  const vehicleIcon = useMemo(() => ({
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-      <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bikeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#FB923C;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#EA580C;stop-opacity:1" />
-          </linearGradient>
-          <linearGradient id="wheelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#374151;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#111827;stop-opacity:1" />
-          </linearGradient>
-          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
-          </filter>
-        </defs>
-        <g transform="translate(32, 32) rotate(${currentLocation?.heading || 0}, 0, 0)" filter="url(#shadow)">
-          <circle cx="-15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
-          <circle cx="-15" cy="8" r="5" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
-          <circle cx="15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
-          <circle cx="15" cy="8" r="5" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
-          <path d="M -15 8 L -5 -5 L 5 -5 L 15 8" stroke="url(#bikeGradient)" stroke-width="4" fill="none" stroke-linecap="round"/>
-          <path d="M -5 -5 L -5 8" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 5 -5 L -5 8" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <path d="M 10 -5 L 20 -5" stroke="url(#bikeGradient)" stroke-width="3" fill="none" stroke-linecap="round"/>
-          <circle cx="5" cy="-5" r="2" fill="url(#bikeGradient)" stroke="#ffffff" stroke-width="1"/>
-          <ellipse cx="-8" cy="-8" rx="4" ry="2" fill="url(#bikeGradient)" stroke="#ffffff" stroke-width="1"/>
-          <ellipse cx="-3" cy="-12" rx="3" ry="4" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
-          <circle cx="-3" cy="-16" r="3" fill="#FB923C" stroke="#ffffff" stroke-width="1"/>
-          <circle cx="-5" cy="5" r="2" fill="#374151" stroke="#ffffff" stroke-width="1"/>
-          <path d="M -13 8 Q -5 5 3 8" stroke="#374151" stroke-width="1" fill="none"/>
-          <circle cx="-15" cy="6" r="2" fill="#ffffff" opacity="0.3"/>
-          <circle cx="15" cy="6" r="2" fill="#ffffff" opacity="0.3"/>
-          <ellipse cx="-3" cy="-14" rx="1" ry="2" fill="#ffffff" opacity="0.4"/>
-        </g>
-      </svg>
-    `),
-    scaledSize: new google.maps.Size(64, 64),
-    anchor: new google.maps.Point(32, 32),
-  }), [currentLocation?.heading]);
 
   return (
     <div className="w-full max-w-7xl mx-auto px-4 py-8">
@@ -338,7 +340,7 @@ const PerformantOrderTrackingComponent = () => {
             <div className="rounded-lg overflow-hidden border">
               <GoogleMap
                 mapContainerStyle={MAP_CONFIG}
-                center={currentLocation ? { lat: currentLocation.lat, lng: currentLocation.lng } : MAP_CENTER}
+                center={liveLocation ? { lat: liveLocation.lat, lng: liveLocation.lng } : MAP_CENTER}
                 zoom={14}
                 options={MAP_OPTIONS}
               >
@@ -349,10 +351,10 @@ const PerformantOrderTrackingComponent = () => {
                 />
 
                 {/* Delivery Person Location */}
-                {currentLocation && (
+                {liveLocation && (
                   <Marker
-                    position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
-                    icon={vehicleIcon}
+                    position={{ lat: liveLocation.lat, lng: liveLocation.lng }}
+                    icon={vehicleIcon || undefined}
                     title={`${trackingData.deliveryPerson.name} - ${trackingData.deliveryPerson.vehicleNumber}`}
                   />
                 )}
@@ -368,11 +370,11 @@ const PerformantOrderTrackingComponent = () => {
             </div>
           )}
 
-          {currentLocation && showMap && (
+          {liveLocation && showMap && (
             <div className="mt-4 p-4 bg-blue-50 rounded-lg">
               <p className="text-sm text-blue-800">
-                Driver speed: {Math.round(currentLocation.speed)} km/h • 
-                Last updated: {new Date(currentLocation.timestamp).toLocaleTimeString()}
+                Driver speed: {Math.round(liveLocation.speed)} km/h • 
+                Last updated: {new Date(liveLocation.timestamp).toLocaleTimeString()}
               </p>
             </div>
           )}
