@@ -7,7 +7,10 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { CartProvider } from "@/hooks/use-cart";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { UIProvider } from "@/contexts/UIContext";
+import { AccessibilityProvider, useKeyboardNavigation } from "@/hooks/use-accessibility";
+import { usePerformanceMonitoring, useMemoryOptimization } from "@/hooks/use-performance";
 import { ProtectedRoute } from "@/components/protected-route";
+import { AccessibilityToolbar, SkipToMainContent } from "@/components/ui/AccessibilityToolbar";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -36,12 +39,17 @@ import Terms from "./pages/terms";
 import PrivacyRefund from "./pages/privacy-refund";
 import FAQs from "./pages/faqs";
 function Router() {
+  useKeyboardNavigation();
+  usePerformanceMonitoring();
+  useMemoryOptimization();
+  
   return (
     <div className="flex flex-col min-h-screen">
+      <SkipToMainContent />
       <div className="font-sans min-h-screen flex flex-col bg-gradient-to-b from-orange-50 to-amber-50">
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.1),rgba(249,115,22,0))] pointer-events-none"></div>
         <Header />
-        <main className="flex-grow relative md:pb-0">
+        <main id="main-content" className="flex-grow relative md:pb-0" role="main">
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/menu" element={<Menu />} />
@@ -101,6 +109,7 @@ function Router() {
 
         <Footer />
         <MobileBottomNav />
+        <AccessibilityToolbar />
       </div>
     </div>
   );
@@ -109,22 +118,24 @@ function Router() {
 function App() {
   return (
     <RecoilRoot>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <UIProvider>
-            <LocationProvider>
-              <AuthProvider>
-                <CartProvider>
-                  <BrowserRouter>
-                    <Toaster />
-                    <Router />
-                  </BrowserRouter>
-                </CartProvider>
-              </AuthProvider>
-            </LocationProvider>
-          </UIProvider>
-        </TooltipProvider>
-      </QueryClientProvider>
+      <AccessibilityProvider>
+        <QueryClientProvider client={queryClient}>
+          <TooltipProvider>
+            <UIProvider>
+              <LocationProvider>
+                <AuthProvider>
+                  <CartProvider>
+                    <BrowserRouter>
+                      <Toaster />
+                      <Router />
+                    </BrowserRouter>
+                  </CartProvider>
+                </AuthProvider>
+              </LocationProvider>
+            </UIProvider>
+          </TooltipProvider>
+        </QueryClientProvider>
+      </AccessibilityProvider>
     </RecoilRoot>
   );
 }

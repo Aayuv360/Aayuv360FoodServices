@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { LazyImage } from "@/components/ui/LazyImage";
 import { MealCardActions } from "./MealCardActions";
 import { Meal } from "@shared/schema";
 import { formatPrice } from "@/lib/utils";
@@ -35,13 +36,11 @@ const MenuCard = ({
   }
   return (
     <div className="relative w-full pb-[100%] bg-white rounded-2xl shadow-lg overflow-hidden transform transition duration-500 hover:scale-103 hover:shadow-xl group">
-      <img
-        src={
-          meal.imageUrl ||
-          "https://via.placeholder.com/300x200?text=Millet+Meal"
-        }
-        alt={meal.name}
-        className="absolute inset-0 w-full h-full object-cover"
+      <LazyImage
+        src={meal.imageUrl || `/api/images/${meal.id}` || ""}
+        alt={`${meal.name} - Millet-based meal`}
+        className="absolute inset-0 w-full h-full"
+        fallback="/api/placeholder-meal.jpg"
       />
 
       <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/40 to-transparent p-4 flex flex-col justify-end text-white">
