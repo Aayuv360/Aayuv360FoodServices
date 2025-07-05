@@ -8,7 +8,7 @@ import Menu from "@/pages/menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
-import { ActiveOrderTracking } from "@/components/home/ActiveOrderTracking";
+import { OptimizedOrderTracking } from "@/components/home/OptimizedOrderTracking";
 
 const Home = () => {
   const isMobile = useIsMobile();
@@ -38,7 +38,7 @@ const Home = () => {
       />
 
       {/* Active Order Tracking - Shows after payment for recent orders */}
-      {user && <ActiveOrderTracking />}
+      {user && <OptimizedOrderTracking />}
 
       {!isMobile && !hasActiveSubscription && <HowItWorks />}
 
