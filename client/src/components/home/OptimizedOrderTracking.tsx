@@ -387,25 +387,29 @@ export function OptimizedOrderTracking() {
                     position={{ lat: currentLocation.lat, lng: currentLocation.lng }}
                     icon={{
                       url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(`
-                        <svg width="48" height="48" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-                          <circle cx="24" cy="24" r="22" fill="#F97316" stroke="#ffffff" stroke-width="4"/>
-                          <g transform="translate(14, 14) rotate(${currentLocation.heading}, 10, 10)">
+                        <svg width="40" height="40" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg">
+                          <g transform="translate(10, 10) rotate(${currentLocation.heading}, 10, 10)">
                             <!-- Bike body -->
-                            <rect x="6" y="8" width="8" height="3" fill="#ffffff" rx="1"/>
+                            <rect x="6" y="8" width="8" height="3" fill="#F97316" rx="1"/>
                             <!-- Handle bars -->
-                            <rect x="5" y="6" width="10" height="2" fill="#ffffff" rx="1"/>
+                            <rect x="5" y="6" width="10" height="2" fill="#F97316" rx="1"/>
                             <!-- Wheels -->
-                            <circle cx="4" cy="14" r="3" fill="#ffffff" stroke="#F97316" stroke-width="1"/>
-                            <circle cx="16" cy="14" r="3" fill="#ffffff" stroke="#F97316" stroke-width="1"/>
+                            <circle cx="4" cy="14" r="3" fill="#F97316" stroke="#ffffff" stroke-width="2"/>
+                            <circle cx="16" cy="14" r="3" fill="#F97316" stroke="#ffffff" stroke-width="2"/>
                             <!-- Seat -->
-                            <rect x="8" y="5" width="4" height="2" fill="#ffffff" rx="1"/>
+                            <rect x="8" y="5" width="4" height="2" fill="#F97316" rx="1"/>
                             <!-- Rider -->
-                            <circle cx="10" cy="4" r="2" fill="#ffffff"/>
+                            <circle cx="10" cy="4" r="2" fill="#F97316"/>
+                            <!-- White outline for visibility -->
+                            <rect x="6" y="8" width="8" height="3" fill="none" stroke="#ffffff" stroke-width="1" rx="1"/>
+                            <rect x="5" y="6" width="10" height="2" fill="none" stroke="#ffffff" stroke-width="1" rx="1"/>
+                            <rect x="8" y="5" width="4" height="2" fill="none" stroke="#ffffff" stroke-width="1" rx="1"/>
+                            <circle cx="10" cy="4" r="2" fill="none" stroke="#ffffff" stroke-width="1"/>
                           </g>
                         </svg>
                       `),
-                      scaledSize: new google.maps.Size(48, 48),
-                      anchor: new google.maps.Point(24, 24),
+                      scaledSize: new google.maps.Size(40, 40),
+                      anchor: new google.maps.Point(20, 20),
                     }}
                     title={`${trackingData.deliveryPerson.name} - ${trackingData.deliveryPerson.vehicleNumber}`}
                   />
