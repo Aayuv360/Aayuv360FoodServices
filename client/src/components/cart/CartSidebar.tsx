@@ -251,65 +251,71 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         deliveryAddress: formattedAddress,
       };
 
-      const res = await apiRequest("POST", "/api/orders", orderPayload);
-      const orderData = await res.json();
-
-      if (res.ok) {
-        setOrderId(orderData.id);
-        // Don't change step - keep showing cart content during payment
-      } else {
-        toast({
-          title: "Error",
-          description: "Failed to create order",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      // Generate a temporary order ID for payment tracking
+      const tempOrderId = Date.now();
+      setOrderId(tempOrderId);
       setIsPaymentInProgress(true);
 
+      // Payment-first approach: Don't create order until payment is successful
       initiatePayment({
         amount: total,
-        orderId: orderData.id,
+        orderId: tempOrderId,
         description: "Food Order",
         name: "Aayuv Millet Foods",
         theme: { color: "#9E6D38" },
         onSuccess: async (response) => {
           setIsPaymentInProgress(false);
 
-          await apiRequest("PATCH", `/api/orders/${orderData.id}`, {
-            status: "confirmed",
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id,
-            razorpaySignature: response.razorpay_signature,
-          });
+          try {
+            // Only create order after successful payment
+            const res = await apiRequest("POST", "/api/orders", {
+              ...orderPayload,
+              razorpayPaymentId: response.razorpay_payment_id,
+              razorpayOrderId: response.razorpay_order_id,
+              razorpaySignature: response.razorpay_signature,
+              status: "confirmed",
+            });
 
-          await clearCart();
+            const orderData = await res.json();
 
-          toast({
-            title: "Order Placed!",
-            description:
-              "Your order has been placed successfully. You can track your order in your profile.",
-            variant: "default",
-          });
+            if (res.ok) {
+              await clearCart();
 
-          // Navigate to success page instead of showing in cart
-          navigate(`/profile?tab=orders`);
+              toast({
+                title: "Order Placed!",
+                description:
+                  "Your order has been placed successfully. You can track your order in your profile.",
+                variant: "default",
+              });
+
+              // Navigate to success page
+              navigate(`/profile?tab=orders`);
+            } else {
+              throw new Error("Failed to create order after payment");
+            }
+          } catch (error) {
+            console.error("Error creating order after payment:", error);
+            toast({
+              title: "Payment Successful, Order Creation Failed",
+              description: "Payment was successful but order creation failed. Please contact support.",
+              variant: "destructive",
+            });
+          }
         },
         onFailure: (error) => {
           setIsPaymentInProgress(false);
 
           if (error.type === "user_cancelled") {
-            // User cancelled payment - show a helpful message
+            // User cancelled payment - cart remains intact, no order created
             toast({
               title: "Payment Cancelled",
-              description: "You can try payment again from your cart.",
+              description: "Your cart is still available. You can try payment again.",
               variant: "default",
             });
             return;
           }
 
-          // For real payment failures, show error and reopen cart for retry
+          // For real payment failures, show error and keep cart for retry
           toast({
             title: "Payment Failed",
             description:

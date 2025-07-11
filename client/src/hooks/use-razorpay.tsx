@@ -170,12 +170,27 @@ export const useRazorpay = () => {
       }
 
       try {
-        // Create order on server
-        const orderData = await createOrderMutation.mutateAsync({
-          amount: options.amount,
-          orderId: options.orderId,
-          type: options.type || "order",
-        });
+        // For cart orders, use payment-first approach (don't create server order)
+        let orderData;
+        if (options.type === "order") {
+          // Generate Razorpay order directly without creating our order first
+          const res = await apiRequest("GET", "/api/payments/config");
+          const config = await res.json();
+          
+          orderData = {
+            key: config.razorpayKeyId,
+            amount: options.amount * 100, // Convert to paise
+            currency: "INR",
+            orderId: `temp_${options.orderId}`, // Temporary order ID
+          };
+        } else {
+          // For subscriptions, use existing create-order flow
+          orderData = await createOrderMutation.mutateAsync({
+            amount: options.amount,
+            orderId: options.orderId,
+            type: options.type || "order",
+          });
+        }
 
         const razorpayOptions: RazorpayOptions = {
           key: orderData.key,
