@@ -65,9 +65,7 @@ const Profile = () => {
   const { payWithRazorpay } = useRazorpay();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [showAddMoneyDialog, setShowAddMoneyDialog] = useState(false);
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [walletAmount, setWalletAmount] = useState("");
-  const [deleteReason, setDeleteReason] = useState("");
 
   const searchParams = new URLSearchParams(location.search);
   const initialTab = searchParams.get("tab") || "profile";
@@ -240,15 +238,8 @@ const Profile = () => {
   };
 
   const handleDeleteAccount = () => {
-    setShowDeleteDialog(true);
-  };
-
-  const confirmDeleteAccount = () => {
-    if (deleteReason.trim()) {
-      deleteAccountMutation.mutate(deleteReason);
-      setShowDeleteDialog(false);
-      setDeleteReason("");
-    }
+    // Delete account immediately with default reason
+    deleteAccountMutation.mutate("User requested immediate deletion");
   };
 
   const getOrderStatusClass = (status: string) => {
