@@ -135,8 +135,13 @@ export function verifyPaymentSignature(
   razorpayPaymentId: string,
   signature: string,
 ) {
+  const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!razorpaySecret) {
+    throw new Error("RAZORPAY_KEY_SECRET not found");
+  }
+  
   const generatedSignature = crypto
-    .createHmac("sha256", env.RAZORPAY_KEY_SECRET!)
+    .createHmac("sha256", razorpaySecret)
     .update(`${razorpayOrderId}|${razorpayPaymentId}`)
     .digest("hex");
 
