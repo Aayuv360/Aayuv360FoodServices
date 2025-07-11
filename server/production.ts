@@ -2,12 +2,15 @@ import express from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./vite";
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { loadEnvironment, getEnvironmentConfig } from './env-loader';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables using the proper loader
+loadEnvironment();
+
+// Get environment configuration
+const config = getEnvironmentConfig();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
