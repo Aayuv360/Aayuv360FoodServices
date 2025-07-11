@@ -44,6 +44,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
+import { useRazorpay } from "@/hooks/use-razorpay";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { formatPrice } from "@/lib/utils";
 import { format } from "date-fns";
@@ -62,6 +63,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  const { payWithRazorpay } = useRazorpay();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [showAddMoneyDialog, setShowAddMoneyDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -150,15 +152,15 @@ const Profile = () => {
 
   // Add money to wallet mutation
   const addMoneyMutation = useMutation({
-    mutationFn: async (amount: number) => {
-      const res = await apiRequest("POST", "/api/profile/wallet/add", { amount });
+    mutationFn: async (payload: { amount: number; paymentMethod?: string; paymentDetails?: any }) => {
+      const res = await apiRequest("POST", "/api/profile/wallet/add", payload);
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/profile/wallet"] });
       toast({
         title: "Money added successfully",
-        description: "Your wallet has been updated",
+        description: `₹${data.transaction.amount} has been added to your wallet`,
       });
     },
     onError: (error: any) => {
@@ -200,12 +202,38 @@ const Profile = () => {
     setShowAddMoneyDialog(true);
   };
 
-  const confirmAddMoney = () => {
+  const confirmAddMoney = async () => {
     const amount = Number(walletAmount);
     if (amount > 0) {
-      addMoneyMutation.mutate(amount);
-      setShowAddMoneyDialog(false);
-      setWalletAmount("");
+      try {
+        // Use Razorpay payment integration for wallet top-up
+        const { success } = await payWithRazorpay(
+          amount,
+          `wallet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          "Add Money to Wallet",
+          "Wallet Top-up",
+          (paymentDetails) => {
+            // On successful payment, add money to wallet with payment details
+            addMoneyMutation.mutate({
+              amount,
+              paymentMethod: "razorpay",
+              paymentDetails: paymentDetails
+            });
+          }
+        );
+
+        if (success) {
+          setShowAddMoneyDialog(false);
+          setWalletAmount("");
+        }
+      } catch (error) {
+        console.error("Payment failed:", error);
+        toast({
+          title: "Payment Failed",
+          description: "There was an error processing your payment. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -1028,7 +1056,7 @@ const Profile = () => {
           <DialogHeader>
             <DialogTitle>Add Money to Wallet</DialogTitle>
             <DialogDescription>
-              Enter the amount you want to add to your wallet balance.
+              Enter the amount you want to add to your wallet. Payment will be processed securely through Razorpay.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -1058,7 +1086,7 @@ const Profile = () => {
               {addMoneyMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
-              Add Money
+              Pay with Razorpay
             </Button>
           </DialogFooter>
         </DialogContent>

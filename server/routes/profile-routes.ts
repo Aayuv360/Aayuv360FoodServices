@@ -87,7 +87,7 @@ export function registerProfileRoutes(app: Express) {
   app.post("/api/profile/wallet/add", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const { amount, paymentMethod = "razorpay" } = req.body;
+      const { amount, paymentMethod = "razorpay", paymentDetails } = req.body;
 
       logAPIRequest("POST /api/profile/wallet/add", userId, { amount });
 
@@ -128,7 +128,9 @@ export function registerProfileRoutes(app: Express) {
         description: `Wallet recharge via ${paymentMethod}`,
         paymentMethod,
         status: "completed",
-        transactionId: `wallet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        transactionId: paymentDetails?.payment_id || `wallet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        razorpayPaymentId: paymentDetails?.payment_id,
+        razorpayOrderId: paymentDetails?.order_id,
         createdAt: new Date(),
       });
 
