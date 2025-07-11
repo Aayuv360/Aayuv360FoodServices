@@ -8,7 +8,6 @@ import { router as notificationRoutes } from "./notifications";
 import { router as trackingRoutes } from "./real-time-tracking";
 import contactRoutes from "./contact-routes";
 
-// Load environment variables
 dotenv.config();
 
 const app = express();
@@ -25,7 +24,7 @@ if (process.env.NODE_ENV === "production") {
     ].filter(Boolean);
 
     const origin = req.headers.origin;
-    if (origin && allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
       res.setHeader("Access-Control-Allow-Origin", origin);
     }
 
