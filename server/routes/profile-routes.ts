@@ -228,13 +228,13 @@ export function registerProfileRoutes(app: Express) {
     }
   });
 
-  // Request account deletion
-  app.post("/api/profile/request-deletion", isAuthenticated, async (req, res) => {
+  // Delete account immediately
+  app.post("/api/profile/delete-account", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const { reason = "User requested deletion" } = req.body;
 
-      logAPIRequest("POST /api/profile/request-deletion", userId);
+      logAPIRequest("POST /api/profile/delete-account", userId);
 
       const user = await storage.getUser(userId);
       if (!user) {
@@ -254,29 +254,64 @@ export function registerProfileRoutes(app: Express) {
         });
       }
 
-      // Create deletion request
+      // Log deletion reason
       await storage.createDeletionRequest({
         userId,
         reason,
         requestedAt: new Date(),
-        status: "pending",
+        status: "completed",
         userEmail: user.email,
         userName: user.name || user.username || user.email,
+        processedAt: new Date(),
       });
 
-      // Mark user as pending deletion
-      await storage.updateUser(userId, {
-        deletionRequested: true,
-        deletionRequestedAt: new Date(),
-        updatedAt: new Date(),
+      // Delete user data in sequence
+      // 1. Clear cart
+      await storage.clearCart(userId);
+      
+      // 2. Update orders to mark as deleted user
+      const userOrders = await storage.getUserOrders(userId);
+      for (const order of userOrders) {
+        await storage.updateOrder(order.id, {
+          userId: null, // Anonymize
+          customerDeleted: true,
+          updatedAt: new Date(),
+        });
+      }
+
+      // 3. Update subscriptions to mark as deleted user
+      const userSubscriptions = await storage.getUserSubscriptions(userId);
+      for (const subscription of userSubscriptions) {
+        await storage.updateSubscription(subscription.id, {
+          userId: null, // Anonymize
+          status: "cancelled",
+          customerDeleted: true,
+          updatedAt: new Date(),
+        });
+      }
+
+      // 4. Delete addresses
+      const userAddresses = await storage.getUserAddresses(userId);
+      for (const address of userAddresses) {
+        await storage.deleteAddress(address.id);
+      }
+
+      // 5. Finally delete the user account
+      const deletedUser = await storage.deleteUser(userId);
+
+      // Destroy session
+      req.logout((err) => {
+        if (err) {
+          console.error("Error during logout:", err);
+        }
       });
 
       res.json({
-        message: "Account deletion request submitted successfully. Our team will review and process your request within 7 business days.",
-        status: "pending",
+        message: "Account deleted successfully. All your data has been removed.",
+        deleted: true,
       });
     } catch (error) {
-      logError(error as Error, { endpoint: "POST /api/profile/request-deletion" });
+      logError(error as Error, { endpoint: "POST /api/profile/delete-account" });
       res.status(500).json({ message: "Internal server error" });
     }
   });
