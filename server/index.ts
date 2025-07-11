@@ -79,8 +79,19 @@ app.use((req, res, next) => {
 async function connectToDatabase() {
   try {
     const uri = process.env.MONGODB_URI;
+    console.log("Environment check:", {
+      NODE_ENV: process.env.NODE_ENV,
+      MONGODB_URI_present: !!process.env.MONGODB_URI,
+      SESSION_SECRET_present: !!process.env.SESSION_SECRET,
+      RAZORPAY_KEY_ID_present: !!process.env.RAZORPAY_KEY_ID
+    });
+    
     if (!uri) {
       console.error("MONGODB_URI not set - database connection required for production");
+      console.error("Please set environment variables in Render.com dashboard:");
+      console.error("1. Go to your service in Render dashboard");
+      console.error("2. Click Environment tab");
+      console.error("3. Add MONGODB_URI, SESSION_SECRET, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET");
       if (process.env.NODE_ENV === "production") {
         throw new Error("Database connection required in production");
       }
