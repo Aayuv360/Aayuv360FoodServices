@@ -17,7 +17,7 @@ export function registerProfileRoutes(app: Express) {
       const userId = (req.user as any).id;
       const { name, email, phone } = req.body;
 
-      logAPIRequest("PUT /api/profile", userId, { name, email });
+      // Logging is handled by the global middleware
 
       // Validate required fields
       if (!name || !email) {
@@ -65,7 +65,7 @@ export function registerProfileRoutes(app: Express) {
     try {
       const userId = (req.user as any).id;
       
-      logAPIRequest("GET /api/profile/wallet", userId);
+      // Logging is handled by the global middleware
 
       const user = await storage.getUser(userId);
       if (!user) {
@@ -88,7 +88,7 @@ export function registerProfileRoutes(app: Express) {
       const userId = (req.user as any).id;
       const { amount } = req.body;
 
-      logAPIRequest("POST /api/profile/wallet/create-order", userId, { amount });
+      // Logging is handled by the global middleware
 
       if (!amount || amount <= 0) {
         return res.status(400).json({ 
@@ -135,7 +135,7 @@ export function registerProfileRoutes(app: Express) {
       const userId = (req.user as any).id;
       const { amount, paymentMethod = "razorpay", paymentDetails } = req.body;
 
-      logAPIRequest("POST /api/profile/wallet/add", userId, { amount });
+      // Logging is handled by the global middleware
 
       // Validate amount
       if (!amount || amount <= 0) {
@@ -201,7 +201,7 @@ export function registerProfileRoutes(app: Express) {
       const userId = (req.user as any).id;
       const { balance, reason = "Manual adjustment" } = req.body;
 
-      logAPIRequest("PUT /api/profile/wallet/update", userId, { balance });
+      // Logging is handled by the global middleware
 
       // Check if user is admin (you can add admin check here)
       const user = await storage.getUser(userId);
@@ -255,7 +255,7 @@ export function registerProfileRoutes(app: Express) {
       const userId = (req.user as any).id;
       const { page = 1, limit = 20 } = req.query;
 
-      logAPIRequest("GET /api/profile/wallet/transactions", userId);
+      // Logging is handled by the global middleware
 
       const transactions = await storage.getWalletTransactions(
         userId,
@@ -282,7 +282,7 @@ export function registerProfileRoutes(app: Express) {
       const userId = (req.user as any).id;
       const { reason = "User requested deletion" } = req.body;
 
-      logAPIRequest("POST /api/profile/delete-account", userId);
+      // Logging is handled by the global middleware
 
       const user = await storage.getUser(userId);
       if (!user) {
@@ -372,7 +372,7 @@ export function registerProfileRoutes(app: Express) {
     try {
       const userId = (req.user as any).id;
 
-      logAPIRequest("GET /api/profile/deletion-status", userId);
+      // Logging is handled by the global middleware
 
       const user = await storage.getUser(userId);
       if (!user) {

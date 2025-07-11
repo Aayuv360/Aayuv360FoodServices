@@ -347,8 +347,10 @@ export const router = express.Router();
 
 // Simple authentication middleware placeholder
 const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  // For now, allow all requests - you can implement proper auth later
-  next();
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ message: "Authentication required" });
 };
 
 // Get delivery status updates for a user
