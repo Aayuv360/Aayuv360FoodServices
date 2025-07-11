@@ -236,10 +236,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       const total =
         calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;
 
-      // Step 1: Generate only order ID first
-      const orderIdRes = await apiRequest("POST", "/api/orders/generate-id", {
-        totalPrice: total,
-      });
+      const orderIdRes = await apiRequest("POST", "/api/orders/generate-id");
       const { orderId } = await orderIdRes.json();
 
       if (!orderIdRes.ok) {
@@ -251,7 +248,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         return;
       }
 
-      // Step 2: Prepare order payload for later use
       const orderPayload = {
         items: cartItems.map((item) => ({
           mealId: item.mealId,
@@ -270,7 +266,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       setOrderId(orderId);
       setIsPaymentInProgress(true);
 
-      // Step 3: Use real order ID for payment
       initiatePayment({
         amount: total,
         orderId: orderId,
@@ -281,7 +276,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           setIsPaymentInProgress(false);
 
           try {
-            // Step 4: Update order with full payload after payment success
             const finalOrderPayload = {
               ...orderPayload,
               status: "confirmed",

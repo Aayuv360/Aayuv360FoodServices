@@ -1,8 +1,7 @@
-
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { smsService } from "../sms-service";
-import { getNextSequence } from "../shared/mongoModels";
+import { getNextSequence } from "../../shared/mongoModels";
 
 export function registerOrderRoutes(app: Express) {
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -12,10 +11,8 @@ export function registerOrderRoutes(app: Express) {
     next();
   };
 
-  // Generate order ID endpoint
   app.post("/api/orders/generate-id", isAuthenticated, async (req, res) => {
     try {
-      // Generate unique order ID using sequence
       const orderId = await getNextSequence("order");
       res.json({ orderId });
     } catch (error) {
@@ -74,14 +71,18 @@ export function registerOrderRoutes(app: Express) {
       };
 
       // Add payment details if provided (for confirmed orders)
-      if (req.body.razorpayPaymentId && req.body.razorpayOrderId && req.body.razorpaySignature) {
+      if (
+        req.body.razorpayPaymentId &&
+        req.body.razorpayOrderId &&
+        req.body.razorpaySignature
+      ) {
         const { verifyPaymentSignature } = await import("../razorpay");
-        
+
         // Verify payment signature
         const isValid = verifyPaymentSignature(
           req.body.razorpayOrderId,
           req.body.razorpayPaymentId,
-          req.body.razorpaySignature
+          req.body.razorpaySignature,
         );
 
         if (!isValid) {
@@ -107,7 +108,7 @@ export function registerOrderRoutes(app: Express) {
               deliveryPhone = req.body.deliveryAddress.phone;
             } else if (req.body.deliveryAddressId) {
               const deliveryAddress = await mongoStorage.getAddressById(
-                req.body.deliveryAddressId
+                req.body.deliveryAddressId,
               );
               deliveryPhone = deliveryAddress?.phone;
             }
@@ -123,7 +124,7 @@ export function registerOrderRoutes(app: Express) {
                 userName,
                 order.id,
                 orderItems,
-                "Soon"
+                "Soon",
               );
             }
           }
@@ -176,7 +177,7 @@ export function registerOrderRoutes(app: Express) {
             ...item,
             meal,
           };
-        })
+        }),
       );
 
       res.json({
@@ -194,7 +195,7 @@ export function registerOrderRoutes(app: Express) {
     try {
       const userId = (req.user as any).id;
       const orderId = parseInt(req.params.id);
-      
+
       // Get cart items for this user
       const cartItems = await mongoStorage.getCartItems(userId);
 
@@ -231,13 +232,17 @@ export function registerOrderRoutes(app: Express) {
       const deliveryCharge = req.body.deliveryCharge || 40;
 
       // Verify payment signature if provided
-      if (req.body.razorpayPaymentId && req.body.razorpayOrderId && req.body.razorpaySignature) {
+      if (
+        req.body.razorpayPaymentId &&
+        req.body.razorpayOrderId &&
+        req.body.razorpaySignature
+      ) {
         const { verifyPaymentSignature } = await import("../razorpay");
-        
+
         const isValid = verifyPaymentSignature(
           req.body.razorpayOrderId,
           req.body.razorpayPaymentId,
-          req.body.razorpaySignature
+          req.body.razorpaySignature,
         );
 
         if (!isValid) {
@@ -281,7 +286,7 @@ export function registerOrderRoutes(app: Express) {
                 userName,
                 order.id,
                 orderItems,
-                "Soon"
+                "Soon",
               );
             }
           }

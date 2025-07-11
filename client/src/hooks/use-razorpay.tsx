@@ -170,82 +170,115 @@ export const useRazorpay = () => {
       }
 
       try {
-        const orderData = await createOrderMutation.mutateAsync({
-          amount: options.amount,
-          orderId: options.orderId,
-          type: options.type || "order",
-        });
+        // For cart orders, get payment config directly instead of creating order through API
+        if (options.type === "order" || !options.type) {
+          // Get payment configuration
+          const configRes = await apiRequest("GET", "/api/payments/config");
+          const config = await configRes.json();
 
-        const razorpayOptions: RazorpayOptions = {
-          key: orderData.key,
-          amount: orderData.amount,
-          currency: orderData.currency,
-          name: options.name || "Aayuv Millet Foods",
-          description: options.description || "Order Payment",
-          image: "/images/logo.png", // Logo URL
-          order_id: orderData.orderId,
-          handler: async (response) => {
-            try {
-              await verifyPaymentMutation.mutateAsync({
-                orderId: options.orderId,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-                type: options.type || "order",
-              });
+          if (!configRes.ok) {
+            throw new Error("Failed to get payment configuration");
+          }
 
-              toast({
-                title: "Payment Successful",
-                description: "Your payment has been processed successfully",
-              });
-
+          const razorpayOptions: RazorpayOptions = {
+            key: config.key,
+            amount: options.amount * 100, // Convert to paise
+            currency: config.currency || "INR",
+            name: options.name || "Aayuv Millet Foods",
+            description: options.description || "Order Payment",
+            image: "/images/logo.png",
+            order_id: `order_${options.orderId}`, // Use our order ID directly
+            handler: async (response) => {
               if (options.onSuccess) {
                 options.onSuccess(response);
               }
-            } catch (error: any) {
-              toast({
-                title: "Payment Verification Failed",
-                description: error.message || "Failed to verify payment",
-                variant: "destructive",
-              });
+            },
+            prefill: {
+              name: user.name || "",
+              email: user.email || "",
+              contact: user.phone || "",
+            },
+            notes: {
+              orderId: options.orderId.toString(),
+            },
+            theme: options.theme || {
+              color: "#F37254",
+            },
+            modal: {
+              ondismiss: () => {
+                if (options.onFailure) {
+                  options.onFailure({
+                    message: "Payment cancelled by user",
+                    type: "user_cancelled",
+                  });
+                }
+              },
+            },
+          };
 
-              if (options.onFailure) {
-                options.onFailure(error);
-              }
-            }
-          },
-          prefill: {
-            name: user.name || "",
-            email: user.email || "",
-            contact: user.phone || "",
-          },
-          notes: {
-            orderId: options.orderId.toString(),
-          },
-          theme: options.theme || {
-            color: "#F37254",
-          },
-          modal: {
-            ondismiss: () => {
-              toast({
-                title: "Payment Cancelled",
-                description: "You cancelled the payment process",
-              });
+          const razorpay = new window.Razorpay(razorpayOptions);
+          razorpay.open();
+        } else {
+          // For subscription orders, use the old flow
+          const orderData = await createOrderMutation.mutateAsync({
+            amount: options.amount,
+            orderId: options.orderId,
+            type: options.type,
+          });
 
-              // Don't call onFailure for user cancellation
-              // The cart should remain intact when user cancels payment
-              if (options.onFailure) {
-                options.onFailure({
-                  message: "Payment cancelled by user",
-                  type: "user_cancelled",
+          const razorpayOptions: RazorpayOptions = {
+            key: orderData.key,
+            amount: orderData.amount,
+            currency: orderData.currency,
+            name: options.name || "Aayuv Millet Foods",
+            description: options.description || "Order Payment",
+            image: "/images/logo.png",
+            order_id: orderData.orderId,
+            handler: async (response) => {
+              try {
+                await verifyPaymentMutation.mutateAsync({
+                  orderId: options.orderId,
+                  razorpayOrderId: response.razorpay_order_id,
+                  razorpayPaymentId: response.razorpay_payment_id,
+                  razorpaySignature: response.razorpay_signature,
+                  type: options.type,
                 });
+
+                if (options.onSuccess) {
+                  options.onSuccess(response);
+                }
+              } catch (error: any) {
+                if (options.onFailure) {
+                  options.onFailure(error);
+                }
               }
             },
-          },
-        };
+            prefill: {
+              name: user.name || "",
+              email: user.email || "",
+              contact: user.phone || "",
+            },
+            notes: {
+              orderId: options.orderId.toString(),
+            },
+            theme: options.theme || {
+              color: "#F37254",
+            },
+            modal: {
+              ondismiss: () => {
+                if (options.onFailure) {
+                  options.onFailure({
+                    message: "Payment cancelled by user",
+                    type: "user_cancelled",
+                  });
+                }
+              },
+            },
+          };
 
-        const razorpay = new window.Razorpay(razorpayOptions);
-        razorpay.open();
+          const razorpay = new window.Razorpay(razorpayOptions);
+          razorpay.open();
+        }
       } catch (error: any) {
         toast({
           title: "Payment Initialization Failed",
