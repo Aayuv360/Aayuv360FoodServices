@@ -12,8 +12,8 @@ import {
   getNextSequence,
   NewsletterEmail,
 } from "../shared/mongoModels";
-import { createSessionStore } from "./session-store";
 import expressSession from "express-session";
+import createMemoryStore from "memorystore";
 import { milletMeals, MealDataItem } from "./mealData";
 
 import { IStorage } from "./storage";
@@ -22,7 +22,11 @@ export class MongoDBStorage implements IStorage {
   sessionStore: expressSession.Store;
 
   constructor() {
-    this.sessionStore = createSessionStore();
+    // Create session store directly
+    const MemoryStore = createMemoryStore(expressSession);
+    this.sessionStore = new MemoryStore({
+      checkPeriod: 86400000,
+    });
 
     setTimeout(() => {
       this.initializeSampleMeals().catch((err) =>

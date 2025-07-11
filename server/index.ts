@@ -6,25 +6,21 @@ import { router as deliveryRoutes } from "./delivery-status";
 import { router as notificationRoutes } from "./notifications";
 import { router as trackingRoutes } from "./real-time-tracking";
 import contactRoutes from "./contact-routes";
-import { loadEnvironment, getEnvironmentConfig } from "./env-loader";
+// Environment validation - using env-validator instead of env-loader
 import { envValidator } from "./env-validator";
-
-// Load environment-specific configuration
-loadEnvironment();
-
-// Get environment configuration
-const config = getEnvironmentConfig();
-console.log(`🚀 Starting server in ${config.NODE_ENV} mode on port ${config.PORT}`);
 
 // Validate environment configuration on startup
 envValidator.printStatus();
 if (!envValidator.isValid()) {
   console.error("Critical environment configuration issues detected!");
-  if (config.IS_PRODUCTION) {
+  if (process.env.NODE_ENV === "production") {
     console.error("Exiting due to missing required environment variables in production");
     process.exit(1);
   }
 }
+
+const config = envValidator.getConfig();
+console.log(`🚀 Starting server in ${config.NODE_ENV} mode on port ${config.PORT}`);
 
 const app = express();
 
