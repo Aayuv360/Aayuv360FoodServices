@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import { logAPIRequest, logError } from "../logger";
+import { createOrder } from "../razorpay";
 
 export function registerProfileRoutes(app: Express) {
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -80,6 +81,53 @@ export function registerProfileRoutes(app: Express) {
     } catch (error) {
       logError(error as Error, { endpoint: "GET /api/profile/wallet" });
       res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
+  // Create Razorpay order for wallet top-up
+  app.post("/api/profile/wallet/create-order", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { amount } = req.body;
+
+      logAPIRequest("POST /api/profile/wallet/create-order", userId, { amount });
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({ 
+          message: "Invalid amount" 
+        });
+      }
+
+      if (amount > 50000) {
+        return res.status(400).json({ 
+          message: "Maximum wallet add limit is ₹50,000" 
+        });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Create Razorpay order
+      const razorpayOrder = await createOrder({
+        amount,
+        receipt: `wallet_topup_${userId}_${Date.now()}`,
+        notes: {
+          userId: userId.toString(),
+          type: "wallet_topup",
+          amount: amount.toString(),
+        }
+      });
+
+      res.json({
+        orderId: razorpayOrder.id,
+        amount: razorpayOrder.amount,
+        currency: razorpayOrder.currency,
+      });
+    } catch (error) {
+      logError(error as Error, { endpoint: "POST /api/profile/wallet/create-order" });
+      res.status(500).json({ message: "Failed to create payment order" });
     }
   });
 

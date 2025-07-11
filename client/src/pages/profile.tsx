@@ -206,10 +206,14 @@ const Profile = () => {
     const amount = Number(walletAmount);
     if (amount > 0) {
       try {
-        // Use Razorpay payment integration for wallet top-up
+        // First create a Razorpay order for wallet top-up
+        const orderRes = await apiRequest("POST", "/api/profile/wallet/create-order", { amount });
+        const orderData = await orderRes.json();
+        
+        // Use Razorpay payment integration with proper order ID
         const { success } = await payWithRazorpay(
-          amount,
-          `wallet_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          orderData.amount,
+          orderData.orderId,
           "Add Money to Wallet",
           "Wallet Top-up",
           (paymentDetails) => {

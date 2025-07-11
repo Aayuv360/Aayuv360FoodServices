@@ -232,8 +232,6 @@ export const useRazorpay = () => {
                 description: "You cancelled the payment process",
               });
 
-              // Don't call onFailure for user cancellation
-              // The cart should remain intact when user cancels payment
               if (options.onFailure) {
                 options.onFailure({
                   message: "Payment cancelled by user",
@@ -277,7 +275,7 @@ export const useRazorpay = () => {
       try {
         const razorpayOptions = {
           key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-          amount: amount * 100, // Convert to paise
+          amount: amount,
           currency: "INR",
           name: "Aayuv Millet Foods",
           description: description,
