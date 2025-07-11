@@ -275,12 +275,8 @@ export const useRazorpay = () => {
       }
 
       try {
-        // Get Razorpay configuration from server
-        const configRes = await apiRequest("GET", "/api/payments/config");
-        const config = await configRes.json();
-
         const razorpayOptions = {
-          key: config.key,
+          key: import.meta.env.VITE_RAZORPAY_KEY_ID,
           amount: amount * 100, // Convert to paise
           currency: "INR",
           name: "Aayuv Millet Foods",
