@@ -92,6 +92,26 @@ export const useRazorpay = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const razorpayLoaded = useRazorpayScript();
+  const [razorpayKey, setRazorpayKey] = useState<string | null>(null);
+
+  // Fetch Razorpay key from server on component mount
+  useEffect(() => {
+    const fetchRazorpayConfig = async () => {
+      try {
+        const response = await fetch('/api/payments/config');
+        if (response.ok) {
+          const config = await response.json();
+          setRazorpayKey(config.key);
+        } else {
+          console.error('Failed to fetch Razorpay config');
+        }
+      } catch (error) {
+        console.error('Error fetching Razorpay config:', error);
+      }
+    };
+
+    fetchRazorpayConfig();
+  }, []);
 
   // Simplified payment - no server order creation needed for new flow
 
@@ -120,6 +140,14 @@ export const useRazorpay = () => {
         return;
       }
 
+      if (!razorpayKey) {
+        toast({
+          title: "Payment configuration loading",
+          description: "Please wait while we load payment configuration.",
+        });
+        return;
+      }
+
       if (!user) {
         toast({
           title: "Authentication required",
@@ -132,7 +160,7 @@ export const useRazorpay = () => {
       try {
         // Simplified payment options for direct Razorpay integration
         const razorpayOptions: RazorpayOptions = {
-          key: "rzp_test_EEu4TnfXJ8JXAT", // Using the same key from server
+          key: razorpayKey, // Use the key from server
           amount: Math.round(options.amount * 100), // Convert to paise
           currency: "INR",
           name: options.name || "Aayuv Millet Foods",
