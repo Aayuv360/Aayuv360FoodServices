@@ -16,16 +16,17 @@ export function loadEnvironment() {
 
   console.log(`🔧 Loading environment: ${NODE_ENV}`);
 
-  // Load base .env file first (if exists)
-  const baseEnvPath = path.join(rootDir, '.env');
-  dotenv.config({ path: baseEnvPath });
-
-  // Load environment-specific .env file
+  // Load environment-specific .env file directly
   const envPath = path.join(rootDir, `.env.${NODE_ENV}`);
-  const result = dotenv.config({ path: envPath, override: true });
+  const result = dotenv.config({ path: envPath });
 
   if (result.error) {
-    console.warn(`⚠️  Could not load .env.${NODE_ENV}, falling back to .env`);
+    console.error(`❌ Could not load .env.${NODE_ENV}`);
+    console.error('Available environment files should be: .env.development, .env.staging, .env.production');
+    if (NODE_ENV === 'production') {
+      console.error('Production environment requires .env.production file or environment variables set in deployment platform');
+      process.exit(1);
+    }
   } else {
     console.log(`✅ Loaded environment configuration from .env.${NODE_ENV}`);
   }

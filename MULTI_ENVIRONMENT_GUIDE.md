@@ -7,11 +7,9 @@ Instead of using `.env.example`, we now have proper environment-specific configu
 ### **Environment Files Structure:**
 
 ```
-├── .env                    # Current environment (development by default)
 ├── .env.development        # Development configuration ✅ Committed
 ├── .env.staging           # Staging configuration ✅ Committed  
 ├── .env.production        # Production template ✅ Committed
-├── .env.example           # Template for reference
 └── .env.local             # Personal overrides (not committed)
 ```
 
@@ -99,22 +97,23 @@ NODE_ENV=production npm start
 # 1. Clone repository
 git clone <repository>
 
-# 2. Copy development environment
-npm run env:copy
+# 2. Install dependencies
+npm install
 
-# 3. Start development
+# 3. Start development (automatically uses .env.development)
 npm run dev
 ```
 
 ### **For Environment Switching:**
 ```bash
 # Switch to staging
-cp .env.staging .env
+NODE_ENV=staging npm run dev
+
+# Switch to development (default)
 npm run dev
 
-# Switch to development  
-cp .env.development .env
-npm run dev
+# Switch to production
+NODE_ENV=production npm start
 ```
 
 ## 📊 **Environment Validation**

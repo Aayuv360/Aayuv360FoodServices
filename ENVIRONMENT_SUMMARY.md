@@ -9,8 +9,6 @@ Instead of using a single `.env.example` template file, we've implemented a **pr
 ✅ .env.development    # Development configuration (committed)
 ✅ .env.staging        # Staging configuration (committed)
 ✅ .env.production     # Production template (committed)
-✅ .env                # Current environment fallback (committed)
-✅ .env.example        # Documentation template (committed)
 ❌ .env.local          # Personal overrides (NOT committed)
 ```
 
