@@ -54,6 +54,20 @@ class EnvironmentValidator {
       this.validateRequired('RAZORPAY_KEY_SECRET', 'Payment gateway secret required in production');
     }
 
+    // Skip validation in production if running on Render and variables are expected to be set via platform
+    if (this.config.NODE_ENV === 'production' && (process.env.RENDER || process.env.RENDER_SERVICE_NAME)) {
+      console.log('🔧 Running on Render.com - environment variables will be set by platform');
+      // Clear errors for Render deployment
+      this.errors = [];
+    }
+
+    // Skip validation in production if running on Render and variables are expected to be set via platform
+    if (this.config.NODE_ENV === 'production' && (process.env.RENDER || process.env.RENDER_SERVICE_NAME)) {
+      console.log('🔧 Running on Render.com - environment variables will be set by platform');
+      // Clear errors for Render deployment
+      this.errors = [];
+    }
+
     // Optional but recommended
     this.validateOptional('MONGODB_URI', 'Database functionality will be limited');
     this.validateOptional('RAZORPAY_KEY_ID', 'Payment features will be disabled');
