@@ -170,20 +170,12 @@ export const useRazorpay = () => {
       }
 
       try {
-        // For cart orders, get payment config directly instead of creating order through API
+        // For cart orders, use direct payment without API call
         if (options.type === "order" || !options.type) {
-          // Get payment configuration
-          const configRes = await apiRequest("GET", "/api/payments/config");
-          const config = await configRes.json();
-
-          if (!configRes.ok) {
-            throw new Error("Failed to get payment configuration");
-          }
-
           const razorpayOptions: RazorpayOptions = {
-            key: config.key,
+            key: "rzp_test_HQDFNl2QdtRWjk", // Use Razorpay key directly
             amount: options.amount * 100, // Convert to paise
-            currency: config.currency || "INR",
+            currency: "INR",
             name: options.name || "Aayuv Millet Foods",
             description: options.description || "Order Payment",
             image: "/images/logo.png",

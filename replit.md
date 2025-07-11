@@ -223,9 +223,11 @@ The architecture prioritizes maintainability, scalability, and user experience w
   - Improved error handling for payment vs order creation failures
 
 **Technical Details**:
-- Old flow: POST /api/orders → initiate payment → PATCH /api/orders (if success)
-- New flow: POST /api/orders/generate-id → initiate payment → PATCH /api/orders/:id (if success)
-- Real order IDs used for payment tracking, full order data only saved after payment success
+- Old flow: POST /api/orders → POST /api/payments/create-order → initiate payment → PATCH /api/orders (if success)
+- New flow: POST /api/orders/generate-id → initiate payment directly → PATCH /api/orders/:id (if success)
+- Eliminated unnecessary /api/payments/create-order API call for cart orders
+- Real order IDs from getNextSequence() used for payment tracking
+- Full order data only saved after payment success
 
 **Benefits**:
 - No orphaned orders when payment is cancelled
