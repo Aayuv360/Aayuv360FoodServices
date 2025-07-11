@@ -29,6 +29,7 @@ export async function seedDatabase() {
       console.log("Adding admin user...");
 
       await UserModel.create({
+        id: 1,
         username: "admin",
         password: await hashPassword("admin123"),
         name: "Admin User",
@@ -48,6 +49,7 @@ export async function seedDatabase() {
       console.log("Adding manager user...");
 
       await UserModel.create({
+        id: 2,
         username: "manager",
         password: await hashPassword("manager123"),
         name: "Manager User",
@@ -67,6 +69,7 @@ export async function seedDatabase() {
       console.log("Adding guest user...");
 
       await UserModel.create({
+        id: 3,
         username: "guest",
         password: await hashPassword("guest123"),
         name: "Guest User",
