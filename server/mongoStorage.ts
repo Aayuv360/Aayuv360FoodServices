@@ -187,6 +187,16 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
+  async deleteUser(id: number): Promise<boolean> {
+    try {
+      const result = await User.deleteOne({ id });
+      return result.deletedCount > 0;
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      throw error;
+    }
+  }
+
   async createUser(userData: any): Promise<any> {
     try {
       const id = await getNextSequence("user");

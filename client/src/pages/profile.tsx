@@ -170,23 +170,27 @@ const Profile = () => {
     },
   });
 
-  // Request account deletion mutation
-  const requestDeletionMutation = useMutation({
+  // Delete account immediately mutation
+  const deleteAccountMutation = useMutation({
     mutationFn: async (reason: string) => {
-      const res = await apiRequest("POST", "/api/profile/request-deletion", { reason });
+      const res = await apiRequest("POST", "/api/profile/delete-account", { reason });
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/profile/deletion-status"] });
       toast({
-        title: "Deletion request submitted",
-        description: "Your request has been submitted and will be reviewed within 7 business days",
+        title: "Account deleted successfully",
+        description: "Your account and all data have been permanently deleted",
       });
+      // Automatically logout after successful deletion
+      setTimeout(() => {
+        logout();
+        navigate("/");
+      }, 2000);
     },
     onError: (error: any) => {
       toast({
-        title: "Failed to submit request",
-        description: error.message || "There was an error submitting your deletion request",
+        title: "Failed to delete account",
+        description: error.message || "There was an error deleting your account",
         variant: "destructive",
       });
     },
@@ -211,7 +215,7 @@ const Profile = () => {
 
   const confirmDeleteAccount = () => {
     if (deleteReason.trim()) {
-      requestDeletionMutation.mutate(deleteReason);
+      deleteAccountMutation.mutate(deleteReason);
       setShowDeleteDialog(false);
       setDeleteReason("");
     }
@@ -463,36 +467,19 @@ const Profile = () => {
                         </span>
                       </div>
                       
-                      {deletionStatus?.deletionRequested ? (
-                        <div className="bg-yellow-50 p-4 rounded-lg">
-                          <h4 className="font-medium text-yellow-800 mb-1">
-                            Deletion Request Pending
-                          </h4>
-                          <p className="text-sm text-yellow-700 mb-2">
-                            Your account deletion request is being reviewed. 
-                            Status: <span className="font-medium">{deletionStatus.status}</span>
-                          </p>
-                          <p className="text-xs text-yellow-600">
-                            Requested on: {new Date(deletionStatus.requestedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          <p className="text-sm text-gray-600 mb-4">
-                            Request to delete your account. This action will be reviewed by our team.
-                          </p>
-                          <Button 
-                            variant="destructive" 
-                            onClick={handleDeleteAccount}
-                            disabled={requestDeletionMutation.isPending}
-                          >
-                            {requestDeletionMutation.isPending ? (
-                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            ) : null}
-                            Request Account Deletion
-                          </Button>
-                        </>
-                      )}
+                      <p className="text-sm text-gray-600 mb-4">
+                        <strong>Warning:</strong> This will permanently delete your account and all associated data. This action cannot be undone.
+                      </p>
+                      <Button 
+                        variant="destructive" 
+                        onClick={handleDeleteAccount}
+                        disabled={deleteAccountMutation.isPending}
+                      >
+                        {deleteAccountMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : null}
+                        Delete Account Permanently
+                      </Button>
                     </CardContent>
                   </Card>
                 </div>
@@ -1063,9 +1050,9 @@ const Profile = () => {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Request Account Deletion</DialogTitle>
+            <DialogTitle>Delete Account Permanently</DialogTitle>
             <DialogDescription>
-              Please provide a reason for deleting your account. This action will be reviewed by our team.
+              <strong>Warning:</strong> This will permanently delete your account and all data. This action cannot be undone. Please provide a reason for deletion.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -1089,12 +1076,12 @@ const Profile = () => {
             <Button
               variant="destructive"
               onClick={confirmDeleteAccount}
-              disabled={!deleteReason.trim() || requestDeletionMutation.isPending}
+              disabled={!deleteReason.trim() || deleteAccountMutation.isPending}
             >
-              {requestDeletionMutation.isPending ? (
+              {deleteAccountMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
-              Submit Request
+              Delete Account Permanently
             </Button>
           </DialogFooter>
         </DialogContent>
