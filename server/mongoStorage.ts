@@ -47,8 +47,14 @@ export class MongoDBStorage implements IStorage {
         return; // Exit early if we can't connect to the database
       }
 
-      if (mealsCount === 0) {
-        console.log("Initializing sample meals...");
+      if (mealsCount === 0 || mealsCount < milletMeals.length) {
+        console.log(`Initializing sample meals... (found ${mealsCount}, need ${milletMeals.length})`);
+
+        // Clear existing meals if count doesn't match
+        if (mealsCount > 0 && mealsCount !== milletMeals.length) {
+          console.log("Clearing existing meals to ensure fresh data...");
+          await Meal.deleteMany({});
+        }
 
         // Prepare meal items with required category field
         const preparedMeals = milletMeals.map((meal: MealDataItem) => {

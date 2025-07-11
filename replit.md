@@ -120,6 +120,14 @@ Required environment variables:
 - `SENDGRID_API_KEY`: Email notifications (optional)
 
 ## Recent Changes
+- **July 11, 2025**: Comprehensive environment fixes and complete meal data restoration
+  - ✅ Fixed Google Maps API key configuration in PerformantOrderTracking component using VITE_GOOGLE_MAPS_API_KEY
+  - ✅ Restored complete 38 millet-based meal catalog in server/mealData.ts with full nutritional info
+  - ✅ Updated database seeding logic to properly load all meal variations when count doesn't match
+  - ✅ Multi-environment system working correctly with .env.development automatic loading  
+  - ✅ All 38 meals now properly seeded and accessible via /api/meals endpoint
+  - ✅ Fixed meal initialization batching system for reliable database population
+  - 🔧 Subscription plan seeding needs schema validation fixes for deliveryAddressId and timeSlot fields
 - **July 11, 2025**: Comprehensive multi-environment configuration system and production deployment fixes
   - Updated session configuration for production environments with proper secure cookie settings
   - Added CORS configuration and trust proxy settings for cloud deployment compatibility
