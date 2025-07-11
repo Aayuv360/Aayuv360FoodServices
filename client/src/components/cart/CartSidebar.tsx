@@ -300,13 +300,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           }
         },
         onFailure: (error) => {
+          console.error("Payment failure:", error);
           setIsPaymentInProgress(false);
 
           // Only show error toast for actual failures, not user cancellation
-          if (error.code !== "payment_failed" && error.code !== "payment_cancelled") {
+          if (error.type !== "user_cancelled") {
             toast({
               title: "Payment failed",
-              description: error.description || "Please try again",
+              description: error.description || error.message || "Please try again",
               variant: "destructive",
             });
           }
