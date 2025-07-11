@@ -224,8 +224,8 @@ The architecture prioritizes maintainability, scalability, and user experience w
 
 **Technical Details**:
 - Old flow: POST /api/orders → initiate payment → PATCH /api/orders (if success)
-- New flow: initiate payment with temp ID → POST /api/orders with payment details (if success)
-- Temporary order IDs prevent database pollution during payment process
+- New flow: POST /api/orders/generate-id → initiate payment → PATCH /api/orders/:id (if success)
+- Real order IDs used for payment tracking, full order data only saved after payment success
 
 **Benefits**:
 - No orphaned orders when payment is cancelled
