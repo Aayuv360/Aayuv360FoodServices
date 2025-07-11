@@ -48,47 +48,75 @@ export function registerOrderRoutes(app: Express) {
 
       const deliveryCharge = req.body.deliveryCharge || 0;
 
-      const order = await mongoStorage.createOrder({
+      // If payment details are provided, verify them first
+      const status = req.body.status || "pending";
+      const orderData: any = {
         userId,
-        status: "pending",
+        status,
         deliveryAddress: req.body.deliveryAddress,
         totalPrice: totalOrderPrice + deliveryCharge,
         deliveryCharge,
         items: orderItems,
         createdAt: new Date(),
-      });
+      };
 
-      try {
-        const user = await mongoStorage.getUser(userId);
-        if (user) {
-          let deliveryPhone = null;
+      // Add payment details if provided (for confirmed orders)
+      if (req.body.razorpayPaymentId && req.body.razorpayOrderId && req.body.razorpaySignature) {
+        const { verifyPaymentSignature } = await import("../razorpay");
+        
+        // Verify payment signature
+        const isValid = verifyPaymentSignature(
+          req.body.razorpayOrderId,
+          req.body.razorpayPaymentId,
+          req.body.razorpaySignature
+        );
 
-          if (req.body.deliveryAddress?.phone) {
-            deliveryPhone = req.body.deliveryAddress.phone;
-          } else if (req.body.deliveryAddressId) {
-            const deliveryAddress = await mongoStorage.getAddressById(
-              req.body.deliveryAddressId
-            );
-            deliveryPhone = deliveryAddress?.phone;
-          }
-
-          if (!deliveryPhone && user.phone) {
-            deliveryPhone = user.phone;
-          }
-
-          if (deliveryPhone) {
-            const userName = user.name || user.username || "Customer";
-            await smsService.sendOrderDeliveryNotification(
-              deliveryPhone,
-              userName,
-              order.id,
-              orderItems,
-              "Soon"
-            );
-          }
+        if (!isValid) {
+          return res.status(400).json({ message: "Invalid payment signature" });
         }
-      } catch (smsError) {
-        console.error("Error sending order confirmation SMS:", smsError);
+
+        orderData.razorpayPaymentId = req.body.razorpayPaymentId;
+        orderData.razorpayOrderId = req.body.razorpayOrderId;
+        orderData.razorpaySignature = req.body.razorpaySignature;
+        orderData.status = "confirmed"; // Force confirmed status for verified payments
+      }
+
+      const order = await mongoStorage.createOrder(orderData);
+
+      // Only send SMS notifications for confirmed orders (i.e., orders with payment)
+      if (order.status === "confirmed") {
+        try {
+          const user = await mongoStorage.getUser(userId);
+          if (user) {
+            let deliveryPhone = null;
+
+            if (req.body.deliveryAddress?.phone) {
+              deliveryPhone = req.body.deliveryAddress.phone;
+            } else if (req.body.deliveryAddressId) {
+              const deliveryAddress = await mongoStorage.getAddressById(
+                req.body.deliveryAddressId
+              );
+              deliveryPhone = deliveryAddress?.phone;
+            }
+
+            if (!deliveryPhone && user.phone) {
+              deliveryPhone = user.phone;
+            }
+
+            if (deliveryPhone) {
+              const userName = user.name || user.username || "Customer";
+              await smsService.sendOrderDeliveryNotification(
+                deliveryPhone,
+                userName,
+                order.id,
+                orderItems,
+                "Soon"
+              );
+            }
+          }
+        } catch (smsError) {
+          console.error("Error sending order confirmation SMS:", smsError);
+        }
       }
 
       res.status(201).json(order);
