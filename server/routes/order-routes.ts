@@ -11,6 +11,18 @@ export function registerOrderRoutes(app: Express) {
     next();
   };
 
+  // Generate order ID endpoint
+  app.post("/api/orders/generate-id", isAuthenticated, async (req, res) => {
+    try {
+      // Generate unique order ID
+      const orderId = Date.now(); // Simple timestamp-based ID
+      res.json({ orderId });
+    } catch (error) {
+      console.error("Error generating order ID:", error);
+      res.status(500).json({ message: "Failed to generate order ID" });
+    }
+  });
+
   app.post("/api/orders", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
@@ -173,6 +185,114 @@ export function registerOrderRoutes(app: Express) {
     } catch (err) {
       console.error("Error fetching order:", err);
       res.status(500).json({ message: "Error fetching order" });
+    }
+  });
+
+  // PATCH endpoint to update order with full payload after payment
+  app.patch("/api/orders/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const orderId = parseInt(req.params.id);
+      
+      // Get cart items for this user
+      const cartItems = await mongoStorage.getCartItems(userId);
+
+      if (!cartItems || cartItems.length === 0) {
+        return res.status(400).json({ message: "Your cart is empty" });
+      }
+
+      const orderItems = [];
+      let totalOrderPrice = 0;
+
+      for (const item of cartItems) {
+        const meal = await mongoStorage.getMeal(item.mealId);
+        if (!meal) continue;
+
+        const basePrice = item.quantity * meal.price;
+        const optionPrice = item.curryOptionPrice
+          ? item.quantity * item.curryOptionPrice
+          : 0;
+        const itemTotalPrice = basePrice + optionPrice;
+
+        totalOrderPrice += itemTotalPrice;
+
+        orderItems.push({
+          mealId: item.mealId,
+          quantity: item.quantity,
+          price: itemTotalPrice,
+          notes: item.notes || "",
+          curryOptionId: item.curryOptionId || null,
+          curryOptionName: item.curryOptionName || null,
+          curryOptionPrice: item.curryOptionPrice || 0,
+        });
+      }
+
+      const deliveryCharge = req.body.deliveryCharge || 40;
+
+      // Verify payment signature if provided
+      if (req.body.razorpayPaymentId && req.body.razorpayOrderId && req.body.razorpaySignature) {
+        const { verifyPaymentSignature } = await import("../razorpay");
+        
+        const isValid = verifyPaymentSignature(
+          req.body.razorpayOrderId,
+          req.body.razorpayPaymentId,
+          req.body.razorpaySignature
+        );
+
+        if (!isValid) {
+          return res.status(400).json({ message: "Invalid payment signature" });
+        }
+      }
+
+      const orderData: any = {
+        id: orderId,
+        userId,
+        status: req.body.status || "confirmed",
+        deliveryAddress: req.body.deliveryAddress,
+        totalPrice: totalOrderPrice + deliveryCharge,
+        deliveryCharge,
+        items: orderItems,
+        createdAt: new Date(),
+        razorpayPaymentId: req.body.razorpayPaymentId,
+        razorpayOrderId: req.body.razorpayOrderId,
+        razorpaySignature: req.body.razorpaySignature,
+      };
+
+      const order = await mongoStorage.createOrder(orderData);
+
+      // Send SMS notifications for confirmed orders
+      if (order.status === "confirmed") {
+        try {
+          const user = await mongoStorage.getUser(userId);
+          if (user) {
+            let deliveryPhone = null;
+
+            if (req.body.deliveryDetails?.phoneNumber) {
+              deliveryPhone = req.body.deliveryDetails.phoneNumber;
+            } else if (user.phone) {
+              deliveryPhone = user.phone;
+            }
+
+            if (deliveryPhone) {
+              const userName = user.name || user.username || "Customer";
+              await smsService.sendOrderDeliveryNotification(
+                deliveryPhone,
+                userName,
+                order.id,
+                orderItems,
+                "Soon"
+              );
+            }
+          }
+        } catch (smsError) {
+          console.error("Error sending order confirmation SMS:", smsError);
+        }
+      }
+
+      res.json(order);
+    } catch (err) {
+      console.error("Error updating order:", err);
+      res.status(500).json({ message: "Error updating order" });
     }
   });
 }
