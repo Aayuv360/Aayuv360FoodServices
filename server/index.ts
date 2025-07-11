@@ -7,8 +7,19 @@ import { router as deliveryRoutes } from "./delivery-status";
 import { router as notificationRoutes } from "./notifications";
 import { router as trackingRoutes } from "./real-time-tracking";
 import contactRoutes from "./contact-routes";
+import { envValidator } from "./env-validator";
 
 dotenv.config();
+
+// Validate environment configuration on startup
+envValidator.printStatus();
+if (!envValidator.isValid()) {
+  console.error("Critical environment configuration issues detected!");
+  if (process.env.NODE_ENV === "production") {
+    console.error("Exiting due to missing required environment variables in production");
+    process.exit(1);
+  }
+}
 
 const app = express();
 
@@ -20,11 +31,11 @@ if (process.env.NODE_ENV === "production") {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       process.env.RENDER_EXTERNAL_URL,
-      "https://" + process.env.RENDER_SERVICE_NAME + ".onrender.com",
+      process.env.RENDER_SERVICE_NAME ? `https://${process.env.RENDER_SERVICE_NAME}.onrender.com` : null,
     ].filter(Boolean);
 
     const origin = req.headers.origin;
-    if (allowedOrigins.includes(origin)) {
+    if (origin && allowedOrigins.includes(origin)) {
       res.setHeader("Access-Control-Allow-Origin", origin);
     }
 
@@ -68,10 +79,15 @@ async function connectToDatabase() {
   try {
     const uri = process.env.MONGODB_URI;
     if (!uri) {
-      console.warn("MONGODB_URI not set - running without database connection");
-      return true;
+      console.error("MONGODB_URI not set - database connection required for production");
+      if (process.env.NODE_ENV === "production") {
+        throw new Error("Database connection required in production");
+      }
+      console.warn("Running in development mode without database");
+      return false;
     }
 
+    console.log("Connecting to MongoDB...");
     await mongoose.connect(uri);
     console.log("Successfully connected to MongoDB");
     return true;
@@ -120,7 +136,7 @@ async function connectToDatabase() {
     app.use("/", notificationRoutes);
     app.use("/", contactRoutes);
 
-    const preferredPort = process.env.PORT || 5000;
+    const preferredPort = Number(process.env.PORT) || 5000;
     let port = preferredPort;
     let retries = 0;
 

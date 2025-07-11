@@ -114,7 +114,7 @@ const PerformantOrderTrackingComponent = () => {
   // Memoized Google Maps loader
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: 'AIzaSyBjak2fBJkYMzYBCAGM3FJOLnZGgKNmqoQ',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES
   });
 

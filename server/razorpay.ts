@@ -13,15 +13,16 @@ interface RazorpaySubscriptionRequest {
 }
 // Initialize Razorpay only if keys are provided
 let razorpay: Razorpay | null = null;
-const env = {
-  RAZORPAY_KEY_ID: "rzp_test_UxXBzl98ySixq7",
-  RAZORPAY_KEY_SECRET: "n78QX7ZaxGndqCdRryofDbNU",
-};
-if (env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET) {
+
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+
+if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
   razorpay = new Razorpay({
-    key_id: env.RAZORPAY_KEY_ID,
-    key_secret: env.RAZORPAY_KEY_SECRET,
+    key_id: RAZORPAY_KEY_ID,
+    key_secret: RAZORPAY_KEY_SECRET,
   });
+  console.log("Razorpay payment gateway initialized successfully");
 } else {
   console.warn("Razorpay keys not found - payment features will be disabled");
 }

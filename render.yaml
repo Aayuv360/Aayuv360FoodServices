@@ -1,18 +1,18 @@
 services:
   - type: web
     name: millet-food-service
-    runtime: node
-    plan: free
+    env: node
+    plan: starter
     buildCommand: npm install && npm run build
     startCommand: npm run start
-    healthCheckPath: /api/health
-    env: node
     envVars:
       - key: NODE_ENV
         value: production
-      - key: SESSION_SECRET
-        generateValue: true
+      - key: PORT
+        value: 10000
       - key: MONGODB_URI
+        sync: false
+      - key: SESSION_SECRET
         sync: false
       - key: RAZORPAY_KEY_ID
         sync: false
@@ -26,7 +26,13 @@ services:
         sync: false
       - key: SENDGRID_API_KEY
         sync: false
-      - key: FAST2SMS_API_KEY
+      - key: GOOGLE_MAPS_API_KEY
         sync: false
-      - key: FAST2SMS_SENDER_ID
+      - key: VITE_GOOGLE_MAPS_API_KEY
         sync: false
+      - key: VITE_API_BASE_URL
+        value: https://millet-food-service.onrender.com
+      - key: FRONTEND_URL
+        value: https://millet-food-service.onrender.com
+      - key: RENDER_SERVICE_NAME
+        value: millet-food-service

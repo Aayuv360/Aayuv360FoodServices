@@ -1,5 +1,5 @@
 
-export const GOOGLE_MAPS_API_KEY = "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI";
+export const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI";
 
 export const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
