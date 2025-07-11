@@ -120,6 +120,8 @@ export async function seedDatabase() {
           dietaryPreference: "veg",
           features: ["2 meals per day", "Basic millet variety", "Standard delivery"],
           isActive: true,
+          timeSlot: "morning",
+          deliveryAddressId: 1,
           menuItems: [
             { day: 1, main: "Pearl Millet Khichdi", sides: ["Coconut Chutney"] },
             { day: 2, main: "Finger Millet Roti", sides: ["Dal"] },
@@ -141,6 +143,8 @@ export async function seedDatabase() {
           dietaryPreference: "veg",
           features: ["3 meals per day", "Premium millet variety", "Priority delivery", "Customization options"],
           isActive: true,
+          timeSlot: "evening",
+          deliveryAddressId: 1,
           menuItems: [
             { day: 1, main: "Multi-Millet Power Bowl", sides: ["Avocado", "Tahini"] },
             { day: 2, main: "Pearl Millet Pizza Base", sides: ["Vegetables", "Cheese"] },
@@ -162,6 +166,8 @@ export async function seedDatabase() {
           dietaryPreference: "veg",
           features: ["4 meals per day", "Family portions", "All millet varieties", "Free delivery", "Weekly customization"],
           isActive: true,
+          timeSlot: "flexible",
+          deliveryAddressId: 1,
           menuItems: [
             { day: 1, main: "Pearl Millet Pancakes", sides: ["Honey", "Fruits"] },
             { day: 2, main: "Finger Millet Dosa", sides: ["Chutney", "Sambar"] },
