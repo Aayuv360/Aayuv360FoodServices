@@ -158,17 +158,6 @@ export const useRazorpay = () => {
       }
 
       try {
-        // Check if Razorpay is available on window
-        if (!window.Razorpay) {
-          throw new Error("Razorpay SDK not loaded. Please refresh the page and try again.");
-        }
-
-        console.log("Initiating payment with:", {
-          key: razorpayKey,
-          amount: Math.round(options.amount * 100),
-          orderId: options.orderId
-        });
-
         // Simplified payment options for direct Razorpay integration
         const razorpayOptions: RazorpayOptions = {
           key: razorpayKey, // Use the key from server
@@ -180,7 +169,6 @@ export const useRazorpay = () => {
           order_id: `order_${options.orderId}_${Date.now()}`, // Use temp order ID
           handler: async (response) => {
             try {
-              console.log("Payment successful:", response);
               // Payment successful - call onSuccess with payment details
               if (options.onSuccess) {
                 options.onSuccess(response);
@@ -205,7 +193,6 @@ export const useRazorpay = () => {
           },
           modal: {
             ondismiss: () => {
-              console.log("Payment modal dismissed");
               toast({
                 title: "Payment Cancelled",
                 description: "You cancelled the payment process",
@@ -223,26 +210,9 @@ export const useRazorpay = () => {
           },
         };
 
-        console.log("Creating Razorpay instance...");
         const razorpay = new window.Razorpay(razorpayOptions);
-        
-        // Add error handler for payment failures
-        razorpay.on('payment.failed', function (response: any) {
-          console.error("Payment failed:", response.error);
-          
-          if (options.onFailure) {
-            options.onFailure({
-              code: response.error.code,
-              description: response.error.description,
-              message: response.error.reason || "Payment failed"
-            });
-          }
-        });
-        
-        console.log("Opening Razorpay checkout...");
         razorpay.open();
       } catch (error: any) {
-        console.error("Payment initialization error:", error);
         toast({
           title: "Payment Initialization Failed",
           description: error.message || "Failed to initialize payment",
