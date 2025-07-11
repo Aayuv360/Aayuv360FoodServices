@@ -437,6 +437,24 @@ const Profile = () => {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={form.control}
+                            name="address"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-xs sm:text-sm">
+                                  Address
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    className="text-xs sm:text-sm h-8 sm:h-10"
+                                    {...field}
+                                  />
+                                </FormControl>
+                                <FormMessage className="text-xs" />
+                              </FormItem>
+                            )}
+                          />
 
                           <div>
                             <Button
