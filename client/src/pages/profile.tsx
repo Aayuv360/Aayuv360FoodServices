@@ -33,6 +33,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -54,6 +63,10 @@ const Profile = () => {
   const { toast } = useToast();
   const { user, logout } = useAuth();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
+  const [showAddMoneyDialog, setShowAddMoneyDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [walletAmount, setWalletAmount] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
 
   const searchParams = new URLSearchParams(location.search);
   const initialTab = searchParams.get("tab") || "profile";
@@ -180,16 +193,27 @@ const Profile = () => {
   });
 
   const handleAddMoney = () => {
-    const amount = prompt("Enter amount to add to wallet (₹):");
-    if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
-      addMoneyMutation.mutate(Number(amount));
+    setShowAddMoneyDialog(true);
+  };
+
+  const confirmAddMoney = () => {
+    const amount = Number(walletAmount);
+    if (amount > 0) {
+      addMoneyMutation.mutate(amount);
+      setShowAddMoneyDialog(false);
+      setWalletAmount("");
     }
   };
 
   const handleDeleteAccount = () => {
-    const reason = prompt("Please provide a reason for account deletion:");
-    if (reason) {
-      requestDeletionMutation.mutate(reason);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteAccount = () => {
+    if (deleteReason.trim()) {
+      requestDeletionMutation.mutate(deleteReason);
+      setShowDeleteDialog(false);
+      setDeleteReason("");
     }
   };
 
@@ -992,6 +1016,89 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {/* Add Money Dialog */}
+      <Dialog open={showAddMoneyDialog} onOpenChange={setShowAddMoneyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Money to Wallet</DialogTitle>
+            <DialogDescription>
+              Enter the amount you want to add to your wallet balance.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              type="number"
+              placeholder="Enter amount (₹)"
+              value={walletAmount}
+              onChange={(e) => setWalletAmount(e.target.value)}
+              min="1"
+              step="1"
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowAddMoneyDialog(false);
+                setWalletAmount("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmAddMoney}
+              disabled={!walletAmount || Number(walletAmount) <= 0 || addMoneyMutation.isPending}
+            >
+              {addMoneyMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
+              Add Money
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Request Account Deletion</DialogTitle>
+            <DialogDescription>
+              Please provide a reason for deleting your account. This action will be reviewed by our team.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Textarea
+              placeholder="Reason for account deletion..."
+              value={deleteReason}
+              onChange={(e) => setDeleteReason(e.target.value)}
+              rows={4}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteReason("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteAccount}
+              disabled={!deleteReason.trim() || requestDeletionMutation.isPending}
+            >
+              {requestDeletionMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : null}
+              Submit Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
