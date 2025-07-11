@@ -15,7 +15,7 @@ export function registerProfileRoutes(app: Express) {
   app.put("/api/profile", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
-      const { name, email, phone, address } = req.body;
+      const { name, email, phone } = req.body;
 
       logAPIRequest("PUT /api/profile", userId, { name, email });
 
@@ -38,7 +38,6 @@ export function registerProfileRoutes(app: Express) {
         name,
         email,
         phone: phone || null,
-        address: address || null,
         updatedAt: new Date(),
       });
 
@@ -53,7 +52,6 @@ export function registerProfileRoutes(app: Express) {
           name: updatedUser.name,
           email: updatedUser.email,
           phone: updatedUser.phone,
-          address: updatedUser.address,
         },
       });
     } catch (error) {
@@ -304,16 +302,19 @@ export function registerProfileRoutes(app: Express) {
         });
       }
 
-      // Log deletion reason
-      await storage.createDeletionRequest({
-        userId,
-        reason,
-        requestedAt: new Date(),
-        status: "completed",
-        userEmail: user.email,
-        userName: user.name || user.username || user.email,
-        processedAt: new Date(),
-      });
+      // Log deletion reason - check if already exists first
+      const existingDeletionRequest = await storage.getDeletionRequest(userId);
+      if (!existingDeletionRequest) {
+        await storage.createDeletionRequest({
+          userId,
+          reason,
+          requestedAt: new Date(),
+          status: "completed",
+          userEmail: user.email,
+          userName: user.name || user.username || user.email,
+          processedAt: new Date(),
+        });
+      }
 
       // Delete user data in sequence
       // 1. Clear cart

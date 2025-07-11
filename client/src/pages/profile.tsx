@@ -53,7 +53,6 @@ const profileSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().optional(),
-  address: z.string().min(1, "Address is required"),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -116,7 +115,6 @@ const Profile = () => {
     name: user?.name || "",
     email: user?.email || "",
     phone: user?.phone || "",
-    address: user?.address || "",
   };
 
   const form = useForm<ProfileFormValues>({
@@ -469,24 +467,7 @@ const Profile = () => {
                               </FormItem>
                             )}
                           />
-                          <FormField
-                            control={form.control}
-                            name="address"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-xs sm:text-sm">
-                                  Address
-                                </FormLabel>
-                                <FormControl>
-                                  <Input
-                                    className="text-xs sm:text-sm h-8 sm:h-10"
-                                    {...field}
-                                  />
-                                </FormControl>
-                                <FormMessage className="text-xs" />
-                              </FormItem>
-                            )}
-                          />
+
 
                           <div>
                             <Button
