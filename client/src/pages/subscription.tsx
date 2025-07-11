@@ -739,7 +739,7 @@ const Subscription = () => {
                           <div>
                             <div className="flex justify-between">
                               <span className="text-xl font-bold text-gray-800 mb-1">
-                                🚚 Delivary Address
+                                🚚 Delivery Address
                               </span>
                             </div>
                             <div className="flex flex-col">
