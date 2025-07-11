@@ -261,7 +261,7 @@ export function registerProfileRoutes(app: Express) {
         requestedAt: new Date(),
         status: "pending",
         userEmail: user.email,
-        userName: user.name,
+        userName: user.name || user.username || user.email,
       });
 
       // Mark user as pending deletion
