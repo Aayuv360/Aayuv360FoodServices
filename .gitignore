@@ -5,7 +5,7 @@ server/public
 vite.config.ts.*
 *.tar.gz
 
-# Environment variables - Use .env.example for template
+# Environment variables - Only commit .env for development
 .env.local
-.env.production
-.env.staging
+# Note: .env.development, .env.staging, .env.production are committed for team use
+# Real production secrets should be set in deployment dashboard
