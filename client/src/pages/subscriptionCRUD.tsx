@@ -60,7 +60,7 @@ import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
-// SubscriptionPlanCards removed
+import { SubscriptionPlanCards } from "./subscriptionPlanCards";
 
 const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
@@ -309,13 +309,10 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         upgradePrice?.changeType === "priceUp"
           ? (upgradePrice?.price ?? 0)
           : (data?.plan?.price ?? 0);
-      // Generate a temporary ID for payment tracking
-      const tempPaymentId = Math.floor(Math.random() * 1000000);
-
       return new Promise((resolve, reject) => {
         initiatePayment({
           amount: Math.floor(subscriptionPrice),
-          orderId: tempPaymentId,
+          orderId: previousPlanId,
           type: subscriptionType,
           description: `${data.plan.name} Millet Meal Subscription`,
           name: "Aayuv Millet Foods",
@@ -323,11 +320,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
           onSuccess: async (paymentData: RazorpayPaymentData) => {
             try {
-              // Update subscription only after successful payment
               const subscription = await apiRequest(
                 "PATCH",
                 `/api/subscriptions/${previousPlanId}`,
                 {
+                  // status: "active",
                   razorpayPaymentId: paymentData.razorpay_payment_id,
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
@@ -336,30 +333,30 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
               );
 
               toast({
-                title: "Subscription Update Successful!",
-                description: `You have successfully updated your subscription to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
+                title: "Subscription Successful!",
+                description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
                 variant: "default",
               });
 
+              // navigate(
+              //   `/payment-success?subscriptionId=${previousPlanId}&type=subscription`,
+              // );
               setFormStep("success");
+
               resolve(subscription);
             } catch (error) {
-              console.error("Subscription update error:", error);
               reject(error);
             }
           },
 
-          onFailure: (error: any) => {
-            // Don't show error for user cancellation
-            if (error.type !== 'user_cancelled') {
-              toast({
-                title: "Payment Failed",
-                description:
-                  error.message ||
-                  "Failed to process your payment. Please try again.",
-                variant: "destructive",
-              });
-            }
+          onFailure: (error: Error) => {
+            toast({
+              title: "Payment Failed",
+              description:
+                error.message ||
+                "Failed to process your payment. Please try again.",
+              variant: "destructive",
+            });
             reject(error);
           },
         });
@@ -644,32 +641,13 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
               </TabsList>
             </Tabs>
             <div>
-              {/* SubscriptionPlanCards component removed - functionality integrated inline */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {filteredPlans.map((plan: any) => (
-                  <Card 
-                    key={plan._id} 
-                    className={`cursor-pointer transition-all ${selectedPlan?._id === plan._id ? 'ring-2 ring-orange-500' : ''}`}
-                    onClick={() => setSelectedPlan(plan)}
-                  >
-                    <CardHeader>
-                      <CardTitle>{plan.name}</CardTitle>
-                      <CardDescription>₹{plan.price}/{plan.duration} days</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600">{plan.description}</p>
-                      <ul className="mt-2 space-y-1">
-                        {plan.features.map((feature: string, idx: number) => (
-                          <li key={idx} className="text-sm flex items-center">
-                            <Check className="h-4 w-4 text-green-500 mr-2" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <SubscriptionPlanCards
+                filteredPlans={filteredPlans}
+                selectedPlan={selectedPlan}
+                setSelectedPlan={setSelectedPlan}
+                isMobile={isMobile}
+                setDefaulMealModalOpen={setDefaulMealModalOpen}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm ">

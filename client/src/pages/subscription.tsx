@@ -66,8 +66,8 @@ import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
+import { SubscriptionPlanCards } from "./subscriptionPlanCards";
 import { useIsMobile } from "@/hooks/use-mobile";
-// SubscriptionPlanCards removed
 
 const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
@@ -198,13 +198,17 @@ const Subscription = () => {
         deliveryAddressId: selectedAddress?.id,
       };
 
-      // Generate a temporary subscription ID for payment tracking
-      const tempSubscriptionId = Math.floor(Math.random() * 1000000);
+      const response = await apiRequest(
+        "POST",
+        "/api/subscriptions/generate-id",
+      );
+
+      const { id: subscriptionId } = await response.json();
 
       return new Promise((resolve, reject) => {
         initiatePayment({
           amount: data.plan.price || 0,
-          orderId: tempSubscriptionId,
+          orderId: subscriptionId,
           type: "subscription",
           description: `${data.plan.name} Millet Meal Subscription`,
           name: "Aayuv Millet Foods",
@@ -212,16 +216,16 @@ const Subscription = () => {
 
           onSuccess: async (paymentData: RazorpayPaymentData) => {
             try {
-              // Create subscription only after successful payment
-              const createdSubscription = await apiRequest(
+              const updatedSubscription = await apiRequest(
                 "POST",
                 `/api/subscriptions`,
                 {
                   ...payload,
+                  id: subscriptionId,
                   razorpayPaymentId: paymentData.razorpay_payment_id,
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
-                }
+                },
               );
 
               toast({
@@ -230,17 +234,19 @@ const Subscription = () => {
                 variant: "default",
               });
 
+              // navigate(
+              //   `/payment-success?subscriptionId=${subscriptionId}&type=subscription`,
+              // );
               setFormStep("success");
-              resolve(createdSubscription);
+              resolve(updatedSubscription);
             } catch (error) {
-              console.error("Subscription creation error:", error);
               reject(error);
             }
           },
 
           onFailure: (error: any) => {
             // Don't show error for user cancellation
-            if (error.type !== 'user_cancelled') {
+            if (error.type !== "user_cancelled") {
               toast({
                 title: "Payment Failed",
                 description:
@@ -285,7 +291,7 @@ const Subscription = () => {
       editingAddress,
       setAddressModalOpen,
       setEditingAddress,
-      addressData
+      addressData,
     );
   };
   const handleDeleteAddress = async (addressId: number) => {
@@ -331,7 +337,7 @@ const Subscription = () => {
     setFilteredPlans(sortedPlans);
 
     const defaultPlan = sortedPlans?.find(
-      (plan: any) => plan.planType === initialPlan
+      (plan: any) => plan.planType === initialPlan,
     );
     if (defaultPlan) {
       form.setValue("plan", defaultPlan);
@@ -361,7 +367,7 @@ const Subscription = () => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "veg" as "veg" | "veg_with_egg" | "nonveg"
+                      "veg" as "veg" | "veg_with_egg" | "nonveg",
                     )
                   }
                 >
@@ -372,7 +378,7 @@ const Subscription = () => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "veg_with_egg" as "veg" | "veg_with_egg" | "nonveg"
+                      "veg_with_egg" as "veg" | "veg_with_egg" | "nonveg",
                     )
                   }
                 >
@@ -383,7 +389,7 @@ const Subscription = () => {
                   onClick={() =>
                     form.setValue(
                       "dietaryPreference",
-                      "nonveg" as "veg" | "veg_with_egg" | "nonveg"
+                      "nonveg" as "veg" | "veg_with_egg" | "nonveg",
                     )
                   }
                 >
@@ -392,32 +398,13 @@ const Subscription = () => {
               </TabsList>
             </Tabs>
             <div>
-              {/* SubscriptionPlanCards component removed - functionality integrated inline */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {filteredPlans.map((plan: any) => (
-                  <Card 
-                    key={plan._id} 
-                    className={`cursor-pointer transition-all ${selectedPlan?._id === plan._id ? 'ring-2 ring-orange-500' : ''}`}
-                    onClick={() => setSelectedPlan(plan)}
-                  >
-                    <CardHeader>
-                      <CardTitle>{plan.name}</CardTitle>
-                      <CardDescription>₹{plan.price}/{plan.duration} days</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-gray-600">{plan.description}</p>
-                      <ul className="mt-2 space-y-1">
-                        {plan.features.map((feature: string, idx: number) => (
-                          <li key={idx} className="text-sm flex items-center">
-                            <Check className="h-4 w-4 text-green-500 mr-2" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              <SubscriptionPlanCards
+                filteredPlans={filteredPlans}
+                selectedPlan={selectedPlan}
+                setSelectedPlan={setSelectedPlan}
+                isMobile={isMobile}
+                setDefaulMealModalOpen={setDefaulMealModalOpen}
+              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-10 mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm ">
@@ -546,7 +533,7 @@ const Subscription = () => {
                                 onClick={() =>
                                   form.setValue(
                                     "personCount",
-                                    Math.max(1, field.value - 1)
+                                    Math.max(1, field.value - 1),
                                   )
                                 }
                                 disabled={field.value <= 1}
@@ -565,7 +552,7 @@ const Subscription = () => {
                                 onClick={() =>
                                   form.setValue(
                                     "personCount",
-                                    Math.min(10, field.value + 1)
+                                    Math.min(10, field.value + 1),
                                   )
                                 }
                                 disabled={field.value >= 10}
@@ -726,7 +713,7 @@ const Subscription = () => {
                     <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
                       {(() => {
                         const address = savedAddresses.find(
-                          (address) => address.id === selectedAddress?.id
+                          (address) => address.id === selectedAddress?.id,
                         );
                         if (!address)
                           return (

@@ -92,28 +92,48 @@ export const useRazorpay = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const razorpayLoaded = useRazorpayScript();
-  const [razorpayKey, setRazorpayKey] = useState<string | null>(null);
 
-  // Fetch Razorpay key from server on component mount
-  useEffect(() => {
-    const fetchRazorpayConfig = async () => {
-      try {
-        const response = await fetch('/api/payments/config');
-        if (response.ok) {
-          const config = await response.json();
-          setRazorpayKey(config.key);
-        } else {
-          console.error('Failed to fetch Razorpay config');
-        }
-      } catch (error) {
-        console.error('Error fetching Razorpay config:', error);
+  // Create order mutation
+  const createOrderMutation = useMutation({
+    mutationFn: async (options: CreateOrderOptions) => {
+      const res = await apiRequest(
+        "POST",
+        "/api/payments/create-order",
+        options,
+      );
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to create order");
       }
-    };
+      return res.json();
+    },
+  });
 
-    fetchRazorpayConfig();
-  }, []);
+  // Verify payment mutation
+  const verifyPaymentMutation = useMutation({
+    mutationFn: async (options: PaymentVerifyOptions) => {
+      const res = await apiRequest("POST", "/api/payments/verify", options);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to verify payment");
+      }
+      return res.json();
+    },
+  });
 
-  // Simplified payment - no server order creation needed for new flow
+  // Payment failure mutation
+  const paymentFailureMutation = useMutation({
+    mutationFn: async (options: PaymentFailureOptions) => {
+      const res = await apiRequest("POST", "/api/payments/failed", options);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(
+          errorData.message || "Failed to handle payment failure",
+        );
+      }
+      return res.json();
+    },
+  });
 
   // Function to initiate payment
   const initiatePayment = useCallback(
@@ -140,14 +160,6 @@ export const useRazorpay = () => {
         return;
       }
 
-      if (!razorpayKey) {
-        toast({
-          title: "Payment configuration loading",
-          description: "Please wait while we load payment configuration.",
-        });
-        return;
-      }
-
       if (!user) {
         toast({
           title: "Authentication required",
@@ -158,28 +170,46 @@ export const useRazorpay = () => {
       }
 
       try {
-        // Check if Razorpay is available
-        if (!window.Razorpay) {
-          throw new Error("Razorpay SDK not loaded. Please refresh the page and try again.");
-        }
+        // Create order on server
+        const orderData = await createOrderMutation.mutateAsync({
+          amount: options.amount,
+          orderId: options.orderId,
+          type: options.type || "order",
+        });
 
-        // Simplified payment options for direct Razorpay integration
         const razorpayOptions: RazorpayOptions = {
-          key: razorpayKey, // Use the key from server
-          amount: Math.round(options.amount * 100), // Convert to paise
-          currency: "INR",
+          key: orderData.key,
+          amount: orderData.amount,
+          currency: orderData.currency,
           name: options.name || "Aayuv Millet Foods",
           description: options.description || "Order Payment",
-          image: "/favicon.png",
-          order_id: `order_${options.orderId}_${Date.now()}`, // Use temp order ID
+          image: "/images/logo.png", // Logo URL
+          order_id: orderData.orderId,
           handler: async (response) => {
             try {
-              // Payment successful - call onSuccess with payment details
+              await verifyPaymentMutation.mutateAsync({
+                orderId: options.orderId,
+                razorpayOrderId: response.razorpay_order_id,
+                razorpayPaymentId: response.razorpay_payment_id,
+                razorpaySignature: response.razorpay_signature,
+                type: options.type || "order",
+              });
+
+              toast({
+                title: "Payment Successful",
+                description: "Your payment has been processed successfully",
+              });
+
               if (options.onSuccess) {
                 options.onSuccess(response);
               }
             } catch (error: any) {
-              console.error("Payment success handling error:", error);
+              toast({
+                title: "Payment Verification Failed",
+                description: error.message || "Failed to verify payment",
+                variant: "destructive",
+              });
+
               if (options.onFailure) {
                 options.onFailure(error);
               }
@@ -206,9 +236,9 @@ export const useRazorpay = () => {
               // Don't call onFailure for user cancellation
               // The cart should remain intact when user cancels payment
               if (options.onFailure) {
-                options.onFailure({ 
-                  message: "Payment cancelled by user", 
-                  type: "user_cancelled" 
+                options.onFailure({
+                  message: "Payment cancelled by user",
+                  type: "user_cancelled",
                 });
               }
             },
@@ -216,19 +246,6 @@ export const useRazorpay = () => {
         };
 
         const razorpay = new window.Razorpay(razorpayOptions);
-        
-        // Add error handler for payment failures
-        razorpay.on('payment.failed', function (response: any) {
-          console.error("Payment failed:", response.error);
-          if (options.onFailure) {
-            options.onFailure({
-              code: response.error.code,
-              description: response.error.description,
-              message: response.error.reason || "Payment failed"
-            });
-          }
-        });
-        
         razorpay.open();
       } catch (error: any) {
         toast({
@@ -242,13 +259,13 @@ export const useRazorpay = () => {
         }
       }
     },
-    [razorpayLoaded, user, toast],
+    [razorpayLoaded, user, createOrderMutation, verifyPaymentMutation, toast],
   );
 
   return {
     initiatePayment,
-    isLoading: false, // No longer using server mutations
-    isError: false,
-    error: null,
+    isLoading: createOrderMutation.isPending || verifyPaymentMutation.isPending,
+    isError: createOrderMutation.isError || verifyPaymentMutation.isError,
+    error: createOrderMutation.error || verifyPaymentMutation.error,
   };
 };
