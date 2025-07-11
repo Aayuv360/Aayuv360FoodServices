@@ -2,6 +2,7 @@
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { smsService } from "../sms-service";
+import { getNextSequence } from "../shared/mongoModels";
 
 export function registerOrderRoutes(app: Express) {
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
@@ -14,8 +15,8 @@ export function registerOrderRoutes(app: Express) {
   // Generate order ID endpoint
   app.post("/api/orders/generate-id", isAuthenticated, async (req, res) => {
     try {
-      // Generate unique order ID
-      const orderId = Date.now(); // Simple timestamp-based ID
+      // Generate unique order ID using sequence
+      const orderId = await getNextSequence("order");
       res.json({ orderId });
     } catch (error) {
       console.error("Error generating order ID:", error);

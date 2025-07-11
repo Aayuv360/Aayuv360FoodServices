@@ -290,7 +290,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               razorpaySignature: response.razorpay_signature,
             };
 
-            const res = await apiRequest("PATCH", `/api/orders/${orderId}`, finalOrderPayload);
+            const res = await apiRequest(
+              "PATCH",
+              `/api/orders/${orderId}`,
+              finalOrderPayload,
+            );
 
             if (!res.ok) {
               throw new Error("Failed to update order after payment");
@@ -311,7 +315,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             console.error("Error updating order after payment:", error);
             toast({
               title: "Order Update Failed",
-              description: "Payment successful but order update failed. Please contact support.",
+              description:
+                "Payment successful but order update failed. Please contact support.",
               variant: "destructive",
             });
           }
