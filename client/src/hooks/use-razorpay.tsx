@@ -268,14 +268,14 @@ export const useRazorpay = () => {
       orderId: string,
       title: string,
       description: string,
-      onSuccess: (paymentDetails: any) => void
+      onSuccess: (paymentDetails: any) => void,
     ) => {
       if (!razorpayLoaded) {
         throw new Error("Razorpay is not loaded yet");
       }
 
       try {
-        // Get Razorpay configuration
+        // Get Razorpay configuration from server
         const configRes = await apiRequest("GET", "/api/payments/config");
         const config = await configRes.json();
 
@@ -286,10 +286,9 @@ export const useRazorpay = () => {
           name: "Aayuv Millet Foods",
           description: description,
           image: "/images/logo.png",
-          order_id: orderId, // Use the provided orderId
+          order_id: orderId,
           handler: async (response: any) => {
             try {
-              // Call success callback with payment details
               onSuccess({
                 payment_id: response.razorpay_payment_id,
                 order_id: response.razorpay_order_id,
@@ -312,9 +311,9 @@ export const useRazorpay = () => {
             }
           },
           prefill: {
-            name: user.name || "",
-            email: user.email || "",
-            contact: user.phone || "",
+            name: user?.name || "",
+            email: user?.email || "",
+            contact: user?.phone || "",
           },
           notes: {
             purpose: "wallet_topup",
@@ -334,7 +333,7 @@ export const useRazorpay = () => {
 
         const razorpay = new window.Razorpay(razorpayOptions);
         razorpay.open();
-        
+
         return { success: true };
       } catch (error: any) {
         toast({
@@ -345,7 +344,7 @@ export const useRazorpay = () => {
         throw error;
       }
     },
-    [razorpayLoaded, user, toast]
+    [razorpayLoaded, user, toast],
   );
 
   return {
