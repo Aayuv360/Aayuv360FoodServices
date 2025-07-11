@@ -212,14 +212,20 @@ The architecture prioritizes maintainability, scalability, and user experience w
 
 ### Cart Payment Flow Issue Fixed - COMPLETED ✅
 - **Problem**: Orders created before payment, causing "processed" orders when payment was cancelled
-- **Root Cause**: Old payment flow created order first, then initiated payment
+- **Root Cause**: CartSidebar.tsx was creating order first (POST /api/orders), then initiating payment
 - **Solution**: Implemented payment-first approach for cart orders (same as subscriptions)
 - **Changes Made**:
-  - Cart orders now use temporary order IDs during payment
-  - Orders only created after successful payment verification
+  - Removed order creation before payment in CartSidebar.tsx
+  - Cart orders now use temporary order IDs during payment (`cart_${timestamp}_${random}`)
+  - Orders only created after successful payment verification with payment details included
   - When payment is cancelled, no order is created in database
   - Cart remains intact for retry when payment fails or is cancelled
   - Improved error handling for payment vs order creation failures
+
+**Technical Details**:
+- Old flow: POST /api/orders → initiate payment → PATCH /api/orders (if success)
+- New flow: initiate payment with temp ID → POST /api/orders with payment details (if success)
+- Temporary order IDs prevent database pollution during payment process
 
 **Benefits**:
 - No orphaned orders when payment is cancelled
