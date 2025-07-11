@@ -65,10 +65,19 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       try {
-        const user = await storage.getUserByUsername(username);
+        // Normalize input for case-insensitive search
+        const normalizedInput = username.toLowerCase().trim();
+        
+        // Try to find user by username (case insensitive) or email
+        let user = await storage.getUserByUsername(normalizedInput);
+        
+        // If not found by username, try email
+        if (!user && normalizedInput.includes('@')) {
+          user = await storage.getUserByEmail(normalizedInput);
+        }
 
         if (!user) {
-          return done(null, false, { message: "Incorrect username." });
+          return done(null, false, { message: "Incorrect username or email." });
         }
 
         const isPasswordValid = await comparePasswords(password, user.password);
