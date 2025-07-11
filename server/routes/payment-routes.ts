@@ -1,4 +1,3 @@
-
 import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import {
@@ -67,19 +66,7 @@ export function registerPaymentRoutes(app: Express) {
         entity = subscription;
         entityType = "subscriptionRenewal";
       } else {
-        const order = await storage.getOrder(orderId);
-
-        if (!order) {
-          return res.status(404).json({ message: "Order not found" });
-        }
-
-        if (order.userId !== userId) {
-          return res.status(403).json({
-            message: "You do not have permission to pay for this order",
-          });
-        }
-
-        entity = order;
+        entity = orderId;
       }
 
       const razorpayOrder = await createOrder({
@@ -154,7 +141,7 @@ export function registerPaymentRoutes(app: Express) {
         razorpayPaymentId,
         razorpayOrderId,
         razorpaySignature,
-        type as "order" | "subscription"
+        type as "order" | "subscription",
       );
 
       res.json(result);
@@ -244,7 +231,7 @@ export function registerPaymentRoutes(app: Express) {
         const isValid = verifyPaymentSignature(
           razorpayOrderId,
           razorpayPaymentId,
-          razorpaySignature
+          razorpaySignature,
         );
 
         if (!isValid) {
@@ -272,21 +259,21 @@ export function registerPaymentRoutes(app: Express) {
   app.get("/api/payments/config", (req, res) => {
     try {
       const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
-      
+
       if (!razorpayKeyId) {
-        return res.status(500).json({ 
-          message: "Payment gateway not configured" 
+        return res.status(500).json({
+          message: "Payment gateway not configured",
         });
       }
 
       res.json({
         key: razorpayKeyId,
-        currency: "INR"
+        currency: "INR",
       });
     } catch (error) {
       console.error("Error getting payment config:", error);
-      res.status(500).json({ 
-        message: "Error getting payment configuration" 
+      res.status(500).json({
+        message: "Error getting payment configuration",
       });
     }
   });

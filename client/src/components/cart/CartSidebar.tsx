@@ -285,8 +285,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             };
 
             const res = await apiRequest(
-              "PATCH",
-              `/api/orders/${orderId}`,
+              "POST",
+              "/api/orders",
               finalOrderPayload,
             );
 
