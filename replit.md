@@ -200,7 +200,7 @@ The architecture prioritizes maintainability, scalability, and user experience w
 
 ### Environment Variables Configuration - COMPLETED ✅ (July 2025)
 - **Enhancement**: Added VITE_RAZORPAY_KEY_ID to all environment files for proper frontend access
-- **Files Updated**: `.env.development`, `.env.staging`, `.env.production`, `client/.env`
+- **Files Updated**: `.env.development`, `.env.staging`, `.env.production`
 - **Solution**: Used Vite's `import.meta.env.VITE_RAZORPAY_KEY_ID` instead of server API calls
 - **Benefits**: 
   - Eliminates "process is not defined" errors in browser
