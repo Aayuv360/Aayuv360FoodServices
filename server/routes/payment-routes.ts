@@ -18,6 +18,27 @@ export function registerPaymentRoutes(app: Express) {
     next();
   };
 
+  // Get Razorpay configuration for frontend
+  app.get("/api/payments/config", (req, res) => {
+    try {
+      const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
+      
+      if (!razorpayKeyId) {
+        return res.status(500).json({ 
+          message: "Razorpay configuration not available" 
+        });
+      }
+
+      res.json({
+        key: razorpayKeyId,
+        currency: "INR"
+      });
+    } catch (error) {
+      console.error("Error getting payment config:", error);
+      res.status(500).json({ message: "Internal server error" });
+    }
+  });
+
   app.post("/api/payments/create-order", isAuthenticated, async (req, res) => {
     try {
       const userId = (req.user as any).id;
