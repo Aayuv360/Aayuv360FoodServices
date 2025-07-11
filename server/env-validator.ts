@@ -1,7 +1,9 @@
 // Environment Variable Validator
 import dotenv from 'dotenv';
 
-dotenv.config();
+// Load environment file based on NODE_ENV
+const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+dotenv.config({ path: envFile });
 
 interface EnvConfig {
   NODE_ENV: string;
