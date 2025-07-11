@@ -254,27 +254,4 @@ export function registerPaymentRoutes(app: Express) {
       res.status(500).json({ message: "Error updating order" });
     }
   });
-
-  // Add endpoint to get Razorpay public key
-  app.get("/api/payments/config", (req, res) => {
-    try {
-      const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
-
-      if (!razorpayKeyId) {
-        return res.status(500).json({
-          message: "Payment gateway not configured",
-        });
-      }
-
-      res.json({
-        key: razorpayKeyId,
-        currency: "INR",
-      });
-    } catch (error) {
-      console.error("Error getting payment config:", error);
-      res.status(500).json({
-        message: "Error getting payment configuration",
-      });
-    }
-  });
 }
