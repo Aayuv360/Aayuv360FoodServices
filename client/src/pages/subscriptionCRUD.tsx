@@ -309,10 +309,13 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         upgradePrice?.changeType === "priceUp"
           ? (upgradePrice?.price ?? 0)
           : (data?.plan?.price ?? 0);
+      // Generate a temporary ID for payment tracking
+      const tempPaymentId = Math.floor(Math.random() * 1000000);
+
       return new Promise((resolve, reject) => {
         initiatePayment({
           amount: Math.floor(subscriptionPrice),
-          orderId: previousPlanId,
+          orderId: tempPaymentId,
           type: subscriptionType,
           description: `${data.plan.name} Millet Meal Subscription`,
           name: "Aayuv Millet Foods",
@@ -320,11 +323,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
           onSuccess: async (paymentData: RazorpayPaymentData) => {
             try {
+              // Update subscription only after successful payment
               const subscription = await apiRequest(
                 "PATCH",
                 `/api/subscriptions/${previousPlanId}`,
                 {
-                  // status: "active",
                   razorpayPaymentId: paymentData.razorpay_payment_id,
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
@@ -333,30 +336,30 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
               );
 
               toast({
-                title: "Subscription Successful!",
-                description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
+                title: "Subscription Update Successful!",
+                description: `You have successfully updated your subscription to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
                 variant: "default",
               });
 
-              // navigate(
-              //   `/payment-success?subscriptionId=${previousPlanId}&type=subscription`,
-              // );
               setFormStep("success");
-
               resolve(subscription);
             } catch (error) {
+              console.error("Subscription update error:", error);
               reject(error);
             }
           },
 
-          onFailure: (error: Error) => {
-            toast({
-              title: "Payment Failed",
-              description:
-                error.message ||
-                "Failed to process your payment. Please try again.",
-              variant: "destructive",
-            });
+          onFailure: (error: any) => {
+            // Don't show error for user cancellation
+            if (error.type !== 'user_cancelled') {
+              toast({
+                title: "Payment Failed",
+                description:
+                  error.message ||
+                  "Failed to process your payment. Please try again.",
+                variant: "destructive",
+              });
+            }
             reject(error);
           },
         });

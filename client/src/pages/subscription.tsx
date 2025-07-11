@@ -66,8 +66,8 @@ import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
-// SubscriptionPlanCards removed
 import { useIsMobile } from "@/hooks/use-mobile";
+// SubscriptionPlanCards removed
 
 const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
@@ -198,17 +198,13 @@ const Subscription = () => {
         deliveryAddressId: selectedAddress?.id,
       };
 
-      const response = await apiRequest(
-        "POST",
-        "/api/subscriptions/generate-id"
-      );
-
-      const { id: subscriptionId } = await response.json();
+      // Generate a temporary subscription ID for payment tracking
+      const tempSubscriptionId = Math.floor(Math.random() * 1000000);
 
       return new Promise((resolve, reject) => {
         initiatePayment({
           amount: data.plan.price || 0,
-          orderId: subscriptionId,
+          orderId: tempSubscriptionId,
           type: "subscription",
           description: `${data.plan.name} Millet Meal Subscription`,
           name: "Aayuv Millet Foods",
@@ -216,12 +212,12 @@ const Subscription = () => {
 
           onSuccess: async (paymentData: RazorpayPaymentData) => {
             try {
-              const updatedSubscription = await apiRequest(
+              // Create subscription only after successful payment
+              const createdSubscription = await apiRequest(
                 "POST",
                 `/api/subscriptions`,
                 {
                   ...payload,
-                  id: subscriptionId,
                   razorpayPaymentId: paymentData.razorpay_payment_id,
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
@@ -234,12 +230,10 @@ const Subscription = () => {
                 variant: "default",
               });
 
-              // navigate(
-              //   `/payment-success?subscriptionId=${subscriptionId}&type=subscription`,
-              // );
               setFormStep("success");
-              resolve(updatedSubscription);
+              resolve(createdSubscription);
             } catch (error) {
+              console.error("Subscription creation error:", error);
               reject(error);
             }
           },
