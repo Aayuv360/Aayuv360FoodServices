@@ -11,6 +11,8 @@ import {
   SubscriptionPlan,
   getNextSequence,
   NewsletterEmail,
+  WalletTransaction,
+  DeletionRequest,
 } from "../shared/mongoModels";
 import expressSession from "express-session";
 import createMemoryStore from "memorystore";
@@ -1309,6 +1311,80 @@ export class MongoDBStorage implements IStorage {
       await newEntry.save();
       return newEntry.toObject();
     } catch (error) {
+      throw error;
+    }
+  }
+
+  // Wallet transaction methods
+  async createWalletTransaction(transactionData: any): Promise<any> {
+    try {
+      const nextId = await getNextSequence("walletTransactionId");
+      const transaction = new WalletTransaction({
+        id: nextId,
+        ...transactionData,
+        createdAt: new Date(),
+      });
+      await transaction.save();
+      return transaction.toObject();
+    } catch (error) {
+      console.error("Error creating wallet transaction:", error);
+      throw error;
+    }
+  }
+
+  async getWalletTransactions(userId: number, page = 1, limit = 20): Promise<any[]> {
+    try {
+      const skip = (page - 1) * limit;
+      const transactions = await WalletTransaction.find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
+      return transactions;
+    } catch (error) {
+      console.error("Error getting wallet transactions:", error);
+      throw error;
+    }
+  }
+
+  // Deletion request methods
+  async createDeletionRequest(requestData: any): Promise<any> {
+    try {
+      const nextId = await getNextSequence("deletionRequestId");
+      const request = new DeletionRequest({
+        id: nextId,
+        ...requestData,
+        requestedAt: new Date(),
+        status: "pending",
+      });
+      await request.save();
+      return request.toObject();
+    } catch (error) {
+      console.error("Error creating deletion request:", error);
+      throw error;
+    }
+  }
+
+  async getDeletionRequest(userId: number): Promise<any | undefined> {
+    try {
+      const request = await DeletionRequest.findOne({ userId }).lean();
+      return request;
+    } catch (error) {
+      console.error("Error getting deletion request:", error);
+      throw error;
+    }
+  }
+
+  async updateDeletionRequest(id: number, updateData: any): Promise<any | undefined> {
+    try {
+      const request = await DeletionRequest.findOneAndUpdate(
+        { id },
+        { ...updateData, updatedAt: new Date() },
+        { new: true }
+      ).lean();
+      return request;
+    } catch (error) {
+      console.error("Error updating deletion request:", error);
       throw error;
     }
   }

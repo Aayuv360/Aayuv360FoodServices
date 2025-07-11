@@ -11,6 +11,9 @@ export interface UserDocument extends Document {
   updatedAt: Date;
   stripeCustomerId?: string;
   stripeSubscriptionId?: string;
+  walletBalance?: number;
+  deletionRequested?: boolean;
+  deletionRequestedAt?: Date;
   preferences?: {
     dietaryPreference?: string;
     favoriteMeals?: number[];
@@ -190,6 +193,9 @@ const userSchema = new Schema<UserDocument>({
   role: { type: String, default: "user" },
   stripeCustomerId: String,
   stripeSubscriptionId: String,
+  walletBalance: { type: Number, default: 0 },
+  deletionRequested: { type: Boolean, default: false },
+  deletionRequestedAt: { type: Date },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });
@@ -499,4 +505,139 @@ const NewsletterEmailSchema: Schema<INewsletterEmail> = new Schema({
 export const NewsletterEmail = mongoose.model<INewsletterEmail>(
   "NewsletterEmail",
   NewsletterEmailSchema,
+);
+
+// Wallet Transaction Schema
+export interface IWalletTransaction extends Document {
+  id: number;
+  userId: number;
+  type: "credit" | "debit";
+  amount: number;
+  previousBalance: number;
+  newBalance: number;
+  description: string;
+  paymentMethod: string;
+  status: "completed" | "pending" | "failed";
+  transactionId: string;
+  createdAt: Date;
+}
+
+const WalletTransactionSchema: Schema<IWalletTransaction> = new Schema({
+  id: {
+    type: Number,
+    unique: true,
+    required: true,
+  },
+  userId: {
+    type: Number,
+    required: true,
+    index: true,
+  },
+  type: {
+    type: String,
+    enum: ["credit", "debit"],
+    required: true,
+  },
+  amount: {
+    type: Number,
+    required: true,
+  },
+  previousBalance: {
+    type: Number,
+    required: true,
+  },
+  newBalance: {
+    type: Number,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  paymentMethod: {
+    type: String,
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ["completed", "pending", "failed"],
+    default: "completed",
+  },
+  transactionId: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+export const WalletTransaction = mongoose.model<IWalletTransaction>(
+  "WalletTransaction",
+  WalletTransactionSchema,
+);
+
+// Deletion Request Schema
+export interface IDeletionRequest extends Document {
+  id: number;
+  userId: number;
+  reason: string;
+  requestedAt: Date;
+  status: "pending" | "approved" | "rejected" | "completed";
+  userEmail: string;
+  userName: string;
+  adminNotes?: string;
+  processedAt?: Date;
+  processedBy?: number;
+}
+
+const DeletionRequestSchema: Schema<IDeletionRequest> = new Schema({
+  id: {
+    type: Number,
+    unique: true,
+    required: true,
+  },
+  userId: {
+    type: Number,
+    required: true,
+    unique: true, // One deletion request per user
+    index: true,
+  },
+  reason: {
+    type: String,
+    required: true,
+  },
+  requestedAt: {
+    type: Date,
+    default: Date.now,
+  },
+  status: {
+    type: String,
+    enum: ["pending", "approved", "rejected", "completed"],
+    default: "pending",
+  },
+  userEmail: {
+    type: String,
+    required: true,
+  },
+  userName: {
+    type: String,
+    required: true,
+  },
+  adminNotes: {
+    type: String,
+  },
+  processedAt: {
+    type: Date,
+  },
+  processedBy: {
+    type: Number,
+  },
+});
+
+export const DeletionRequest = mongoose.model<IDeletionRequest>(
+  "DeletionRequest",
+  DeletionRequestSchema,
 );

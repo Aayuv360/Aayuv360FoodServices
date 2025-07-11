@@ -58,6 +58,7 @@ import { registerAdminRoutes } from "./routes/admin-routes";
 import { registerPaymentRoutes } from "./routes/payment-routes";
 import { registerLocationRoutes } from "./routes/location-routes";
 import { registerMiscRoutes } from "./routes/misc-routes";
+import { registerProfileRoutes } from "./routes/profile-routes";
 
 const insertUserPreferencesSchema = z.object({
   userId: z.number(),
@@ -227,6 +228,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerPaymentRoutes(app);
   registerLocationRoutes(app);
   registerMiscRoutes(app);
+  registerProfileRoutes(app);
 
   app.use("/api/delivery", deliveryRoutes);
   app.use("/api/notifications", notificationRoutes);

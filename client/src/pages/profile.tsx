@@ -13,6 +13,8 @@ import {
   ChevronRight,
   Truck,
   Wallet,
+  Plus,
+  AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -54,21 +56,18 @@ const Profile = () => {
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
 
   const searchParams = new URLSearchParams(location.search);
-const initialTab = searchParams.get("tab") || "profile";
-const [currentTab, setCurrentTab] = useState(initialTab);
+  const initialTab = searchParams.get("tab") || "profile";
+  const [currentTab, setCurrentTab] = useState(initialTab);
 
-const toggleOrderDetails = (orderId: number) => {
-  setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
-};
+  const toggleOrderDetails = (orderId: number) => {
+    setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
+  };
 
-useEffect(() => {
-  const searchParams = new URLSearchParams(location.search);
-  const tabParam = searchParams.get("tab");
-  setCurrentTab(tabParam || "profile");
-}, [location.search]);
-
-
-
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get("tab");
+    setCurrentTab(tabParam || "profile");
+  }, [location.search]);
 
   if (!user) {
     navigate("/login");
@@ -85,6 +84,18 @@ useEffect(() => {
       queryKey: ["/api/subscriptions"],
       enabled: !!user,
     });
+
+  // Wallet balance query
+  const { data: walletData, isLoading: isLoadingWallet } = useQuery({
+    queryKey: ["/api/profile/wallet"],
+    enabled: !!user && currentTab === "profile",
+  });
+
+  // Deletion status query
+  const { data: deletionStatus } = useQuery({
+    queryKey: ["/api/profile/deletion-status"],
+    enabled: !!user && currentTab === "profile",
+  });
 
   const defaultValues: ProfileFormValues = {
     name: user?.name || "",
@@ -122,6 +133,64 @@ useEffect(() => {
 
   const onSubmit = (values: ProfileFormValues) => {
     updateProfileMutation.mutate(values);
+  };
+
+  // Add money to wallet mutation
+  const addMoneyMutation = useMutation({
+    mutationFn: async (amount: number) => {
+      const res = await apiRequest("POST", "/api/profile/wallet/add", { amount });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/wallet"] });
+      toast({
+        title: "Money added successfully",
+        description: "Your wallet has been updated",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to add money",
+        description: error.message || "There was an error adding money to your wallet",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Request account deletion mutation
+  const requestDeletionMutation = useMutation({
+    mutationFn: async (reason: string) => {
+      const res = await apiRequest("POST", "/api/profile/request-deletion", { reason });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/profile/deletion-status"] });
+      toast({
+        title: "Deletion request submitted",
+        description: "Your request has been submitted and will be reviewed within 7 business days",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to submit request",
+        description: error.message || "There was an error submitting your deletion request",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleAddMoney = () => {
+    const amount = prompt("Enter amount to add to wallet (₹):");
+    if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
+      addMoneyMutation.mutate(Number(amount));
+    }
+  };
+
+  const handleDeleteAccount = () => {
+    const reason = prompt("Please provide a reason for account deletion:");
+    if (reason) {
+      requestDeletionMutation.mutate(reason);
+    }
   };
 
   const getOrderStatusClass = (status: string) => {
@@ -166,7 +235,7 @@ useEffect(() => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-light py-3 sm:py-6 min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 py-3 sm:py-6">
       <div className="container mx-auto max-w-6xl px-5 py-6">
         <div className="flex flex-col md:flex-row gap-4 sm:gap-6">
           <div className="hidden md:block w-full md:w-64 space-y-3 sm:space-y-4">
@@ -254,9 +323,27 @@ useEffect(() => {
                         <div className="flex items-center space-x-2">
                           <Wallet className="w-5 h-5 text-green-500" />
                           <span className="text-xl font-bold text-green-600">
-                            ₹ 120.00
+                            {isLoadingWallet ? (
+                              <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                              `₹${(walletData?.balance || 0).toFixed(2)}`
+                            )}
                           </span>
                         </div>
+                      </div>
+                      <div className="mt-4">
+                        <Button
+                          onClick={handleAddMoney}
+                          disabled={addMoneyMutation.isPending}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          {addMoneyMutation.isPending ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          ) : (
+                            <Plus className="w-4 h-4 mr-2" />
+                          )}
+                          Add Money
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
@@ -345,16 +432,43 @@ useEffect(() => {
 
                   <Card className="bg-white border rounded-xl shadow">
                     <CardContent className="p-6">
-                      <span className="text-lg font-medium text-red-600 mb-2">
-                        Danger Zone
-                      </span>
-                      <p className="text-sm text-gray-600 mb-4">
-                        Request to delete your account. This action is
-                        irreversible.
-                      </p>
-                      <Button variant="destructive">
-                        Request Account Deletion
-                      </Button>
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="w-5 h-5 text-red-600" />
+                        <span className="text-lg font-medium text-red-600">
+                          Danger Zone
+                        </span>
+                      </div>
+                      
+                      {deletionStatus?.deletionRequested ? (
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                          <h4 className="font-medium text-yellow-800 mb-1">
+                            Deletion Request Pending
+                          </h4>
+                          <p className="text-sm text-yellow-700 mb-2">
+                            Your account deletion request is being reviewed. 
+                            Status: <span className="font-medium">{deletionStatus.status}</span>
+                          </p>
+                          <p className="text-xs text-yellow-600">
+                            Requested on: {new Date(deletionStatus.requestedAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ) : (
+                        <>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Request to delete your account. This action will be reviewed by our team.
+                          </p>
+                          <Button 
+                            variant="destructive" 
+                            onClick={handleDeleteAccount}
+                            disabled={requestDeletionMutation.isPending}
+                          >
+                            {requestDeletionMutation.isPending ? (
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : null}
+                            Request Account Deletion
+                          </Button>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
                 </div>
