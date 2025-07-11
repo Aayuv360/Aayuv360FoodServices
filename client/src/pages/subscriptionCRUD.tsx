@@ -60,7 +60,7 @@ import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
-import { SubscriptionPlanCards } from "./subscriptionPlanCards";
+// SubscriptionPlanCards removed
 
 const deliveryTime = [
   { id: 1, time: "7:00 PM - 8:00 PM" },
@@ -641,13 +641,32 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
               </TabsList>
             </Tabs>
             <div>
-              <SubscriptionPlanCards
-                filteredPlans={filteredPlans}
-                selectedPlan={selectedPlan}
-                setSelectedPlan={setSelectedPlan}
-                isMobile={isMobile}
-                setDefaulMealModalOpen={setDefaulMealModalOpen}
-              />
+              {/* SubscriptionPlanCards component removed - functionality integrated inline */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {filteredPlans.map((plan: any) => (
+                  <Card 
+                    key={plan._id} 
+                    className={`cursor-pointer transition-all ${selectedPlan?._id === plan._id ? 'ring-2 ring-orange-500' : ''}`}
+                    onClick={() => setSelectedPlan(plan)}
+                  >
+                    <CardHeader>
+                      <CardTitle>{plan.name}</CardTitle>
+                      <CardDescription>₹{plan.price}/{plan.duration} days</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-gray-600">{plan.description}</p>
+                      <ul className="mt-2 space-y-1">
+                        {plan.features.map((feature: string, idx: number) => (
+                          <li key={idx} className="text-sm flex items-center">
+                            <Check className="h-4 w-4 text-green-500 mr-2" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm ">

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LiveOrderTracking } from '@/components/orders/LiveOrderTracking';
 import { usePushNotifications } from '@/hooks/use-push-notifications';
 import { useAuth } from '@/hooks/use-auth';
-import { SkipToMainContent } from '@/components/ui/AccessibilityToolbar';
+// SkipToMainContent removed
 
 export default function OrderTrackingPage() {
   const { orderId } = useParams<{ orderId: string }>();
@@ -134,7 +134,7 @@ export default function OrderTrackingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <SkipToMainContent />
+      {/* SkipToMainContent removed */}
       
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

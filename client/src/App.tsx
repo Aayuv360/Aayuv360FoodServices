@@ -10,7 +10,7 @@ import { UIProvider } from "@/contexts/UIContext";
 import { AccessibilityProvider, useKeyboardNavigation } from "@/hooks/use-accessibility";
 import { usePerformanceMonitoring, useMemoryOptimization } from "@/hooks/use-performance";
 import { ProtectedRoute } from "@/components/protected-route";
-import { AccessibilityToolbar, SkipToMainContent } from "@/components/ui/AccessibilityToolbar";
+// Accessibility components removed
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -21,7 +21,7 @@ import Menu from "@/pages/menu";
 import Profile from "@/pages/profile";
 import Subscription from "@/pages/subscription";
 import Checkout from "@/pages/checkout";
-import PaymentSuccess from "@/pages/payment-success";
+// PaymentSuccess page removed
 import MealPlanner from "@/pages/meal-planner";
 import Analytics from "@/pages/analytics";
 import OrderManagement from "@/pages/order-management";
@@ -47,7 +47,7 @@ function Router() {
   
   return (
     <div className="flex flex-col min-h-screen">
-      <SkipToMainContent />
+      {/* Skip to content removed */}
       <div className="font-sans min-h-screen flex flex-col bg-gradient-to-b from-orange-50 to-amber-50">
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.1),rgba(249,115,22,0))] pointer-events-none"></div>
         <Header />
@@ -71,10 +71,7 @@ function Router() {
               path="/checkout/:orderId"
               element={<ProtectedRoute component={Checkout} />}
             />
-            <Route
-              path="/payment-success"
-              element={<ProtectedRoute component={SuccessPage} />}
-            />
+            {/* Payment success route removed */}
             <Route
               path="/meal-planner"
               element={<ProtectedRoute component={MealPlanner} />}
@@ -116,7 +113,7 @@ function Router() {
 
         <Footer />
         <MobileBottomNav />
-        <AccessibilityToolbar />
+        {/* AccessibilityToolbar removed */}
       </div>
     </div>
   );

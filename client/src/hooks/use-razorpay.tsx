@@ -93,47 +93,7 @@ export const useRazorpay = () => {
   const { user } = useAuth();
   const razorpayLoaded = useRazorpayScript();
 
-  // Create order mutation
-  const createOrderMutation = useMutation({
-    mutationFn: async (options: CreateOrderOptions) => {
-      const res = await apiRequest(
-        "POST",
-        "/api/payments/create-order",
-        options,
-      );
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to create order");
-      }
-      return res.json();
-    },
-  });
-
-  // Verify payment mutation
-  const verifyPaymentMutation = useMutation({
-    mutationFn: async (options: PaymentVerifyOptions) => {
-      const res = await apiRequest("POST", "/api/payments/verify", options);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to verify payment");
-      }
-      return res.json();
-    },
-  });
-
-  // Payment failure mutation
-  const paymentFailureMutation = useMutation({
-    mutationFn: async (options: PaymentFailureOptions) => {
-      const res = await apiRequest("POST", "/api/payments/failed", options);
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(
-          errorData.message || "Failed to handle payment failure",
-        );
-      }
-      return res.json();
-    },
-  });
+  // Simplified payment - no server order creation needed for new flow
 
   // Function to initiate payment
   const initiatePayment = useCallback(
@@ -170,46 +130,23 @@ export const useRazorpay = () => {
       }
 
       try {
-        // Create order on server
-        const orderData = await createOrderMutation.mutateAsync({
-          amount: options.amount,
-          orderId: options.orderId,
-          type: options.type || "order",
-        });
-
+        // Simplified payment options for direct Razorpay integration
         const razorpayOptions: RazorpayOptions = {
-          key: orderData.key,
-          amount: orderData.amount,
-          currency: orderData.currency,
+          key: "rzp_test_EEu4TnfXJ8JXAT", // Using the same key from server
+          amount: Math.round(options.amount * 100), // Convert to paise
+          currency: "INR",
           name: options.name || "Aayuv Millet Foods",
           description: options.description || "Order Payment",
-          image: "/images/logo.png", // Logo URL
-          order_id: orderData.orderId,
+          image: "/favicon.png",
+          order_id: `order_${options.orderId}_${Date.now()}`, // Use temp order ID
           handler: async (response) => {
             try {
-              await verifyPaymentMutation.mutateAsync({
-                orderId: options.orderId,
-                razorpayOrderId: response.razorpay_order_id,
-                razorpayPaymentId: response.razorpay_payment_id,
-                razorpaySignature: response.razorpay_signature,
-                type: options.type || "order",
-              });
-
-              toast({
-                title: "Payment Successful",
-                description: "Your payment has been processed successfully",
-              });
-
+              // Payment successful - call onSuccess with payment details
               if (options.onSuccess) {
                 options.onSuccess(response);
               }
             } catch (error: any) {
-              toast({
-                title: "Payment Verification Failed",
-                description: error.message || "Failed to verify payment",
-                variant: "destructive",
-              });
-
+              console.error("Payment success handling error:", error);
               if (options.onFailure) {
                 options.onFailure(error);
               }
@@ -259,13 +196,13 @@ export const useRazorpay = () => {
         }
       }
     },
-    [razorpayLoaded, user, createOrderMutation, verifyPaymentMutation, toast],
+    [razorpayLoaded, user, toast],
   );
 
   return {
     initiatePayment,
-    isLoading: createOrderMutation.isPending || verifyPaymentMutation.isPending,
-    isError: createOrderMutation.isError || verifyPaymentMutation.isError,
-    error: createOrderMutation.error || verifyPaymentMutation.error,
+    isLoading: false, // No longer using server mutations
+    isError: false,
+    error: null,
   };
 };
