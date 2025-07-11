@@ -261,8 +261,96 @@ export const useRazorpay = () => {
     [razorpayLoaded, user, createOrderMutation, verifyPaymentMutation, toast],
   );
 
+  // Simplified wallet payment method
+  const payWithRazorpay = useCallback(
+    async (
+      amount: number,
+      orderId: string,
+      title: string,
+      description: string,
+      onSuccess: (paymentDetails: any) => void
+    ) => {
+      if (!razorpayLoaded) {
+        throw new Error("Razorpay is not loaded yet");
+      }
+
+      try {
+        // Get Razorpay configuration
+        const configRes = await apiRequest("GET", "/api/payments/config");
+        const config = await configRes.json();
+
+        const razorpayOptions = {
+          key: config.key,
+          amount: amount * 100, // Convert to paise
+          currency: "INR",
+          name: "Aayuv Millet Foods",
+          description: description,
+          image: "/images/logo.png",
+          order_id: orderId, // Use the provided orderId
+          handler: async (response: any) => {
+            try {
+              // Call success callback with payment details
+              onSuccess({
+                payment_id: response.razorpay_payment_id,
+                order_id: response.razorpay_order_id,
+                signature: response.razorpay_signature,
+              });
+
+              toast({
+                title: "Payment Successful",
+                description: "Your payment has been processed successfully",
+              });
+
+              return { success: true };
+            } catch (error: any) {
+              toast({
+                title: "Payment Processing Failed",
+                description: error.message || "Failed to process payment",
+                variant: "destructive",
+              });
+              throw error;
+            }
+          },
+          prefill: {
+            name: user.name || "",
+            email: user.email || "",
+            contact: user.phone || "",
+          },
+          notes: {
+            purpose: "wallet_topup",
+          },
+          theme: {
+            color: "#F37254",
+          },
+          modal: {
+            ondismiss: () => {
+              toast({
+                title: "Payment Cancelled",
+                description: "You cancelled the payment process",
+              });
+            },
+          },
+        };
+
+        const razorpay = new window.Razorpay(razorpayOptions);
+        razorpay.open();
+        
+        return { success: true };
+      } catch (error: any) {
+        toast({
+          title: "Payment Initialization Failed",
+          description: error.message || "Failed to initialize payment",
+          variant: "destructive",
+        });
+        throw error;
+      }
+    },
+    [razorpayLoaded, user, toast]
+  );
+
   return {
     initiatePayment,
+    payWithRazorpay,
     isLoading: createOrderMutation.isPending || verifyPaymentMutation.isPending,
     isError: createOrderMutation.isError || verifyPaymentMutation.isError,
     error: createOrderMutation.error || verifyPaymentMutation.error,
