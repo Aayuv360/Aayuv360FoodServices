@@ -158,6 +158,14 @@ export const useRazorpay = () => {
       }
 
       try {
+        // Check if Razorpay is available
+        if (!window.Razorpay) {
+          throw new Error("Razorpay SDK not loaded. Please refresh the page and try again.");
+        }
+
+        console.log("Razorpay available:", !!window.Razorpay);
+        console.log("Payment details:", { amount: options.amount, key: razorpayKey?.substring(0, 10) + "..." });
+
         // Simplified payment options for direct Razorpay integration
         const razorpayOptions: RazorpayOptions = {
           key: razorpayKey, // Use the key from server
