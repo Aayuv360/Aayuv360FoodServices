@@ -65,6 +65,7 @@ const Profile = () => {
   const { payWithRazorpay } = useRazorpay();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [showAddMoneyDialog, setShowAddMoneyDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [walletAmount, setWalletAmount] = useState("");
 
   const searchParams = new URLSearchParams(location.search);
@@ -238,8 +239,12 @@ const Profile = () => {
   };
 
   const handleDeleteAccount = () => {
-    // Delete account immediately with default reason
-    deleteAccountMutation.mutate("User requested immediate deletion");
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeleteAccount = () => {
+    deleteAccountMutation.mutate("User confirmed account deletion");
+    setShowDeleteDialog(false);
   };
 
   const getOrderStatusClass = (status: string) => {
@@ -1068,42 +1073,43 @@ const Profile = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Account Dialog */}
+      {/* Delete Account Confirmation Dialog */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Account Permanently</DialogTitle>
+            <DialogTitle className="text-red-600">Delete Account Permanently</DialogTitle>
             <DialogDescription>
-              <strong>Warning:</strong> This will permanently delete your account and all data. This action cannot be undone. Please provide a reason for deletion.
+              <div className="space-y-2 text-gray-700">
+                <p><strong className="text-red-600">⚠️ Warning:</strong> This will permanently delete your account and all associated data including:</p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Profile information</li>
+                  <li>Order history</li>
+                  <li>Subscription plans</li>
+                  <li>Wallet balance</li>
+                  <li>Saved addresses</li>
+                </ul>
+                <p className="font-medium text-red-600">This action cannot be undone.</p>
+                <p>Are you sure you want to permanently delete your account?</p>
+              </div>
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
-            <Textarea
-              placeholder="Reason for account deletion..."
-              value={deleteReason}
-              onChange={(e) => setDeleteReason(e.target.value)}
-              rows={4}
-            />
-          </div>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button
               variant="outline"
-              onClick={() => {
-                setShowDeleteDialog(false);
-                setDeleteReason("");
-              }}
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={deleteAccountMutation.isPending}
             >
               Cancel
             </Button>
             <Button
               variant="destructive"
               onClick={confirmDeleteAccount}
-              disabled={!deleteReason.trim() || deleteAccountMutation.isPending}
+              disabled={deleteAccountMutation.isPending}
             >
               {deleteAccountMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : null}
-              Delete Account Permanently
+              Yes, Delete Account Permanently
             </Button>
           </DialogFooter>
         </DialogContent>
