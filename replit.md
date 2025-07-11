@@ -2,213 +2,117 @@
 
 ## Overview
 
-This is a comprehensive millet-based food service platform that provides subscription meal delivery services in the Hyderabad area. The application offers 38 different millet-based meal options with flexible subscription plans, user authentication, order management, and payment processing capabilities.
+This is a comprehensive millet-based food service platform built as a full-stack web application. The system provides subscription-based meal delivery services with 38 millet-based meal options, featuring user authentication, shopping cart functionality, order management, and real-time delivery tracking. The platform includes both customer-facing features and administrative tools for managing the business operations.
+
+## User Preferences
+
+Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Styling**: TailwindCSS with custom design system
-- **State Management**: React Query for server state, React Context for local state
-- **UI Components**: Custom component library based on Radix UI primitives
-- **Routing**: React Router with protected routes
-- **Build Tool**: Vite for development and production builds
+- **Framework**: React 18 with TypeScript for type safety and modern development
+- **Build Tool**: Vite for fast development and optimized production builds
+- **Styling**: TailwindCSS with custom design system and component library
+- **State Management**: 
+  - React Query (TanStack Query) for server state management and caching
+  - Recoil for global client state management
+  - Context API for specific feature state (Location, UI, Accessibility)
+- **UI Components**: Custom component library built on Radix UI primitives with shadcn/ui
+- **Routing**: React Router with protected routes for authentication
 
 ### Backend Architecture
-- **Runtime**: Node.js with Express.js
-- **Language**: TypeScript with ES modules
-- **Authentication**: Passport.js with local strategy and session-based auth
-- **Session Management**: Express sessions with memory store
-- **API Design**: RESTful APIs with structured error handling
+- **Runtime**: Node.js with Express.js framework
+- **Language**: TypeScript with ES modules for better type safety
+- **Authentication**: Passport.js with local strategy and session-based authentication
+- **Session Management**: Express sessions with in-memory store (MemoryStore)
+- **API Design**: RESTful APIs with structured error handling and middleware
+- **File Uploads**: Multer with Sharp for image processing
+- **Payment Processing**: Razorpay integration for orders and subscriptions
 
 ### Database Architecture
 - **Primary Database**: MongoDB with Mongoose ODM
-- **Schema Design**: Flexible document-based models for users, meals, orders, subscriptions
-- **Collections**: Users, Meals, Orders, Subscriptions, CartItems, Addresses, Reviews, CurryOptions, SubscriptionPlans
-- **Fallback**: In-memory storage for development environments
+- **Schema Design**: Flexible document-based models with TypeScript interfaces
+- **Key Collections**: Users, Meals, Orders, Subscriptions, CartItems, Addresses, Reviews, CurryOptions, SubscriptionPlans, ContactReviews
+- **Image Storage**: GridFS for meal images with optimization using Sharp
+- **Data Seeding**: Automated initialization of sample meals and admin users
 
 ## Key Components
 
-### User Management
-- Role-based access control (user, admin, manager)
-- Profile management with preferences
-- Authentication with bcrypt password hashing
-- Session-based authentication with secure cookies
+### Authentication & Authorization
+- **Problem**: Secure user access and role-based permissions
+- **Solution**: Passport.js with local strategy, bcrypt password hashing, and role-based middleware
+- **Rationale**: Session-based auth provides good security for web applications without token management complexity
 
-### Meal System
-- 38 millet-based meal options with nutritional information
-- Dietary preference filtering (vegetarian, gluten-free, high-protein, etc.)
-- Curry options and customization for meals
-- Search and categorization functionality
+### Shopping Cart System
+- **Problem**: Complex cart management with meal customization and curry options
+- **Solution**: MongoDB-based cart storage with rich meal metadata and curry option tracking
+- **Features**: Real-time cart updates, curry option selection, quantity management, and persistent storage
 
 ### Subscription Management
-- Multiple subscription plans (Basic, Premium, Family)
-- Default and customized meal plan options
-- Flexible delivery scheduling
-- Subscription lifecycle management (active, expired, cancelled)
+- **Problem**: Recurring meal delivery with flexible scheduling
+- **Solution**: Three-tier subscription system (Basic ₹2000, Premium ₹3500, Family ₹5000) with automated meal planning
+- **Features**: Subscription lifecycle management, delivery scheduling, and payment integration
 
-### Order Processing
-- Shopping cart functionality with meal customization
-- Order placement and tracking
-- Delivery status updates
-- Order history and management
-
-### Payment Integration
-- Razorpay payment gateway integration
-- Support for both one-time orders and subscriptions
-- Payment verification and webhook handling
-- Secure payment processing with order mapping
+### Real-time Features
+- **Order Tracking**: Live GPS tracking integration with Google Maps API
+- **Notifications**: Multi-channel notifications (app, SMS via Twilio, email via SendGrid)
+- **Delivery Updates**: Real-time status updates for orders and subscriptions
 
 ### Admin Portal
-- Order management and tracking
-- Subscription plan administration
-- Meal inventory management
-- User management and analytics
-- Delivery scheduling and notifications
+- **Problem**: Business operations management
+- **Solution**: Comprehensive admin dashboard with analytics, order management, and user administration
+- **Features**: Revenue analytics, meal management, user role management, and order status updates
 
 ## Data Flow
 
-1. **User Registration/Login**: Users authenticate through Passport.js local strategy
-2. **Meal Browsing**: Frontend fetches meal data from MongoDB via REST APIs
-3. **Cart Management**: Cart items stored in database linked to user sessions
-4. **Order Placement**: Orders processed through Razorpay with verification
-5. **Subscription Management**: Automated meal planning and delivery scheduling
-6. **Admin Operations**: Real-time management of orders, meals, and users
+1. **User Registration/Login**: User authentication through Passport.js with session storage
+2. **Menu Browsing**: Meals fetched from MongoDB with curry options formatting
+3. **Cart Management**: Items stored in MongoDB with user association and real-time updates
+4. **Order Processing**: Order creation triggers payment gateway integration and inventory updates
+5. **Subscription Handling**: Automated meal planning and delivery scheduling based on subscription type
+6. **Payment Flow**: Razorpay integration for secure payment processing with webhook handling
+7. **Delivery Tracking**: Real-time location updates and notification system
 
 ## External Dependencies
 
-### Payment Processing
-- **Razorpay**: Primary payment gateway for orders and subscriptions
-- Environment variables: `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`
+### Payment Gateway
+- **Service**: Razorpay for payment processing
+- **Integration**: Order creation, payment verification, and webhook handling
+- **Features**: Support for one-time payments and subscription billing
 
-### Email Services
-- **SendGrid**: Email notifications for delivery updates
-- Environment variable: `SENDGRID_API_KEY`
+### Communication Services
+- **SMS**: Twilio for SMS notifications and delivery updates
+- **Email**: SendGrid for email notifications and subscription confirmations
+- **Maps**: Google Maps API for location services and delivery tracking
 
-### SMS Services
-- **Twilio** (configured but optional): SMS notifications
-- Environment variables: `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`
-
-### Maps Integration
-- **Google Maps API**: Location services and delivery area validation
-- API key embedded in MapProvider component
-
-### Database
-- **MongoDB**: Primary data storage
-- Environment variable: `MONGODB_URI`
+### Image Processing
+- **Service**: Sharp for image optimization and resizing
+- **Storage**: MongoDB GridFS for storing processed meal images
+- **Features**: Automatic image compression and multiple format support
 
 ## Deployment Strategy
 
-### Development Environment
-- **Command**: `npm run dev`
-- **Server**: Development server with hot reloading via Vite
-- **Database**: MongoDB Atlas or local MongoDB instance
-- **Port**: 5000 (configurable via PORT environment variable)
-
-### Production Build
-- **Build Command**: `npm run build`
-- **Start Command**: `npm run start`
-- **Deployment**: Configured for Replit autoscale deployment
-- **Static Assets**: Served from `/dist/public` directory
-- **Process Management**: Single Node.js process with Express
-
 ### Environment Configuration
-Required environment variables:
-- `MONGODB_URI`: MongoDB connection string
-- `SESSION_SECRET`: Session encryption key
-- `RAZORPAY_KEY_ID` & `RAZORPAY_KEY_SECRET`: Payment processing
-- `SENDGRID_API_KEY`: Email notifications (optional)
+- **Development**: Local MongoDB with hot reload via Vite
+- **Staging**: Environment-specific configuration with .env files
+- **Production**: Optimized builds with proper security headers and rate limiting
 
-## Recent Changes
-- **July 11, 2025**: Comprehensive environment fixes and complete meal data restoration
-  - ✅ Fixed Google Maps API key configuration in PerformantOrderTracking component using VITE_GOOGLE_MAPS_API_KEY
-  - ✅ Restored complete 38 millet-based meal catalog in server/mealData.ts with full nutritional info
-  - ✅ Updated database seeding logic to properly load all meal variations when count doesn't match
-  - ✅ Multi-environment system working correctly with .env.development automatic loading  
-  - ✅ All 38 meals now properly seeded and accessible via /api/meals endpoint
-  - ✅ Fixed meal initialization batching system for reliable database population
-  - ✅ Fixed subscription plan validation by adding required timeSlot and deliveryAddressId fields
-  - ✅ All 3 subscription plans (Basic, Premium, Family) now properly seeded and accessible
-  - ✅ Razorpay payment gateway fully operational with proper key configuration
-  - ✅ Session security working with SESSION_SECRET properly configured
-  - ✅ Fixed payment verification issue by correcting environment variable reference in razorpay.ts
-  - ✅ All environment warnings resolved - MongoDB URI and Google Maps API key now properly configured
-  - ✅ Complete system now fully operational with no critical issues
-- **July 11, 2025**: Comprehensive multi-environment configuration system and production deployment fixes
-  - Updated session configuration for production environments with proper secure cookie settings
-  - Added CORS configuration and trust proxy settings for cloud deployment compatibility
-  - Created deployment guide and troubleshooting documentation for Render.com
-  - Fixed authentication flow differences between Replit development and Render.com production
-  - Implemented multi-environment system (.env.development, .env.staging, .env.production) replacing .env.example
-  - Created environment loader with automatic environment detection based on NODE_ENV
-  - Fixed hardcoded API keys in Razorpay service to use environment variables
-  - Standardized Google Maps API key configuration across all frontend components
-  - Created centralized environment validator with startup validation
-  - Added comprehensive production deployment documentation and render.yaml configuration
-  - Fixed CORS origin handling with proper null checking for production deployment
-  - Enhanced database connection handling with production-specific error requirements
-  - Established proper team collaboration workflow with committed environment configurations
-- **June 25, 2025**: Initial project setup and migration from Replit Agent
-- **June 25, 2025**: Implemented image upload functionality for admin portal
-  - Added multer and sharp for image processing
-  - Created ImageUpload component replacing URL fields
-  - Images stored in MongoDB using GridFS with optimization
-  - Added server endpoints for image upload and serving from database
-- **June 25, 2025**: Enhanced location management with RecoilState
-  - Added comprehensive location state management with Recoil atoms
-  - Created LocationModal with Google Maps integration and autocomplete
-  - Implemented service area validation with distance calculations
-  - Added saved addresses functionality with CRUD operations
-  - Integrated location synchronization across all components
-  - Enhanced header location selector with modal interface
-- **July 3, 2025**: Migration to Replit and cart functionality fixes
-  - Completed migration from Replit Agent to standard Replit environment
-  - Fixed mobile cart close button with improved touch targets and z-index
-  - Fixed payment flow by removing unnecessary payment step that showed empty data
-  - Enhanced Razorpay modal interactions by preventing cart closure during payment
-  - Improved error handling and user feedback for payment cancellation and failures
-- **July 5, 2025**: Completed migration analysis and environment setup
-  - Successfully migrated from Replit Agent to standard Replit environment
-  - Identified missing environment variables that need configuration
-  - Verified application architecture and security implementations
-  - Server running successfully with MongoDB connection
-  - Documented comprehensive feature improvement roadmap
-- **July 5, 2025**: Implemented Performance Optimization and Accessibility Features
-  - Added LazyImage component with intersection observer for image optimization
-  - Implemented comprehensive API response caching with React Query
-  - Created accessibility framework with high contrast mode and keyboard navigation
-  - Added screen reader support and ARIA compliance
-  - Implemented performance monitoring with metrics logging
-  - Added memory optimization and bundle splitting utilities
-  - Enhanced CSS with accessibility and reduced motion support
-  - Created accessibility toolbar for user customization
-- **July 5, 2025**: Implemented Real-Time Order Tracking System
-  - Created live GPS tracking for delivery partners with location updates
-  - Implemented Server-Sent Events (SSE) for real-time order status updates
-  - Added push notification system with browser notifications
-  - Built comprehensive order tracking UI with live progress indicators
-  - Created delivery time estimation based on GPS coordinates
-  - Added SMS notifications for critical order status changes
-  - Implemented admin test panel for tracking system validation
-  - Added order tracking links and status badges throughout the platform
-- **July 5, 2025**: Integrated Order Tracking with Google Maps on Home Page
-  - Created ActiveOrderTracking component for home page display
-  - Integrated Google Maps API with live delivery location tracking
-  - Added real-time GPS updates showing delivery person movement
-  - Implemented turn-by-turn directions between driver and customer
-  - Shows automatically on home page after payment completion for active orders
-  - Added order progress tracking with visual status indicators
-  - Included delivery person contact details and estimated delivery time
-  - Cleaned up test components and made system production-ready
+### Database Strategy
+- **Primary**: MongoDB for all application data with Mongoose ODM
+- **Fallback**: In-memory storage fallback for development when MongoDB is unavailable
+- **Migrations**: Automated database seeding for initial data setup
 
-## Changelog
-```
-Changelog:
-- June 25, 2025. Initial setup
-- June 25, 2025. Added image upload system for meal management
-```
+### Security Features
+- **Rate Limiting**: Express rate limiter for API endpoints
+- **Input Validation**: Zod schemas for request validation
+- **Security Headers**: Helmet.js for security headers
+- **Authentication**: Secure session management with proper cookie settings
 
-## User Preferences
-```
-Preferred communication style: Simple, everyday language.
-```
+### Performance Optimizations
+- **Caching**: Multi-level caching with NodeCache for different data types
+- **Image Optimization**: Lazy loading and responsive images
+- **Database**: Query optimization and proper indexing
+- **Frontend**: Code splitting and optimized bundle sizes
+
+The architecture prioritizes maintainability, scalability, and user experience while providing a robust foundation for a food delivery service platform.
