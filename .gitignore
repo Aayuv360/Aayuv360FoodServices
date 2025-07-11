@@ -5,8 +5,7 @@ server/public
 vite.config.ts.*
 *.tar.gz
 
-# Environment variables - NEVER commit these!
-.env
+# Environment variables - Use .env.example for template
 .env.local
 .env.production
 .env.staging
