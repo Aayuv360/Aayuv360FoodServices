@@ -39,15 +39,21 @@ export async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  // Configure session
+  // Configure session with deployment-specific settings
+  const isRender = process.env.RENDER_SERVICE_NAME !== undefined;
+  const isProduction = process.env.NODE_ENV === "production";
+  
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || "millet-meal-service-secret",
     resave: false,
     saveUninitialized: false,
     store: storage.sessionStore,
+    name: 'connect.sid',
     cookie: {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      secure: process.env.NODE_ENV === "production",
+      secure: isProduction && isRender, // Only secure on Render.com HTTPS
+      httpOnly: true,
+      sameSite: isProduction ? (isRender ? "none" : "strict") : "lax",
     },
   };
 

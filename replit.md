@@ -120,6 +120,11 @@ Required environment variables:
 - `SENDGRID_API_KEY`: Email notifications (optional)
 
 ## Recent Changes
+- **July 11, 2025**: Fixed 401 Unauthorized issues for Render.com production deployment
+  - Updated session configuration for production environments with proper secure cookie settings
+  - Added CORS configuration and trust proxy settings for cloud deployment compatibility
+  - Created deployment guide and troubleshooting documentation for Render.com
+  - Fixed authentication flow differences between Replit development and Render.com production
 - **June 25, 2025**: Initial project setup and migration from Replit Agent
 - **June 25, 2025**: Implemented image upload functionality for admin portal
   - Added multer and sharp for image processing

@@ -12,6 +12,38 @@ import contactRoutes from "./contact-routes";
 dotenv.config();
 
 const app = express();
+
+// Trust proxy for Render.com and other cloud providers
+if (process.env.NODE_ENV === "production") {
+  app.set('trust proxy', 1);
+}
+
+// CORS configuration for production deployments
+if (process.env.NODE_ENV === "production") {
+  app.use((req, res, next) => {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL,
+      process.env.RENDER_EXTERNAL_URL,
+      'https://' + process.env.RENDER_SERVICE_NAME + '.onrender.com'
+    ].filter(Boolean);
+    
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    
+    if (req.method === 'OPTIONS') {
+      res.sendStatus(200);
+      return;
+    }
+    next();
+  });
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
