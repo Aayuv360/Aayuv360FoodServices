@@ -1,8 +1,8 @@
-# Render.com Environment Setup
+# Render.com Deployment Guide
 
-## Required Environment Variables to Set in Render.com Dashboard
+## Simple Environment Variable Setup
 
-When deploying to Render.com, you need to manually set these environment variables in your service's Environment tab:
+Render.com works perfectly with just environment variables - no YAML configuration needed. Simply set these in your Render service's Environment tab:
 
 ### Critical Variables (Required)
 ```
@@ -28,10 +28,12 @@ FRONTEND_URL=https://millet-food-service.onrender.com
 
 ## Setup Instructions
 
-1. Go to your Render.com dashboard
-2. Select your service "millet-food-service"
-3. Go to Environment tab
-4. Add each variable as a new environment variable
-5. Deploy the service
+1. Deploy from Replit (or connect your GitHub repo to Render)
+2. In Render dashboard, go to your service's Environment tab
+3. Add the critical variables listed above
+4. Render will automatically build using `npm run build` and start with `npm run start`
+5. No YAML configuration needed - just environment variables
 
-This will resolve the "Critical environment configuration issues" error.
+**Build Command:** `npm install && npm run build`
+**Start Command:** `npm run start`
+**Port:** Render will automatically detect port 10000 from your app
