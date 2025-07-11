@@ -142,7 +142,10 @@ export class MongoDBStorage implements IStorage {
 
   async getUserByUsername(username: string): Promise<any | undefined> {
     try {
-      const user = await User.findOne({ username });
+      // Case-insensitive search using regex
+      const user = await User.findOne({ 
+        username: { $regex: new RegExp(`^${username}$`, 'i') }
+      });
       return user ? user.toObject() : undefined;
     } catch (error) {
       console.error("Error getting user by username:", error);
@@ -152,7 +155,10 @@ export class MongoDBStorage implements IStorage {
 
   async getUserByEmail(email: string): Promise<any | undefined> {
     try {
-      const user = await User.findOne({ email });
+      // Case-insensitive search using regex
+      const user = await User.findOne({ 
+        email: { $regex: new RegExp(`^${email}$`, 'i') }
+      });
       return user ? user.toObject() : undefined;
     } catch (error) {
       console.error("Error getting user by email:", error);
