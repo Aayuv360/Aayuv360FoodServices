@@ -163,13 +163,6 @@ export const useRazorpay = () => {
           throw new Error("Razorpay SDK not loaded. Please refresh the page and try again.");
         }
 
-        console.log("Razorpay available:", !!window.Razorpay);
-        console.log("Payment details:", { 
-          amount: options.amount, 
-          key: razorpayKey?.substring(0, 10) + "...",
-          user: user ? user.name : 'Not authenticated'
-        });
-
         // Simplified payment options for direct Razorpay integration
         const razorpayOptions: RazorpayOptions = {
           key: razorpayKey, // Use the key from server
@@ -222,7 +215,6 @@ export const useRazorpay = () => {
           },
         };
 
-        console.log("Creating Razorpay instance with options:", razorpayOptions);
         const razorpay = new window.Razorpay(razorpayOptions);
         
         // Add error handler for payment failures
@@ -237,14 +229,7 @@ export const useRazorpay = () => {
           }
         });
         
-        console.log("Opening Razorpay payment modal...");
-        try {
-          razorpay.open();
-          console.log("Razorpay modal opened successfully");
-        } catch (modalError) {
-          console.error("Error opening Razorpay modal:", modalError);
-          throw new Error("Failed to open payment modal: " + modalError.message);
-        }
+        razorpay.open();
       } catch (error: any) {
         toast({
           title: "Payment Initialization Failed",

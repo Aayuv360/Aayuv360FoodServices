@@ -218,4 +218,134 @@ export function registerCartRoutes(app: Express) {
       res.status(500).json({ message: "Error clearing cart" });
     }
   });
+
+  // Add item to cart
+  app.post("/api/cart/add", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const { mealId, quantity = 1, curryOptionId, curryOptionName, curryOptionPrice, notes } = req.body;
+
+      if (!mealId) {
+        return res.status(400).json({ message: "Meal ID is required" });
+      }
+
+      // Check if meal exists
+      const meal = await MealModel.findOne({ id: mealId }).lean();
+      if (!meal) {
+        return res.status(404).json({ message: "Meal not found" });
+      }
+
+      // Check if item with same curry option already exists
+      let existingItem = null;
+      if (curryOptionId) {
+        existingItem = await CartItemModel.findOne({
+          userId,
+          mealId,
+          curryOptionId
+        }).lean();
+      } else {
+        existingItem = await CartItemModel.findOne({
+          userId,
+          mealId,
+          $or: [
+            { curryOptionId: { $exists: false } },
+            { curryOptionId: null }
+          ]
+        }).lean();
+      }
+
+      if (existingItem) {
+        // Update existing item quantity
+        const updatedItem = await CartItemModel.findByIdAndUpdate(
+          existingItem._id,
+          { $inc: { quantity: quantity } },
+          { new: true }
+        ).lean();
+        
+        return res.json(updatedItem);
+      } else {
+        // Create new cart item
+        const newCartItem = new CartItemModel({
+          userId,
+          mealId,
+          quantity,
+          curryOptionId,
+          curryOptionName,
+          curryOptionPrice: curryOptionPrice || 0,
+          notes: notes || null
+        });
+
+        const savedItem = await newCartItem.save();
+        res.json(savedItem);
+      }
+    } catch (err) {
+      console.error("Error adding to cart:", err);
+      res.status(500).json({ message: "Error adding item to cart" });
+    }
+  });
+
+  // Update cart item
+  app.put("/api/cart/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const itemId = req.params.id;
+      const { quantity, curryOptionId, curryOptionName, curryOptionPrice, notes } = req.body;
+
+      const updatedItem = await CartItemModel.findOneAndUpdate(
+        { _id: itemId, userId },
+        {
+          ...(quantity !== undefined && { quantity }),
+          ...(curryOptionId !== undefined && { curryOptionId }),
+          ...(curryOptionName !== undefined && { curryOptionName }),
+          ...(curryOptionPrice !== undefined && { curryOptionPrice }),
+          ...(notes !== undefined && { notes })
+        },
+        { new: true }
+      ).lean();
+
+      if (!updatedItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+
+      res.json(updatedItem);
+    } catch (err) {
+      console.error("Error updating cart item:", err);
+      res.status(500).json({ message: "Error updating cart item" });
+    }
+  });
+
+  // Remove cart item
+  app.delete("/api/cart/:id", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      const itemId = req.params.id;
+
+      const deletedItem = await CartItemModel.findOneAndDelete({
+        _id: itemId,
+        userId
+      }).lean();
+
+      if (!deletedItem) {
+        return res.status(404).json({ message: "Cart item not found" });
+      }
+
+      res.json({ message: "Item removed from cart" });
+    } catch (err) {
+      console.error("Error removing cart item:", err);
+      res.status(500).json({ message: "Error removing cart item" });
+    }
+  });
+
+  // Clear entire cart
+  app.delete("/api/cart", isAuthenticated, async (req, res) => {
+    try {
+      const userId = (req.user as any).id;
+      
+      await CartItemModel.deleteMany({ userId });
+      res.json({ message: "Cart cleared" });
+    } catch (err) {
+      console.error("Error clearing cart:", err);
+      res.status(500).json({ message: "Error clearing cart" });
+    }
+  });
 }
