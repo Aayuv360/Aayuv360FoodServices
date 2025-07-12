@@ -23,12 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useRazorpay } from "@/hooks/use-razorpay";
 import { formatPrice } from "@/lib/utils";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+// Using custom right-sliding drawer implementation
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
@@ -358,16 +353,24 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   };
   const renderCartSummary = () => (
     <div className="flex flex-col h-full px-4">
-      <DialogHeader className="p-3 sm:p-4 border-b">
+      <div className="p-3 sm:p-4 border-b">
         <div className="flex justify-between items-center">
-          <DialogTitle className="flex gap-2 font-extrabold text-orange-600 text-lg text-2xl">
+          <h2 className="flex gap-2 font-extrabold text-orange-600 text-lg text-2xl">
             🛒 Your Cart{" "}
             <span className="text-yellow-400">
               <Star size={20} fill="currentColor" />
             </span>
-          </DialogTitle>
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={onClose}
+          >
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-      </DialogHeader>
+      </div>
       <div className="flex-grow overflow-y-auto">
         {cartItems.length === 0 ? (
           <div className="text-center py-6 sm:py-8">
@@ -558,25 +561,37 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="w-full max-w-2xl p-0 flex flex-col h-[90vh] bg-white shadow-xl rounded-3xl overflow-hidden gap-0 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto">
+      <div className={`fixed inset-0 z-50 ${open ? 'block' : 'hidden'}`}>
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        />
+        
+        {/* Right Sliding Drawer */}
+        <div className={`
+          fixed top-0 right-0 h-full w-full sm:max-w-md bg-white shadow-xl 
+          transform transition-transform duration-300 ease-in-out z-50
+          rounded-l-3xl overflow-hidden flex flex-col
+          ${open ? 'translate-x-0' : 'translate-x-full'}
+        `}>
           <div className="flex-grow overflow-auto">
             {currentStep === "cart" && renderCartSummary()}
 
             {currentStep === "delivery" && (
               <div className="flex flex-col h-full px-4">
-                <DialogHeader
+                <div
                   className="group p-3 sm:p-4 border-b cursor-pointer hover:opacity-90 transition-opacity duration-200"
                   onClick={handlePreviousStep}
                 >
-                  <DialogTitle className="flex items-center font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
+                  <h2 className="flex items-center font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
                     <ArrowLeft
                       className="mr-2 mt-1 transition-transform duration-200 group-hover:-translate-x-1"
                       strokeWidth={3}
                     />
                     <span>Delivery Address</span>
-                  </DialogTitle>
-                </DialogHeader>
+                  </h2>
+                </div>
 
                 <div className="flex items-center justify-between mt-4">
                   <div className="font-bold text-base sm:text-lg">
@@ -731,8 +746,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </div>
             )}
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
 
       {customizingMeal && (
