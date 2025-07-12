@@ -1,3 +1,5 @@
+import { getCurrentISTDate } from "@/lib/timezone-utils";
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { MapPin, Clock, Phone, CheckCircle, Truck, Package, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -67,7 +69,7 @@ export function LiveOrderTracking({ orderId, onStatusUpdate }: LiveOrderTracking
   // Calculate estimated time remaining
   const calculateTimeRemaining = useCallback((estimatedTime: string): string => {
     const estimated = new Date(estimatedTime);
-    const now = new Date();
+    const now = getCurrentISTDate();
     const diffMs = estimated.getTime() - now.getTime();
     
     if (diffMs <= 0) return 'Any moment now';

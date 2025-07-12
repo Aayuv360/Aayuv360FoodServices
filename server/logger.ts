@@ -39,7 +39,7 @@ export const logDBOperation = (
     operation,
     collection,
     duration: duration ? `${duration}ms` : undefined,
-    timestamp: new Date().toISOString(),
+    timestamp: getCurrentISTISOString(),
   });
 };
 
@@ -57,7 +57,7 @@ export const logAPIRequest = (
     statusCode,
     duration: `${duration}ms`,
     userId,
-    timestamp: new Date().toISOString(),
+    timestamp: getCurrentISTISOString(),
   });
 };
 
@@ -67,7 +67,7 @@ export const logError = (error: Error, context?: any) => {
     message: error.message,
     stack: error.stack,
     context,
-    timestamp: new Date().toISOString(),
+    timestamp: getCurrentISTISOString(),
   });
 };
 
@@ -83,7 +83,7 @@ export const logSecurityEvent = (
     userId,
     ip,
     details,
-    timestamp: new Date().toISOString(),
+    timestamp: getCurrentISTISOString(),
   });
 };
 

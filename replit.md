@@ -241,6 +241,25 @@ The architecture prioritizes maintainability, scalability, and user experience w
   - Consistent environment variable access across all deployment stages
   - Proper separation of client-side and server-side environment variables
 
+### Comprehensive Timezone Standardization - COMPLETED ✅ (July 2025)
+- **Problem**: Inconsistent timezone handling across client and server leading to scheduling and display issues
+- **Solution**: Implemented comprehensive Asia/Kolkata timezone standardization across entire application
+- **Changes Made**:
+  - Created matching timezone utility modules for both server (`server/timezone-utils.ts`) and client (`client/src/lib/timezone-utils.ts`)
+  - Replaced all `new Date()` calls with `getCurrentISTDate()` for consistent IST timezone handling
+  - Updated all `new Date().toISOString()` calls with `getCurrentISTISOString()` for proper IST timestamps
+  - Standardized date formatting and display to Asia/Kolkata timezone across all components
+  - Enhanced subscription scheduling, order timestamps, and delivery tracking with proper timezone support
+- **Files Updated**: 
+  - Server: mongoStorage.ts, delivery-status.ts, helth-check.ts, and timezone-utils.ts
+  - Client: All components using date/time functions including TodaysMenu, Footer, subscription pages, and timezone-utils.ts
+- **Benefits**:
+  - Consistent time display for Indian users regardless of server location
+  - Accurate subscription scheduling and delivery timing
+  - Proper order timestamps and tracking information
+  - Eliminates timezone confusion between client and server
+  - Better user experience with localized time display
+
 ### Deep Security and Performance Audit - COMPLETED ✅ (July 2025)
 - **Security Issues Fixed**:
   - Removed authentication bypasses in notifications.ts and delivery-status.ts

@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiRequest } from "@/lib/queryClient";
+import { getCurrentISTDate } from "@/lib/timezone-utils";
 
 const Footer = () => {
   const navigate = useNavigate();
@@ -205,7 +206,7 @@ const Footer = () => {
         </div>
 
         <div className="text-center text-xs text-gray-500 mt-10">
-          © {new Date().getFullYear()} Aayuv. All rights reserved.
+          © {getCurrentISTDate().getFullYear()} Aayuv. All rights reserved.
         </div>
       </div>
     </footer>

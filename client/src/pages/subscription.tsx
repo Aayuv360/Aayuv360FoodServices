@@ -58,6 +58,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useRazorpay } from "@/hooks/use-razorpay";
+import { getCurrentISTDate } from "@/lib/timezone-utils";
 import { DefaulMealSheduleModal } from "@/components/Modals/DefaulMealSheduleModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
@@ -169,7 +170,7 @@ const Subscription = () => {
     dietaryPreference: "veg",
     personCount: 1,
     subscriptionType: "default",
-    startDate: new Date(),
+    startDate: getCurrentISTDate(),
     useNewAddress: false,
     timeSlot: deliveryTime[0].time,
   };
@@ -462,7 +463,7 @@ const Subscription = () => {
                               selected={field.value}
                               onSelect={field.onChange}
                               initialFocus
-                              disabled={(date) => date < new Date()}
+                              disabled={(date) => date < getCurrentISTDate()}
                             />
                           </PopoverContent>
                         </Popover>

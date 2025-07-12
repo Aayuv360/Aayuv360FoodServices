@@ -19,6 +19,7 @@ import createMemoryStore from "memorystore";
 import { milletMeals, MealDataItem } from "./mealData";
 
 import { IStorage } from "./storage";
+import { getCurrentISTDate } from "./timezone-utils";
 
 export class MongoDBStorage implements IStorage {
   sessionStore: expressSession.Store;
@@ -172,7 +173,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...userData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -209,8 +210,8 @@ export class MongoDBStorage implements IStorage {
       const newUser = new User({
         ...userData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newUser.save();
       return newUser.toObject();
@@ -229,7 +230,7 @@ export class MongoDBStorage implements IStorage {
         { id: userId },
         {
           stripeCustomerId: customerId,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -250,7 +251,7 @@ export class MongoDBStorage implements IStorage {
         {
           stripeCustomerId: stripeInfo.stripeCustomerId,
           stripeSubscriptionId: stripeInfo.stripeSubscriptionId,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -310,8 +311,8 @@ export class MongoDBStorage implements IStorage {
       const newMeal = new Meal({
         ...mealData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newMeal.save();
       return newMeal.toObject();
@@ -327,7 +328,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...mealData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -394,8 +395,8 @@ export class MongoDBStorage implements IStorage {
       const newCartItem = new CartItem({
         ...cartItemData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newCartItem.save();
 
@@ -418,7 +419,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...updateData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -465,8 +466,8 @@ export class MongoDBStorage implements IStorage {
       const newOrder = new Order({
         ...orderData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newOrder.save();
       return newOrder.toObject();
@@ -570,7 +571,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           status,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -604,7 +605,7 @@ export class MongoDBStorage implements IStorage {
         { id: orderItemData.orderId },
         {
           $push: { items: orderItemData },
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -648,7 +649,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...updateData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -666,8 +667,8 @@ export class MongoDBStorage implements IStorage {
       const newSubscription = new Subscription({
         ...subscriptionData,
         id: subscriptionData?.id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newSubscription.save();
       return newSubscription.toObject();
@@ -698,8 +699,8 @@ export class MongoDBStorage implements IStorage {
       const mealPlan = {
         ...customMealPlanData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       };
 
       // Add the meal plan to the subscription document
@@ -707,7 +708,7 @@ export class MongoDBStorage implements IStorage {
         { id: customMealPlanData.subscriptionId },
         {
           $push: { customMealPlans: mealPlan },
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
       );
 
@@ -725,7 +726,7 @@ export class MongoDBStorage implements IStorage {
         { "customMealPlans.id": id },
         {
           $pull: { customMealPlans: { id } },
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
       );
 
@@ -761,7 +762,7 @@ export class MongoDBStorage implements IStorage {
         { id: preferencesData.userId },
         {
           preferences: preferencesData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -789,7 +790,7 @@ export class MongoDBStorage implements IStorage {
         { id: userId },
         {
           preferences: { ...preferencesData },
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -861,7 +862,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...updateData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -888,8 +889,8 @@ export class MongoDBStorage implements IStorage {
       const newAddress = new Address({
         ...addressData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newAddress.save();
       return newAddress.toObject();
@@ -945,7 +946,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...updateData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -993,8 +994,8 @@ export class MongoDBStorage implements IStorage {
       const review = new Review({
         ...reviewData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
 
       await review.save();
@@ -1028,7 +1029,7 @@ export class MongoDBStorage implements IStorage {
       if (existingItem) {
         // Update quantity
         existingItem.quantity += cartItemData.quantity;
-        existingItem.updatedAt = new Date();
+        existingItem.updatedAt = getCurrentISTDate();
         await existingItem.save();
         return existingItem.toObject();
       } else {
@@ -1037,8 +1038,8 @@ export class MongoDBStorage implements IStorage {
         const cartItem = new CartItem({
           ...cartItemData,
           id,
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          createdAt: getCurrentISTDate(),
+          updatedAt: getCurrentISTDate(),
         });
 
         await cartItem.save();
@@ -1059,7 +1060,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           quantity,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -1119,8 +1120,8 @@ export class MongoDBStorage implements IStorage {
       const newLocation = new Location({
         ...locationData,
         id,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newLocation.save();
       return newLocation.toObject();
@@ -1139,7 +1140,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...locationData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       );
@@ -1209,7 +1210,7 @@ export class MongoDBStorage implements IStorage {
         {
           ...updateData,
           mealIds: mealIds,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true },
       ).lean();
@@ -1278,7 +1279,7 @@ export class MongoDBStorage implements IStorage {
         { id },
         {
           ...updateData,
-          updatedAt: new Date(),
+          updatedAt: getCurrentISTDate(),
         },
         { new: true, upsert: true },
       ).lean();
@@ -1294,8 +1295,8 @@ export class MongoDBStorage implements IStorage {
     try {
       const newPlan = new SubscriptionPlan({
         ...planData,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: getCurrentISTDate(),
+        updatedAt: getCurrentISTDate(),
       });
       await newPlan.save();
       return newPlan.toObject();
@@ -1338,7 +1339,7 @@ export class MongoDBStorage implements IStorage {
       const transaction = new WalletTransaction({
         id: nextId,
         ...transactionData,
-        createdAt: new Date(),
+        createdAt: getCurrentISTDate(),
       });
       await transaction.save();
       return transaction.toObject();
@@ -1370,7 +1371,7 @@ export class MongoDBStorage implements IStorage {
       const request = new DeletionRequest({
         id: nextId,
         ...requestData,
-        requestedAt: new Date(),
+        requestedAt: getCurrentISTDate(),
         status: "pending",
       });
       await request.save();
@@ -1395,7 +1396,7 @@ export class MongoDBStorage implements IStorage {
     try {
       const request = await DeletionRequest.findOneAndUpdate(
         { id },
-        { ...updateData, updatedAt: new Date() },
+        { ...updateData, updatedAt: getCurrentISTDate() },
         { new: true }
       ).lean();
       return request;

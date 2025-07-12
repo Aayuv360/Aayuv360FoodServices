@@ -1,3 +1,5 @@
+import { getCurrentISTDate } from "@/lib/timezone-utils";
+
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -87,7 +89,7 @@ export function UserDeliverySchedule() {
   };
 
   // Get today's delivery
-  const today = new Date().toISOString().split('T')[0];
+  const today = getCurrentISTISOString().split('T')[0];
   const todayDelivery = userDeliveries?.find((delivery: DeliveryItem) => 
     delivery.scheduledDate.startsWith(today)
   );
@@ -95,8 +97,8 @@ export function UserDeliverySchedule() {
   // Get upcoming deliveries (next 7 days)
   const upcomingDeliveries = userDeliveries?.filter((delivery: DeliveryItem) => {
     const deliveryDate = new Date(delivery.scheduledDate);
-    const currentDate = new Date();
-    const weekFromNow = new Date();
+    const currentDate = getCurrentISTDate();
+    const weekFromNow = getCurrentISTDate();
     weekFromNow.setDate(currentDate.getDate() + 7);
     
     return deliveryDate >= currentDate && deliveryDate <= weekFromNow;

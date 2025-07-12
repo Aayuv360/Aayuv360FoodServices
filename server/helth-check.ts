@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import { getCurrentISTISOString } from "./timezone-utils";
 
 export const healthCheck = async (req: Request, res: Response) => {
   try {
@@ -10,7 +11,7 @@ export const healthCheck = async (req: Request, res: Response) => {
 
     res.status(200).json({
       status: "healthy",
-      timestamp: new Date().toISOString(),
+      timestamp: getCurrentISTISOString(),
       uptime: `${Math.floor(uptime / 60)} minutes`,
       database: dbStatus,
       memory: {

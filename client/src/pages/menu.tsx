@@ -1,3 +1,4 @@
+
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
@@ -8,6 +9,7 @@ import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import { useDebounce } from "use-debounce";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
+import { getCurrentISTDate } from "@/lib/timezone-utils";
 
 const tabs = [
   { id: "all", name: "All Meals" },
@@ -22,7 +24,7 @@ const Menu = () => {
   const [filter, setFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch] = useDebounce(searchQuery, 300);
-  const today = format(new Date(), "MMMM d, yyyy");
+  const today = format(getCurrentISTDate(), "MMMM d, yyyy");
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
   const [mealData, setMealData] = useState<any>();
   const [scrolled, setScrolled] = useState(false);

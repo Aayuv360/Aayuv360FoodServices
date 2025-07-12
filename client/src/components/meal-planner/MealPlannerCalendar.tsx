@@ -1,3 +1,5 @@
+import { getCurrentISTDate } from "@/lib/timezone-utils";
+
 import { useState, useEffect } from "react";
 import { format, addDays, startOfWeek, isSameDay } from "date-fns";
 import { Meal } from "@shared/schema";
@@ -22,7 +24,7 @@ interface MealPlannerCalendarProps {
 }
 
 export default function MealPlannerCalendar({ onSelectMeal }: MealPlannerCalendarProps) {
-  const [startDate, setStartDate] = useState<Date>(startOfWeek(new Date()));
+  const [startDate, setStartDate] = useState<Date>(startOfWeek(getCurrentISTDate()));
   const [mealPlan, setMealPlan] = useState<MealPlan[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const { toast } = useToast();

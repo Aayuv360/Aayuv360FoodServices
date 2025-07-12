@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getCurrentISTDate } from "@/lib/timezone-utils";
 import { Calendar, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
@@ -19,7 +20,7 @@ const TodaysMenu = () => {
   const [filter, setFilter] = useState("all");
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
   const [mealData, setMealData] = useState<any>();
-  const currentDate = new Date();
+  const currentDate = getCurrentISTDate();
   const [searchQuery, setSearchQuery] = useState("");
 
   const formattedDate = currentDate.toLocaleDateString("en-US", {

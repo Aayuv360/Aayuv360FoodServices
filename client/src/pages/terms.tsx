@@ -1,3 +1,5 @@
+import { getCurrentISTDate } from "@/lib/timezone-utils";
+
 import React from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,7 +134,7 @@ const Terms = () => {
             services.
           </p>
           <div className="mt-3 text-sm text-gray-500">
-            Last updated: {new Date().toLocaleDateString()}
+            Last updated: {getCurrentISTDate().toLocaleDateString()}
           </div>
         </motion.div>
 

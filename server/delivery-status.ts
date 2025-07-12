@@ -1,6 +1,7 @@
 import { ObjectId } from "mongodb";
 import { connectToMongoDB } from "./db";
 import { sendAppNotification, sendSmsNotification, sendWhatsAppNotification } from "./notifications";
+import { getCurrentISTDate } from "./timezone-utils";
 
 export interface DeliveryStatus {
   _id?: ObjectId;
@@ -136,7 +137,7 @@ async function createDeliveryStatusForOrder(
     status,
     message,
     estimatedTime,
-    timestamp: new Date()
+    timestamp: getCurrentISTDate()
   };
 
   await deliveryCollection.insertOne(statusUpdate);
@@ -189,7 +190,7 @@ export async function createDeliveryStatusUpdate(
   const statusUpdate: DeliveryStatus = {
     id: nextId,
     ...statusData,
-    timestamp: new Date()
+    timestamp: getCurrentISTDate()
   };
 
   await deliveryCollection.insertOne(statusUpdate);

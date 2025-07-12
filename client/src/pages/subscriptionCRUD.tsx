@@ -1,3 +1,5 @@
+import { getCurrentISTDate } from "@/lib/timezone-utils";
+
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -176,8 +178,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     subscriptionType: "default",
     startDate:
       determinedAction === "RENEW"
-        ? new Date()
-        : new Date(previousPlansData?.[0]?.startDate) || new Date(),
+        ? getCurrentISTDate()
+        : new Date(previousPlansData?.[0]?.startDate) || getCurrentISTDate(),
     useNewAddress: false,
     timeSlot: deliveryTime[0].time,
     modifydelivaryAdrs: modifyDelivaryAddress[0].name,
@@ -230,7 +232,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         return { price: 0, changeType: "invalidPlanData", unitsConsumed };
       }
 
-      const now = new Date();
+      const now = getCurrentISTDate();
       const planStartDate = new Date(startDate);
       unitsConsumed = Math.max(
         0,
@@ -422,7 +424,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   }, [subscriptionPlans, diet, previousPlansData]);
   useEffect(() => {
     if (determinedAction === "RENEW") {
-      const date = new Date();
+      const date = getCurrentISTDate();
       form.setValue("startDate", date);
     }
   }, [determinedAction]);
@@ -705,7 +707,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                               selected={field.value}
                               onSelect={field.onChange}
                               initialFocus
-                              disabled={(date) => date < new Date()}
+                              disabled={(date) => date < getCurrentISTDate()}
                             />
                           </PopoverContent>
                         </Popover>

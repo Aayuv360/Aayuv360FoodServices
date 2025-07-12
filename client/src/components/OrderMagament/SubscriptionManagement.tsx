@@ -1,3 +1,5 @@
+import { getCurrentISTDate } from "@/lib/timezone-utils";
+
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,7 +53,7 @@ export function SubscriptionManagement() {
   };
 
   const getSubscriptionStatus = (subscription: any) => {
-    const now = new Date();
+    const now = getCurrentISTDate();
     const startDate = new Date(subscription.startDate);
     const endDate = subscription.endDate
       ? new Date(subscription.endDate)
@@ -203,7 +205,7 @@ export function SubscriptionManagement() {
                           (subscription.duration || 30) * 24 * 60 * 60 * 1000,
                       );
 
-                  const today = new Date();
+                  const today = getCurrentISTDate();
 
                   const stripTime = (date: Date) =>
                     new Date(

@@ -1,4 +1,6 @@
+
 import { useState, useEffect, useCallback } from 'react';
+import { getCurrentISTISOString } from '@/lib/timezone-utils';
 
 export interface PushNotificationData {
   title: string;
@@ -80,7 +82,7 @@ export function usePushNotifications() {
         data: {
           orderId: data.orderId,
           status: data.status,
-          timestamp: new Date().toISOString(),
+          timestamp: getCurrentISTISOString(),
         },
       });
 

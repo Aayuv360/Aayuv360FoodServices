@@ -52,7 +52,7 @@ export const globalErrorHandler = (
       context: {
         url: req.url,
         method: req.method,
-        timestamp: new Date().toISOString(),
+        timestamp: getCurrentISTISOString(),
       },
     }),
   });
