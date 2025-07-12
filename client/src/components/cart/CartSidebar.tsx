@@ -213,21 +213,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         throw new Error("Selected address not found");
       }
 
-      const deliveryDetails = {
-        name: selectedAddress.label,
-        phoneNumber: selectedAddress.phone,
-        completeAddress: selectedAddress.address,
-        nearbyLandmark: selectedAddress.address || "",
-        addressType: selectedAddress.label.toLowerCase().includes("home")
-          ? "home"
-          : selectedAddress.label.toLowerCase().includes("work")
-            ? "work"
-            : "other",
-        deliveryType,
-      };
-
-      const formattedAddress = `${selectedAddress.address}`;
-
       const total =
         calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;
 
@@ -252,10 +237,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           curryOptionName: (item.meal as any)?.curryOption?.name,
           curryOptionPrice: (item.meal as any)?.curryOption?.priceAdjustment,
         })),
-        deliveryDetails,
         paymentMethod: "razorpay",
         totalPrice: total,
-        deliveryAddress: formattedAddress,
+        deliveryAddressId: selectedAddress?.id,
       };
 
       setOrderId(orderId);

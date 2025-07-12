@@ -58,7 +58,6 @@ export function registerOrderRoutes(app: Express) {
 
       const deliveryCharge = req.body.deliveryCharge || 0;
 
-      // If payment details are provided, verify them first
       const status = req.body.status || "pending";
       const orderData: any = {
         userId,
@@ -70,7 +69,6 @@ export function registerOrderRoutes(app: Express) {
         createdAt: new Date(),
       };
 
-      // Add payment details if provided (for confirmed orders)
       if (
         req.body.razorpayPaymentId &&
         req.body.razorpayOrderId &&
@@ -78,7 +76,6 @@ export function registerOrderRoutes(app: Express) {
       ) {
         const { verifyPaymentSignature } = await import("../razorpay");
 
-        // Verify payment signature
         const isValid = verifyPaymentSignature(
           req.body.razorpayOrderId,
           req.body.razorpayPaymentId,
@@ -92,21 +89,18 @@ export function registerOrderRoutes(app: Express) {
         orderData.razorpayPaymentId = req.body.razorpayPaymentId;
         orderData.razorpayOrderId = req.body.razorpayOrderId;
         orderData.razorpaySignature = req.body.razorpaySignature;
-        orderData.status = "confirmed"; // Force confirmed status for verified payments
+        orderData.status = "confirmed";
       }
 
       const order = await mongoStorage.createOrder(orderData);
 
-      // Only send SMS notifications for confirmed orders (i.e., orders with payment)
       if (order.status === "confirmed") {
         try {
           const user = await mongoStorage.getUser(userId);
           if (user) {
             let deliveryPhone = null;
 
-            if (req.body.deliveryAddress?.phone) {
-              deliveryPhone = req.body.deliveryAddress.phone;
-            } else if (req.body.deliveryAddressId) {
+            if (req.body.deliveryAddressId) {
               const deliveryAddress = await mongoStorage.getAddressById(
                 req.body.deliveryAddressId,
               );

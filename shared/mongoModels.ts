@@ -98,7 +98,7 @@ export interface OrderDocument extends Document {
   status: string;
   totalPrice: number;
   deliveryTime?: Date;
-  deliveryAddress?: string;
+  deliveryAddressId: number;
   paymentMethod?: string;
   items: {
     mealId: number;
@@ -142,6 +142,7 @@ export interface SubscriptionDocument extends Document {
   deliveryAddressId: number;
   increasedPrice?: number;
   walletPrice?: number;
+  menuItems?: any;
 }
 
 export interface AddressDocument extends Document {
@@ -263,7 +264,7 @@ const orderSchema = new Schema<OrderDocument>({
   status: { type: String, required: true },
   totalPrice: { type: Number, required: true },
   deliveryTime: Date,
-  deliveryAddress: String,
+  deliveryAddressId: { type: Number, required: true },
   paymentMethod: String,
   items: [
     {

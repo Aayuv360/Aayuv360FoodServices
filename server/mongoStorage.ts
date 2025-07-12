@@ -55,7 +55,9 @@ export class MongoDBStorage implements IStorage {
       }
 
       if (mealsCount === 0 || mealsCount < milletMeals.length) {
-        console.log(`Initializing sample meals... (found ${mealsCount}, need ${milletMeals.length})`);
+        console.log(
+          `Initializing sample meals... (found ${mealsCount}, need ${milletMeals.length})`,
+        );
 
         // Clear existing meals if count doesn't match
         if (mealsCount > 0 && mealsCount !== milletMeals.length) {
@@ -144,8 +146,8 @@ export class MongoDBStorage implements IStorage {
   async getUserByUsername(username: string): Promise<any | undefined> {
     try {
       // Case-insensitive search using regex
-      const user = await User.findOne({ 
-        username: { $regex: new RegExp(`^${username}$`, 'i') }
+      const user = await User.findOne({
+        username: { $regex: new RegExp(`^${username}$`, "i") },
       });
       return user ? user.toObject() : undefined;
     } catch (error) {
@@ -157,8 +159,8 @@ export class MongoDBStorage implements IStorage {
   async getUserByEmail(email: string): Promise<any | undefined> {
     try {
       // Case-insensitive search using regex
-      const user = await User.findOne({ 
-        email: { $regex: new RegExp(`^${email}$`, 'i') }
+      const user = await User.findOne({
+        email: { $regex: new RegExp(`^${email}$`, "i") },
       });
       return user ? user.toObject() : undefined;
     } catch (error) {
@@ -459,7 +461,6 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  // Order operations
   async createOrder(orderData: any): Promise<any> {
     try {
       const id = await getNextSequence("order");
@@ -1349,7 +1350,11 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async getWalletTransactions(userId: number, page = 1, limit = 20): Promise<any[]> {
+  async getWalletTransactions(
+    userId: number,
+    page = 1,
+    limit = 20,
+  ): Promise<any[]> {
     try {
       const skip = (page - 1) * limit;
       const transactions = await WalletTransaction.find({ userId })
@@ -1392,12 +1397,15 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  async updateDeletionRequest(id: number, updateData: any): Promise<any | undefined> {
+  async updateDeletionRequest(
+    id: number,
+    updateData: any,
+  ): Promise<any | undefined> {
     try {
       const request = await DeletionRequest.findOneAndUpdate(
         { id },
         { ...updateData, updatedAt: getCurrentISTDate() },
-        { new: true }
+        { new: true },
       ).lean();
       return request;
     } catch (error) {
