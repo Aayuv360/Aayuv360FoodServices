@@ -13,6 +13,7 @@ import { useUIContext } from "@/contexts/UIContext";
 import {
   GOOGLE_MAPS_API_KEY,
   GOOGLE_MAPS_LIBRARIES,
+  ENHANCED_MAP_OPTIONS,
 } from "@/lib/location-constants";
 
 // Default coordinates for Hyderabad as fallback
@@ -294,21 +295,29 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           )}
         </div>
 
-        <div className="w-full h-[300px] rounded-lg overflow-hidden">
+        <div className="w-full h-[350px] rounded-lg overflow-hidden border">
           <GoogleMap
             mapContainerStyle={{ width: "100%", height: "100%" }}
             center={currentMapLocation}
             zoom={18}
-            options={{
-              clickableIcons: false,
-              gestureHandling: "greedy",
-              mapTypeControl: false,
-              streetViewControl: false,
+            options={ENHANCED_MAP_OPTIONS}
+            onClick={(e) => {
+              if (e.latLng) {
+                const newLoc = {
+                  lat: e.latLng.lat(),
+                  lng: e.latLng.lng(),
+                };
+                setCurrentMapLocation(newLoc);
+                reverseGeocode(newLoc);
+                checkServiceAvailability(newLoc);
+              }
             }}
           >
             <Marker
               position={currentMapLocation}
               draggable
+              animation={google.maps.Animation.DROP}
+              title="Drag to adjust your exact location"
               onDragEnd={(e) => {
                 const latLng = e.latLng;
                 if (!latLng) return;

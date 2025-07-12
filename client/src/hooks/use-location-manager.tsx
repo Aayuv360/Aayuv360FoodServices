@@ -116,8 +116,8 @@ export const useLocationManager = () => {
         (resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
-            timeout: 10000,
-            maximumAge: 300000,
+            timeout: 20000,
+            maximumAge: 60000, // 1 minute for better accuracy
           });
         },
       );

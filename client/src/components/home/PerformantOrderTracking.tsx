@@ -223,7 +223,7 @@ const PerformantOrderTrackingComponent = () => {
               <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000000" flood-opacity="0.3"/>
             </filter>
           </defs>
-          <g transform="translate(32, 32) rotate(${liveLocation.heading || 0}, 0, 0)" filter="url(#shadow)">
+          <g transform="translate(32, 32)" filter="url(#shadow)">
             <circle cx="-15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
             <circle cx="-15" cy="8" r="5" fill="#F97316" stroke="#ffffff" stroke-width="1"/>
             <circle cx="15" cy="8" r="8" fill="url(#wheelGradient)" stroke="#ffffff" stroke-width="2"/>
