@@ -24,11 +24,11 @@ import { useAuth } from "@/hooks/use-auth";
 import { useRazorpay } from "@/hooks/use-razorpay";
 import { formatPrice } from "@/lib/utils";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
@@ -558,25 +558,25 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   return (
     <>
-      <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent className=" w-full sm:max-w-md p-0 flex flex-col h-full bg-white shadow-xl flex flex-col animate-slide-in-right rounded-l-none lg:rounded-l-3xl overflow-hidden">
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="w-full max-w-2xl p-0 flex flex-col h-[90vh] bg-white shadow-xl rounded-3xl overflow-hidden gap-0 fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 max-h-[90vh] overflow-y-auto">
           <div className="flex-grow overflow-auto">
             {currentStep === "cart" && renderCartSummary()}
 
             {currentStep === "delivery" && (
               <div className="flex flex-col h-full px-4">
-                <SheetHeader
+                <DialogHeader
                   className="group p-3 sm:p-4 border-b cursor-pointer hover:opacity-90 transition-opacity duration-200"
                   onClick={handlePreviousStep}
                 >
-                  <SheetTitle className="flex items-center font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
+                  <DialogTitle className="flex items-center font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
                     <ArrowLeft
                       className="mr-2 mt-1 transition-transform duration-200 group-hover:-translate-x-1"
                       strokeWidth={3}
                     />
                     <span>Delivery Address</span>
-                  </SheetTitle>
-                </SheetHeader>
+                  </DialogTitle>
+                </DialogHeader>
 
                 <div className="flex items-center justify-between mt-4">
                   <div className="font-bold text-base sm:text-lg">
@@ -731,8 +731,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </div>
             )}
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
 
       {customizingMeal && (
