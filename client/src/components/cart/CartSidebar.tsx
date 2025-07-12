@@ -358,16 +358,16 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   };
   const renderCartSummary = () => (
     <div className="flex flex-col h-full px-4">
-      <SheetHeader className="p-3 sm:p-4 border-b">
+      <DialogHeader className="p-3 sm:p-4 border-b">
         <div className="flex justify-between items-center">
-          <SheetTitle className="flex gap-2 font-extrabold text-orange-600 text-lg text-2xl">
+          <DialogTitle className="flex gap-2 font-extrabold text-orange-600 text-lg text-2xl">
             🛒 Your Cart{" "}
             <span className="text-yellow-400">
               <Star size={20} fill="currentColor" />
             </span>
-          </SheetTitle>
+          </DialogTitle>
         </div>
-      </SheetHeader>
+      </DialogHeader>
       <div className="flex-grow overflow-y-auto">
         {cartItems.length === 0 ? (
           <div className="text-center py-6 sm:py-8">
