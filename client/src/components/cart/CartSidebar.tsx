@@ -580,17 +580,29 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
             {currentStep === "delivery" && (
               <div className="flex flex-col h-full px-4">
-                <div
-                  className="group p-3 sm:p-4 border-b cursor-pointer hover:opacity-90 transition-opacity duration-200"
-                  onClick={handlePreviousStep}
-                >
-                  <h2 className="flex items-center font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
-                    <ArrowLeft
-                      className="mr-2 mt-1 transition-transform duration-200 group-hover:-translate-x-1"
-                      strokeWidth={3}
-                    />
-                    <span>Delivery Address</span>
-                  </h2>
+                <div className="p-3 sm:p-4 border-b">
+                  <div className="flex justify-between items-center">
+                    <div 
+                      className="group flex items-center cursor-pointer hover:opacity-90 transition-opacity duration-200"
+                      onClick={handlePreviousStep}
+                    >
+                      <ArrowLeft
+                        className="mr-2 mt-1 transition-transform duration-200 group-hover:-translate-x-1"
+                        strokeWidth={3}
+                      />
+                      <h2 className="font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
+                        Delivery Address
+                      </h2>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full"
+                      onClick={onClose}
+                    >
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between mt-4">
