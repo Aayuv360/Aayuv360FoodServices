@@ -561,20 +561,20 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   return (
     <>
-      <div className={`fixed inset-0 z-50 ${open ? 'block' : 'hidden'}`}>
-        {/* Backdrop */}
-        <div 
+      <div className={`fixed inset-0 z-50 ${open ? "block" : "hidden"}`}>
+        <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm"
           onClick={onClose}
         />
-        
-        {/* Right Sliding Drawer */}
-        <div className={`
+
+        <div
+          className={`
           fixed top-0 right-0 h-full w-full sm:max-w-md bg-white shadow-xl 
           transform transition-transform duration-300 ease-in-out z-50
-          rounded-l-3xl overflow-hidden flex flex-col
-          ${open ? 'translate-x-0' : 'translate-x-full'}
-        `}>
+           overflow-hidden flex flex-col
+          ${open ? "translate-x-0" : "translate-x-full"}
+        `}
+        >
           <div className="flex-grow overflow-auto">
             {currentStep === "cart" && renderCartSummary()}
 
@@ -582,7 +582,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               <div className="flex flex-col h-full px-4">
                 <div className="p-3 sm:p-4 border-b">
                   <div className="flex justify-between items-center">
-                    <div 
+                    <div
                       className="group flex items-center cursor-pointer hover:opacity-90 transition-opacity duration-200"
                       onClick={handlePreviousStep}
                     >
