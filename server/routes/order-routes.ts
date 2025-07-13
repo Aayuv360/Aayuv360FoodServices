@@ -62,7 +62,7 @@ export function registerOrderRoutes(app: Express) {
       const orderData: any = {
         userId,
         status,
-        deliveryAddress: req.body.deliveryAddress,
+        deliveryAddressId: req.body.deliveryAddressId,
         totalPrice: totalOrderPrice + deliveryCharge,
         deliveryCharge,
         items: orderItems,
