@@ -1,20 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Minus,
   Plus,
   Check,
-  CreditCard,
-  ChevronRight,
-  ChevronLeft,
   ShoppingCart as ShoppingCartIcon,
-  PlusCircle,
   Trash2,
   Edit,
-  Star,
   Info,
   ArrowLeft,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -23,15 +17,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useRazorpay } from "@/hooks/use-razorpay";
 import { formatPrice } from "@/lib/utils";
-// Using custom right-sliding drawer implementation
 import { AuthModal } from "@/components/auth/AuthModal";
-import { Separator } from "@/components/ui/separator";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
 import { Meal } from "@shared/schema";
 import { Address } from "./Address";
 import DeleteAddressDialog from "../Modals/DeleteAddressDialog";
 import { useLocationManager } from "@/hooks/use-location-manager";
+import { Drawer } from "./Drawer";
 
 interface CartSidebarProps {
   open: boolean;
@@ -81,11 +74,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     deleteAddress,
     selectedAddress,
   } = useLocationManager();
-  useEffect(() => {
-    if (open) {
-      setCurrentStep("cart");
-    }
-  }, [open]);
+  const notSavedAddress = savedAddresses?.find(
+    (item) => item.id === selectedAddress?.id,
+  );
 
   const handleAddressFormSubmit = (addressData: any) => {
     addNewAddress(
@@ -197,7 +188,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       return;
     }
 
-    if (!selectedAddress?.id) {
+    if (!notSavedAddress) {
       toast({
         title: "Address required",
         description: "Please select an existing address or add a new one",
@@ -281,9 +272,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 "Your order has been placed successfully. You can track your order in your profile.",
               variant: "default",
             });
-
-            // Navigate to success page
-            navigate(`/profile?tab=orders`);
+            setCurrentStep("success");
+            // navigate(`/profile?tab=orders`);
           } catch (error) {
             console.error("Error updating order after payment:", error);
             toast({
@@ -298,7 +288,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           setIsPaymentInProgress(false);
 
           if (error.type === "user_cancelled") {
-            // User cancelled payment - cart remains intact, order ID unused
             toast({
               title: "Payment Cancelled",
               description: "You can try payment again from your cart.",
@@ -307,7 +296,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             return;
           }
 
-          // For real payment failures, cart remains intact for retry
           toast({
             title: "Payment Failed",
             description:
@@ -336,26 +324,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     setCurrentStep("delivery");
   };
   const renderCartSummary = () => (
-    <div className="flex flex-col h-full px-4">
-      <div className="p-3 sm:p-4 border-b">
-        <div className="flex justify-between items-center">
-          <h2 className="flex gap-2 font-extrabold text-orange-600 text-lg text-2xl">
-            🛒 Your Cart{" "}
-            <span className="text-yellow-400">
-              <Star size={20} fill="currentColor" />
-            </span>
-          </h2>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-      </div>
-      <div className="flex-grow overflow-y-auto">
+    <div className="flex flex-col max-h-[92.5vh]">
+      <div className="flex-1 overflow-y-auto pl-4 pb-4">
         {cartItems.length === 0 ? (
           <div className="text-center py-6 sm:py-8">
             <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
@@ -376,7 +346,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           </div>
         ) : (
           <>
-            <div className="py-3">
+            <div>
               {cartItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-2 p-4">
                   <div>
@@ -388,8 +358,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   </div>
                   <div className="flex-grow px-2 sm:px-3">
                     <div className="font-semibold text-base">
-                      {" "}
-                      {item.meal?.name}{" "}
+                      {item.meal?.name}
                     </div>
                     {item?.meal?.selectedCurry && (
                       <p className="text-sm text-gray-600">
@@ -455,9 +424,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 </div>
               ))}
             </div>
+
             <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-medium mb-4 flex items-center justify-center shadow-sm animate-bounce">
               🎉 You saved ₹25 on this order!
             </div>
+
             <div className="border-t border-orange-200 pt-4">
               <h3 className="font-bold mb-3 text-gray-800 text-lg">
                 💰 Bill Details
@@ -467,7 +438,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   <span>Items Total</span>
                   <span>{formatPrice(calculateCartTotal())}</span>
                 </div>
-
                 <div className="flex justify-between text-gray-700">
                   <span>Delivery Charge</span>
                   <span>
@@ -478,7 +448,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   <span>Taxes</span>
                   <span>{formatPrice(20)}</span>
                 </div>
-
                 <div className="border-t border-dashed border-orange-300 pt-3 flex justify-between font-extrabold text-lg">
                   <span className="text-gray-900">Total</span>
                   <span className="text-primary">
@@ -487,7 +456,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         (deliveryType === "express" ? 60 : 40) +
                         20,
                     )}
-                  </span>{" "}
+                  </span>
                 </div>
               </div>
             </div>
@@ -503,11 +472,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         )}
       </div>
 
-      <div className="pb-5 border-t border-gray-200 animate-fade-in-up">
-        {selectedAddress ? (
+      <div className="sticky bottom-0 bg-white px-4 py-2 border-t border-gray-200 z-10 shadow-md">
+        {selectedAddress && notSavedAddress ? (
           <Address selectedAddress={selectedAddress} onEdit={addressChange} />
         ) : (
-          <div className="flex justify-end w-full mb-8 mt-1">
+          <div className="flex justify-end w-full mb-4 mt-1">
             <Button
               variant="link"
               className="text-xs sm:text-sm flex items-center"
@@ -518,6 +487,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             </Button>
           </div>
         )}
+
         <Button
           onClick={handleNextStep}
           className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
@@ -529,7 +499,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             <>Payment in progress...</>
           ) : (
             <>
-              {/* <CreditCard className="mr-0.5 sm:mr-1 h-3 w-3 sm:h-4 sm:w-4" /> */}
               💳 Pay{" "}
               {formatPrice(
                 calculateCartTotal() +
@@ -545,205 +514,172 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
   return (
     <>
-      <div className={`fixed inset-0 z-50 ${open ? "block" : "hidden"}`}>
-        <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-          onClick={onClose}
-        />
+      <Drawer open={open} onClose={onClose} title="🛒 Your Cart">
+        <div className="flex-grow overflow-auto">
+          {currentStep === "cart" && renderCartSummary()}
 
-        <div
-          className={`
-          fixed top-0 right-0 h-full w-full sm:max-w-md bg-white shadow-xl 
-          transform transition-transform duration-300 ease-in-out z-50
-           overflow-hidden flex flex-col
-          ${open ? "translate-x-0" : "translate-x-full"}
-        `}
-        >
-          <div className="flex-grow overflow-auto">
-            {currentStep === "cart" && renderCartSummary()}
-
-            {currentStep === "delivery" && (
-              <div className="flex flex-col h-full px-4">
-                <div className="p-3 sm:p-4 border-b">
-                  <div className="flex justify-between items-center">
-                    <div
-                      className="group flex items-center cursor-pointer hover:opacity-90 transition-opacity duration-200"
-                      onClick={handlePreviousStep}
-                    >
-                      <ArrowLeft
-                        className="mr-2 mt-1 transition-transform duration-200 group-hover:-translate-x-1"
-                        strokeWidth={3}
-                      />
-                      <h2 className="font-extrabold text-xl text-orange-600 sm:text-2xl animate-fade-in">
-                        Delivery Address
-                      </h2>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 rounded-full"
-                      onClick={onClose}
-                    >
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mt-4">
-                  <div className="font-bold text-base sm:text-lg">
-                    Your Saved Address
-                  </div>
-                  <Button
-                    variant="link"
-                    className="flex items-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
-                    onClick={() => {
-                      setAddressModalOpen(true);
-                      setAddressModalAction("addressAdd");
-                    }}
+          {currentStep === "delivery" && (
+            <div className="flex flex-col h-full px-4">
+              <div className="flex items-center justify-between mt-4">
+                <div className="flex justify-between items-center">
+                  <div
+                    className="group flex items-center cursor-pointer hover:opacity-90 transition-opacity duration-200"
+                    onClick={handlePreviousStep}
                   >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Address</span>
-                  </Button>
+                    <ArrowLeft className="transition-transform duration-200 group-hover:-translate-x-1" />
+                    <h2 className="font-bold text-lg ">Delivery Address</h2>
+                  </div>
                 </div>
+                <Button
+                  variant="link"
+                  className="flex items-center h-auto py-1.5 sm:py-2 text-xs sm:text-sm"
+                  onClick={() => {
+                    setAddressModalOpen(true);
+                    setAddressModalAction("addressAdd");
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Address</span>
+                </Button>
+              </div>
 
-                {/* Address List */}
-                {savedAddresses.length > 0 ? (
-                  <div className="space-y-2 sm:space-y-3 mt-4">
-                    {savedAddresses.map((address) => (
-                      <div
-                        key={address.id}
-                        className={`border rounded-xl p-3 sm:p-4 cursor-pointer transition hover:shadow-sm ${
-                          selectedAddress?.id === address.id
-                            ? "border-primary bg-primary/5"
-                            : ""
-                        }`}
-                        onClick={() => selectAddress(address)}
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <div className="font-semibold   text-base sm:text-sm">
-                              {address.label}
-                            </div>
-                            {address.isDefault && (
-                              <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
-                                Default
-                              </span>
-                            )}
+              {savedAddresses.length > 0 ? (
+                <div className="space-y-2 sm:space-y-3 mt-4">
+                  {savedAddresses.map((address) => (
+                    <div
+                      key={address.id}
+                      className={`border rounded-xl p-3 sm:p-4 cursor-pointer transition hover:shadow-sm ${
+                        selectedAddress?.id === address.id
+                          ? "border-primary bg-primary/5"
+                          : ""
+                      }`}
+                      onClick={() => selectAddress(address)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <div className="font-semibold   text-base sm:text-sm">
+                            {address.label}
                           </div>
-
-                          <div className="flex items-center gap-2">
-                            <Edit
-                              className="h-4 w-4 text-primary"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingAddress(address);
-                                setAddressModalOpen(true);
-                                setAddressModalAction("addressEdit");
-                              }}
-                            />
-                            <Trash2
-                              className="h-4 w-4 text-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDeletingAddress(address);
-                              }}
-                            />
-                            {selectedAddress?.id === address.id && (
-                              <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                            )}
-                          </div>
+                          {address.isDefault && (
+                            <span className="text-[10px] sm:text-xs bg-primary/10 text-primary px-2 py-0.5 rounded">
+                              Default
+                            </span>
+                          )}
                         </div>
 
-                        <div className="text-xs sm:text-sm text-gray-600 space-y-0.5">
-                          <p className="line-clamp-1">{address.address}</p>
-
-                          <p>Phone: {address.phone}</p>
+                        <div className="flex items-center gap-2">
+                          <Edit
+                            className="h-4 w-4 text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingAddress(address);
+                              setAddressModalOpen(true);
+                              setAddressModalAction("addressEdit");
+                            }}
+                          />
+                          <Trash2
+                            className="h-4 w-4 text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingAddress(address);
+                            }}
+                          />
+                          {selectedAddress?.id === address.id && (
+                            <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                          )}
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 text-gray-500 mt-4">
-                    No saved addresses found
-                  </div>
-                )}
 
-                <NewAddressModal
-                  addressModalOpen={addressModalOpen}
-                  setAddressModalOpen={setAddressModalOpen}
-                  handleAddressFormSubmit={handleAddressFormSubmit}
-                  editingAddress={editingAddress}
-                  addressModalAction={addressModalAction}
-                />
+                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5">
+                        <p className="line-clamp-1">{address.address}</p>
 
-                <div className="text-xs sm:text-sm text-gray-500 mt-6 sm:mt-8">
-                  <p>
-                    We currently deliver only in Hyderabad, within a 10km radius
-                    of our service locations.
-                  </p>
+                        <p>Phone: {address.phone}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            )}
-
-            {currentStep === "success" && (
-              <div className="p-3 sm:p-4 text-center">
-                <div className="bg-primary/10 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                  <Check className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+              ) : (
+                <div className="text-center py-6 text-gray-500 mt-4">
+                  No saved addresses found
                 </div>
-                <h2 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2">
-                  Order Placed Successfully!
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6">
-                  Your order #{orderId} has been placed successfully.
+              )}
+
+              <NewAddressModal
+                addressModalOpen={addressModalOpen}
+                setAddressModalOpen={setAddressModalOpen}
+                handleAddressFormSubmit={handleAddressFormSubmit}
+                editingAddress={editingAddress}
+                addressModalAction={addressModalAction}
+              />
+
+              <div className="text-xs sm:text-sm text-gray-500 mt-6 sm:mt-8">
+                <p>
+                  We currently deliver only in Hyderabad, within a 10km radius
+                  of our service locations.
                 </p>
-                <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
-                  <h3 className="font-bold text-sm sm:text-base text-left mb-1.5 sm:mb-2">
-                    Order Details
-                  </h3>
-                  <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
-                    <div className="flex justify-between">
-                      <span>Order Number</span>
-                      <span>#{orderId}</span>
-                    </div>
+              </div>
+            </div>
+          )}
 
-                    <div className="flex justify-between">
-                      <span>Total Amount</span>
-                      <span>
-                        {formatPrice(
-                          calculateCartTotal() +
-                            (deliveryType === "express" ? 60 : 40) +
-                            20,
-                        )}
-                      </span>
-                    </div>
+          {currentStep === "success" && (
+            <div className="p-3 sm:p-4 text-center">
+              <div className="bg-primary/10 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+                <Check className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2">
+                Order Placed Successfully!
+              </h2>
+              <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6">
+                Your order #{orderId} has been placed successfully.
+              </p>
+              <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
+                <h3 className="font-bold text-sm sm:text-base text-left mb-1.5 sm:mb-2">
+                  Order Details
+                </h3>
+                <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
+                  <div className="flex justify-between">
+                    <span>Order Number</span>
+                    <span>#{orderId}</span>
+                  </div>
+
+                  <div className="flex justify-between">
+                    <span>Total Amount</span>
+                    <span>
+                      {formatPrice(
+                        calculateCartTotal() +
+                          (deliveryType === "express" ? 60 : 40) +
+                          20,
+                      )}
+                    </span>
                   </div>
                 </div>
-                <Button
-                  className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                  onClick={() => {
-                    onClose();
-                    setCurrentStep("cart");
-                    navigate("/menu");
-                  }}
-                >
-                  Continue Shopping
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                  onClick={() => {
-                    onClose();
-                    setCurrentStep("cart");
-                    navigate("/profile?tab=orders");
-                  }}
-                >
-                  View Orders
-                </Button>
               </div>
-            )}
-          </div>
+              <Button
+                className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+                onClick={() => {
+                  onClose();
+                  setCurrentStep("cart");
+                  navigate("/menu");
+                }}
+              >
+                Continue Shopping
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
+                onClick={() => {
+                  onClose();
+                  setCurrentStep("cart");
+                  navigate("/profile?tab=orders");
+                }}
+              >
+                View Orders
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
+      </Drawer>
+
       <AuthModal isOpen={authModalOpen} onOpenChange={setAuthModalOpen} />
 
       {customizingMeal && (

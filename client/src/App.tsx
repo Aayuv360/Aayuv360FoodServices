@@ -7,8 +7,14 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { CartProvider } from "@/hooks/use-cart";
 import { LocationProvider } from "@/contexts/LocationContext";
 import { UIProvider } from "@/contexts/UIContext";
-import { AccessibilityProvider, useKeyboardNavigation } from "@/hooks/use-accessibility";
-import { usePerformanceMonitoring, useMemoryOptimization } from "@/hooks/use-performance";
+import {
+  AccessibilityProvider,
+  useKeyboardNavigation,
+} from "@/hooks/use-accessibility";
+import {
+  usePerformanceMonitoring,
+  useMemoryOptimization,
+} from "@/hooks/use-performance";
 import { ProtectedRoute } from "@/components/protected-route";
 // Accessibility components removed
 
@@ -44,14 +50,18 @@ function Router() {
   useKeyboardNavigation();
   usePerformanceMonitoring();
   useMemoryOptimization();
-  
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Skip to content removed */}
       <div className="font-sans min-h-screen flex flex-col bg-gradient-to-b from-orange-50 to-amber-50">
         <div className="fixed inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.1),rgba(249,115,22,0))] pointer-events-none"></div>
         <Header />
-        <main id="main-content" className="flex-grow relative md:pb-0" role="main">
+        <main
+          id="main-content"
+          className="flex-grow relative md:pb-0"
+          role="main"
+        >
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/menu" element={<Menu />} />

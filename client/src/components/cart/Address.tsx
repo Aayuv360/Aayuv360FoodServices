@@ -12,7 +12,7 @@ export const Address: React.FC<AddressProps> = ({
   onEdit,
 }) => {
   return (
-    <div key={selectedAddress?.id} className="p-2 sm:p-3">
+    <div key={selectedAddress?.id} className="pb-2">
       <div className="flex justify-between items-start">
         <div className="flex items-start gap-2 sm:gap-3">
           <MapPin className="text-orange-600 mt-0.5" size={30} />
@@ -33,7 +33,7 @@ export const Address: React.FC<AddressProps> = ({
             variant="link"
             onClick={onEdit}
             size="sm"
-            className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary"
+            className="p-0 h-5 sm:h-6 text-sm font-semibold  text-primary"
           >
             Change{" "}
           </Button>
