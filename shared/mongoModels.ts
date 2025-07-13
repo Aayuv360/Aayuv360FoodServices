@@ -171,6 +171,8 @@ export interface LocationDocument extends Document {
   deliveryFee: number;
   createdAt: Date;
   updatedAt: Date;
+  lnt: number;
+  lng: number;
 }
 
 // Define CurryOption model
@@ -342,6 +344,8 @@ const locationSchema = new Schema<LocationDocument>({
   deliveryFee: { type: Number, required: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
+  lng: { type: Number, required: true },
+  lnt: { type: Number, required: true },
 });
 
 const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({

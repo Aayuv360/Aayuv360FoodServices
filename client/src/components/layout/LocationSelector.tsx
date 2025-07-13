@@ -83,7 +83,7 @@ const LocationSelector = () => {
       const coords = await getCurrentLocation();
 
       await checkServiceAvailability(coords);
-
+      console.log(coords);
       if (window.google && window.google.maps) {
         const geocoder = new window.google.maps.Geocoder();
         const result = await new Promise<google.maps.GeocoderResult[]>(
@@ -188,7 +188,7 @@ const LocationSelector = () => {
   };
 
   useEffect(() => {
-    if (!user && !selectedAddress && isLoaded) {
+    if (!selectedAddress && isLoaded) {
       const timer = setTimeout(() => {
         if (!selectedAddress) {
           handleCurrentLocation();

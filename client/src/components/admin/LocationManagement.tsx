@@ -44,6 +44,8 @@ interface Location {
   area: string;
   pincode: string;
   deliveryFee: number;
+  lng: number;
+  lnt: number;
 }
 
 const LocationManagement = () => {
@@ -69,11 +71,7 @@ const LocationManagement = () => {
 
   const createLocationMutation = useMutation({
     mutationFn: async (locationData: Omit<Location, "id">) => {
-      const res = await apiRequest(
-        "POST",
-        "/api/admin/locations",
-        locationData,
-      );
+      const res = await apiRequest("POST", "/api/locations", locationData);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to create location");
@@ -105,11 +103,7 @@ const LocationManagement = () => {
       id: number;
       locationData: Partial<Location>;
     }) => {
-      const res = await apiRequest(
-        "PUT",
-        `/api/admin/locations/${id}`,
-        locationData,
-      );
+      const res = await apiRequest("PUT", `/api/locations/${id}`, locationData);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to update location");
@@ -135,7 +129,7 @@ const LocationManagement = () => {
 
   const deleteLocationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await apiRequest("DELETE", `/api/admin/locations/${id}`);
+      const res = await apiRequest("DELETE", `/api/locations/${id}`);
       if (!res.ok) {
         const errorData = await res.json();
         throw new Error(errorData.message || "Failed to delete location");
@@ -167,6 +161,8 @@ const LocationManagement = () => {
       area: formData.get("area") as string,
       pincode: formData.get("pincode") as string,
       deliveryFee: Number(formData.get("deliveryFee")),
+      lng: Number(formData.get("lng")),
+      lnt: Number(formData.get("lnt")),
     };
 
     if (selectedLocation) {
@@ -227,6 +223,8 @@ const LocationManagement = () => {
                   <TableHead>ID</TableHead>
                   <TableHead>Area</TableHead>
                   <TableHead>Pincode</TableHead>
+                  <TableHead>longitude</TableHead>
+                  <TableHead>latitude</TableHead>
                   <TableHead>Delivery Fee (₹)</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -237,9 +235,9 @@ const LocationManagement = () => {
                     <TableCell>{location.id}</TableCell>
                     <TableCell>{location.area}</TableCell>
                     <TableCell>{location.pincode}</TableCell>
-                    <TableCell>
-                      ₹{(location.deliveryFee / 100).toFixed(2)}
-                    </TableCell>
+                    <TableCell>₹{location.lng}</TableCell>
+                    <TableCell>₹{location.lnt}</TableCell>
+                    <TableCell>₹{location.deliveryFee}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
                         variant="outline"
@@ -323,6 +321,42 @@ const LocationManagement = () => {
                   htmlFor="deliveryFee"
                   className="text-right text-sm font-medium"
                 >
+                  Longitude
+                </label>
+                <Input
+                  id="lng"
+                  name="lng"
+                  type="number"
+                  min="0"
+                  step="any"
+                  defaultValue={selectedLocation?.lng}
+                  required
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label
+                  htmlFor="deliveryFee"
+                  className="text-right text-sm font-medium"
+                >
+                  Latitude
+                </label>
+                <Input
+                  id="lnt"
+                  name="lnt"
+                  type="number"
+                  min="0"
+                  step="any"
+                  defaultValue={selectedLocation?.lnt}
+                  required
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label
+                  htmlFor="deliveryFee"
+                  className="text-right text-sm font-medium"
+                >
                   Delivery Fee (₹)
                 </label>
                 <Input
@@ -332,7 +366,7 @@ const LocationManagement = () => {
                   min="0"
                   step="1"
                   defaultValue={
-                    selectedLocation ? selectedLocation.deliveryFee / 100 : 30
+                    selectedLocation ? selectedLocation.deliveryFee : 30
                   }
                   required
                   className="col-span-3"

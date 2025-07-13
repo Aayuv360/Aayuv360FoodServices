@@ -116,12 +116,10 @@ export function CurryOptionsModal({
                   </Label>
                 </div>
                 <div className="text-xs sm:text-sm font-medium">
-                  {option.priceAdjustment > 0 ? (
+                  {option.priceAdjustment > 0 && (
                     <span className="text-primary">
                       +{formatPrice(option.priceAdjustment)}
                     </span>
-                  ) : (
-                    <span>Included</span>
                   )}
                 </div>
               </div>

@@ -93,11 +93,11 @@ export const useLocationManager = () => {
 
         setSavedAddresses(formattedAddresses);
 
-        const defaultAddress =
-          formattedAddresses.find((a) => a.isDefault) || formattedAddresses[0];
-        if (defaultAddress) {
-          setSelectedAddress(defaultAddress);
-        }
+        // const defaultAddress =
+        //   formattedAddresses.find((a) => a.isDefault) || formattedAddresses[0];
+        // if (defaultAddress) {
+        //   setSelectedAddress(defaultAddress);
+        // }
       } else {
         const errorText = await response.text();
         console.error("Failed to load addresses:", errorText);
@@ -117,7 +117,7 @@ export const useLocationManager = () => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
             timeout: 20000,
-            maximumAge: 60000, // 1 minute for better accuracy
+            maximumAge: 0,
           });
         },
       );
