@@ -77,7 +77,7 @@ export function AuthModal({
             <LoginForm onSuccess={onSuccess} />
           </TabsContent>
           <TabsContent value="register" className="mt-3 sm:mt-4">
-            <RegisterForm onSuccess={onSuccess} />
+            <RegisterForm onSuccess={() => setActiveTab("login")} />
           </TabsContent>
         </Tabs>
       </DialogContent>
