@@ -464,9 +464,13 @@ export class MongoDBStorage implements IStorage {
   async createOrder(orderData: any): Promise<any> {
     try {
       const id = await getNextSequence("order");
+      // Generate a unique order number: ORD + timestamp + random
+      const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+      
       const newOrder = new Order({
         ...orderData,
         id,
+        orderNumber,
         createdAt: getCurrentISTDate(),
         updatedAt: getCurrentISTDate(),
       });

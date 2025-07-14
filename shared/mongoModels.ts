@@ -94,6 +94,7 @@ export interface CartItemDocument extends Document {
 
 export interface OrderDocument extends Document {
   id: number;
+  orderNumber: string;
   userId: number;
   status: string;
   totalPrice: number;
@@ -263,6 +264,7 @@ const cartItemSchema = new Schema<CartItemDocument>({
 
 const orderSchema = new Schema<OrderDocument>({
   id: { type: Number, required: true, unique: true },
+  orderNumber: { type: String, required: true, unique: true },
   userId: { type: Number, required: true },
   status: { type: String, required: true },
   totalPrice: { type: Number, required: true },
