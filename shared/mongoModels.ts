@@ -173,6 +173,7 @@ export interface LocationDocument extends Document {
   updatedAt: Date;
   lnt: number;
   lng: number;
+  serviceRadius: number;
 }
 
 // Define CurryOption model
@@ -346,6 +347,7 @@ const locationSchema = new Schema<LocationDocument>({
   updatedAt: { type: Date, default: Date.now },
   lng: { type: Number, required: true },
   lnt: { type: Number, required: true },
+  serviceRadius: { type: Number, required: true },
 });
 
 const subscriptionPlanSchema = new Schema<SubscriptionPlanDocument>({

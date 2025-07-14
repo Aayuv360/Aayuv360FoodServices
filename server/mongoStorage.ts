@@ -1083,14 +1083,13 @@ export class MongoDBStorage implements IStorage {
     }
   }
 
-  // Location operations
   async getLocations(): Promise<any[]> {
     try {
       const locations = await Location.find();
       return locations.map((loc) => loc.toObject());
     } catch (error) {
       console.error("Error getting locations:", error);
-      return []; // Return empty array on error instead of throwing
+      return [];
     }
   }
 
@@ -1116,7 +1115,6 @@ export class MongoDBStorage implements IStorage {
 
   async createLocation(locationData: any): Promise<any> {
     try {
-      // Use the provided ID if available, otherwise get next sequence
       const id = locationData.id || (await getNextSequence("location"));
       const newLocation = new Location({
         ...locationData,

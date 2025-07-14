@@ -46,6 +46,7 @@ interface Location {
   deliveryFee: number;
   lng: number;
   lnt: number;
+  serviceRadius: number;
 }
 
 const LocationManagement = () => {
@@ -163,6 +164,7 @@ const LocationManagement = () => {
       deliveryFee: Number(formData.get("deliveryFee")),
       lng: Number(formData.get("lng")),
       lnt: Number(formData.get("lnt")),
+      serviceRadius: Number(formData.get("serviceRadius")),
     };
 
     if (selectedLocation) {
@@ -223,8 +225,9 @@ const LocationManagement = () => {
                   <TableHead>ID</TableHead>
                   <TableHead>Area</TableHead>
                   <TableHead>Pincode</TableHead>
-                  <TableHead>longitude</TableHead>
-                  <TableHead>latitude</TableHead>
+                  <TableHead>Longitude</TableHead>
+                  <TableHead>Latitude</TableHead>
+                  <TableHead>Service Radius</TableHead>
                   <TableHead>Delivery Fee (₹)</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -235,8 +238,9 @@ const LocationManagement = () => {
                     <TableCell>{location.id}</TableCell>
                     <TableCell>{location.area}</TableCell>
                     <TableCell>{location.pincode}</TableCell>
-                    <TableCell>₹{location.lng}</TableCell>
-                    <TableCell>₹{location.lnt}</TableCell>
+                    <TableCell>{location.lng}</TableCell>
+                    <TableCell>{location.lnt}</TableCell>
+                    <TableCell>{location.serviceRadius}</TableCell>
                     <TableCell>₹{location.deliveryFee}</TableCell>
                     <TableCell className="text-right space-x-2">
                       <Button
@@ -317,10 +321,7 @@ const LocationManagement = () => {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <label
-                  htmlFor="deliveryFee"
-                  className="text-right text-sm font-medium"
-                >
+                <label htmlFor="lng" className="text-right text-sm font-medium">
                   Longitude
                 </label>
                 <Input
@@ -335,10 +336,7 @@ const LocationManagement = () => {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <label
-                  htmlFor="deliveryFee"
-                  className="text-right text-sm font-medium"
-                >
+                <label htmlFor="lnt" className="text-right text-sm font-medium">
                   Latitude
                 </label>
                 <Input
@@ -348,6 +346,24 @@ const LocationManagement = () => {
                   min="0"
                   step="any"
                   defaultValue={selectedLocation?.lnt}
+                  required
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <label
+                  htmlFor="serviceRadius"
+                  className="text-right text-sm font-medium"
+                >
+                  Service Radius
+                </label>
+                <Input
+                  id="serviceRadius"
+                  name="serviceRadius"
+                  type="number"
+                  min="0"
+                  step="any"
+                  defaultValue={selectedLocation?.serviceRadius}
                   required
                   className="col-span-3"
                 />

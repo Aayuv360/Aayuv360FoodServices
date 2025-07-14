@@ -334,6 +334,7 @@ const LocationSelector = () => {
                       },
                       pincode: address.pincode,
                       isDefault: address.isDefault,
+                      phone: address?.phone,
                     })
                   }
                   className={`flex-col items-start ${isMobile ? "py-3 px-3" : "py-2"}`}
