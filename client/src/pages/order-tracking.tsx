@@ -1,28 +1,26 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, BellOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LiveOrderTracking } from '@/components/orders/LiveOrderTracking';
-import { usePushNotifications } from '@/hooks/use-push-notifications';
-import { useAuth } from '@/hooks/use-auth';
-// SkipToMainContent removed
+import React, { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { ArrowLeft, Bell, BellOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LiveOrderTracking } from "@/components/orders/LiveOrderTracking";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function OrderTrackingPage() {
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { 
-    permission, 
-    requestPermission, 
-    setupOrderNotifications, 
-    sendTestNotification 
+  const {
+    permission,
+    requestPermission,
+    setupOrderNotifications,
+    sendTestNotification,
   } = usePushNotifications();
-  
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [orderExists, setOrderExists] = useState<boolean | null>(null);
 
-  // Verify order exists and belongs to user
   useEffect(() => {
     const verifyOrder = async () => {
       if (!orderId || !user) return;
@@ -31,13 +29,12 @@ export default function OrderTrackingPage() {
         const response = await fetch(`/api/orders/${orderId}`);
         if (response.ok) {
           const order = await response.json();
-          // Check if order belongs to current user (in production)
           setOrderExists(true);
         } else {
           setOrderExists(false);
         }
       } catch (error) {
-        console.error('Error verifying order:', error);
+        console.error("Error verifying order:", error);
         setOrderExists(false);
       }
     };
@@ -45,13 +42,12 @@ export default function OrderTrackingPage() {
     verifyOrder();
   }, [orderId, user]);
 
-  // Setup notifications when order tracking loads
   useEffect(() => {
     if (!orderId || !orderExists) return;
 
     let cleanup: (() => void) | undefined;
 
-    if (permission === 'granted') {
+    if (permission === "granted") {
       cleanup = setupOrderNotifications(parseInt(orderId));
       setNotificationsEnabled(true);
     }
@@ -59,24 +55,19 @@ export default function OrderTrackingPage() {
     return cleanup;
   }, [orderId, orderExists, permission, setupOrderNotifications]);
 
-  // Handle enabling notifications
   const handleEnableNotifications = async () => {
     const granted = await requestPermission();
     if (granted && orderId) {
       const cleanup = setupOrderNotifications(parseInt(orderId));
       setNotificationsEnabled(true);
-      
-      // Send test notification
       await sendTestNotification();
-      
+
       return cleanup;
     }
   };
 
-  // Handle order status updates
   const handleStatusUpdate = (status: string) => {
-    console.log('Order status updated:', status);
-    // You can add additional handling here (analytics, etc.)
+    console.log("Order status updated:", status);
   };
 
   if (!orderId) {
@@ -84,9 +75,11 @@ export default function OrderTrackingPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">Invalid Order</h2>
+            <h2 className="text-xl font-semibold text-red-600 mb-2">
+              Invalid Order
+            </h2>
             <p className="text-gray-600 mb-4">No order ID provided.</p>
-            <Button onClick={() => navigate('/orders')} variant="outline">
+            <Button onClick={() => navigate("/orders")} variant="outline">
               View My Orders
             </Button>
           </CardContent>
@@ -100,11 +93,14 @@ export default function OrderTrackingPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold text-red-600 mb-2">Order Not Found</h2>
+            <h2 className="text-xl font-semibold text-red-600 mb-2">
+              Order Not Found
+            </h2>
             <p className="text-gray-600 mb-4">
-              Order #{orderId} could not be found or you don't have permission to view it.
+              Order #{orderId} could not be found or you don't have permission
+              to view it.
             </p>
-            <Button onClick={() => navigate('/orders')} variant="outline">
+            <Button onClick={() => navigate("/orders")} variant="outline">
               View My Orders
             </Button>
           </CardContent>
@@ -114,7 +110,6 @@ export default function OrderTrackingPage() {
   }
 
   if (orderExists === null) {
-    // Loading state
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-pulse">
@@ -134,8 +129,6 @@ export default function OrderTrackingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* SkipToMainContent removed */}
-      
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -155,9 +148,8 @@ export default function OrderTrackingPage() {
               </h1>
             </div>
 
-            {/* Notification Toggle */}
             <div className="flex items-center gap-2">
-              {permission !== 'granted' && !notificationsEnabled && (
+              {permission !== "granted" && !notificationsEnabled && (
                 <Button
                   onClick={handleEnableNotifications}
                   variant="outline"
@@ -169,15 +161,15 @@ export default function OrderTrackingPage() {
                   Enable Notifications
                 </Button>
               )}
-              
+
               {notificationsEnabled && (
                 <div className="flex items-center gap-2 text-green-600 text-sm">
                   <Bell className="w-4 h-4" />
                   <span>Notifications Active</span>
                 </div>
               )}
-              
-              {permission === 'denied' && (
+
+              {permission === "denied" && (
                 <div className="flex items-center gap-2 text-gray-500 text-sm">
                   <BellOff className="w-4 h-4" />
                   <span>Notifications Disabled</span>
@@ -188,15 +180,17 @@ export default function OrderTrackingPage() {
         </div>
       </div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="main-content">
-        <LiveOrderTracking 
-          orderId={parseInt(orderId)} 
+      <main
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        id="main-content"
+      >
+        <LiveOrderTracking
+          orderId={parseInt(orderId)}
           onStatusUpdate={handleStatusUpdate}
         />
       </main>
 
-      {/* Notification Permission Info */}
-      {permission === 'default' && (
+      {permission === "default" && (
         <div className="fixed bottom-4 right-4 max-w-sm">
           <Card className="bg-blue-50 border-blue-200">
             <CardContent className="p-4">
@@ -207,7 +201,8 @@ export default function OrderTrackingPage() {
                     Stay Updated
                   </h3>
                   <p className="text-sm text-blue-700 mb-3">
-                    Enable notifications to get real-time updates about your order delivery.
+                    Enable notifications to get real-time updates about your
+                    order delivery.
                   </p>
                   <Button
                     onClick={handleEnableNotifications}
