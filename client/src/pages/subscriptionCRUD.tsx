@@ -1181,7 +1181,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 setAddressModalOpen={(open: boolean) => {
                   setAddressModalOpen(open);
                 }}
-                handleAddressFormSubmit={handleAddressFormSubmit}
+                setEditingAddress={setEditingAddress}
                 editingAddress={editingAddress}
                 addressModalAction={addressModalAction}
               />

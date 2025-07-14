@@ -198,7 +198,9 @@ export const useLocationManager = () => {
       const data = await res.json();
       setIsUpdateAddress(false);
 
-      await refetchSavedAddresses();
+      await refetchSavedAddresses().then((res) => {
+        setSavedAddresses(res.data || []);
+      });
 
       if (data.isDefault) {
         const formattedAddress: SavedAddress = {
@@ -248,7 +250,9 @@ export const useLocationManager = () => {
         throw new Error("Failed to delete address");
       }
 
-      await refetchSavedAddresses();
+      await refetchSavedAddresses().then((res) => {
+        setSavedAddresses(res.data || []);
+      });
 
       if (selectedAddress?.id === addressId) {
         setSelectedAddress(null);

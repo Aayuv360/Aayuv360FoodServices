@@ -380,7 +380,6 @@ const LocationSelector = () => {
       <NewAddressModal
         addressModalOpen={isNewAddressModalOpen}
         setAddressModalOpen={setIsNewAddressModalOpen}
-        handleAddressFormSubmit={handleNewAddressAdded}
         addressModalAction="add"
       />
     </>

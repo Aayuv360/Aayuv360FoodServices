@@ -67,25 +67,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { initiatePayment } = useRazorpay();
-  const {
-    addNewAddress,
-    savedAddresses,
-    selectAddress,
-    deleteAddress,
-    selectedAddress,
-  } = useLocationManager();
+  const { savedAddresses, selectAddress, deleteAddress, selectedAddress } =
+    useLocationManager();
   const notSavedAddress = savedAddresses?.find(
     (item) => item.id === selectedAddress?.id,
   );
 
-  const handleAddressFormSubmit = (addressData: any) => {
-    addNewAddress(
-      editingAddress,
-      setAddressModalOpen,
-      setEditingAddress,
-      addressData,
-    );
-  };
   const handleDeleteAddress = async (addressId: number) => {
     deleteAddress(addressId);
   };
@@ -109,7 +96,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   ) => {
     try {
       const existingItem = cartItems.find((item) => {
-        console.log(item, selectedCurryOption);
         return (
           item.meal?.id === selectedMeal.id &&
           item.meal?.selectedCurry?.id === selectedCurryOption?.id
@@ -140,8 +126,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
       setCustomizingMeal(null);
     } catch (error) {
-      console.error("Error adding item to cart:", error);
-
       if (
         error instanceof Error &&
         error.message === "authentication_required"
@@ -275,7 +259,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             setCurrentStep("success");
             // navigate(`/profile?tab=orders`);
           } catch (error) {
-            console.error("Error updating order after payment:", error);
             toast({
               title: "Order Update Failed",
               description:
@@ -306,7 +289,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         },
       });
     } catch (error) {
-      console.error("Error creating order:", error);
       toast({
         title: "Error",
         description: "Failed to create order",
@@ -607,7 +589,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               <NewAddressModal
                 addressModalOpen={addressModalOpen}
                 setAddressModalOpen={setAddressModalOpen}
-                handleAddressFormSubmit={handleAddressFormSubmit}
+                setEditingAddress={setEditingAddress}
                 editingAddress={editingAddress}
                 addressModalAction={addressModalAction}
               />

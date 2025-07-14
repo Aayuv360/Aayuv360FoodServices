@@ -43,9 +43,7 @@ const DeleteAddressDialog: React.FC<DeleteAddressDialogProps> = ({
               {address.addressLine2 && (
                 <p className="text-sm text-gray-600">{address.addressLine2}</p>
               )}
-              <p className="text-sm text-gray-600">
-                {address.city}, {address.state} - {address.pincode}
-              </p>
+              <p className="text-sm text-gray-600 mt-1">{address.phone}</p>
             </div>
           </div>
         )}

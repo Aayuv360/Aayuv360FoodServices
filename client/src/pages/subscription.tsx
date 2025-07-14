@@ -856,7 +856,7 @@ const Subscription = () => {
                 setAddressModalOpen={(open) => {
                   setAddressModalOpen(open);
                 }}
-                handleAddressFormSubmit={handleAddressFormSubmit}
+                setEditingAddress={setEditingAddress}
                 editingAddress={editingAddress}
                 addressModalAction={addressModalAction}
               />

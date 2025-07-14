@@ -15,14 +15,14 @@ import {
   GOOGLE_MAPS_LIBRARIES,
   ENHANCED_MAP_OPTIONS,
 } from "@/lib/location-constants";
+import { useLocationManager } from "@/hooks/use-location-manager";
 
-// Default coordinates for Hyderabad as fallback
-const DEFAULT_COORDS = { lat: 17.385044, lng: 78.486671 };
+const DEFAULT_COORDS = { lat: 17.406657556136498, lng: 78.48462445101225 };
 
 interface NewAddressModalProps {
   addressModalOpen: boolean;
   setAddressModalOpen: (open: boolean) => void;
-  handleAddressFormSubmit: (data: any) => void;
+  setEditingAddress?: any;
   editingAddress?: any;
   addressModalAction: string;
 }
@@ -30,7 +30,7 @@ interface NewAddressModalProps {
 export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   addressModalOpen,
   setAddressModalOpen,
-  handleAddressFormSubmit,
+  setEditingAddress,
   editingAddress,
   addressModalAction,
 }) => {
@@ -42,7 +42,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
   >([]);
-
+  const { addNewAddress, isUpdateAddress } = useLocationManager();
   const [addressType, setAddressType] = useState(
     editingAddress?.name || "Home",
   );
@@ -58,7 +58,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     checkServiceAvailability,
     getServiceMessage,
     isLoading: serviceLoading,
-    isUpdateAddress,
   } = useServiceArea();
 
   const [addressDetails, setAddressDetails] = useState({
@@ -428,7 +427,12 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
               nearbyLandmark: formData.get("nearbyLandmark") as string,
             };
 
-            handleAddressFormSubmit(addressData);
+            addNewAddress(
+              editingAddress,
+              setAddressModalOpen,
+              setEditingAddress,
+              addressData,
+            );
           }}
           className="space-y-4"
         >
@@ -511,16 +515,20 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           <div className="flex justify-end pt-4">
             <Button
               type="submit"
-              className="w-full"
               disabled={!isWithinServiceArea || isUpdateAddress}
             >
-              {addressModalAction === "addressEdit"
-                ? isUpdateAddress
-                  ? "Updating..."
-                  : "Update Address"
-                : isUpdateAddress
-                  ? "Saving..."
-                  : "Save Address"}
+              {isUpdateAddress ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {addressModalAction === "addressEdit"
+                    ? "Updating..."
+                    : "Saving..."}
+                </div>
+              ) : addressModalAction === "addressEdit" ? (
+                "Update Address"
+              ) : (
+                "Save Address"
+              )}
             </Button>
           </div>
         </form>
@@ -672,7 +680,12 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                   nearbyLandmark: formData.get("nearbyLandmark") as string,
                 };
 
-                handleAddressFormSubmit(addressData);
+                addNewAddress(
+                  editingAddress,
+                  setAddressModalOpen,
+                  setEditingAddress,
+                  addressData,
+                );
               }}
               className="space-y-4"
             >
@@ -762,10 +775,23 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={!isWithinServiceArea}>
-                  {addressModalAction === "addressEdit"
-                    ? "Update Address"
-                    : "Save Address"}
+
+                <Button
+                  type="submit"
+                  disabled={!isWithinServiceArea || isUpdateAddress}
+                >
+                  {isUpdateAddress ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      {addressModalAction === "addressEdit"
+                        ? "Updating..."
+                        : "Saving..."}
+                    </div>
+                  ) : addressModalAction === "addressEdit" ? (
+                    "Update Address"
+                  ) : (
+                    "Save Address"
+                  )}
                 </Button>
               </DialogFooter>
             </form>
