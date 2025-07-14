@@ -155,6 +155,9 @@ const Subscription = () => {
     deleteAddress,
     selectedAddress,
   } = useLocationManager();
+  const notSavedAddress = savedAddresses?.find(
+    (item) => item.id === selectedAddress?.id,
+  );
   const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
     queryKey: ["/api/subscription-plans"],
     queryFn: async () => {
@@ -198,7 +201,6 @@ const Subscription = () => {
         timeSlot: data.timeSlot,
         deliveryAddressId: selectedAddress?.id,
       };
-
       const response = await apiRequest(
         "POST",
         "/api/subscriptions/generate-id",
@@ -301,7 +303,7 @@ const Subscription = () => {
 
   const onSubmit = (values: SubscriptionFormValues) => {
     if (formStep === "payment") {
-      if (!selectedAddress?.id) {
+      if (!notSavedAddress) {
         toast({
           title: "Address required",
           description: "Please select an existing address or add a new one",
@@ -713,10 +715,7 @@ const Subscription = () => {
                   <div className="flex flex-col gap-8">
                     <div className="bg-white rounded-2xl p-4 sm:p-6 border border-orange-100 shadow-sm w-full">
                       {(() => {
-                        const address = savedAddresses.find(
-                          (address) => address.id === selectedAddress?.id,
-                        );
-                        if (!address)
+                        if (!notSavedAddress)
                           return (
                             <>
                               <div className="flex justify-center">
@@ -745,11 +744,11 @@ const Subscription = () => {
                             </div>
                             <div className="flex flex-col">
                               <p className="text-sm text-gray-600">
-                                {address?.address}
+                                {notSavedAddress?.address}
                               </p>
 
                               <p className="text-sm text-gray-600">
-                                Phone: {address?.phone}
+                                Phone: {notSavedAddress?.phone}
                               </p>
                             </div>
                           </div>

@@ -49,7 +49,7 @@ export const useLocationManager = () => {
   const [error, setError] = useRecoilState(locationErrorState);
   const [serviceArea, setServiceArea] = useRecoilState(serviceAreaState);
   const activeLocation = useRecoilValue(activeLocationState);
-
+  const [isUpdateAddress, setIsUpdateAddress] = useState(false);
   const { user } = useAuth();
   const { checkServiceAvailability, getServiceMessage } = useServiceArea();
 
@@ -192,10 +192,11 @@ export const useLocationManager = () => {
     const url = isEditing
       ? `/api/addresses/${editingAddress.id}`
       : "/api/addresses";
-
+    setIsUpdateAddress(true);
     try {
       const res = await apiRequest(method, url, addressData);
       const data = await res.json();
+      setIsUpdateAddress(false);
 
       await refetchSavedAddresses();
 
@@ -228,6 +229,7 @@ export const useLocationManager = () => {
         variant: "default",
       });
     } catch (error) {
+      setIsUpdateAddress(false);
       toast({
         title: "Error",
         description: `Failed to ${isEditing ? "update" : "add"} address. Please try again.`,
@@ -302,5 +304,6 @@ export const useLocationManager = () => {
     refreshSavedAddresses: refetchSavedAddresses,
     clearError,
     checkLocationServiceArea,
+    isUpdateAddress,
   };
 };

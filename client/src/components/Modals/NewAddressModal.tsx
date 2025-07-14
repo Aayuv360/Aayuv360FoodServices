@@ -58,6 +58,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     checkServiceAvailability,
     getServiceMessage,
     isLoading: serviceLoading,
+    isUpdateAddress,
   } = useServiceArea();
 
   const [addressDetails, setAddressDetails] = useState({
@@ -511,11 +512,15 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             <Button
               type="submit"
               className="w-full"
-              disabled={!isWithinServiceArea}
+              disabled={!isWithinServiceArea || isUpdateAddress}
             >
               {addressModalAction === "addressEdit"
-                ? "Update Address"
-                : "Save Address"}
+                ? isUpdateAddress
+                  ? "Updating..."
+                  : "Update Address"
+                : isUpdateAddress
+                  ? "Saving..."
+                  : "Save Address"}
             </Button>
           </div>
         </form>
