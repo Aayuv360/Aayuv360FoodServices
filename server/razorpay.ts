@@ -1,3 +1,8 @@
+// Load environment variables first
+import dotenv from 'dotenv';
+const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+dotenv.config({ path: envFile });
+
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import { storage } from "./storage";
@@ -17,14 +22,24 @@ let razorpay: Razorpay | null = null;
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
+console.log("Razorpay environment check:", {
+  RAZORPAY_KEY_ID_present: !!RAZORPAY_KEY_ID,
+  RAZORPAY_KEY_SECRET_present: !!RAZORPAY_KEY_SECRET,
+  NODE_ENV: process.env.NODE_ENV
+});
+
 if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
   razorpay = new Razorpay({
     key_id: RAZORPAY_KEY_ID,
     key_secret: RAZORPAY_KEY_SECRET,
   });
-  console.log("Razorpay payment gateway initialized successfully");
+  console.log("✅ Razorpay payment gateway initialized successfully");
 } else {
-  console.warn("Razorpay keys not found - payment features will be disabled");
+  console.warn("⚠️ Razorpay keys not found - payment features will be disabled");
+  console.log("Missing keys:", {
+    RAZORPAY_KEY_ID: RAZORPAY_KEY_ID ? "PRESENT" : "MISSING",
+    RAZORPAY_KEY_SECRET: RAZORPAY_KEY_SECRET ? "PRESENT" : "MISSING"
+  });
 }
 
 export const orderPaymentMap = new Map<
@@ -265,8 +280,13 @@ export async function handleWebhookEvent(event: any, signature: string) {
 }
 
 function verifyWebhookSignature(payload: string, signature: string) {
+  const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
+  if (!razorpaySecret) {
+    throw new Error("RAZORPAY_KEY_SECRET not found");
+  }
+  
   const expectedSignature = crypto
-    .createHmac("sha256", env.RAZORPAY_KEY_SECRET!)
+    .createHmac("sha256", razorpaySecret)
     .update(payload)
     .digest("hex");
 
