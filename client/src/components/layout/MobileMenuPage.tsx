@@ -1,16 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
-import {
-  LogOut,
-  Utensils,
-  CalendarCheck,
-  ChefHat,
-  ClipboardList,
-  LogIn,
-  User,
-} from "lucide-react";
+import { LogOut, ChefHat, ClipboardList, User } from "lucide-react";
 import { motion } from "framer-motion";
-import { AuthModal } from "@/components/auth/AuthModal";
 import { useState } from "react";
 import CartSidebar from "@/components/cart/CartSidebar";
 
@@ -56,25 +47,6 @@ const MobileMenuPage = ({
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [cartOpen, setCartOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<"normal" | "subscribe">(
-    "normal",
-  );
-  const [authModalTab, setAuthModalTab] = useState<"login" | "register">(
-    "login",
-  );
-  const [authRedirectUrl, setAuthRedirectUrl] = useState("");
-
-  const openAuthModal = (
-    mode: "normal" | "subscribe" = "normal",
-    redirectUrl = "",
-    tab: "login" | "register" = "login",
-  ) => {
-    setAuthModalMode(mode);
-    setAuthRedirectUrl(redirectUrl);
-    setAuthModalTab(tab);
-    setAuthModalOpen(true);
-  };
 
   return (
     <>
@@ -103,28 +75,19 @@ const MobileMenuPage = ({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
           >
-            {user ? (
-              <MenuItem icon={<LogOut />} text="Sign Out" click={logout} />
-            ) : (
-              <MenuItem
-                icon={<LogIn />}
-                text="Login"
-                click={() => openAuthModal("normal")}
-              />
-            )}
+            <MenuItem
+              icon={<LogOut />}
+              text="Logout"
+              click={() => {
+                logout();
+                setMobilePage?.(false);
+              }}
+            />
           </motion.div>
         </div>
       </div>
 
       <CartSidebar open={cartOpen} onClose={() => setCartOpen(false)} />
-
-      <AuthModal
-        isOpen={authModalOpen}
-        onOpenChange={setAuthModalOpen}
-        defaultTab={authModalTab}
-        redirectUrl={authRedirectUrl}
-        mode={authModalMode}
-      />
     </>
   );
 };
