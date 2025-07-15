@@ -1,4 +1,3 @@
-
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { storage } from "../storage";
@@ -9,15 +8,11 @@ import { router as deliveryRoutes } from "../delivery-status";
 import { router as notificationRoutes } from "../notifications";
 
 export function registerMiscRoutes(app: Express) {
-  // Serve images from MongoDB
   app.get("/api/images/:id", serveImageFromMongoDB);
-
-  // Use existing route modules
   app.use(deliveryRoutes);
   app.use(notificationRoutes);
   app.use(contactRoutes);
 
-  // Curry options routes
   app.get("/api/curry-options", async (req, res) => {
     try {
       const curryOptions = await storage.getCurryOptions();
@@ -54,7 +49,7 @@ export function registerMiscRoutes(app: Express) {
       const allCurryOptions = await storage.getCurryOptions();
       const mealCurryOptions = allCurryOptions.filter(
         (option: { mealId?: number | null }) =>
-          option.mealId === mealId || option.mealId === null
+          option.mealId === mealId || option.mealId === null,
       );
 
       res.json(mealCurryOptions);
@@ -64,7 +59,6 @@ export function registerMiscRoutes(app: Express) {
     }
   });
 
-  // Contact/Review form
   app.post("/api/contact-review", async (req, res) => {
     try {
       const { name, email, phone, message, rating } = req.body;
@@ -114,7 +108,6 @@ export function registerMiscRoutes(app: Express) {
     }
   });
 
-  // Newsletter subscription
   app.post("/api/newsletter", async (req, res) => {
     try {
       const result = await mongoStorage.createNewsletterEmail(req.body);
@@ -137,13 +130,8 @@ export function registerMiscRoutes(app: Express) {
     }
   });
 
-  // Deliveries endpoint
   app.get("/api/deliveries", async (req, res) => {
     try {
-      if (!req.isAuthenticated()) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
       const user = await mongoStorage.getUser((req.user as any).id);
       if (!user?.isAdmin) {
         return res.status(403).json({ error: "Admin access required" });

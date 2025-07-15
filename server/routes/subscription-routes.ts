@@ -1,4 +1,3 @@
-
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { insertSubscriptionSchema } from "../../shared/schema";
@@ -8,7 +7,6 @@ import { logAPIRequest } from "../logger";
 import { z } from "zod";
 import { authenticateToken } from "../jwt-middleware";
 
-// Utility function to calculate subscription status
 function calculateSubscriptionStatus(subscription: any) {
   try {
     let startDate;
@@ -37,7 +35,7 @@ function calculateSubscriptionStatus(subscription: any) {
         "Invalid start date for subscription:",
         subscription.id,
         "Date value:",
-        subscription.startDate || subscription.start_date
+        subscription.startDate || subscription.start_date,
       );
       return {
         ...subscription,
@@ -60,7 +58,7 @@ function calculateSubscriptionStatus(subscription: any) {
     if (isNaN(endDate.getTime())) {
       console.log(
         "Invalid end date calculation for subscription:",
-        subscription.id
+        subscription.id,
       );
       return {
         ...subscription,
@@ -73,17 +71,17 @@ function calculateSubscriptionStatus(subscription: any) {
     const current = new Date(
       currentDate.getFullYear(),
       currentDate.getMonth(),
-      currentDate.getDate()
+      currentDate.getDate(),
     );
     const start = new Date(
       startDate.getFullYear(),
       startDate.getMonth(),
-      startDate.getDate()
+      startDate.getDate(),
     );
     const end = new Date(
       endDate.getFullYear(),
       endDate.getMonth(),
-      endDate.getDate()
+      endDate.getDate(),
     );
 
     let status = "inactive";
@@ -116,7 +114,7 @@ function calculateSubscriptionStatus(subscription: any) {
     console.error(
       "Error calculating subscription status for subscription:",
       subscription.id,
-      error
+      error,
     );
     return {
       ...subscription,
@@ -128,17 +126,12 @@ function calculateSubscriptionStatus(subscription: any) {
 }
 
 export function registerSubscriptionRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
-
   const isManagerOrAdmin = (req: Request, res: Response, next: Function) => {
     const user = req.user as any;
     if (!user || (user.role !== "manager" && user.role !== "admin")) {
-      return res.status(403).json({ message: "Access denied. Manager privileges required." });
+      return res
+        .status(403)
+        .json({ message: "Access denied. Manager privileges required." });
     }
     next();
   };
@@ -192,7 +185,7 @@ export function registerSubscriptionRoutes(app: Express) {
           {
             dietaryPreference: "veg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg"
+              (plan) => plan.dietaryPreference === "veg",
             ),
             extraPrice: 0,
             id: 1,
@@ -200,7 +193,7 @@ export function registerSubscriptionRoutes(app: Express) {
           {
             dietaryPreference: "veg_with_egg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg_with_egg"
+              (plan) => plan.dietaryPreference === "veg_with_egg",
             ),
             extraPrice: 0,
             id: 2,
@@ -208,7 +201,7 @@ export function registerSubscriptionRoutes(app: Express) {
           {
             dietaryPreference: "nonveg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "nonveg"
+              (plan) => plan.dietaryPreference === "nonveg",
             ),
             extraPrice: 0,
             id: 3,
@@ -216,14 +209,10 @@ export function registerSubscriptionRoutes(app: Express) {
         ].filter((group) => group.plans.length > 0);
         subscriptionPlans = groupedPlans;
 
-        console.log(
-          `📋 Retrieved ${subscriptionPlans.length} subscription plans from MongoDB`
-        );
-
         CacheService.setSubscriptionPlans(subscriptionPlans);
       } else {
         console.log(
-          `📋 Retrieved ${subscriptionPlans.length} subscription plans from cache`
+          `📋 Retrieved ${subscriptionPlans.length} subscription plans from cache`,
         );
       }
 
@@ -233,7 +222,7 @@ export function registerSubscriptionRoutes(app: Express) {
         "/api/subscription-plans",
         200,
         duration,
-        (req.user as any)?.id
+        (req.user as any)?.id,
       );
 
       res.json(subscriptionPlans);
@@ -245,13 +234,13 @@ export function registerSubscriptionRoutes(app: Express) {
         "/api/subscription-plans",
         500,
         duration,
-        (req.user as any)?.id
+        (req.user as any)?.id,
       );
       res.status(500).json({ message: "Failed to fetch subscription plans" });
     }
   });
 
-  app.get("/api/subscriptions", isAuthenticated, async (req, res) => {
+  app.get("/api/subscriptions", authenticateToken, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const subscriptions = await mongoStorage.getSubscriptionsByUserId(userId);
@@ -263,7 +252,7 @@ export function registerSubscriptionRoutes(app: Express) {
           console.error(
             "Failed to calculate status for subscription:",
             subscription.id,
-            statusError
+            statusError,
           );
           return {
             ...subscription,
@@ -281,7 +270,7 @@ export function registerSubscriptionRoutes(app: Express) {
     }
   });
 
-  app.get("/api/subscriptions/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/subscriptions/:id", authenticateToken, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const isAdmin = (req.user as any).role === "admin";
@@ -307,17 +296,21 @@ export function registerSubscriptionRoutes(app: Express) {
     }
   });
 
-  app.post("/api/subscriptions/generate-id", isAuthenticated, async (req, res) => {
-    try {
-      const id = await getNextSequence("subscription");
-      res.status(200).json({ id });
-    } catch (error) {
-      console.error("Error generating subscription ID:", error);
-      res.status(500).json({ message: "Failed to generate subscription ID" });
-    }
-  });
+  app.post(
+    "/api/subscriptions/generate-id",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const id = await getNextSequence("subscription");
+        res.status(200).json({ id });
+      } catch (error) {
+        console.error("Error generating subscription ID:", error);
+        res.status(500).json({ message: "Failed to generate subscription ID" });
+      }
+    },
+  );
 
-  app.post("/api/subscriptions", isAuthenticated, async (req, res) => {
+  app.post("/api/subscriptions", authenticateToken, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const requestData = {
@@ -330,11 +323,14 @@ export function registerSubscriptionRoutes(app: Express) {
       };
 
       const subscriptionData = insertSubscriptionSchema.parse(requestData);
-      const subscription = await mongoStorage.createSubscription(subscriptionData);
+      const subscription =
+        await mongoStorage.createSubscription(subscriptionData);
       res.status(201).json(subscription);
     } catch (err) {
       if (err instanceof z.ZodError) {
-        res.status(400).json({ message: "Validation error", errors: err.errors });
+        res
+          .status(400)
+          .json({ message: "Validation error", errors: err.errors });
       } else {
         console.error("Error creating subscription:", err);
         res.status(500).json({ message: "Error creating subscription" });
@@ -342,99 +338,113 @@ export function registerSubscriptionRoutes(app: Express) {
     }
   });
 
-  app.post("/api/subscriptions/:id/modify", isAuthenticated, async (req, res) => {
-    try {
-      const userId = (req.user as any).id;
-      const subscriptionId = parseInt(req.params.id, 10);
-      const { resumeDate, timeSlot, deliveryAddressId, personCount } = req.body;
+  app.post(
+    "/api/subscriptions/:id/modify",
+    authenticateToken,
+    async (req, res) => {
+      try {
+        const userId = (req.user as any).id;
+        const subscriptionId = parseInt(req.params.id, 10);
+        const { resumeDate, timeSlot, deliveryAddressId, personCount } =
+          req.body;
 
-      const parsedResumeDate = new Date(resumeDate);
-      if (!resumeDate || isNaN(parsedResumeDate.getTime())) {
-        return res.status(400).json({ message: "Invalid or missing resumeDate in request body" });
-      }
+        const parsedResumeDate = new Date(resumeDate);
+        if (!resumeDate || isNaN(parsedResumeDate.getTime())) {
+          return res
+            .status(400)
+            .json({ message: "Invalid or missing resumeDate in request body" });
+        }
 
-      const subscription = await mongoStorage.getSubscription(subscriptionId);
-      if (!subscription) {
-        return res.status(404).json({ message: "Subscription not found" });
-      }
+        const subscription = await mongoStorage.getSubscription(subscriptionId);
+        if (!subscription) {
+          return res.status(404).json({ message: "Subscription not found" });
+        }
 
-      if (subscription.userId !== userId) {
-        return res.status(403).json({
-          message: "You do not have permission to modify this subscription",
-        });
-      }
+        if (subscription.userId !== userId) {
+          return res.status(403).json({
+            message: "You do not have permission to modify this subscription",
+          });
+        }
 
-      const planDuration = subscription?.mealsPerMonth;
-      if (typeof planDuration !== "number" || planDuration <= 0) {
-        console.error(
-          "Invalid or missing plan duration for subscription:",
-          planDuration
+        const planDuration = subscription?.mealsPerMonth;
+        if (typeof planDuration !== "number" || planDuration <= 0) {
+          console.error(
+            "Invalid or missing plan duration for subscription:",
+            planDuration,
+          );
+          return res.status(400).json({
+            message: "Invalid or missing plan duration for the subscription.",
+          });
+        }
+
+        const today = new Date();
+        const startDate = new Date(subscription.startDate);
+
+        const deliveredDays = Math.max(
+          0,
+          Math.floor(
+            (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+          ) + 1,
         );
-        return res.status(400).json({
-          message: "Invalid or missing plan duration for the subscription.",
-        });
+
+        const remainingDays = planDuration - deliveredDays;
+        if (remainingDays <= 0) {
+          return res
+            .status(400)
+            .json({ message: "No remaining days in the subscription plan" });
+        }
+
+        const addDays = (date: Date, days: number) => {
+          const result = new Date(date);
+          result.setUTCDate(result.getUTCDate() + days);
+          return result;
+        };
+
+        const newEndDate =
+          remainingDays > 1
+            ? addDays(parsedResumeDate, planDuration - 1)
+            : addDays(parsedResumeDate, remainingDays - 1);
+
+        const updates = {
+          startDate: parsedResumeDate.toISOString(),
+          endDate: newEndDate.toISOString(),
+          timeSlot,
+          deliveryAddressId,
+          updatedAt: new Date(),
+          personCount,
+        };
+
+        const updatedSubscription = await mongoStorage.updateSubscription(
+          subscriptionId,
+          updates,
+        );
+
+        if (!updatedSubscription) {
+          return res
+            .status(500)
+            .json({ message: "Failed to modify subscription" });
+        }
+
+        const modifiedSubscriptionWithStatus =
+          calculateSubscriptionStatus(updatedSubscription);
+
+        return res.json(modifiedSubscriptionWithStatus);
+      } catch (err) {
+        console.error("Error modifying subscription:", err);
+        return res
+          .status(500)
+          .json({ message: "Error modifying subscription" });
       }
+    },
+  );
 
-      const today = new Date();
-      const startDate = new Date(subscription.startDate);
-
-      const deliveredDays = Math.max(
-        0,
-        Math.floor(
-          (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-        ) + 1
-      );
-
-      const remainingDays = planDuration - deliveredDays;
-      if (remainingDays <= 0) {
-        return res.status(400).json({ message: "No remaining days in the subscription plan" });
-      }
-
-      const addDays = (date: Date, days: number) => {
-        const result = new Date(date);
-        result.setUTCDate(result.getUTCDate() + days);
-        return result;
-      };
-
-      const newEndDate =
-        remainingDays > 1
-          ? addDays(parsedResumeDate, planDuration - 1)
-          : addDays(parsedResumeDate, remainingDays - 1);
-
-      const updates = {
-        startDate: parsedResumeDate.toISOString(),
-        endDate: newEndDate.toISOString(),
-        timeSlot,
-        deliveryAddressId,
-        updatedAt: new Date(),
-        personCount,
-      };
-
-      const updatedSubscription = await mongoStorage.updateSubscription(
-        subscriptionId,
-        updates
-      );
-
-      if (!updatedSubscription) {
-        return res.status(500).json({ message: "Failed to modify subscription" });
-      }
-
-      const modifiedSubscriptionWithStatus =
-        calculateSubscriptionStatus(updatedSubscription);
-
-      return res.json(modifiedSubscriptionWithStatus);
-    } catch (err) {
-      console.error("Error modifying subscription:", err);
-      return res.status(500).json({ message: "Error modifying subscription" });
-    }
-  });
-
-  app.patch("/api/subscriptions/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/subscriptions/:id", authenticateToken, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const subscriptionId = parseInt(req.params.id);
 
-      const existingSubscription = await mongoStorage.getSubscription(subscriptionId);
+      const existingSubscription =
+        await mongoStorage.getSubscription(subscriptionId);
 
       if (!existingSubscription) {
         return res.status(404).json({ message: "Subscription not found" });
@@ -448,7 +458,7 @@ export function registerSubscriptionRoutes(app: Express) {
 
       const updatedSubscription = await mongoStorage.updateSubscription(
         subscriptionId,
-        req.body
+        req.body,
       );
       res.json(updatedSubscription);
     } catch (err) {
@@ -458,8 +468,9 @@ export function registerSubscriptionRoutes(app: Express) {
   });
 
   // Admin subscription plan routes
-  app.route("/api/admin/subscription-plans")
-    .get(isAuthenticated, isManagerOrAdmin, async (req, res) => {
+  app
+    .route("/api/admin/subscription-plans")
+    .get(authenticateToken, isManagerOrAdmin, async (req, res) => {
       try {
         const plans = await mongoStorage.getAllSubscriptionPlans();
         const plansWithMenuItems = plans;
@@ -468,7 +479,7 @@ export function registerSubscriptionRoutes(app: Express) {
           {
             dietaryPreference: "veg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg"
+              (plan) => plan.dietaryPreference === "veg",
             ),
             extraPrice: 0,
             id: 1,
@@ -476,7 +487,7 @@ export function registerSubscriptionRoutes(app: Express) {
           {
             dietaryPreference: "veg_with_egg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg_with_egg"
+              (plan) => plan.dietaryPreference === "veg_with_egg",
             ),
             extraPrice: 0,
             id: 2,
@@ -484,7 +495,7 @@ export function registerSubscriptionRoutes(app: Express) {
           {
             dietaryPreference: "nonveg",
             plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "nonveg"
+              (plan) => plan.dietaryPreference === "nonveg",
             ),
             extraPrice: 0,
             id: 3,
@@ -497,7 +508,7 @@ export function registerSubscriptionRoutes(app: Express) {
         res.status(500).json({ message: "Error fetching subscription plans" });
       }
     })
-    .post(isAuthenticated, isManagerOrAdmin, async (req, res) => {
+    .post(authenticateToken, isManagerOrAdmin, async (req, res) => {
       try {
         const { action, planData, planId } = req.body;
 
@@ -513,7 +524,7 @@ export function registerSubscriptionRoutes(app: Express) {
           console.log("🚀 Updating subscription plan:", planId, planData);
           const updatedPlan = await mongoStorage.updateSubscriptionPlan(
             planId,
-            planData
+            planData,
           );
           res.json({
             success: true,
@@ -524,7 +535,7 @@ export function registerSubscriptionRoutes(app: Express) {
           console.log("🚀 Deleting subscription plan:", planId);
           const updatedPlan = await mongoStorage.updateSubscriptionPlan(
             planId,
-            { isActive: false }
+            { isActive: false },
           );
           res.json({
             success: true,
@@ -543,38 +554,43 @@ export function registerSubscriptionRoutes(app: Express) {
       }
     });
 
-  app.put("/api/admin/subscription-plans/:id", isAuthenticated, isManagerOrAdmin, async (req: Request, res: Response) => {
-    try {
-      console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
-      const planId = req.params.id;
-      const updateData = req.body;
+  app.put(
+    "/api/admin/subscription-plans/:id",
+    authenticateToken,
+    isManagerOrAdmin,
+    async (req: Request, res: Response) => {
+      try {
+        console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
+        const planId = req.params.id;
+        const updateData = req.body;
 
-      const updatedPlan = await mongoStorage.updateSubscriptionPlan(
-        planId,
-        updateData
-      );
+        const updatedPlan = await mongoStorage.updateSubscriptionPlan(
+          planId,
+          updateData,
+        );
 
-      if (!updatedPlan) {
-        return res.status(404).json({
+        if (!updatedPlan) {
+          return res.status(404).json({
+            success: false,
+            message: "Subscription plan not found",
+          });
+        }
+
+        console.log(`✅ Successfully updated subscription plan ${planId}`);
+        res.setHeader("Content-Type", "application/json");
+        res.status(200).json({
+          success: true,
+          message: "Plan updated successfully!",
+          id: planId,
+          data: updatedPlan,
+        });
+      } catch (error) {
+        console.error("Error updating subscription plan:", error);
+        res.status(500).json({
           success: false,
-          message: "Subscription plan not found",
+          message: "Failed to update subscription plan",
         });
       }
-
-      console.log(`✅ Successfully updated subscription plan ${planId}`);
-      res.setHeader("Content-Type", "application/json");
-      res.status(200).json({
-        success: true,
-        message: "Plan updated successfully!",
-        id: planId,
-        data: updatedPlan,
-      });
-    } catch (error) {
-      console.error("Error updating subscription plan:", error);
-      res.status(500).json({
-        success: false,
-        message: "Failed to update subscription plan",
-      });
-    }
-  });
+    },
+  );
 }

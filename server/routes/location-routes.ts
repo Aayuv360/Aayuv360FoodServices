@@ -2,12 +2,6 @@ import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 
 export function registerLocationRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
   const isManagerOrAdmin = (req: Request, res: Response, next: Function) => {
     const user = req.user as any;
     if (!user || (user.role !== "manager" && user.role !== "admin")) {

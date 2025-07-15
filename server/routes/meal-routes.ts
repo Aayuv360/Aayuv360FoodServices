@@ -2,15 +2,9 @@ import type { Express, Request, Response } from "express";
 import { Meal as MealModel, CurryOption } from "../../shared/mongoModels";
 import { formatCurryOptions } from "../curry-formatter";
 import { upload, processImage, deleteImage } from "../upload";
+import { authenticateToken } from "../jwt-middleware";
 
 export function registerMealRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.user) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
-
   const isAdmin = (req: Request, res: Response, next: Function) => {
     const user = req.user as any;
     if (!user || user.role !== "admin") {
@@ -138,7 +132,7 @@ export function registerMealRoutes(app: Express) {
   // Admin meal routes
   app.get(
     "/api/admin/meals/:id",
-    isAuthenticated,
+    authenticateToken,
     isAdmin,
     async (req, res) => {
       try {
@@ -191,7 +185,7 @@ export function registerMealRoutes(app: Express) {
 
   app.post(
     "/api/admin/upload-image",
-    isAuthenticated,
+    authenticateToken,
     isAdmin,
     upload.single("image"),
     async (req, res) => {
@@ -211,7 +205,7 @@ export function registerMealRoutes(app: Express) {
       }
     },
   );
-  app.get("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
+  app.get("/api/admin/meals", authenticateToken, isAdmin, async (req, res) => {
     try {
       const meals = await MealModel.find().lean();
 
@@ -259,7 +253,7 @@ export function registerMealRoutes(app: Express) {
       res.status(500).json({ message: "Error fetching meals" });
     }
   });
-  app.post("/api/admin/meals", isAuthenticated, isAdmin, async (req, res) => {
+  app.post("/api/admin/meals", authenticateToken, isAdmin, async (req, res) => {
     try {
       let mealData = { ...req.body };
       console.log("Admin: Creating new meal in MongoDB...");
@@ -296,7 +290,7 @@ export function registerMealRoutes(app: Express) {
 
   app.put(
     "/api/admin/meals/:id",
-    isAuthenticated,
+    authenticateToken,
     isAdmin,
     async (req, res) => {
       try {
