@@ -92,7 +92,7 @@ function Router() {
               element={<ProtectedRoute component={OrderTrackingPage} />}
             />
 
-            <Route path="/success" element={<SuccessPage />} />
+            <Route path="/success/:id/:type" element={<SuccessPage />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/terms" element={<Terms />} />

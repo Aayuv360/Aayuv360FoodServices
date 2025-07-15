@@ -1,13 +1,10 @@
 import NodeCache from "node-cache";
 
-// Meal cache with 15-minute TTL for better performance
-const menuCache = new NodeCache({ stdTTL: 900 }); // 5 minutes for menu items
-const userCache = new NodeCache({ stdTTL: 600 }); // 10 minutes for user data
-const analyticsCache = new NodeCache({ stdTTL: 900 }); // 15 minutes for analytics
-const subscriptionCache = new NodeCache({ stdTTL: 600 }); // 10 minutes for subscriptions
-
+const menuCache = new NodeCache({ stdTTL: 900 });
+const userCache = new NodeCache({ stdTTL: 600 });
+const analyticsCache = new NodeCache({ stdTTL: 900 });
+const subscriptionCache = new NodeCache({ stdTTL: 600 });
 export class CacheService {
-  // Menu caching
   static setMeals(meals: any[]) {
     menuCache.set("all_meals", meals);
   }
@@ -24,7 +21,6 @@ export class CacheService {
     return menuCache.get(`meal_${id}`);
   }
 
-  // User caching
   static setUser(userId: number, user: any) {
     userCache.set(`user_${userId}`, user);
   }
@@ -37,7 +33,6 @@ export class CacheService {
     userCache.del(`user_${userId}`);
   }
 
-  // Subscription caching
   static setSubscriptionPlans(plans: any[]) {
     subscriptionCache.set("subscription_plans", plans);
   }
@@ -54,7 +49,6 @@ export class CacheService {
     return subscriptionCache.get(`user_subscriptions_${userId}`);
   }
 
-  // Analytics caching
   static setAnalytics(range: string, data: any) {
     analyticsCache.set(`analytics_${range}`, data);
   }
@@ -63,7 +57,6 @@ export class CacheService {
     return analyticsCache.get(`analytics_${range}`);
   }
 
-  // Generic cache operations
   static clearAll() {
     menuCache.flushAll();
     userCache.flushAll();
@@ -85,7 +78,6 @@ export class CacheService {
     }
   }
 
-  // Cache statistics
   static getStats() {
     return {
       menu: menuCache.getStats(),

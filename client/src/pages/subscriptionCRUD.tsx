@@ -1,7 +1,5 @@
 import { getCurrentISTDate } from "@/lib/timezone-utils";
-
 import { useEffect, useState } from "react";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -47,9 +45,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-
 import { useIsMobile } from "@/hooks/use-mobile";
-
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
@@ -60,80 +56,25 @@ import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { AuthModal } from "@/components/auth/AuthModal";
 import DeleteAddressDialog from "@/components/Modals/DeleteAddressDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { SubscriptionPlanCards } from "./subscriptionPlanCards";
-
-const deliveryTime = [
-  { id: 1, time: "7:00 PM - 8:00 PM" },
-  { id: 2, time: "8:00 PM - 9:00 PM" },
-];
-const modifyDelivaryAddress = [
-  { id: 1, name: "Yes" },
-  { id: 2, name: "No" },
-];
-const addressSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  phone: z.string().min(10, "Valid phone number is required"),
-  addressLine1: z.string().min(5, "Address line 1 is required"),
-  addressLine2: z.string().optional(),
-  isDefault: z.boolean().default(false),
-});
-
-const menuItemSchema = z.object({
-  day: z.number(),
-  main: z.string(),
-  sides: z.array(z.string()),
-});
-
-const planSchema = z.object({
-  _id: z.string(),
-  id: z.string(),
-  name: z.string(),
-  price: z.number(),
-  duration: z.number(),
-  description: z.string(),
-  features: z.array(z.string()),
-  dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
-  planType: z.string(),
-  menuItems: z.array(menuItemSchema).optional(),
-  isActive: z.boolean(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  __v: z.number(),
-});
-const subscriptionSchema = z.object({
-  plan: planSchema,
-  dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
-  personCount: z
-    .number()
-    .min(1, "At least 1 person required")
-    .max(10, "Maximum 10 persons allowed")
-    .default(1),
-  subscriptionType: z.enum(["default"]).default("default"),
-  startDate: z.date({
-    required_error: "Please select a start date",
-  }),
-  useNewAddress: z.boolean().default(false),
-  newAddress: addressSchema.optional(),
-  timeSlot: z.string().optional(),
-  modifydelivaryAdrs: z.string().optional(),
-});
-
-type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
-
-type FormStep = "plan" | "payment" | "success";
-
-interface RazorpayPaymentData {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
+import { useNavigate } from "react-router-dom";
+import {
+  deliveryTime,
+  modifyDelivaryAddress,
+} from "@/utils/subscribeConstants";
+import {
+  FormStep,
+  SubscriptionFormValues,
+  RazorpayPaymentData,
+} from "@/utils/type";
+import { subscriptionCrudSchema } from "@/utils/schema";
 
 const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const { initiatePayment } = useRazorpay();
   const [formStep, setFormStep] = useState<FormStep>("plan");
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -149,13 +90,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const setSelectedPlan = (plan: any) => {
     form.setValue("plan", plan);
   };
-  const {
-    addNewAddress,
-    savedAddresses,
-    selectAddress,
-    deleteAddress,
-    selectedAddress,
-  } = useLocationManager();
+  const { savedAddresses, selectAddress, deleteAddress, selectedAddress } =
+    useLocationManager();
   const exictingAdrs = savedAddresses.find(
     (item: any) => item.id === previousPlansData?.[0]?.deliveryAddressId,
   );
@@ -164,7 +100,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
       form.setValue("modifydelivaryAdrs", "No");
     }
   }, [exictingAdrs]);
-  const { data: subscriptionPlans, isLoading: plansLoading } = useQuery({
+  const { data: subscriptionPlans } = useQuery({
     queryKey: ["/api/subscription-plans"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/subscription-plans");
@@ -186,7 +122,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   };
 
   const form = useForm<SubscriptionFormValues>({
-    resolver: zodResolver(subscriptionSchema),
+    resolver: zodResolver(subscriptionCrudSchema),
     defaultValues,
   });
   const diet = form.watch("dietaryPreference");
@@ -220,7 +156,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
 
     if (previousPlan.status === "inactive") {
       netPriceDifference = selectedPlan.price - previousPlan.price;
-      unitsConsumed = 0; // or null, depending on business logic
+      unitsConsumed = 0;
     } else if (previousPlan.status === "active") {
       const { mealsPerMonth, startDate } = previousPlan;
 
@@ -326,7 +262,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 "PATCH",
                 `/api/subscriptions/${previousPlanId}`,
                 {
-                  // status: "active",
                   razorpayPaymentId: paymentData.razorpay_payment_id,
                   razorpayOrderId: paymentData.razorpay_order_id,
                   razorpaySignature: paymentData.razorpay_signature,
@@ -339,12 +274,9 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 description: `You have successfully subscribed to the ${data.plan.name} plan. Your millet meals will be delivered according to your schedule.`,
                 variant: "default",
               });
-
-              // navigate(
-              //   `/payment-success?subscriptionId=${previousPlanId}&type=subscription`,
-              // );
-              setFormStep("success");
-
+              navigate(
+                `/success/${previousPlanId}/${determinedAction === "UPGRADE" ? "upgrade" : "renew"}`,
+              );
               resolve(subscription);
             } catch (error) {
               reject(error);
@@ -391,14 +323,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
     }
   };
 
-  const handleAddressFormSubmit = (addressData: any) => {
-    addNewAddress(
-      editingAddress,
-      setAddressModalOpen,
-      setEditingAddress,
-      addressData,
-    );
-  };
   const handleDeleteAddress = async (addressId: number) => {
     deleteAddress(addressId);
   };
@@ -487,15 +411,11 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
         payload,
       );
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "Failed to modify subscription");
-      }
-
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/subscriptions"] });
+      navigate(`/success/${data.id}/modify`);
       toast({
         title: "Subscription updated",
         description: "Your subscription has been updated successfully",
@@ -1194,12 +1114,6 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                 </p>
               </div>
             </div>
-          </div>
-        );
-      case "success":
-        return (
-          <div>
-            <SuccessPage />
           </div>
         );
     }
