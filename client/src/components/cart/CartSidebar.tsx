@@ -1,13 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Minus } from "lucide-react/dist/esm/icons/minus";
-import { Plus } from "lucide-react/dist/esm/icons/plus";
-import { Check } from "lucide-react/dist/esm/icons/check";
-import { ShoppingCart as ShoppingCartIcon } from "lucide-react/dist/esm/icons/shopping-cart";
-import { Trash2 } from "lucide-react/dist/esm/icons/trash-2";
-import { Edit } from "lucide-react/dist/esm/icons/edit";
-import { Info } from "lucide-react/dist/esm/icons/info";
-import { ArrowLeft } from "lucide-react/dist/esm/icons/arrow-left";
+import { Minus, Plus, Check, ShoppingCart as ShoppingCartIcon, Trash2, Edit, Info } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { apiRequest } from "@/lib/queryClient";
