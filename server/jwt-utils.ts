@@ -104,68 +104,70 @@ export function verifyRefreshToken(token: string): JWTPayload {
 /**
  * Store refresh token in Redis or fallback to in-memory
  */
-export async function storeRefreshToken(
+export const storeRefreshToken = async (
   userId: number,
   refreshToken: string,
-): Promise<void> {
-  try {
-    if (isRedisConnected) {
-      const key = `refresh_token:${userId}`;
-      await redis.setEx(key, 7 * 24 * 60 * 60, refreshToken); // 7 days expiry
-    } else {
-      // Fallback to in-memory storage
-      const key = `refresh_token:${userId}`;
+): Promise<void> => {
+  const key = `refresh_token:${userId}`;
+  const expiresInSeconds = 7 * 24 * 60 * 60; // 7 days
+
+  if (isRedisConnected) {
+    try {
+      await redisClient.setEx(key, expiresInSeconds, refreshToken);
+    } catch (error) {
+      console.error("Redis store error:", error);
+      // Fallback to in-memory
       refreshTokenStore.set(key, refreshToken);
     }
-  } catch (error) {
-    console.error("Error storing refresh token:", error);
-    // Fallback to in-memory storage
-    const key = `refresh_token:${userId}`;
+  } else {
+    // Use in-memory fallback
     refreshTokenStore.set(key, refreshToken);
+    // Set expiration for in-memory store
+    setTimeout(() => {
+      refreshTokenStore.delete(key);
+    }, expiresInSeconds * 1000);
   }
-}
+};
 
 /**
  * Get refresh token from Redis or fallback to in-memory
  */
-export async function getRefreshToken(userId: number): Promise<string | null> {
-  try {
-    if (isRedisConnected) {
-      const key = `refresh_token:${userId}`;
-      return await redis.get(key);
-    } else {
-      // Fallback to in-memory storage
-      const key = `refresh_token:${userId}`;
+export const getRefreshToken = async (
+  userId: number,
+): Promise<string | null> => {
+  const key = `refresh_token:${userId}`;
+
+  if (isRedisConnected) {
+    try {
+      return await redisClient.get(key);
+    } catch (error) {
+      console.error("Redis get error:", error);
       return refreshTokenStore.get(key) || null;
     }
-  } catch (error) {
-    console.error("Error getting refresh token:", error);
-    // Fallback to in-memory storage
-    const key = `refresh_token:${userId}`;
+  } else {
     return refreshTokenStore.get(key) || null;
   }
-}
+};
 
 /**
  * Remove refresh token from Redis or fallback to in-memory
  */
-export async function removeRefreshToken(userId: number): Promise<void> {
-  try {
-    if (isRedisConnected) {
-      const key = `refresh_token:${userId}`;
-      await redis.del(key);
-    } else {
-      // Fallback to in-memory storage
-      const key = `refresh_token:${userId}`;
+export const deleteRefreshToken = async (
+  userId: number,
+): Promise<void> => {
+  const key = `refresh_token:${userId}`;
+
+  if (isRedisConnected) {
+    try {
+      await redisClient.del(key);
+    } catch (error) {
+      console.error("Redis delete error:", error);
       refreshTokenStore.delete(key);
     }
-  } catch (error) {
-    console.error("Error removing refresh token:", error);
-    // Fallback to in-memory storage
-    const key = `refresh_token:${userId}`;
+  } else {
     refreshTokenStore.delete(key);
   }
-}
+};
 
 /**
  * Remove all refresh tokens for a user (logout from all devices)
