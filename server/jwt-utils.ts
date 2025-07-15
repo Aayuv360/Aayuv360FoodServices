@@ -1,25 +1,25 @@
-import jwt from 'jsonwebtoken';
-import { createClient } from 'redis';
-import { getCurrentISTDate } from './timezone-utils';
+import jwt from "jsonwebtoken";
+import { createClient } from "redis";
 
-// Initialize Redis client
 const redis = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
+  url: process.env.REDIS_URL,
 });
 
-redis.on('error', (err) => {
-  console.log('Redis Client Error', err);
+redis.on("error", (err) => {
+  console.log("Redis Client Error", err);
 });
 
-// Connect to Redis with retry logic
 let isRedisConnected = false;
 const connectToRedis = async () => {
   try {
     await redis.connect();
     isRedisConnected = true;
-    console.log('✅ Redis connected successfully');
+    console.log("✅ Redis connected successfully");
   } catch (error) {
-    console.log('⚠️  Redis connection failed, using in-memory fallback:', error.message);
+    console.log(
+      "⚠️  Redis connection failed, using in-memory fallback:",
+      error.message,
+    );
     isRedisConnected = false;
   }
 };
@@ -44,23 +44,29 @@ export interface TokenPair {
 }
 
 // JWT Configuration
-const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET || 'your_access_token_secret';
-const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'your_refresh_token_secret';
-const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
-const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
+const ACCESS_TOKEN_SECRET =
+  process.env.ACCESS_TOKEN_SECRET || "your_access_token_secret";
+const REFRESH_TOKEN_SECRET =
+  process.env.REFRESH_TOKEN_SECRET || "your_refresh_token_secret";
+const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
+const REFRESH_TOKEN_EXPIRY = "7d"; // 7 days
 
 /**
  * Generate access token
  */
 export function generateAccessToken(payload: JWTPayload): string {
-  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, {
+    expiresIn: ACCESS_TOKEN_EXPIRY,
+  });
 }
 
 /**
  * Generate refresh token
  */
 export function generateRefreshToken(payload: JWTPayload): string {
-  return jwt.sign(payload, REFRESH_TOKEN_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRY });
+  return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
+    expiresIn: REFRESH_TOKEN_EXPIRY,
+  });
 }
 
 /**
@@ -69,7 +75,7 @@ export function generateRefreshToken(payload: JWTPayload): string {
 export function generateTokens(payload: JWTPayload): TokenPair {
   const accessToken = generateAccessToken(payload);
   const refreshToken = generateRefreshToken(payload);
-  
+
   return { accessToken, refreshToken };
 }
 
@@ -80,7 +86,7 @@ export function verifyAccessToken(token: string): JWTPayload {
   try {
     return jwt.verify(token, ACCESS_TOKEN_SECRET) as JWTPayload;
   } catch (error) {
-    throw new Error('Invalid access token');
+    throw new Error("Invalid access token");
   }
 }
 
@@ -91,14 +97,17 @@ export function verifyRefreshToken(token: string): JWTPayload {
   try {
     return jwt.verify(token, REFRESH_TOKEN_SECRET) as JWTPayload;
   } catch (error) {
-    throw new Error('Invalid refresh token');
+    throw new Error("Invalid refresh token");
   }
 }
 
 /**
  * Store refresh token in Redis or fallback to in-memory
  */
-export async function storeRefreshToken(userId: number, refreshToken: string): Promise<void> {
+export async function storeRefreshToken(
+  userId: number,
+  refreshToken: string,
+): Promise<void> {
   try {
     if (isRedisConnected) {
       const key = `refresh_token:${userId}`;
@@ -109,7 +118,7 @@ export async function storeRefreshToken(userId: number, refreshToken: string): P
       refreshTokenStore.set(key, refreshToken);
     }
   } catch (error) {
-    console.error('Error storing refresh token:', error);
+    console.error("Error storing refresh token:", error);
     // Fallback to in-memory storage
     const key = `refresh_token:${userId}`;
     refreshTokenStore.set(key, refreshToken);
@@ -130,7 +139,7 @@ export async function getRefreshToken(userId: number): Promise<string | null> {
       return refreshTokenStore.get(key) || null;
     }
   } catch (error) {
-    console.error('Error getting refresh token:', error);
+    console.error("Error getting refresh token:", error);
     // Fallback to in-memory storage
     const key = `refresh_token:${userId}`;
     return refreshTokenStore.get(key) || null;
@@ -151,7 +160,7 @@ export async function removeRefreshToken(userId: number): Promise<void> {
       refreshTokenStore.delete(key);
     }
   } catch (error) {
-    console.error('Error removing refresh token:', error);
+    console.error("Error removing refresh token:", error);
     // Fallback to in-memory storage
     const key = `refresh_token:${userId}`;
     refreshTokenStore.delete(key);
@@ -175,7 +184,7 @@ export async function removeAllRefreshTokens(userId: number): Promise<void> {
       refreshTokenStore.delete(pattern);
     }
   } catch (error) {
-    console.error('Error removing all refresh tokens:', error);
+    console.error("Error removing all refresh tokens:", error);
     // Fallback to in-memory storage
     const pattern = `refresh_token:${userId}`;
     refreshTokenStore.delete(pattern);
@@ -185,12 +194,15 @@ export async function removeAllRefreshTokens(userId: number): Promise<void> {
 /**
  * Check if refresh token exists in Redis or fallback to in-memory
  */
-export async function isRefreshTokenValid(userId: number, refreshToken: string): Promise<boolean> {
+export async function isRefreshTokenValid(
+  userId: number,
+  refreshToken: string,
+): Promise<boolean> {
   try {
     const storedToken = await getRefreshToken(userId);
     return storedToken === refreshToken;
   } catch (error) {
-    console.error('Error validating refresh token:', error);
+    console.error("Error validating refresh token:", error);
     return false;
   }
 }
@@ -198,18 +210,23 @@ export async function isRefreshTokenValid(userId: number, refreshToken: string):
 /**
  * Extract token from Authorization header
  */
-export function extractTokenFromHeader(authHeader: string | undefined): string | null {
+export function extractTokenFromHeader(
+  authHeader: string | undefined,
+): string | null {
   if (!authHeader) return null;
-  
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
-  
+
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") return null;
+
   return parts[1];
 }
 
 /**
  * Extract token from cookie
  */
-export function extractTokenFromCookie(cookieName: string, cookies: any): string | null {
+export function extractTokenFromCookie(
+  cookieName: string,
+  cookies: any,
+): string | null {
   return cookies[cookieName] || null;
 }
