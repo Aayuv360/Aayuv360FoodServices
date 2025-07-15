@@ -1,8 +1,10 @@
-
 import { createClient } from "redis";
+import dotenv from "dotenv";
 
-const redisClient = createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
+dotenv.config();
+
+export const redisClient = createClient({
+  url: "rediss://default:AVwLAAIjcDFmNTEyYzJjYzhkZmY0MTIxOTBiYjJjNTQ0YmZiYjE4ZnAxMA@capable-ferret-23563.upstash.io:6379",
 });
 
 redisClient.on("error", (err) => {
