@@ -1,17 +1,29 @@
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
+import { authenticateToken } from "../jwt-middleware";
 
 export function registerLocationRoutes(app: Express) {
-  const isManagerOrAdmin = (req: Request, res: Response, next: Function) => {
+  const isManagerOrAdmin = async (req: Request, res: Response, next: Function) => {
     const user = req.user as any;
-    if (!user || (user.role !== "manager" && user.role !== "admin")) {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Manager privileges required." });
+    if (!user) {
+      return res.status(401).json({ message: "Authentication required" });
     }
-    next();
+    
+    try {
+      // Get full user details from database to check role
+      const fullUser = await mongoStorage.getUser(user.id);
+      if (!fullUser || (fullUser.role !== "manager" && fullUser.role !== "admin")) {
+        return res
+          .status(403)
+          .json({ message: "Access denied. Manager privileges required." });
+      }
+      next();
+    } catch (error) {
+      console.error("Error checking user role:", error);
+      return res.status(500).json({ message: "Server error" });
+    }
   };
-  app.get("/api/locations", async (req: Request, res: Response) => {
+  app.get("/api/locations", authenticateToken, async (req: Request, res: Response) => {
     try {
       const locations = await mongoStorage.getLocations();
 
@@ -24,6 +36,7 @@ export function registerLocationRoutes(app: Express) {
 
   app.post(
     "/api/locations",
+    authenticateToken,
     isManagerOrAdmin,
     async (req: Request, res: Response) => {
       try {
@@ -39,6 +52,7 @@ export function registerLocationRoutes(app: Express) {
 
   app.put(
     "/api/locations/:id",
+    authenticateToken,
     isManagerOrAdmin,
     async (req: Request, res: Response) => {
       try {
@@ -58,6 +72,7 @@ export function registerLocationRoutes(app: Express) {
 
   app.delete(
     "/api/locations/:id",
+    authenticateToken,
     isManagerOrAdmin,
     async (req: Request, res: Response) => {
       try {

@@ -23,6 +23,7 @@ import { registerLocationRoutes } from "./routes/location-routes";
 import { registerMiscRoutes } from "./routes/misc-routes";
 import { registerProfileRoutes } from "./routes/profile-routes";
 import { authenticateToken } from "./jwt-middleware";
+import { registerTestAuthRoutes } from "./test-auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   try {
@@ -44,6 +45,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerLocationRoutes(app);
   registerMiscRoutes(app);
   registerProfileRoutes(app);
+  registerTestAuthRoutes(app);
 
   app.use("/api/delivery", deliveryRoutes);
   app.use("/api/notifications", notificationRoutes);
