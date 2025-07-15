@@ -68,7 +68,7 @@ import {
   SubscriptionFormValues,
   RazorpayPaymentData,
 } from "@/utils/type";
-import { subscriptionCrudSchema } from "@/utils/schema";
+import { subscriptionSchema } from "@/utils/schema";
 
 const SubscriptionCRUD = ({ previousPlansData }: any) => {
   const { toast } = useToast();
@@ -122,7 +122,7 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
   };
 
   const form = useForm<SubscriptionFormValues>({
-    resolver: zodResolver(subscriptionCrudSchema),
+    resolver: zodResolver(subscriptionSchema),
     defaultValues,
   });
   const diet = form.watch("dietaryPreference");

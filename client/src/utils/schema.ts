@@ -30,7 +30,7 @@ export const planSchema = z.object({
   updatedAt: z.string().datetime(),
   __v: z.number(),
 });
-export const subscriptionCrudSchema = z.object({
+export const subscriptionSchema = z.object({
   plan: planSchema,
   dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
   personCount: z

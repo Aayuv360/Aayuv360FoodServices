@@ -45,13 +45,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
@@ -69,71 +62,18 @@ import SuccessPage from "./SuccessPage";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { SubscriptionPlanCards } from "./subscriptionPlanCards";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-const deliveryTime = [
-  { id: 1, time: "7:00 PM - 8:00 PM" },
-  { id: 2, time: "8:00 PM - 9:00 PM" },
-];
-const addressSchema = z.object({
-  name: z.string().min(2, "Name is required"),
-  phone: z.string().min(10, "Valid phone number is required"),
-  addressLine1: z.string().min(5, "Address line 1 is required"),
-  addressLine2: z.string().optional(),
-  isDefault: z.boolean().default(false),
-});
-
-const menuItemSchema = z.object({
-  day: z.number(),
-  main: z.string(),
-  sides: z.array(z.string()),
-});
-
-const planSchema = z.object({
-  _id: z.string(),
-  id: z.string(),
-  name: z.string(),
-  price: z.number(),
-  duration: z.number(),
-  description: z.string(),
-  features: z.array(z.string()),
-  dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
-  planType: z.string(),
-  menuItems: z.array(menuItemSchema).optional(),
-  isActive: z.boolean(),
-  createdAt: z.string().datetime(),
-  updatedAt: z.string().datetime(),
-  __v: z.number(),
-});
-const subscriptionSchema = z.object({
-  plan: planSchema,
-  dietaryPreference: z.enum(["veg", "veg_with_egg", "nonveg"]),
-  personCount: z
-    .number()
-    .min(1, "At least 1 person required")
-    .max(10, "Maximum 10 persons allowed")
-    .default(1),
-  subscriptionType: z.enum(["default"]).default("default"),
-  startDate: z.date({
-    required_error: "Please select a start date",
-  }),
-  useNewAddress: z.boolean().default(false),
-  newAddress: addressSchema.optional(),
-  timeSlot: z.string().optional(),
-});
-
-type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
-
-type FormStep = "plan" | "payment" | "success";
-
-interface RazorpayPaymentData {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
+import { deliveryTime } from "@/utils/subscribeConstants";
+import {
+  FormStep,
+  SubscriptionFormValues,
+  RazorpayPaymentData,
+} from "@/utils/type";
+import { subscriptionSchema } from "@/utils/schema";
 
 const Subscription = () => {
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -148,13 +88,8 @@ const Subscription = () => {
   const [deletingAddress, setDeletingAddress] = useState<any>(null);
   const [filteredPlans, setFilteredPlans] = useState<any>([]);
   const [addressModalAction, setAddressModalAction] = useState<string>("");
-  const {
-    addNewAddress,
-    savedAddresses,
-    selectAddress,
-    deleteAddress,
-    selectedAddress,
-  } = useLocationManager();
+  const { savedAddresses, selectAddress, deleteAddress, selectedAddress } =
+    useLocationManager();
   const notSavedAddress = savedAddresses?.find(
     (item) => item.id === selectedAddress?.id,
   );
@@ -237,10 +172,8 @@ const Subscription = () => {
                 variant: "default",
               });
 
-              // navigate(
-              //   `/payment-success?subscriptionId=${subscriptionId}&type=subscription`,
-              // );
-              setFormStep("success");
+              navigate(`/success/${subscriptionId}/subscribed`);
+
               resolve(updatedSubscription);
             } catch (error) {
               reject(error);
@@ -248,7 +181,6 @@ const Subscription = () => {
           },
 
           onFailure: (error: any) => {
-            // Don't show error for user cancellation
             if (error.type !== "user_cancelled") {
               toast({
                 title: "Payment Failed",
@@ -289,14 +221,6 @@ const Subscription = () => {
     }
   };
 
-  const handleAddressFormSubmit = (addressData: any) => {
-    addNewAddress(
-      editingAddress,
-      setAddressModalOpen,
-      setEditingAddress,
-      addressData,
-    );
-  };
   const handleDeleteAddress = async (addressId: number) => {
     deleteAddress(addressId);
   };
@@ -869,12 +793,6 @@ const Subscription = () => {
                 </p>
               </div>
             </div>
-          </div>
-        );
-      case "success":
-        return (
-          <div>
-            <SuccessPage />
           </div>
         );
     }
