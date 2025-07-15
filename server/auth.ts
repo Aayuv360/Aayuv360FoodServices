@@ -12,7 +12,7 @@ import {
   generateTokens, 
   verifyRefreshToken, 
   storeRefreshToken, 
-  removeRefreshToken, 
+  deleteRefreshToken, 
   isRefreshTokenValid,
   extractTokenFromCookie 
 } from "./jwt-utils";
@@ -222,7 +222,7 @@ export function setupAuth(app: Express) {
     try {
       if (req.user) {
         // Remove refresh token from Redis
-        await removeRefreshToken(req.user.id);
+        await deleteRefreshToken(req.user.id);
       }
 
       // Clear cookies

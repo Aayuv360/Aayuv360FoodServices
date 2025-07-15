@@ -1,34 +1,22 @@
 import jwt from "jsonwebtoken";
 import { createClient } from "redis";
+import redisClient from "./utils/redisClient";
 
-const redis = createClient({
-  url: process.env.REDIS_URL,
-});
-
-redis.on("error", (err) => {
-  console.log("Redis Client Error", err);
-});
-
+// Check Redis connection status
 let isRedisConnected = false;
-const connectToRedis = async () => {
-  try {
-    await redis.connect();
-    isRedisConnected = true;
-    console.log("✅ Redis connected successfully");
-  } catch (error) {
-    console.log(
-      "⚠️  Redis connection failed, using in-memory fallback:",
-      error.message,
-    );
-    isRedisConnected = false;
-  }
-};
+
+// Check if Redis client is ready
+redisClient.on('ready', () => {
+  isRedisConnected = true;
+  console.log("✅ Redis connected successfully for JWT");
+});
+
+redisClient.on('error', () => {
+  isRedisConnected = false;
+});
 
 // In-memory fallback for refresh tokens
 const refreshTokenStore = new Map<string, string>();
-
-// Connect to Redis
-connectToRedis();
 
 export interface JWTPayload {
   userId: number;
