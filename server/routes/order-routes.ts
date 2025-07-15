@@ -2,16 +2,10 @@ import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { smsService } from "../sms-service";
 import { getNextSequence } from "../../shared/mongoModels";
+import { authenticateToken } from "../jwt-middleware";
 
 export function registerOrderRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
-
-  app.post("/api/orders/generate-id", isAuthenticated, async (req, res) => {
+  app.post("/api/orders/generate-id", authenticateToken, async (req, res) => {
     try {
       const orderId = await getNextSequence("order");
       res.json({ orderId });
@@ -21,9 +15,9 @@ export function registerOrderRoutes(app: Express) {
     }
   });
 
-  app.post("/api/orders", isAuthenticated, async (req, res) => {
+  app.post("/api/orders", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const cartItems = await mongoStorage.getCartItems(userId);
 
       if (!cartItems || cartItems.length === 0) {
@@ -134,9 +128,9 @@ export function registerOrderRoutes(app: Express) {
     }
   });
 
-  app.get("/api/orders", isAuthenticated, async (req, res) => {
+  app.get("/api/orders", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const orders = await mongoStorage.getOrdersByUserId(userId);
       res.json(orders);
     } catch (err) {
@@ -145,9 +139,9 @@ export function registerOrderRoutes(app: Express) {
     }
   });
 
-  app.get("/api/orders/:id", isAuthenticated, async (req, res) => {
+  app.get("/api/orders/:id", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const orderId = parseInt(req.params.id);
 
       const order = await mongoStorage.getOrder(orderId);
@@ -185,7 +179,7 @@ export function registerOrderRoutes(app: Express) {
   });
 
   // PATCH endpoint to update order with full payload after payment
-  app.patch("/api/orders/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/orders/:id", authenticateToken, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const orderId = parseInt(req.params.id);

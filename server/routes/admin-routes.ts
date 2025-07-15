@@ -5,37 +5,12 @@ import { analyticsService } from "../analytics";
 import { updateOrderDeliveryStatus } from "../delivery-status";
 import CacheService from "../cache";
 import { logAPIRequest } from "../logger";
+import { authenticateToken, requireAdmin } from "../jwt-middleware";
 
 export function registerAdminRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
-
-  const isAdmin = (req: Request, res: Response, next: Function) => {
-    const user = req.user as any;
-    if (!user || user.role !== "admin") {
-      return res.status(403).json({ message: "Access denied. Admin privileges required." });
-    }
-    next();
-  };
-
-  const isManagerOrAdmin = (req: Request, res: Response, next: Function) => {
-    const user = req.user as any;
-    if (!user || (user.role !== "manager" && user.role !== "admin")) {
-      return res.status(403).json({ message: "Access denied. Manager privileges required." });
-    }
-    next();
-  };
-
-  app.get("/api/analytics", async (req, res) => {
+  app.get("/api/analytics", requireAdmin, async (req, res) => {
     const startTime = Date.now();
     try {
-      if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
-        return res.status(403).json({ error: "Admin access required" });
-      }
 
       const { range = "30days" } = req.query;
       const validRanges = ["7days", "30days", "90days", "year"];
@@ -75,10 +50,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.post("/api/admin/cache/clear", (req, res) => {
-    if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
+  app.post("/api/admin/cache/clear", requireAdmin, (req, res) => {
 
     const { type } = req.body;
 
@@ -99,16 +71,13 @@ export function registerAdminRoutes(app: Express) {
     res.json({ message: `${type || "all"} cache cleared successfully` });
   });
 
-  app.get("/api/admin/cache/stats", (req, res) => {
-    if (!req.isAuthenticated() || (req.user as any)?.role !== "admin") {
-      return res.status(403).json({ error: "Admin access required" });
-    }
+  app.get("/api/admin/cache/stats", requireAdmin, (req, res) => {
 
     const stats = CacheService.getStats();
     res.json(stats);
   });
 
-  app.get("/api/admin/orders", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+  app.get("/api/admin/orders", requireAdmin, async (req, res) => {
     try {
       const orders = await mongoStorage.getAllOrders();
 
@@ -154,7 +123,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.get("/api/admin/subscriptions", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+  app.get("/api/admin/subscriptions", requireAdmin, async (req, res) => {
     try {
       const subscriptions = await mongoStorage.getAllSubscriptions();
 
@@ -189,7 +158,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.patch("/api/admin/orders/:id/status", isAuthenticated, isManagerOrAdmin, async (req, res) => {
+  app.patch("/api/admin/orders/:id/status", requireAdmin, async (req, res) => {
     try {
       const orderId = parseInt(req.params.id);
       const { status } = req.body;
@@ -263,7 +232,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.get("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+  app.get("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const users = await mongoStorage.getAllUsers();
       res.json(users);
@@ -273,7 +242,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.post("/api/admin/users", isAuthenticated, isAdmin, async (req, res) => {
+  app.post("/api/admin/users", requireAdmin, async (req, res) => {
     try {
       const userData = req.body;
 
@@ -295,7 +264,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.patch("/api/admin/users/:id", isAuthenticated, isAdmin, async (req, res) => {
+  app.patch("/api/admin/users/:id", requireAdmin, async (req, res) => {
     try {
       const userId = parseInt(req.params.id);
       const userData = req.body;
@@ -313,7 +282,7 @@ export function registerAdminRoutes(app: Express) {
     }
   });
 
-  app.post("/api/admin/update-prices", isAuthenticated, isAdmin, async (req, res) => {
+  app.post("/api/admin/update-prices", requireAdmin, async (req, res) => {
     try {
       console.log("Starting price update process...");
       const { Meal: MealModel } = await import("../../shared/mongoModels");

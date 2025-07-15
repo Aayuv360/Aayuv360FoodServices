@@ -13,6 +13,7 @@ import { router as trackingRoutes } from "./real-time-tracking";
 import contactRoutes from "./contact-routes";
 import { envValidator } from "./env-validator";
 import cookieParser from "cookie-parser";
+import { setupAuth } from "./auth";
 
 envValidator.printStatus();
 if (!envValidator.isValid()) {

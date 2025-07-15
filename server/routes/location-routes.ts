@@ -3,7 +3,7 @@ import { mongoStorage } from "../mongoStorage";
 
 export function registerLocationRoutes(app: Express) {
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
     next();

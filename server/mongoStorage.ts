@@ -14,23 +14,15 @@ import {
   WalletTransaction,
   DeletionRequest,
 } from "../shared/mongoModels";
-import expressSession from "express-session";
-import createMemoryStore from "memorystore";
+// JWT authentication doesn't need session store imports
 import { milletMeals, MealDataItem } from "./mealData";
 
 import { IStorage } from "./storage";
 import { getCurrentISTDate } from "./timezone-utils";
 
 export class MongoDBStorage implements IStorage {
-  sessionStore: expressSession.Store;
-
   constructor() {
-    // Create session store directly
-    const MemoryStore = createMemoryStore(expressSession);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
-    });
-
+    // JWT authentication doesn't need session store
     setTimeout(() => {
       this.initializeSampleMeals().catch((err) =>
         console.error("Error initializing sample meals:", err),

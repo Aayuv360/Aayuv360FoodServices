@@ -6,6 +6,7 @@ import { getNextSequence } from "../../shared/mongoModels";
 import CacheService from "../cache";
 import { logAPIRequest } from "../logger";
 import { z } from "zod";
+import { authenticateToken } from "../jwt-middleware";
 
 // Utility function to calculate subscription status
 function calculateSubscriptionStatus(subscription: any) {
@@ -128,7 +129,7 @@ function calculateSubscriptionStatus(subscription: any) {
 
 export function registerSubscriptionRoutes(app: Express) {
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
     next();

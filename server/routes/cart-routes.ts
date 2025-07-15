@@ -2,18 +2,12 @@
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { CartItem as CartItemModel, Meal as MealModel } from "../../shared/mongoModels";
+import { authenticateToken, optionalAuthenticateToken } from "../jwt-middleware";
 
 export function registerCartRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
-
-  app.get("/api/cart", async (req, res) => {
+  app.get("/api/cart", optionalAuthenticateToken, async (req, res) => {
     try {
-      const userId = req.isAuthenticated() ? (req.user as any).id : 0;
+      const userId = req.user ? req.user.id : 0;
       const cartItems = await CartItemModel.find({ userId }).lean();
 
       const enrichedCartItems = await Promise.all(
@@ -54,9 +48,9 @@ export function registerCartRoutes(app: Express) {
     }
   });
 
-  app.post("/api/cart", isAuthenticated, async (req, res) => {
+  app.post("/api/cart", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
 
       let curryOptionId = null;
       let curryOptionName = null;
@@ -115,10 +109,10 @@ export function registerCartRoutes(app: Express) {
     }
   });
 
-  app.put("/api/cart/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/cart/:id", authenticateToken, async (req, res) => {
     try {
       const itemId = parseInt(req.params.id);
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { quantity } = req.body;
 
       const cartItems = await mongoStorage.getCartItems(userId);
@@ -153,10 +147,10 @@ export function registerCartRoutes(app: Express) {
     }
   });
 
-  app.patch("/api/cart/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/cart/:id", authenticateToken, async (req, res) => {
     try {
       const itemId = parseInt(req.params.id);
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
 
       const cartItems = await mongoStorage.getCartItems(userId);
       const existingItem = cartItems.find((item) => item.id === itemId);
@@ -188,10 +182,10 @@ export function registerCartRoutes(app: Express) {
     }
   });
 
-  app.delete("/api/cart/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/cart/:id", authenticateToken, async (req, res) => {
     try {
       const itemId = parseInt(req.params.id);
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
 
       const cartItems = await mongoStorage.getCartItems(userId);
       const existingItem = cartItems.find((item: any) => item.id === itemId);
@@ -208,9 +202,9 @@ export function registerCartRoutes(app: Express) {
     }
   });
 
-  app.delete("/api/cart", isAuthenticated, async (req, res) => {
+  app.delete("/api/cart", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       await mongoStorage.clearCart(userId);
       res.status(204).send();
     } catch (err) {
@@ -220,9 +214,9 @@ export function registerCartRoutes(app: Express) {
   });
 
   // Add item to cart
-  app.post("/api/cart/add", isAuthenticated, async (req, res) => {
+  app.post("/api/cart/add", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { mealId, quantity = 1, curryOptionId, curryOptionName, curryOptionPrice, notes } = req.body;
 
       if (!mealId) {
@@ -285,9 +279,9 @@ export function registerCartRoutes(app: Express) {
   });
 
   // Update cart item
-  app.put("/api/cart/:id", isAuthenticated, async (req, res) => {
+  app.put("/api/cart/:id", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const itemId = req.params.id;
       const { quantity, curryOptionId, curryOptionName, curryOptionPrice, notes } = req.body;
 
@@ -315,9 +309,9 @@ export function registerCartRoutes(app: Express) {
   });
 
   // Remove cart item
-  app.delete("/api/cart/:id", isAuthenticated, async (req, res) => {
+  app.delete("/api/cart/:id", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const itemId = req.params.id;
 
       const deletedItem = await CartItemModel.findOneAndDelete({
@@ -337,9 +331,9 @@ export function registerCartRoutes(app: Express) {
   });
 
   // Clear entire cart
-  app.delete("/api/cart", isAuthenticated, async (req, res) => {
+  app.delete("/api/cart", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       
       await CartItemModel.deleteMany({ userId });
       res.json({ message: "Cart cleared" });

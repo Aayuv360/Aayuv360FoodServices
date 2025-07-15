@@ -9,15 +9,9 @@ import {
   orderPaymentMap,
   subscriptionPaymentMap,
 } from "../razorpay";
+import { authenticateToken } from "../jwt-middleware";
 
 export function registerPaymentRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
-
   // Get Razorpay configuration for frontend
   app.get("/api/payments/config", (req, res) => {
     try {
@@ -39,9 +33,9 @@ export function registerPaymentRoutes(app: Express) {
     }
   });
 
-  app.post("/api/payments/create-order", isAuthenticated, async (req, res) => {
+  app.post("/api/payments/create-order", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { amount, orderId, type = "order", notes = {} } = req.body;
 
       if (!amount || amount <= 0) {
@@ -136,7 +130,7 @@ export function registerPaymentRoutes(app: Express) {
     }
   });
 
-  app.post("/api/payments/verify", isAuthenticated, async (req, res) => {
+  app.post("/api/payments/verify", authenticateToken, async (req, res) => {
     try {
       const {
         orderId,
@@ -174,7 +168,7 @@ export function registerPaymentRoutes(app: Express) {
     }
   });
 
-  app.post("/api/payments/failed", isAuthenticated, async (req, res) => {
+  app.post("/api/payments/failed", authenticateToken, async (req, res) => {
     try {
       const { orderId, error } = req.body;
 
@@ -208,7 +202,7 @@ export function registerPaymentRoutes(app: Express) {
     }
   });
 
-  app.patch("/api/orders/:id", isAuthenticated, async (req, res) => {
+  app.patch("/api/orders/:id", authenticateToken, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const orderId = parseInt(req.params.id);

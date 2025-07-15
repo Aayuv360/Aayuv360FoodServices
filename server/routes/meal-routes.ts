@@ -5,7 +5,7 @@ import { upload, processImage, deleteImage } from "../upload";
 
 export function registerMealRoutes(app: Express) {
   const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
+    if (!req.user) {
       return res.status(401).json({ message: "Authentication required" });
     }
     next();

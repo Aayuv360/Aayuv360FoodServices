@@ -1,21 +1,14 @@
 import { mongoStorage } from "./mongoStorage";
-import expressSession from "express-session";
-import createMemoryStore from "memorystore";
 
 export interface IStorage {
-  sessionStore: expressSession.Store;
   [key: string]: any;
 }
 
 export class MemStorage implements IStorage {
-  sessionStore: expressSession.Store;
   [key: string]: any;
 
   constructor() {
-    const MemoryStore = createMemoryStore(expressSession);
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
-    });
+    // JWT authentication doesn't need session store
   }
 
   async getCurryOptions(): Promise<any[]> {

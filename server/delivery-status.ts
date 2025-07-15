@@ -344,18 +344,11 @@ async function sendDeliveryNotifications(
 
 // Export router for use in index.ts
 import express from 'express';
+import { authenticateToken } from './jwt-middleware';
 export const router = express.Router();
 
-// Simple authentication middleware placeholder
-const isAuthenticated = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (req.isAuthenticated && req.isAuthenticated()) {
-    return next();
-  }
-  res.status(401).json({ message: "Authentication required" });
-};
-
 // Get delivery status updates for a user
-router.get('/api/delivery-status/user/:userId', isAuthenticated, async (req, res) => {
+router.get('/api/delivery-status/user/:userId', authenticateToken, async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     if (isNaN(userId)) {
@@ -371,7 +364,7 @@ router.get('/api/delivery-status/user/:userId', isAuthenticated, async (req, res
 });
 
 // Get delivery status for a specific order
-router.get('/api/delivery-status/order/:orderId', isAuthenticated, async (req, res) => {
+router.get('/api/delivery-status/order/:orderId', authenticateToken, async (req, res) => {
   try {
     const orderId = parseInt(req.params.orderId);
     if (isNaN(orderId)) {
@@ -387,7 +380,7 @@ router.get('/api/delivery-status/order/:orderId', isAuthenticated, async (req, r
 });
 
 // Create/update delivery status (admin only)
-router.post('/api/delivery-status', isAuthenticated, async (req, res) => {
+router.post('/api/delivery-status', authenticateToken, async (req, res) => {
   try {
     // Add admin check here
     const { orderId, userId, status, customMessage } = req.body;
@@ -410,7 +403,7 @@ router.post('/api/delivery-status', isAuthenticated, async (req, res) => {
 });
 
 // Create delivery status update with custom notifications
-router.post('/api/delivery-status/create', isAuthenticated, async (req, res) => {
+router.post('/api/delivery-status/create', authenticateToken, async (req, res) => {
   try {
     const { orderId, userId, status, message, estimatedTime, notificationMethods } = req.body;
 

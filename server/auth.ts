@@ -1,9 +1,5 @@
-import passport from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
 import { Express } from "express";
-import session from "express-session";
-import { scrypt, randomBytes, timingSafeEqual } from "crypto";
-import { promisify } from "util";
+import bcrypt from "bcryptjs";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
 import {
@@ -12,6 +8,15 @@ import {
   validatePassword,
   validatePhone,
 } from "./security-middleware";
+import { 
+  generateTokens, 
+  verifyRefreshToken, 
+  storeRefreshToken, 
+  removeRefreshToken, 
+  isRefreshTokenValid,
+  extractTokenFromCookie 
+} from "./jwt-utils";
+import { authenticateToken } from "./jwt-middleware";
 
 declare global {
   namespace Express {
@@ -19,92 +24,31 @@ declare global {
   }
 }
 
-const scryptAsync = promisify(scrypt);
-
-// Hash password for database
-export async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+// Hash password for database using bcrypt
+export async function hashPassword(password: string): Promise<string> {
+  const saltRounds = 12;
+  return await bcrypt.hash(password, saltRounds);
 }
 
-// Verify password
-export async function comparePasswords(supplied: string, stored: string) {
-  const [hashed, salt] = stored.split(".");
-  if (!hashed || !salt) return false;
-
-  const hashedBuf = Buffer.from(hashed, "hex");
-  const suppliedBuf = (await scryptAsync(supplied, salt, 64)) as Buffer;
-  return timingSafeEqual(hashedBuf, suppliedBuf);
+// Verify password using bcrypt
+export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+  return await bcrypt.compare(supplied, stored);
 }
 
 export function setupAuth(app: Express) {
-  // Configure session with deployment-specific settings
-  const isRender = process.env.RENDER_SERVICE_NAME !== undefined;
+  // JWT Cookie configuration
   const isProduction = process.env.NODE_ENV === "production";
-  
-  const sessionSettings: session.SessionOptions = {
-    secret: process.env.SESSION_SECRET || "millet-meal-service-secret",
-    resave: false,
-    saveUninitialized: false,
-    store: storage.sessionStore,
-    name: 'connect.sid',
-    cookie: {
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      secure: isProduction && isRender, // Only secure on Render.com HTTPS
-      httpOnly: true,
-      sameSite: isProduction ? (isRender ? "none" : "strict") : "lax",
-    },
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'none' as const : 'lax' as const,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for refresh token
   };
 
-  app.use(session(sessionSettings));
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  // Configure passport
-  passport.use(
-    new LocalStrategy(async (username, password, done) => {
-      try {
-        // Normalize input for case-insensitive search
-        const normalizedInput = username.toLowerCase().trim();
-        
-        // Try to find user by username (case insensitive) or email
-        let user = await storage.getUserByUsername(normalizedInput);
-        
-        // If not found by username, try email
-        if (!user && normalizedInput.includes('@')) {
-          user = await storage.getUserByEmail(normalizedInput);
-        }
-
-        if (!user) {
-          return done(null, false, { message: "Incorrect username or email." });
-        }
-
-        const isPasswordValid = await comparePasswords(password, user.password);
-
-        if (!isPasswordValid) {
-          return done(null, false, { message: "Incorrect password." });
-        }
-
-        return done(null, user);
-      } catch (err) {
-        return done(err);
-      }
-    })
-  );
-
-  passport.serializeUser((user: any, done) => {
-    done(null, user.id);
-  });
-
-  passport.deserializeUser(async (id: number, done) => {
-    try {
-      const user = await storage.getUser(id);
-      done(null, user);
-    } catch (err) {
-      done(err);
-    }
-  });
+  const accessTokenCookieOptions = {
+    ...cookieOptions,
+    maxAge: 15 * 60 * 1000, // 15 minutes for access token
+  };
 
   // Authentication routes
   app.post(
@@ -141,16 +85,29 @@ export function setupAuth(app: Express) {
           address,
         });
 
+        // Generate JWT tokens
+        const tokenPayload = {
+          userId: user.id,
+          username: user.username,
+          email: user.email,
+        };
+
+        const { accessToken, refreshToken } = generateTokens(tokenPayload);
+
+        // Store refresh token in Redis
+        await storeRefreshToken(user.id, refreshToken);
+
+        // Set tokens in httpOnly cookies
+        res.cookie('accessToken', accessToken, accessTokenCookieOptions);
+        res.cookie('refreshToken', refreshToken, cookieOptions);
+
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user;
 
-        req.login(user, (err) => {
-          if (err) {
-            return res
-              .status(500)
-              .json({ message: "Error logging in after registration" });
-          }
-          res.status(201).json(userWithoutPassword);
+        res.status(201).json({
+          user: userWithoutPassword,
+          accessToken,
+          message: "Registration successful"
         });
       } catch (err) {
         console.error("Registration error:", err);
@@ -159,43 +116,144 @@ export function setupAuth(app: Express) {
     }
   );
 
-  app.post("/api/auth/login", (req, res, next) => {
-    passport.authenticate("local", (err: any, user: any, info: any) => {
-      if (err) {
-        return next(err);
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
       }
+
+      // Normalize input for case-insensitive search
+      const normalizedInput = username.toLowerCase().trim();
+      
+      // Try to find user by username (case insensitive) or email
+      let user = await storage.getUserByUsername(normalizedInput);
+      
+      // If not found by username, try email
+      if (!user && normalizedInput.includes('@')) {
+        user = await storage.getUserByEmail(normalizedInput);
+      }
+
       if (!user) {
-        return res
-          .status(401)
-          .json({ message: info.message || "Authentication failed" });
+        return res.status(401).json({ message: "Incorrect username or email" });
       }
-      req.login(user, (err) => {
-        if (err) {
-          return next(err);
-        }
-        // Remove password from response
-        const { password, ...userWithoutPassword } = user;
-        return res.json(userWithoutPassword);
+
+      const isPasswordValid = await comparePasswords(password, user.password);
+
+      if (!isPasswordValid) {
+        return res.status(401).json({ message: "Incorrect password" });
+      }
+
+      // Generate JWT tokens
+      const tokenPayload = {
+        userId: user.id,
+        username: user.username,
+        email: user.email,
+      };
+
+      const { accessToken, refreshToken } = generateTokens(tokenPayload);
+
+      // Store refresh token in Redis
+      await storeRefreshToken(user.id, refreshToken);
+
+      // Set tokens in httpOnly cookies
+      res.cookie('accessToken', accessToken, accessTokenCookieOptions);
+      res.cookie('refreshToken', refreshToken, cookieOptions);
+
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+
+      res.json({
+        user: userWithoutPassword,
+        accessToken,
+        message: "Login successful"
       });
-    })(req, res, next);
-  });
-
-  app.post("/api/auth/logout", (req, res) => {
-    req.logout((err) => {
-      if (err) {
-        return res.status(500).json({ message: "Error logging out" });
-      }
-      res.json({ message: "Logged out successfully" });
-    });
-  });
-
-  app.get("/api/auth/me", (req, res) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
+    } catch (err) {
+      console.error("Login error:", err);
+      res.status(500).json({ message: "Error during login" });
     }
+  });
 
-    // Remove password from response
-    const { password, ...userWithoutPassword } = req.user as any;
-    res.json(userWithoutPassword);
+  app.post("/api/auth/refresh", async (req, res) => {
+    try {
+      const refreshToken = extractTokenFromCookie('refreshToken', req.cookies);
+
+      if (!refreshToken) {
+        return res.status(401).json({ message: "Refresh token required" });
+      }
+
+      // Verify refresh token
+      const payload = verifyRefreshToken(refreshToken);
+
+      // Check if refresh token exists in Redis
+      const isValid = await isRefreshTokenValid(payload.userId, refreshToken);
+      if (!isValid) {
+        return res.status(401).json({ message: "Invalid refresh token" });
+      }
+
+      // Generate new access token
+      const tokenPayload = {
+        userId: payload.userId,
+        username: payload.username,
+        email: payload.email,
+      };
+
+      const { accessToken, refreshToken: newRefreshToken } = generateTokens(tokenPayload);
+
+      // Store new refresh token in Redis
+      await storeRefreshToken(payload.userId, newRefreshToken);
+
+      // Set new tokens in httpOnly cookies
+      res.cookie('accessToken', accessToken, accessTokenCookieOptions);
+      res.cookie('refreshToken', newRefreshToken, cookieOptions);
+
+      res.json({
+        accessToken,
+        message: "Token refreshed successfully"
+      });
+    } catch (err) {
+      console.error("Token refresh error:", err);
+      res.status(401).json({ message: "Invalid refresh token" });
+    }
+  });
+
+  app.post("/api/auth/logout", authenticateToken, async (req, res) => {
+    try {
+      if (req.user) {
+        // Remove refresh token from Redis
+        await removeRefreshToken(req.user.id);
+      }
+
+      // Clear cookies
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+
+      res.json({ message: "Logged out successfully" });
+    } catch (err) {
+      console.error("Logout error:", err);
+      res.status(500).json({ message: "Error during logout" });
+    }
+  });
+
+  app.get("/api/auth/me", authenticateToken, async (req, res) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Get full user details from database
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Remove password from response
+      const { password, ...userWithoutPassword } = user;
+      res.json(userWithoutPassword);
+    } catch (err) {
+      console.error("Get user error:", err);
+      res.status(500).json({ message: "Error fetching user data" });
+    }
   });
 }

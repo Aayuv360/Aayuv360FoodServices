@@ -2,19 +2,13 @@ import type { Express, Request, Response } from "express";
 import { storage } from "../storage";
 import { logAPIRequest, logError } from "../logger";
 import { createOrder } from "../razorpay";
+import { authenticateToken } from "../jwt-middleware";
 
 export function registerProfileRoutes(app: Express) {
-  const isAuthenticated = (req: Request, res: Response, next: Function) => {
-    if (!req.isAuthenticated()) {
-      return res.status(401).json({ message: "Authentication required" });
-    }
-    next();
-  };
-
   // Update user profile
-  app.put("/api/profile", isAuthenticated, async (req, res) => {
+  app.put("/api/profile", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { name, email, phone } = req.body;
 
       // Logging is handled by the global middleware
@@ -61,9 +55,9 @@ export function registerProfileRoutes(app: Express) {
   });
 
   // Get user wallet balance
-  app.get("/api/profile/wallet", isAuthenticated, async (req, res) => {
+  app.get("/api/profile/wallet", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       
       // Logging is handled by the global middleware
 
@@ -83,9 +77,9 @@ export function registerProfileRoutes(app: Express) {
   });
 
   // Create Razorpay order for wallet top-up
-  app.post("/api/profile/wallet/create-order", isAuthenticated, async (req, res) => {
+  app.post("/api/profile/wallet/create-order", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { amount } = req.body;
 
       // Logging is handled by the global middleware
@@ -130,9 +124,9 @@ export function registerProfileRoutes(app: Express) {
   });
 
   // Add money to wallet
-  app.post("/api/profile/wallet/add", isAuthenticated, async (req, res) => {
+  app.post("/api/profile/wallet/add", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { amount, paymentMethod = "razorpay", paymentDetails } = req.body;
 
       // Logging is handled by the global middleware
@@ -196,7 +190,7 @@ export function registerProfileRoutes(app: Express) {
   });
 
   // Update wallet balance (admin only or internal use)
-  app.put("/api/profile/wallet/update", isAuthenticated, async (req, res) => {
+  app.put("/api/profile/wallet/update", authenticateToken, async (req, res) => {
     try {
       const userId = (req.user as any).id;
       const { balance, reason = "Manual adjustment" } = req.body;
@@ -250,9 +244,9 @@ export function registerProfileRoutes(app: Express) {
   });
 
   // Get wallet transaction history
-  app.get("/api/profile/wallet/transactions", isAuthenticated, async (req, res) => {
+  app.get("/api/profile/wallet/transactions", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { page = 1, limit = 20 } = req.query;
 
       // Logging is handled by the global middleware
@@ -277,9 +271,9 @@ export function registerProfileRoutes(app: Express) {
   });
 
   // Delete account immediately
-  app.post("/api/profile/delete-account", isAuthenticated, async (req, res) => {
+  app.post("/api/profile/delete-account", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
       const { reason = "User requested deletion" } = req.body;
 
       // Logging is handled by the global middleware
@@ -368,9 +362,9 @@ export function registerProfileRoutes(app: Express) {
   });
 
   // Get deletion request status
-  app.get("/api/profile/deletion-status", isAuthenticated, async (req, res) => {
+  app.get("/api/profile/deletion-status", authenticateToken, async (req, res) => {
     try {
-      const userId = (req.user as any).id;
+      const userId = req.user!.id;
 
       // Logging is handled by the global middleware
 
