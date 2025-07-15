@@ -40,11 +40,10 @@ interface Address {
   isDefault: boolean;
 }
 
-type CheckoutStep = "cart" | "delivery" | "payment" | "success";
+type CheckoutStep = "cart" | "delivery";
 
 const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [currentStep, setCurrentStep] = useState<CheckoutStep>("cart");
-  const [orderId, setOrderId] = useState<number | null>(null);
   const [deliveryType, setDeliveryType] = useState<string>("default");
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
@@ -217,9 +216,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         deliveryAddressId: selectedAddress?.id,
       };
 
-      setOrderId(orderId);
       setIsPaymentInProgress(true);
-
       initiatePayment({
         amount: total,
         orderId: orderId,
