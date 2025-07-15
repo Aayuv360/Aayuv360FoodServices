@@ -1,6 +1,14 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Minus, Plus, Check, ShoppingCart as ShoppingCartIcon, Trash2, Edit, Info } from "lucide-react";
+import {
+  Minus,
+  Plus,
+  Check,
+  ShoppingCart as ShoppingCartIcon,
+  Trash2,
+  Edit,
+  Info,
+} from "lucide-react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
@@ -216,8 +224,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         name: "Aayuv Millet Foods",
         theme: { color: "#9E6D38" },
         onSuccess: async (response) => {
-          setIsPaymentInProgress(false);
-
           try {
             const finalOrderPayload = {
               ...orderPayload,
@@ -232,6 +238,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               "/api/orders",
               finalOrderPayload,
             );
+            setIsPaymentInProgress(false);
 
             if (!res.ok) {
               throw new Error("Failed to update order after payment");
@@ -248,6 +255,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             onClose();
             setCurrentStep("cart");
           } catch (error) {
+            setIsPaymentInProgress(false);
+
             toast({
               title: "Order Update Failed",
               description:
