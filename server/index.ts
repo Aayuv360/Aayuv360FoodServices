@@ -1,6 +1,5 @@
-// Load environment variables first
-import dotenv from 'dotenv';
-const envFile = `.env.${process.env.NODE_ENV || 'development'}`;
+import dotenv from "dotenv";
+const envFile = `.env.${process.env.NODE_ENV || "development"}`;
 dotenv.config({ path: envFile });
 
 import express, { type Request, Response, NextFunction } from "express";
@@ -12,21 +11,24 @@ import { router as deliveryRoutes } from "./delivery-status";
 import { router as notificationRoutes } from "./notifications";
 import { router as trackingRoutes } from "./real-time-tracking";
 import contactRoutes from "./contact-routes";
-// Environment validation - using env-validator instead of env-loader
 import { envValidator } from "./env-validator";
+import cookieParser from "cookie-parser";
 
-// Validate environment configuration on startup
 envValidator.printStatus();
 if (!envValidator.isValid()) {
   console.error("Critical environment configuration issues detected!");
   if (process.env.NODE_ENV === "production") {
-    console.error("Exiting due to missing required environment variables in production");
+    console.error(
+      "Exiting due to missing required environment variables in production",
+    );
     process.exit(1);
   }
 }
 
 const config = envValidator.getConfig();
-console.log(`🚀 Starting server in ${config.NODE_ENV} mode on port ${config.PORT}`);
+console.log(
+  `🚀 Starting server in ${config.NODE_ENV} mode on port ${config.PORT}`,
+);
 
 const app = express();
 
@@ -38,7 +40,9 @@ if (process.env.NODE_ENV === "production") {
     const allowedOrigins = [
       process.env.FRONTEND_URL,
       process.env.RENDER_EXTERNAL_URL,
-      process.env.RENDER_SERVICE_NAME ? `https://${process.env.RENDER_SERVICE_NAME}.onrender.com` : null,
+      process.env.RENDER_SERVICE_NAME
+        ? `https://${process.env.RENDER_SERVICE_NAME}.onrender.com`
+        : null,
     ].filter(Boolean);
 
     const origin = req.headers.origin;
@@ -73,9 +77,10 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-app.use('/api/', apiLimiter);
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use("/api/", apiLimiter);
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: false, limit: "10mb" }));
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -99,15 +104,21 @@ async function connectToDatabase() {
       NODE_ENV: process.env.NODE_ENV,
       MONGODB_URI_present: !!process.env.MONGODB_URI,
       SESSION_SECRET_present: !!process.env.SESSION_SECRET,
-      RAZORPAY_KEY_ID_present: !!process.env.RAZORPAY_KEY_ID
+      RAZORPAY_KEY_ID_present: !!process.env.RAZORPAY_KEY_ID,
     });
-    
+
     if (!uri) {
-      console.error("MONGODB_URI not set - database connection required for production");
-      console.error("Please set environment variables in Render.com dashboard:");
+      console.error(
+        "MONGODB_URI not set - database connection required for production",
+      );
+      console.error(
+        "Please set environment variables in Render.com dashboard:",
+      );
       console.error("1. Go to your service in Render dashboard");
       console.error("2. Click Environment tab");
-      console.error("3. Add MONGODB_URI, SESSION_SECRET, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET");
+      console.error(
+        "3. Add MONGODB_URI, SESSION_SECRET, RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET",
+      );
       if (process.env.NODE_ENV === "production") {
         throw new Error("Database connection required in production");
       }
