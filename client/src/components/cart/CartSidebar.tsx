@@ -256,8 +256,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 "Your order has been placed successfully. You can track your order in your profile.",
               variant: "default",
             });
-            setCurrentStep("success");
-            // navigate(`/profile?tab=orders`);
+            onClose();
+            setCurrentStep("cart");
           } catch (error) {
             toast({
               title: "Order Update Failed",
@@ -411,7 +411,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               🎉 You saved ₹25 on this order!
             </div>
 
-            <div className="border-t border-orange-200 pt-4">
+            <div className="border-t border-orange-200 p-4 ">
               <h3 className="font-bold mb-3 text-gray-800 text-lg">
                 💰 Bill Details
               </h3>
@@ -443,7 +443,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </div>
             </div>
 
-            <div className="mt-6 bg-yellow-50 p-4 rounded-xl text-sm text-gray-700 flex items-start gap-3 shadow-inner border border-yellow-200">
+            <div className="mt-6 bg-yellow-50 p-4 mr-4 rounded-xl text-sm text-gray-700 flex items-start gap-3 shadow-inner border border-yellow-200">
               <Info size={18} className="text-orange-600 mt-0.5" />
               <p>
                 Orders can be cancelled before confirmation. Once confirmed,
@@ -600,63 +600,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   of our service locations.
                 </p>
               </div>
-            </div>
-          )}
-
-          {currentStep === "success" && (
-            <div className="p-3 sm:p-4 text-center">
-              <div className="bg-primary/10 w-16 h-16 sm:w-20 sm:h-20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
-                <Check className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-semibold mb-1.5 sm:mb-2">
-                Order Placed Successfully!
-              </h2>
-              <p className="text-xs sm:text-sm text-muted-foreground mb-5 sm:mb-6">
-                Your order #{orderId} has been placed successfully.
-              </p>
-              <div className="border p-3 sm:p-4 rounded-md mb-5 sm:mb-6">
-                <h3 className="font-bold text-sm sm:text-base text-left mb-1.5 sm:mb-2">
-                  Order Details
-                </h3>
-                <div className="text-xs sm:text-sm text-left space-y-1.5 sm:space-y-2">
-                  <div className="flex justify-between">
-                    <span>Order Number</span>
-                    <span>#{orderId}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span>Total Amount</span>
-                    <span>
-                      {formatPrice(
-                        calculateCartTotal() +
-                          (deliveryType === "express" ? 60 : 40) +
-                          20,
-                      )}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <Button
-                className="w-full mb-2 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                onClick={() => {
-                  onClose();
-                  setCurrentStep("cart");
-                  navigate("/menu");
-                }}
-              >
-                Continue Shopping
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2"
-                onClick={() => {
-                  onClose();
-                  setCurrentStep("cart");
-                  navigate("/profile?tab=orders");
-                }}
-              >
-                View Orders
-              </Button>
             </div>
           )}
         </div>
