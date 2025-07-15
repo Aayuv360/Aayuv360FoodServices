@@ -22,9 +22,8 @@ externalPort = 3001
 localPort = 5007
 externalPort = 3002
 
-
 [workflows]
-runButton = "Project"
+runButton = "Optimized Start"
 
 [[workflows.workflow]]
 name = "Project"
@@ -48,7 +47,6 @@ task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
 
-
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
@@ -62,6 +60,15 @@ author = "agent"
 task = "shell.exec"
 args = "npm run dev"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Optimized Start"
+author = 45003725
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [deployment]
 deploymentTarget = "autoscale"

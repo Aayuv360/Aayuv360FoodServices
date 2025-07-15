@@ -1,15 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  Minus,
-  Plus,
-  Check,
-  ShoppingCart as ShoppingCartIcon,
-  Trash2,
-  Edit,
-  Info,
-  ArrowLeft,
-} from "lucide-react";
+import { Minus } from "lucide-react/dist/esm/icons/minus";
+import { Plus } from "lucide-react/dist/esm/icons/plus";
+import { Check } from "lucide-react/dist/esm/icons/check";
+import { ShoppingCart as ShoppingCartIcon } from "lucide-react/dist/esm/icons/shopping-cart";
+import { Trash2 } from "lucide-react/dist/esm/icons/trash-2";
+import { Edit } from "lucide-react/dist/esm/icons/edit";
+import { Info } from "lucide-react/dist/esm/icons/info";
+import { ArrowLeft } from "lucide-react/dist/esm/icons/arrow-left";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/hooks/use-cart";
 import { apiRequest } from "@/lib/queryClient";
@@ -76,7 +74,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     deleteAddress(addressId);
   };
 
-  const calculateCartTotal = (): number => {
+  const calculateCartTotal = useMemo((): number => {
     let total = 0;
 
     for (const item of cartItems) {
@@ -87,7 +85,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     }
 
     return total;
-  };
+  }, [cartItems]);
 
   const handleUpdateCurryOption = async (
     selectedMeal: Meal,
@@ -153,7 +151,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const handleCustomizeItem = (item: any) => {
     setCustomizingMeal(item.meal);
   };
-  function calculateMealPrice(item: any): number {
+  const calculateMealPrice = useCallback((item: any): number => {
     const basePrice = item.meal?.price || 0;
 
     const curryAdjustment =
@@ -163,7 +161,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       0;
 
     return (basePrice + curryAdjustment) * item.quantity;
-  }
+  }, []);
 
   const handleNextStep = async () => {
     if (!user) {
@@ -188,7 +186,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       }
 
       const total =
-        calculateCartTotal() + (deliveryType === "express" ? 60 : 40) + 20;
+        calculateCartTotal + (deliveryType === "express" ? 60 : 40) + 20;
 
       const orderIdRes = await apiRequest("POST", "/api/orders/generate-id");
       const { orderId } = await orderIdRes.json();
@@ -325,7 +323,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           </div>
         ) : (
           <>
-            <div>
+            <div className="max-h-96 overflow-y-auto">
               {cartItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-2 p-4">
                   <div>
@@ -333,6 +331,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
                       alt={item.meal?.name || "Meal item"}
                       className="w-16 h-16 rounded-2xl object-cover shadow-md"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   <div className="flex-grow px-2 sm:px-3">
@@ -415,7 +415,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-gray-700">
                   <span>Items Total</span>
-                  <span>{formatPrice(calculateCartTotal())}</span>
+                  <span>{formatPrice(calculateCartTotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-700">
                   <span>Delivery Charge</span>
@@ -431,7 +431,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   <span className="text-gray-900">Total</span>
                   <span className="text-primary">
                     {formatPrice(
-                      calculateCartTotal() +
+                      calculateCartTotal +
                         (deliveryType === "express" ? 60 : 40) +
                         20,
                     )}
@@ -480,7 +480,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             <>
               💳 Pay{" "}
               {formatPrice(
-                calculateCartTotal() +
+                calculateCartTotal +
                   (deliveryType === "express" ? 60 : 40) +
                   20,
               )}

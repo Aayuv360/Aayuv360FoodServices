@@ -1,7 +1,7 @@
 import NodeCache from "node-cache";
 
-// Create cache instances for different data types
-const menuCache = new NodeCache({ stdTTL: 300 }); // 5 minutes for menu items
+// Meal cache with 15-minute TTL for better performance
+const menuCache = new NodeCache({ stdTTL: 900 }); // 5 minutes for menu items
 const userCache = new NodeCache({ stdTTL: 600 }); // 10 minutes for user data
 const analyticsCache = new NodeCache({ stdTTL: 900 }); // 15 minutes for analytics
 const subscriptionCache = new NodeCache({ stdTTL: 600 }); // 10 minutes for subscriptions
