@@ -25,14 +25,14 @@ redisClient.on("end", () => {
   console.log("🔌 Redis connection closed");
 });
 
-// Only attempt Redis connection if REDIS_URL is available
-if (process.env.REDIS_URL) {
+// For Replit environment, skip Redis connection and use in-memory fallback
+if (process.env.NODE_ENV === 'production' && process.env.REDIS_URL) {
   redisClient.connect().catch((err) => {
     console.error("❌ Redis connection failed:", err);
     console.log("⚠️ Will use in-memory fallback for JWT tokens");
   });
 } else {
-  console.log("⚠️ No REDIS_URL found - using in-memory fallback for JWT tokens");
+  console.log("⚠️ Using in-memory fallback for JWT tokens (Replit environment)");
 }
 
 export default redisClient;
