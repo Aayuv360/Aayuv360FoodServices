@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { logError, logSecurityEvent } from "./logger";
+import { getCurrentISTISOString } from "./timezone-utils";
 
 export interface AppError extends Error {
   statusCode?: number;

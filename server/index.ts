@@ -78,6 +78,8 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Security middleware
+app.disable('x-powered-by'); // Hide Express.js
 app.use("/api/", apiLimiter);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
