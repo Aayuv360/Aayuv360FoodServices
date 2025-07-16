@@ -33,9 +33,8 @@ console.log(
 
 const app = express();
 
-if (process.env.NODE_ENV === "production") {
-  app.set("trust proxy", 1);
-}
+// Configure trust proxy for rate limiting (required for Replit/Render environments)
+app.set("trust proxy", 1);
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
     const allowedOrigins = [
@@ -69,13 +68,14 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-// Rate limiting
+// Rate limiting with proper trust proxy configuration
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Trust proxy headers for accurate IP detection
 });
 
 // Security middleware

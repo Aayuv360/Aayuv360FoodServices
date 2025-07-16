@@ -2,13 +2,14 @@ import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import { Request, Response, NextFunction } from "express";
 
-// Rate limiting
+// Rate limiting with trust proxy configuration
 export const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
+  trustProxy: true, // Required for Replit/Render proxy environments
 });
 
 export const authLimiter = rateLimit({
@@ -16,6 +17,7 @@ export const authLimiter = rateLimit({
   max: 5, // limit each IP to 5 login attempts per windowMs
   message: "Too many login attempts, please try again later.",
   skipSuccessfulRequests: true,
+  trustProxy: true, // Required for accurate IP detection
 });
 
 // Security headers
