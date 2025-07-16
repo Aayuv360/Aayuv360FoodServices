@@ -17,6 +17,9 @@ interface EnvConfig {
   TWILIO_PHONE_NUMBER?: string;
   SENDGRID_API_KEY?: string;
   GOOGLE_MAPS_API_KEY?: string;
+  REDIS_URL?: string;
+  ACCESS_TOKEN_SECRET?: string;
+  REFRESH_TOKEN_SECRET?: string;
 }
 
 class EnvironmentValidator {
@@ -42,6 +45,9 @@ class EnvironmentValidator {
       TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
       SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
       GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
+      REDIS_URL: process.env.REDIS_URL,
+      ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
+      REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
     };
   }
 

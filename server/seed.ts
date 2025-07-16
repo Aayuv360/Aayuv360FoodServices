@@ -2,15 +2,11 @@ import { connectToMongoDB } from "./db";
 import { User as UserModel, SubscriptionPlan as SubscriptionPlanModel } from "../shared/mongoModels";
 import { milletMeals, MealDataItem } from "./mealData";
 import { Meal as MealModel } from "../shared/mongoModels";
-import { scrypt, randomBytes } from "crypto";
-import { promisify } from "util";
-
-const scryptAsync = promisify(scrypt);
+import bcrypt from "bcryptjs";
 
 async function hashPassword(password: string) {
-  const salt = randomBytes(16).toString("hex");
-  const buf = (await scryptAsync(password, salt, 64)) as Buffer;
-  return `${buf.toString("hex")}.${salt}`;
+  const saltRounds = 12;
+  return await bcrypt.hash(password, saltRounds);
 }
 
 export async function seedDatabase() {

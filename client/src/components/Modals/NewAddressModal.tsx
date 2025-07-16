@@ -104,7 +104,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     };
 
     initializeFromEditingAddress();
-  }, [isLoaded, editingAddress, getCurrentPosition, checkServiceAvailability]);
+  }, [isLoaded, editingAddress]);
 
   useEffect(() => {
     if (coords && !editingAddress) {
@@ -112,7 +112,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       reverseGeocode(coords);
       checkServiceAvailability(coords);
     }
-  }, [coords, editingAddress, checkServiceAvailability]);
+  }, [coords, editingAddress]);
 
   useEffect(() => {
     setIsAddressModalOpen(addressModalOpen);
