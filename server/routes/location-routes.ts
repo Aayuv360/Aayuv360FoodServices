@@ -3,16 +3,23 @@ import { mongoStorage } from "../mongoStorage";
 import { authenticateToken } from "../jwt-middleware";
 
 export function registerLocationRoutes(app: Express) {
-  const isManagerOrAdmin = async (req: Request, res: Response, next: Function) => {
+  const isManagerOrAdmin = async (
+    req: Request,
+    res: Response,
+    next: Function,
+  ) => {
     const user = req.user as any;
     if (!user) {
       return res.status(401).json({ message: "Authentication required" });
     }
-    
+
     try {
       // Get full user details from database to check role
       const fullUser = await mongoStorage.getUser(user.id);
-      if (!fullUser || (fullUser.role !== "manager" && fullUser.role !== "admin")) {
+      if (
+        !fullUser ||
+        (fullUser.role !== "manager" && fullUser.role !== "admin")
+      ) {
         return res
           .status(403)
           .json({ message: "Access denied. Manager privileges required." });
@@ -23,7 +30,7 @@ export function registerLocationRoutes(app: Express) {
       return res.status(500).json({ message: "Server error" });
     }
   };
-  app.get("/api/locations", authenticateToken, async (req: Request, res: Response) => {
+  app.get("/api/locations", async (req: Request, res: Response) => {
     try {
       const locations = await mongoStorage.getLocations();
 

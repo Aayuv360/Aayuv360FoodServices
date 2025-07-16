@@ -1,6 +1,12 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { useGeolocation, LocationCoords } from '../hooks/use-geolocation';
-import { useServiceArea } from '../hooks/use-service-area';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import { useGeolocation, LocationCoords } from "../hooks/use-geolocation";
+import { useServiceArea } from "../hooks/use-service-area";
 
 interface LocationContextType {
   currentLocation: LocationCoords | null;
@@ -12,15 +18,19 @@ interface LocationContextType {
   clearLocationError: () => void;
 }
 
-const LocationContext = createContext<LocationContextType | undefined>(undefined);
+const LocationContext = createContext<LocationContextType | undefined>(
+  undefined,
+);
 
 interface LocationProviderProps {
   children: ReactNode;
 }
 
-export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) => {
+export const LocationProvider: React.FC<LocationProviderProps> = ({
+  children,
+}) => {
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
-  
+
   const {
     coords: currentLocation,
     isLoading: isLocationLoading,
@@ -33,13 +43,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     maximumAge: 300000, // 5 minutes
   });
 
-  const {
-    isWithinServiceArea,
-    checkServiceAvailability,
-    getServiceMessage,
-  } = useServiceArea();
+  const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
+    useServiceArea();
 
-  // Automatically request location when app loads
   useEffect(() => {
     if (!hasRequestedLocation) {
       setHasRequestedLocation(true);
@@ -47,7 +53,6 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
     }
   }, [getCurrentPosition, hasRequestedLocation]);
 
-  // Check service availability when location changes
   useEffect(() => {
     if (currentLocation) {
       checkServiceAvailability(currentLocation);
@@ -84,7 +89,9 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({ children }) 
 export const useLocationContext = (): LocationContextType => {
   const context = useContext(LocationContext);
   if (context === undefined) {
-    throw new Error('useLocationContext must be used within a LocationProvider');
+    throw new Error(
+      "useLocationContext must be used within a LocationProvider",
+    );
   }
   return context;
 };
