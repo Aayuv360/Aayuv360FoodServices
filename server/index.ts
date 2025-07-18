@@ -217,11 +217,3 @@ async function connectToDatabase() {
     process.exit(1);
   }
 })();
-
-if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-    console.log("⚠️  Email notifications disabled (EMAIL_USER/EMAIL_PASS not set)")
-  }
-
-  if (!process.env.FAST2SMS_API_KEY) {
-    console.log("⚠️  SMS notifications disabled (FAST2SMS_API_KEY not set)")
-  }

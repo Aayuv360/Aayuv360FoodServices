@@ -12,10 +12,9 @@ interface EnvConfig {
   SESSION_SECRET: string;
   RAZORPAY_KEY_ID?: string;
   RAZORPAY_KEY_SECRET?: string;
-  TWILIO_ACCOUNT_SID?: string;
-  TWILIO_AUTH_TOKEN?: string;
-  TWILIO_PHONE_NUMBER?: string;
-  SENDGRID_API_KEY?: string;
+  EMAIL_USER?: string;
+  EMAIL_PASS?: string;
+  FAST2SMS_API_KEY?: string;
   GOOGLE_MAPS_API_KEY?: string;
   REDIS_URL?: string;
   ACCESS_TOKEN_SECRET?: string;
@@ -40,10 +39,9 @@ class EnvironmentValidator {
       SESSION_SECRET: process.env.SESSION_SECRET,
       RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID,
       RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET,
-      TWILIO_ACCOUNT_SID: process.env.TWILIO_ACCOUNT_SID,
-      TWILIO_AUTH_TOKEN: process.env.TWILIO_AUTH_TOKEN,
-      TWILIO_PHONE_NUMBER: process.env.TWILIO_PHONE_NUMBER,
-      SENDGRID_API_KEY: process.env.SENDGRID_API_KEY,
+      EMAIL_USER: process.env.EMAIL_USER,
+      EMAIL_PASS: process.env.EMAIL_PASS,
+      FAST2SMS_API_KEY: process.env.FAST2SMS_API_KEY,
       GOOGLE_MAPS_API_KEY: process.env.GOOGLE_MAPS_API_KEY,
       REDIS_URL: process.env.REDIS_URL,
       ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
@@ -75,12 +73,12 @@ class EnvironmentValidator {
     this.validateOptional('GOOGLE_MAPS_API_KEY', 'Location features may be limited');
 
     // Informational
-    if (!this.config.SENDGRID_API_KEY) {
-      this.warnings.push('Email notifications disabled (SENDGRID_API_KEY not set)');
+    if (!this.config.EMAIL_USER || !this.config.EMAIL_PASS) {
+      this.warnings.push('Email notifications disabled (EMAIL_USER/EMAIL_PASS not set)');
     }
     
-    if (!this.config.TWILIO_ACCOUNT_SID || !this.config.TWILIO_AUTH_TOKEN) {
-      this.warnings.push('SMS notifications disabled (Twilio credentials not set)');
+    if (!this.config.FAST2SMS_API_KEY) {
+      this.warnings.push('SMS notifications disabled (FAST2SMS_API_KEY not set)');
     }
   }
 
