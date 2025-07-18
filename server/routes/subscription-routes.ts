@@ -5,7 +5,6 @@ import { getNextSequence } from "../../shared/mongoModels";
 import { logAPIRequest } from "../logger";
 import { z } from "zod";
 import { authenticateToken } from "../jwt-middleware";
-import { cacheService as CacheService } from "../services/cacheService";
 
 function calculateSubscriptionStatus(subscription: any) {
   try {
@@ -139,82 +138,71 @@ export function registerSubscriptionRoutes(app: Express) {
   app.get("/api/subscription-plans", async (req, res) => {
     const startTime = Date.now();
     try {
-      let subscriptionPlans = CacheService.getSubscriptionPlans();
+      console.log("📋 Fetching subscription plans from MongoDB");
+      const activePlans = await mongoStorage.getAllSubscriptionPlans();
+      const plansWithMenuItems = activePlans.map((plan) => {
+        if (!plan.menuItems || plan.menuItems.length === 0) {
+          console.warn(`Plan ${plan.id} missing menuItems, adding default`);
+          const defaultMenuItems = [
+            {
+              day: 1,
+              main: "Ragi Dosa",
+              sides: ["Coconut Chutney", "Sambar"],
+            },
+            { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
+            { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
+            {
+              day: 4,
+              main: "Foxtail Millet Lemon Rice",
+              sides: ["Boondi Raita"],
+            },
+            {
+              day: 5,
+              main: "Little Millet Pongal",
+              sides: ["Coconut Chutney"],
+            },
+            {
+              day: 6,
+              main: "Barnyard Millet Khichdi",
+              sides: ["Pickle", "Curd"],
+            },
+            {
+              day: 7,
+              main: "Pearl Millet Roti",
+              sides: ["Dal", "Vegetable Curry"],
+            },
+          ];
+          return { ...plan, menuItems: defaultMenuItems };
+        }
+        return plan;
+      });
 
-      if (!subscriptionPlans) {
-        console.log("📋 Fetching subscription plans from MongoDB");
-        const activePlans = await mongoStorage.getAllSubscriptionPlans();
-        const plansWithMenuItems = activePlans.map((plan) => {
-          if (!plan.menuItems || plan.menuItems.length === 0) {
-            console.warn(`Plan ${plan.id} missing menuItems, adding default`);
-            const defaultMenuItems = [
-              {
-                day: 1,
-                main: "Ragi Dosa",
-                sides: ["Coconut Chutney", "Sambar"],
-              },
-              { day: 2, main: "Jowar Upma", sides: ["Mixed Vegetable Curry"] },
-              { day: 3, main: "Millet Pulao", sides: ["Raita", "Papad"] },
-              {
-                day: 4,
-                main: "Foxtail Millet Lemon Rice",
-                sides: ["Boondi Raita"],
-              },
-              {
-                day: 5,
-                main: "Little Millet Pongal",
-                sides: ["Coconut Chutney"],
-              },
-              {
-                day: 6,
-                main: "Barnyard Millet Khichdi",
-                sides: ["Pickle", "Curd"],
-              },
-              {
-                day: 7,
-                main: "Pearl Millet Roti",
-                sides: ["Dal", "Vegetable Curry"],
-              },
-            ];
-            return { ...plan, menuItems: defaultMenuItems };
-          }
-          return plan;
-        });
-
-        const groupedPlans = [
-          {
-            dietaryPreference: "veg",
-            plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg",
-            ),
-            extraPrice: 0,
-            id: 1,
-          },
-          {
-            dietaryPreference: "veg_with_egg",
-            plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "veg_with_egg",
-            ),
-            extraPrice: 0,
-            id: 2,
-          },
-          {
-            dietaryPreference: "nonveg",
-            plans: plansWithMenuItems.filter(
-              (plan) => plan.dietaryPreference === "nonveg",
-            ),
-            extraPrice: 0,
-            id: 3,
-          },
-        ].filter((group) => group.plans.length > 0);
-        subscriptionPlans = groupedPlans;
-
-        CacheService.setSubscriptionPlans(subscriptionPlans);
-      } else {
-        console.log(
-          `📋 Retrieved ${subscriptionPlans.length} subscription plans from cache`,
-        );
-      }
+      const groupedPlans = [
+        {
+          dietaryPreference: "veg",
+          plans: plansWithMenuItems.filter(
+            (plan) => plan.dietaryPreference === "veg",
+          ),
+          extraPrice: 0,
+          id: 1,
+        },
+        {
+          dietaryPreference: "veg_with_egg",
+          plans: plansWithMenuItems.filter(
+            (plan) => plan.dietaryPreference === "veg_with_egg",
+          ),
+          extraPrice: 0,
+          id: 2,
+        },
+        {
+          dietaryPreference: "nonveg",
+          plans: plansWithMenuItems.filter(
+            (plan) => plan.dietaryPreference === "nonveg",
+          ),
+          extraPrice: 0,
+          id: 3,
+        },
+      ].filter((group) => group.plans.length > 0);
 
       const duration = Date.now() - startTime;
       logAPIRequest(
@@ -225,7 +213,7 @@ export function registerSubscriptionRoutes(app: Express) {
         (req.user as any)?.id,
       );
 
-      res.json(subscriptionPlans);
+      res.json(groupedPlans);
     } catch (error) {
       const duration = Date.now() - startTime;
       console.error("Error fetching subscription plans:", error);
