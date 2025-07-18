@@ -36,12 +36,12 @@ export async function comparePasswords(supplied: string, stored: string): Promis
 }
 
 export function setupAuth(app: Express) {
-  // JWT Cookie configuration
+  // JWT Cookie configuration - Enhanced Security
   const isProduction = process.env.NODE_ENV === "production";
   const cookieOptions = {
     httpOnly: true,
-    secure: isProduction,
-    sameSite: isProduction ? 'none' as const : 'lax' as const,
+    secure: isProduction, // HTTPS only in production - prevents MITM attacks
+    sameSite: isProduction ? 'none' as const : 'lax' as const, // CSRF protection
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for refresh token
   };
 
@@ -254,6 +254,114 @@ export function setupAuth(app: Express) {
     } catch (err) {
       console.error("Get user error:", err);
       res.status(500).json({ message: "Error fetching user data" });
+    }
+  });
+
+  // Forgot Password endpoint
+  app.post("/api/auth/forgot-password", async (req, res) => {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+
+      // Find user by email
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists or not for security
+        return res.json({ message: "If your email is registered, you will receive a reset link" });
+      }
+
+      // Generate reset token
+      const resetToken = jwt.sign(
+        { userId: user.id, email: user.email },
+        process.env.ACCESS_TOKEN_SECRET || "your_access_token_secret",
+        { expiresIn: "1h" }
+      );
+
+      // Store reset token and expiration in database
+      const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+      await storage.updateUser(user.id, {
+        resetPasswordToken: resetToken,
+        resetPasswordExpires: resetExpires
+      });
+
+      // Send reset email
+      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
+      
+      try {
+        const { emailService } = await import('./email-service-nodemailer');
+        await emailService.sendPasswordReset(email, resetToken, resetUrl);
+        console.log(`Password reset email sent to ${email}`);
+      } catch (emailError) {
+        console.error('Failed to send reset email:', emailError);
+      }
+
+      // Send SMS notification if phone number exists
+      if (user.phone) {
+        try {
+          const { smsService } = await import('./sms-service-fast2sms');
+          await smsService.sendPasswordResetNotification(user.phone);
+        } catch (smsError) {
+          console.error('Failed to send SMS notification:', smsError);
+        }
+      }
+
+      res.json({ message: "If your email is registered, you will receive a reset link" });
+    } catch (error) {
+      console.error("Forgot password error:", error);
+      res.status(500).json({ message: "Error processing password reset request" });
+    }
+  });
+
+  // Reset Password endpoint
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        return res.status(400).json({ message: "Token and new password are required" });
+      }
+
+      // Verify token
+      let decoded;
+      try {
+        decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || "your_access_token_secret") as any;
+      } catch (error) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      // Find user with valid reset token
+      const user = await storage.getUser(decoded.userId);
+      if (!user || user.resetPasswordToken !== token) {
+        return res.status(400).json({ message: "Invalid reset token" });
+      }
+
+      // Check if token is expired
+      if (!user.resetPasswordExpires || new Date() > user.resetPasswordExpires) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+
+      // Validate new password
+      if (newPassword.length < 6) {
+        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+      }
+
+      // Hash new password
+      const hashedPassword = await hashPassword(newPassword);
+
+      // Update user password and clear reset token
+      await storage.updateUser(user.id, {
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null
+      });
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error) {
+      console.error("Reset password error:", error);
+      res.status(500).json({ message: "Error resetting password" });
     }
   });
 }

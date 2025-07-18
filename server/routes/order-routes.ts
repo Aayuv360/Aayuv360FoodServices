@@ -1,6 +1,6 @@
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
-import { smsService } from "../sms-service";
+import { smsServiceLegacy as smsService } from "../sms-service";
 import { getNextSequence } from "../../shared/mongoModels";
 import { authenticateToken } from "../jwt-middleware";
 

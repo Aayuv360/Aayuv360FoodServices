@@ -1,10 +1,5 @@
-// smsService.ts
-
-interface SMSConfig {
-  accountSid?: string;
-  authToken?: string;
-  phoneNumber?: string;
-}
+// smsService.ts - Now using Fast2SMS instead of Twilio
+import { smsService } from './sms-service-fast2sms';
 
 interface SMSMessage {
   to: string;
@@ -12,28 +7,18 @@ interface SMSMessage {
 }
 
 class SMSService {
-  private config: SMSConfig;
   private isConfigured: boolean = false;
 
   constructor() {
-    this.config = {
-      accountSid: process.env.TWILIO_ACCOUNT_SID,
-      authToken: process.env.TWILIO_AUTH_TOKEN,
-      phoneNumber: process.env.TWILIO_PHONE_NUMBER,
-    };
-
-    this.isConfigured = !!(
-      this.config.accountSid &&
-      this.config.authToken &&
-      this.config.phoneNumber
-    );
+    // Check if Fast2SMS is configured
+    this.isConfigured = !!(process.env.FAST2SMS_API_KEY);
 
     if (!this.isConfigured) {
       console.log(
         "SMS service not configured - SMS notifications will be logged only",
       );
     } else {
-      console.log("SMS service configured and ready");
+      console.log("SMS service configured with Fast2SMS and ready");
     }
   }
 
@@ -44,23 +29,9 @@ class SMSService {
         return true;
       }
 
-      const twilio = await import("twilio");
-      const client = twilio.default(
-        this.config.accountSid!,
-        this.config.authToken!,
-      );
-      console.log("Using from number:", this.config.phoneNumber);
-
-      const result = await client.messages.create({
-        body: message,
-        from: this.config.phoneNumber,
-        to: to,
-      });
-
-      console.log(`SMS sent successfully to ${to}. SID: ${result.sid}`);
-      return true;
+      return await smsService.sendSMS({ to, message });
     } catch (error) {
-      console.error("Error sending SMS:", error);
+      console.error('Error sending SMS:', error);
       return false;
     }
   }
@@ -121,13 +92,13 @@ class SMSService {
 
   getStatus(): string {
     return this.isConfigured
-      ? "SMS service ready with Twilio"
-      : "SMS service in logging mode - need Twilio credentials";
+      ? "SMS service ready with Fast2SMS"
+      : "SMS service in logging mode - need Fast2SMS API key";
   }
 }
 
-// Exporting the service instance
-export const smsService = new SMSService();
+// Exporting the service instance (renamed to avoid conflict)
+export const smsServiceLegacy = new SMSService();
 
 // Helper function for general-purpose SMS sending
 export async function sendRealSmsNotification(
@@ -138,7 +109,7 @@ export async function sendRealSmsNotification(
 ): Promise<boolean> {
   try {
     const fullMessage = `${title}: ${message}`;
-    return await smsService.sendSMS(userPhone, fullMessage);
+    return await smsServiceLegacy.sendSMS(userPhone, fullMessage);
   } catch (error) {
     console.error("Error sending real SMS notification:", error);
     return false;

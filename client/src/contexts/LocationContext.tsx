@@ -51,13 +51,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
       setHasRequestedLocation(true);
       getCurrentPosition();
     }
-  }, [hasRequestedLocation]);
+  }, [hasRequestedLocation, getCurrentPosition]);
 
   useEffect(() => {
     if (currentLocation) {
       checkServiceAvailability(currentLocation);
     }
-  }, [currentLocation]);
+  }, [currentLocation, checkServiceAvailability]);
 
   const requestLocation = () => {
     getCurrentPosition();

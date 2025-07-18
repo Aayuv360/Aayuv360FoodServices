@@ -6,7 +6,7 @@ import {
   sendWhatsAppNotification,
 } from "./notifications";
 import { sendSubscriptionDeliveryEmail } from "./email-service";
-import { smsService } from "./sms-service";
+import { smsServiceLegacy as smsService } from "./sms-service";
 import { DateTime } from "luxon";
 
 interface SubscriptionDeliveryItem {

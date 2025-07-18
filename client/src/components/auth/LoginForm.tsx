@@ -25,9 +25,10 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LoginFormProps {
   onSuccess?: () => void;
+  onForgotPassword?: () => void;
 }
 
-export default function LoginForm({ onSuccess }: LoginFormProps) {
+export default function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { login } = useAuth();
@@ -98,20 +99,34 @@ export default function LoginForm({ onSuccess }: LoginFormProps) {
             </FormItem>
           )}
         />
-        <Button 
-          type="submit" 
-          className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2 mt-1 sm:mt-2" 
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-              Logging in...
-            </>
-          ) : (
-            "Login"
+        <div className="space-y-2">
+          <Button 
+            type="submit" 
+            className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2" 
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
+                Logging in...
+              </>
+            ) : (
+              "Login"
+            )}
+          </Button>
+          
+          {onForgotPassword && (
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full text-xs sm:text-sm h-auto py-1 text-blue-600 hover:text-blue-800"
+              onClick={onForgotPassword}
+              disabled={isLoading}
+            >
+              Forgot Password?
+            </Button>
           )}
-        </Button>
+        </div>
       </form>
     </Form>
   );

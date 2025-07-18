@@ -7,6 +7,8 @@ export interface UserDocument extends Document {
   password: string;
   name?: string;
   role?: string;
+  phone?: string;
+  address?: string;
   createdAt: Date;
   updatedAt: Date;
   stripeCustomerId?: string;
@@ -14,6 +16,8 @@ export interface UserDocument extends Document {
   walletBalance?: number;
   deletionRequested?: boolean;
   deletionRequestedAt?: Date;
+  resetPasswordToken?: string;
+  resetPasswordExpires?: Date;
   preferences?: {
     dietaryPreference?: string;
     favoriteMeals?: number[];
