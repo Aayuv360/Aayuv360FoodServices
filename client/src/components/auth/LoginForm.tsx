@@ -115,17 +115,15 @@ export default function LoginForm({ onSuccess, onForgotPassword }: LoginFormProp
             )}
           </Button>
           
-          {onForgotPassword && (
-            <Button
-              type="button"
-              variant="ghost"
-              className="w-full text-xs sm:text-sm h-auto py-1 text-blue-600 hover:text-blue-800"
-              onClick={onForgotPassword}
-              disabled={isLoading}
-            >
-              Forgot Password?
-            </Button>
-          )}
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full text-xs sm:text-sm h-auto py-1 text-blue-600 hover:text-blue-800"
+            onClick={onForgotPassword}
+            disabled={isLoading}
+          >
+            Forgot Password?
+          </Button>
         </div>
       </form>
     </Form>

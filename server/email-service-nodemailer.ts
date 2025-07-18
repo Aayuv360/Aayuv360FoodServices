@@ -57,7 +57,7 @@ class NodemailerService {
         config.service = emailService;
       }
 
-      this.transporter = nodemailer.createTransporter(config);
+      this.transporter = nodemailer.createTransport(config);
       this.isConfigured = true;
       
       logger.info('✅ Nodemailer email service initialized successfully');

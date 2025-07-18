@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
+import { ForgotPasswordForm } from "@/components/auth/ForgotPasswordForm";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export function AuthModal({
   onSuccess: customOnSuccess,
 }: AuthModalProps) {
   const [activeTab, setActiveTab] = useState<string>(defaultTab);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const onSuccess = () => {
     onOpenChange(false);
@@ -58,28 +60,35 @@ export function AuthModal({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger
-              value="login"
-              className="text-xs sm:text-sm py-1.5 sm:py-2"
-            >
-              Login
-            </TabsTrigger>
-            <TabsTrigger
-              value="register"
-              className="text-xs sm:text-sm py-1.5 sm:py-2"
-            >
-              Register
-            </TabsTrigger>
-          </TabsList>
-          <TabsContent value="login" className="mt-3 sm:mt-4">
-            <LoginForm onSuccess={onSuccess} />
-          </TabsContent>
-          <TabsContent value="register" className="mt-3 sm:mt-4">
-            <RegisterForm onSuccess={() => setActiveTab("login")} />
-          </TabsContent>
-        </Tabs>
+        {showForgotPassword ? (
+          <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger
+                value="login"
+                className="text-xs sm:text-sm py-1.5 sm:py-2"
+              >
+                Login
+              </TabsTrigger>
+              <TabsTrigger
+                value="register"
+                className="text-xs sm:text-sm py-1.5 sm:py-2"
+              >
+                Register
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="login" className="mt-3 sm:mt-4">
+              <LoginForm 
+                onSuccess={onSuccess} 
+                onForgotPassword={() => setShowForgotPassword(true)}
+              />
+            </TabsContent>
+            <TabsContent value="register" className="mt-3 sm:mt-4">
+              <RegisterForm onSuccess={() => setActiveTab("login")} />
+            </TabsContent>
+          </Tabs>
+        )}
       </DialogContent>
     </Dialog>
   );
