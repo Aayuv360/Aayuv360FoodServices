@@ -51,9 +51,29 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey[0] as string, {
+    let res = await fetch(queryKey[0] as string, {
       credentials: "include",
     });
+
+    // If unauthorized and not already trying to refresh, attempt token refresh
+    const url = queryKey[0] as string;
+    if (res.status === 401 && !url.includes('/api/auth/refresh') && !url.includes('/api/auth/login')) {
+      try {
+        const refreshRes = await fetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        
+        if (refreshRes.ok) {
+          // Retry original request with new token
+          res = await fetch(url, {
+            credentials: "include",
+          });
+        }
+      } catch (refreshError) {
+        console.log('Token refresh failed in query:', refreshError);
+      }
+    }
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

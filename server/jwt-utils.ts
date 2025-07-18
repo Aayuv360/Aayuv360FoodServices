@@ -36,8 +36,8 @@ const ACCESS_TOKEN_SECRET =
   process.env.ACCESS_TOKEN_SECRET || "your_access_token_secret";
 const REFRESH_TOKEN_SECRET =
   process.env.REFRESH_TOKEN_SECRET || "your_refresh_token_secret";
-const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
-const REFRESH_TOKEN_EXPIRY = "7d"; // 7 days
+const ACCESS_TOKEN_EXPIRY = "24h"; // 24 hours - no automatic logout during idle
+const REFRESH_TOKEN_EXPIRY = "30d"; // 30 days - extended refresh window
 
 /**
  * Generate access token
@@ -97,7 +97,7 @@ export const storeRefreshToken = async (
   refreshToken: string,
 ): Promise<void> => {
   const key = `refresh_token:${userId}`;
-  const expiresInSeconds = 7 * 24 * 60 * 60; // 7 days
+  const expiresInSeconds = 30 * 24 * 60 * 60; // 30 days - extended refresh window
 
   if (isRedisConnected) {
     try {

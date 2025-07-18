@@ -42,12 +42,12 @@ export function setupAuth(app: Express) {
     httpOnly: true,
     secure: isProduction,
     sameSite: isProduction ? 'none' as const : 'lax' as const,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days for refresh token
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for refresh token
   };
 
   const accessTokenCookieOptions = {
     ...cookieOptions,
-    maxAge: 15 * 60 * 1000, // 15 minutes for access token
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours for access token - no idle logout
   };
 
   // Authentication routes
