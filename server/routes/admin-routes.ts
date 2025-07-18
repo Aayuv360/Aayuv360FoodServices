@@ -1,9 +1,7 @@
-
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { analyticsService } from "../analytics";
 import { updateOrderDeliveryStatus } from "../delivery-status";
-import CacheService from "../cache";
 import { logAPIRequest } from "../logger";
 import { authenticateToken, requireAdmin } from "../jwt-middleware";
 
@@ -11,7 +9,6 @@ export function registerAdminRoutes(app: Express) {
   app.get("/api/analytics", requireAdmin, async (req, res) => {
     const startTime = Date.now();
     try {
-
       const { range = "30days" } = req.query;
       const validRanges = ["7days", "30days", "90days", "year"];
 
@@ -19,12 +16,7 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ error: "Invalid date range" });
       }
 
-      let analyticsData = CacheService.getAnalytics(range as string);
-
-      if (!analyticsData) {
-        analyticsData = await analyticsService.getAnalytics(range as any);
-        CacheService.setAnalytics(range as string, analyticsData);
-      }
+      let analyticsData = await analyticsService.getAnalytics(range as any);
 
       const duration = Date.now() - startTime;
       logAPIRequest(
@@ -32,7 +24,7 @@ export function registerAdminRoutes(app: Express) {
         "/api/analytics",
         200,
         duration,
-        (req.user as any)?.id
+        (req.user as any)?.id,
       );
 
       res.json(analyticsData);
@@ -44,37 +36,10 @@ export function registerAdminRoutes(app: Express) {
         "/api/analytics",
         500,
         duration,
-        (req.user as any)?.id
+        (req.user as any)?.id,
       );
       res.status(500).json({ error: "Failed to fetch analytics data" });
     }
-  });
-
-  app.post("/api/admin/cache/clear", requireAdmin, (req, res) => {
-
-    const { type } = req.body;
-
-    switch (type) {
-      case "all":
-        CacheService.clearAll();
-        break;
-      case "menu":
-        CacheService.clearMenuCache();
-        break;
-      case "user":
-        CacheService.clearUserCache();
-        break;
-      default:
-        CacheService.clearAll();
-    }
-
-    res.json({ message: `${type || "all"} cache cleared successfully` });
-  });
-
-  app.get("/api/admin/cache/stats", requireAdmin, (req, res) => {
-
-    const stats = CacheService.getStats();
-    res.json(stats);
   });
 
   app.get("/api/admin/orders", requireAdmin, async (req, res) => {
@@ -92,7 +57,7 @@ export function registerAdminRoutes(app: Express) {
                 ...item,
                 meal: meal || { name: `Meal #${item.mealId}` },
               };
-            })
+            }),
           );
 
           let userName = "Unknown User";
@@ -113,7 +78,7 @@ export function registerAdminRoutes(app: Express) {
             userName,
             items: enrichedItems,
           };
-        })
+        }),
       );
 
       res.json(enrichedOrders);
@@ -148,7 +113,7 @@ export function registerAdminRoutes(app: Express) {
             ...subscription,
             userName,
           };
-        })
+        }),
       );
 
       res.json(enrichedSubscriptions);
@@ -178,7 +143,10 @@ export function registerAdminRoutes(app: Express) {
         return res.status(400).json({ message: "Invalid status" });
       }
 
-      const updatedOrder = await mongoStorage.updateOrderStatus(orderId, status);
+      const updatedOrder = await mongoStorage.updateOrderStatus(
+        orderId,
+        status,
+      );
 
       if (!updatedOrder) {
         return res.status(404).json({ message: "Order not found" });
@@ -218,7 +186,7 @@ export function registerAdminRoutes(app: Express) {
           await updateOrderDeliveryStatus(
             updatedOrder.id,
             updatedOrder.userId,
-            deliveryStatus
+            deliveryStatus,
           );
         }
       } catch (err) {
@@ -293,9 +261,7 @@ export function registerAdminRoutes(app: Express) {
       for (const meal of meals) {
         const oldPrice = meal.price;
         const newPrice = Math.round(oldPrice / 100);
-        console.log(
-          `Updating meal '${meal.name}': ${oldPrice} -> ${newPrice}`
-        );
+        console.log(`Updating meal '${meal.name}': ${oldPrice} -> ${newPrice}`);
 
         meal.price = newPrice;
         updates.push(meal.save());

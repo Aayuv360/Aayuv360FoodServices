@@ -92,7 +92,6 @@ function Router() {
             />
 
             <Route path="/success/:id/:type" element={<SuccessPage />} />
-            <Route path="/auth" element={<AuthPage />} />
             <Route path="/about-us" element={<AboutUs />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy-refund" element={<PrivacyRefund />} />

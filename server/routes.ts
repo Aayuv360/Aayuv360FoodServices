@@ -24,7 +24,6 @@ import { registerMiscRoutes } from "./routes/misc-routes";
 import { registerProfileRoutes } from "./routes/profile-routes";
 import { authenticateToken } from "./jwt-middleware";
 import { registerTestAuthRoutes } from "./test-auth";
-import { healthCheck, databaseHealthCheck } from "./helth-check";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   try {
@@ -48,11 +47,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   registerProfileRoutes(app);
   registerTestAuthRoutes(app);
 
-  // Health check endpoints
-  app.get("/api/health", healthCheck);
-  app.get("/api/health-check", healthCheck);
-  app.get("/api/database-health", databaseHealthCheck);
-  
   app.use("/api/delivery", deliveryRoutes);
   app.use("/api/notifications", notificationRoutes);
   app.use("/api/contact", contactRoutes);

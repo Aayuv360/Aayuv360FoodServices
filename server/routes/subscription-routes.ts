@@ -2,7 +2,6 @@ import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { insertSubscriptionSchema } from "../../shared/schema";
 import { getNextSequence } from "../../shared/mongoModels";
-import CacheService from "../cache";
 import { logAPIRequest } from "../logger";
 import { z } from "zod";
 import { authenticateToken } from "../jwt-middleware";
