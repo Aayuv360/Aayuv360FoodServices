@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { apiRequest } from '@/lib/queryClient';
 import { ArrowLeft, Mail } from 'lucide-react';
 
 interface ForgotPasswordFormProps {
@@ -21,7 +20,19 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
     setMessage('');
 
     try {
-      await apiRequest('/api/auth/forgot-password', 'POST', { email });
+      const response = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send reset email');
+      }
+
       setIsSuccess(true);
       setMessage('If your email is registered, you will receive a reset link shortly.');
     } catch (error: any) {
