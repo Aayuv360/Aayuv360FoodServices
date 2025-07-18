@@ -12,12 +12,34 @@ export async function apiRequest(
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
+  let res = await fetch(url, {
     method,
     headers: data ? { "Content-Type": "application/json" } : {},
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
+
+  // If unauthorized and not already trying to refresh, attempt token refresh
+  if (res.status === 401 && !url.includes('/api/auth/refresh') && !url.includes('/api/auth/login')) {
+    try {
+      const refreshRes = await fetch('/api/auth/refresh', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      if (refreshRes.ok) {
+        // Retry original request with new token
+        res = await fetch(url, {
+          method,
+          headers: data ? { "Content-Type": "application/json" } : {},
+          body: data ? JSON.stringify(data) : undefined,
+          credentials: "include",
+        });
+      }
+    } catch (refreshError) {
+      console.log('Token refresh failed:', refreshError);
+    }
+  }
 
   await throwIfResNotOk(res);
   return res;

@@ -62,8 +62,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return await res.json();
     },
-    onSuccess: (userData: User) => {
+    onSuccess: (response: any) => {
+      // Extract user data from login response
+      const userData = response.user || response;
       queryClient.setQueryData(["/api/auth/me"], userData);
+      
+      // Refetch user data to ensure it's current
+      queryClient.invalidateQueries({
+        queryKey: ["/api/auth/me"]
+      });
+      
       toast({
         title: "Login successful",
         description: `Welcome back, ${userData.name}!`,
@@ -87,8 +95,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       return await res.json();
     },
-    onSuccess: (userData: User) => {
+    onSuccess: (response: any) => {
+      // Extract user data from registration response
+      const userData = response.user || response;
       queryClient.setQueryData(["/api/auth/me"], userData);
+      
+      // Refetch user data to ensure it's current
+      queryClient.invalidateQueries({
+        queryKey: ["/api/auth/me"]
+      });
+      
       toast({
         title: "Registration successful",
         description: `Welcome to Aayuv, ${userData.name}!`,
