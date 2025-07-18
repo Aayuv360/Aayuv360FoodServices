@@ -5,7 +5,7 @@ import { getNextSequence } from "../../shared/mongoModels";
 import { logAPIRequest } from "../logger";
 import { z } from "zod";
 import { authenticateToken } from "../jwt-middleware";
-import { CacheService } from "../services/cacheService";
+import { cacheService as CacheService } from "../services/cacheService";
 
 function calculateSubscriptionStatus(subscription: any) {
   try {
