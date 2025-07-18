@@ -30,6 +30,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
   children,
 }) => {
   const [hasRequestedLocation, setHasRequestedLocation] = useState(false);
+  const [location, setLocation] = useState<LocationCoords | null>(null);
 
   const {
     coords: currentLocation,
@@ -54,10 +55,20 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
   }, [hasRequestedLocation, getCurrentPosition]);
 
   useEffect(() => {
-    if (currentLocation) {
-      checkServiceAvailability(currentLocation);
+    // Only update if currentLocation is different from state
+    if (currentLocation && 
+        (!location || 
+         location.lat !== currentLocation.lat || 
+         location.lng !== currentLocation.lng)) {
+      setLocation(currentLocation);
     }
-  }, [currentLocation, checkServiceAvailability]);
+  }, [currentLocation, location]);
+
+  useEffect(() => {
+    if (location) {
+      checkServiceAvailability(location);
+    }
+  }, [location, checkServiceAvailability]);
 
   const requestLocation = () => {
     getCurrentPosition();
@@ -70,7 +81,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
   const serviceMessage = getServiceMessage();
 
   const value: LocationContextType = {
-    currentLocation,
+    currentLocation: location,
     isLocationLoading,
     locationError,
     isWithinServiceArea,
