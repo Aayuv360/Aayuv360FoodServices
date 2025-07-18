@@ -32,7 +32,6 @@ import { RecoilRoot } from "recoil";
 import { ItemDetailsPage } from "./pages/ItemDetailsPage";
 import SubscriptionManager from "./pages/subscriptionManager";
 import SuccessPage from "./pages/SuccessPage";
-import AuthPage from "./pages/auth-page";
 import AboutUs from "./pages/about-us";
 import Terms from "./pages/terms";
 import PrivacyRefund from "./pages/privacy-refund";
