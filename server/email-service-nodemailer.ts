@@ -1,5 +1,5 @@
-import nodemailer from 'nodemailer';
-import logger from './logger';
+import nodemailer from "nodemailer";
+import logger from "./logger";
 
 interface EmailConfig {
   service?: string;
@@ -31,13 +31,17 @@ class NodemailerService {
     try {
       const emailUser = process.env.EMAIL_USER;
       const emailPass = process.env.EMAIL_PASS;
-      const emailService = process.env.EMAIL_SERVICE || 'gmail';
+      const emailService = process.env.EMAIL_SERVICE || "gmail";
       const emailHost = process.env.EMAIL_HOST;
-      const emailPort = process.env.EMAIL_PORT ? parseInt(process.env.EMAIL_PORT) : undefined;
-      const emailSecure = process.env.EMAIL_SECURE === 'true';
+      const emailPort = process.env.EMAIL_PORT
+        ? parseInt(process.env.EMAIL_PORT)
+        : undefined;
+      const emailSecure = process.env.EMAIL_SECURE === "true";
 
       if (!emailUser || !emailPass) {
-        logger.warn('Email credentials not configured - email notifications disabled');
+        logger.warn(
+          "Email credentials not configured - email notifications disabled",
+        );
         return;
       }
 
@@ -48,7 +52,6 @@ class NodemailerService {
         },
       };
 
-      // Use service or custom host configuration
       if (emailHost) {
         config.host = emailHost;
         config.port = emailPort || 587;
@@ -59,16 +62,16 @@ class NodemailerService {
 
       this.transporter = nodemailer.createTransport(config);
       this.isConfigured = true;
-      
-      logger.info('✅ Nodemailer email service initialized successfully');
+
+      logger.info("✅ Nodemailer email service initialized successfully");
     } catch (error) {
-      logger.error('Failed to initialize Nodemailer service:', error);
+      logger.error("Failed to initialize Nodemailer service:", error);
     }
   }
 
   async sendEmail(options: EmailOptions): Promise<boolean> {
     if (!this.isConfigured || !this.transporter) {
-      logger.warn('Email service not configured - skipping email send');
+      logger.warn("Email service not configured - skipping email send");
       return false;
     }
 
@@ -82,16 +85,22 @@ class NodemailerService {
       };
 
       const result = await this.transporter.sendMail(mailOptions);
-      logger.info(`Email sent successfully to ${options.to}`, { messageId: result.messageId });
+      logger.info(`Email sent successfully to ${options.to}`, {
+        messageId: result.messageId,
+      });
       return true;
     } catch (error) {
-      logger.error('Failed to send email:', error);
+      logger.error("Failed to send email:", error);
       return false;
     }
   }
 
   // Order confirmation email
-  async sendOrderConfirmation(to: string, orderNumber: string, totalAmount: number): Promise<boolean> {
+  async sendOrderConfirmation(
+    to: string,
+    orderNumber: string,
+    totalAmount: number,
+  ): Promise<boolean> {
     const subject = `Order Confirmation - ${orderNumber}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -113,8 +122,12 @@ class NodemailerService {
   }
 
   // Password reset email
-  async sendPasswordReset(to: string, resetToken: string, resetUrl: string): Promise<boolean> {
-    const subject = 'Password Reset Request - Millet Food Service';
+  async sendPasswordReset(
+    to: string,
+    resetToken: string,
+    resetUrl: string,
+  ): Promise<boolean> {
+    const subject = "Password Reset Request - Millet Food Service";
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #2563eb;">Password Reset Request</h2>
@@ -135,7 +148,11 @@ class NodemailerService {
   }
 
   // Subscription confirmation email
-  async sendSubscriptionConfirmation(to: string, planName: string, startDate: string): Promise<boolean> {
+  async sendSubscriptionConfirmation(
+    to: string,
+    planName: string,
+    startDate: string,
+  ): Promise<boolean> {
     const subject = `Subscription Confirmed - ${planName}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

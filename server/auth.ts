@@ -8,15 +8,16 @@ import {
   validatePassword,
   validatePhone,
 } from "./security-middleware";
-import { 
-  generateTokens, 
-  verifyRefreshToken, 
-  storeRefreshToken, 
-  deleteRefreshToken, 
+import {
+  generateTokens,
+  verifyRefreshToken,
+  storeRefreshToken,
+  deleteRefreshToken,
   isRefreshTokenValid,
-  extractTokenFromCookie 
+  extractTokenFromCookie,
 } from "./jwt-utils";
 import { authenticateToken } from "./jwt-middleware";
+import jwt from "jsonwebtoken";
 
 declare global {
   namespace Express {
@@ -31,7 +32,10 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 // Verify password using bcrypt
-export async function comparePasswords(supplied: string, stored: string): Promise<boolean> {
+export async function comparePasswords(
+  supplied: string,
+  stored: string,
+): Promise<boolean> {
   return await bcrypt.compare(supplied, stored);
 }
 
@@ -41,7 +45,7 @@ export function setupAuth(app: Express) {
   const cookieOptions = {
     httpOnly: true,
     secure: isProduction, // HTTPS only in production - prevents MITM attacks
-    sameSite: isProduction ? 'none' as const : 'lax' as const, // CSRF protection
+    sameSite: isProduction ? ("none" as const) : ("lax" as const), // CSRF protection
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for refresh token
   };
 
@@ -98,8 +102,8 @@ export function setupAuth(app: Express) {
         await storeRefreshToken(user.id, refreshToken);
 
         // Set tokens in httpOnly cookies
-        res.cookie('accessToken', accessToken, accessTokenCookieOptions);
-        res.cookie('refreshToken', refreshToken, cookieOptions);
+        res.cookie("accessToken", accessToken, accessTokenCookieOptions);
+        res.cookie("refreshToken", refreshToken, cookieOptions);
 
         // Remove password from response
         const { password: _, ...userWithoutPassword } = user;
@@ -107,13 +111,13 @@ export function setupAuth(app: Express) {
         res.status(201).json({
           user: userWithoutPassword,
           accessToken,
-          message: "Registration successful"
+          message: "Registration successful",
         });
       } catch (err) {
         console.error("Registration error:", err);
         res.status(500).json({ message: "Error creating user" });
       }
-    }
+    },
   );
 
   app.post("/api/auth/login", async (req, res) => {
@@ -121,17 +125,19 @@ export function setupAuth(app: Express) {
       const { username, password } = req.body;
 
       if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
+        return res
+          .status(400)
+          .json({ message: "Username and password are required" });
       }
 
       // Normalize input for case-insensitive search
       const normalizedInput = username.toLowerCase().trim();
-      
+
       // Try to find user by username (case insensitive) or email
       let user = await storage.getUserByUsername(normalizedInput);
-      
+
       // If not found by username, try email
-      if (!user && normalizedInput.includes('@')) {
+      if (!user && normalizedInput.includes("@")) {
         user = await storage.getUserByEmail(normalizedInput);
       }
 
@@ -158,8 +164,8 @@ export function setupAuth(app: Express) {
       await storeRefreshToken(user.id, refreshToken);
 
       // Set tokens in httpOnly cookies
-      res.cookie('accessToken', accessToken, accessTokenCookieOptions);
-      res.cookie('refreshToken', refreshToken, cookieOptions);
+      res.cookie("accessToken", accessToken, accessTokenCookieOptions);
+      res.cookie("refreshToken", refreshToken, cookieOptions);
 
       // Remove password from response
       const { password: _, ...userWithoutPassword } = user;
@@ -167,7 +173,7 @@ export function setupAuth(app: Express) {
       res.json({
         user: userWithoutPassword,
         accessToken,
-        message: "Login successful"
+        message: "Login successful",
       });
     } catch (err) {
       console.error("Login error:", err);
@@ -177,7 +183,7 @@ export function setupAuth(app: Express) {
 
   app.post("/api/auth/refresh", async (req, res) => {
     try {
-      const refreshToken = extractTokenFromCookie('refreshToken', req.cookies);
+      const refreshToken = extractTokenFromCookie("refreshToken", req.cookies);
 
       if (!refreshToken) {
         return res.status(401).json({ message: "Refresh token required" });
@@ -199,18 +205,19 @@ export function setupAuth(app: Express) {
         email: payload.email,
       };
 
-      const { accessToken, refreshToken: newRefreshToken } = generateTokens(tokenPayload);
+      const { accessToken, refreshToken: newRefreshToken } =
+        generateTokens(tokenPayload);
 
       // Store new refresh token in Redis
       await storeRefreshToken(payload.userId, newRefreshToken);
 
       // Set new tokens in httpOnly cookies
-      res.cookie('accessToken', accessToken, accessTokenCookieOptions);
-      res.cookie('refreshToken', newRefreshToken, cookieOptions);
+      res.cookie("accessToken", accessToken, accessTokenCookieOptions);
+      res.cookie("refreshToken", newRefreshToken, cookieOptions);
 
       res.json({
         accessToken,
-        message: "Token refreshed successfully"
+        message: "Token refreshed successfully",
       });
     } catch (err) {
       console.error("Token refresh error:", err);
@@ -226,8 +233,8 @@ export function setupAuth(app: Express) {
       }
 
       // Clear cookies
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      res.clearCookie("accessToken");
+      res.clearCookie("refreshToken");
 
       res.json({ message: "Logged out successfully" });
     } catch (err) {
@@ -242,13 +249,11 @@ export function setupAuth(app: Express) {
         return res.status(401).json({ message: "Authentication required" });
       }
 
-      // Get full user details from database
       const user = await storage.getUser(req.user.id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Remove password from response
       const { password, ...userWithoutPassword } = user;
       res.json(userWithoutPassword);
     } catch (err) {
@@ -257,7 +262,6 @@ export function setupAuth(app: Express) {
     }
   });
 
-  // Forgot Password endpoint
   app.post("/api/auth/forgot-password", async (req, res) => {
     try {
       const { email } = req.body;
@@ -266,52 +270,43 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ message: "Email is required" });
       }
 
-      // Find user by email
       const user = await storage.getUserByEmail(email);
       if (!user) {
-        // Don't reveal if email exists or not for security
-        return res.json({ message: "If your email is registered, you will receive a reset link" });
+        return res.json({
+          message: "If your email is registered, you will receive a reset link",
+        });
       }
 
-      // Generate reset token
       const resetToken = jwt.sign(
         { userId: user.id, email: user.email },
         process.env.ACCESS_TOKEN_SECRET || "your_access_token_secret",
-        { expiresIn: "1h" }
+        { expiresIn: "1h" },
       );
 
-      // Store reset token and expiration in database
       const resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
       await storage.updateUser(user.id, {
         resetPasswordToken: resetToken,
-        resetPasswordExpires: resetExpires
+        resetPasswordExpires: resetExpires,
       });
 
-      // Send reset email
-      const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-      
+      const resetUrl = `${process.env.FRONTEND_URL || "http://localhost:3000"}/reset-password?token=${resetToken}`;
+
       try {
-        const { emailService } = await import('./email-service-nodemailer');
+        const { emailService } = await import("./email-service-nodemailer");
         await emailService.sendPasswordReset(email, resetToken, resetUrl);
         console.log(`Password reset email sent to ${email}`);
       } catch (emailError) {
-        console.error('Failed to send reset email:', emailError);
+        console.error("Failed to send reset email:", emailError);
       }
 
-      // Send SMS notification if phone number exists
-      if (user.phone) {
-        try {
-          const { smsService } = await import('./sms-service-fast2sms');
-          await smsService.sendPasswordResetNotification(user.phone);
-        } catch (smsError) {
-          console.error('Failed to send SMS notification:', smsError);
-        }
-      }
-
-      res.json({ message: "If your email is registered, you will receive a reset link" });
+      res.json({
+        message: "If your email is registered, you will receive a reset link",
+      });
     } catch (error) {
       console.error("Forgot password error:", error);
-      res.status(500).json({ message: "Error processing password reset request" });
+      res
+        .status(500)
+        .json({ message: "Error processing password reset request" });
     }
   });
 
@@ -321,41 +316,47 @@ export function setupAuth(app: Express) {
       const { token, newPassword } = req.body;
 
       if (!token || !newPassword) {
-        return res.status(400).json({ message: "Token and new password are required" });
+        return res
+          .status(400)
+          .json({ message: "Token and new password are required" });
       }
 
-      // Verify token
       let decoded;
       try {
-        decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET || "your_access_token_secret") as any;
+        decoded = jwt.verify(
+          token,
+          process.env.ACCESS_TOKEN_SECRET || "your_access_token_secret",
+        ) as any;
       } catch (error) {
-        return res.status(400).json({ message: "Invalid or expired reset token" });
+        return res
+          .status(400)
+          .json({ message: "Invalid or expired reset token" });
       }
 
-      // Find user with valid reset token
       const user = await storage.getUser(decoded.userId);
       if (!user || user.resetPasswordToken !== token) {
         return res.status(400).json({ message: "Invalid reset token" });
       }
 
-      // Check if token is expired
-      if (!user.resetPasswordExpires || new Date() > user.resetPasswordExpires) {
+      if (
+        !user.resetPasswordExpires ||
+        new Date() > user.resetPasswordExpires
+      ) {
         return res.status(400).json({ message: "Reset token has expired" });
       }
 
-      // Validate new password
       if (newPassword.length < 6) {
-        return res.status(400).json({ message: "Password must be at least 6 characters long" });
+        return res
+          .status(400)
+          .json({ message: "Password must be at least 6 characters long" });
       }
 
-      // Hash new password
       const hashedPassword = await hashPassword(newPassword);
 
-      // Update user password and clear reset token
       await storage.updateUser(user.id, {
         password: hashedPassword,
         resetPasswordToken: null,
-        resetPasswordExpires: null
+        resetPasswordExpires: null,
       });
 
       res.json({ message: "Password reset successfully" });

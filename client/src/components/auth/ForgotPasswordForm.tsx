@@ -1,42 +1,43 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, Mail } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, Mail } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface ForgotPasswordFormProps {
   onBack: () => void;
 }
 
 export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
   const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setMessage('');
+    setMessage("");
 
     try {
-      const response = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email }),
+      const response = await apiRequest("POST", "/api/auth/forgot-password", {
+        email,
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send reset email');
+        throw new Error(errorData.message || "Failed to send reset email");
       }
 
       setIsSuccess(true);
-      setMessage('If your email is registered, you will receive a reset link shortly.');
+      setMessage(
+        "If your email is registered, you will receive a reset link shortly.",
+      );
     } catch (error: any) {
-      setMessage(error.message || 'Failed to send reset email. Please try again.');
+      setMessage(
+        error.message || "Failed to send reset email. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -52,12 +53,12 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
           <h2 className="text-2xl font-bold mb-2">Check Your Email</h2>
           <p className="text-gray-600">{message}</p>
         </div>
-        
+
         <div className="space-y-4">
           <p className="text-sm text-gray-500 text-center">
             Check your spam folder if you don't see the email in your inbox.
           </p>
-          
+
           <Button
             type="button"
             variant="outline"
@@ -77,7 +78,8 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">Reset Password</h2>
         <p className="text-gray-600">
-          Enter your email address and we'll send you a link to reset your password.
+          Enter your email address and we'll send you a link to reset your
+          password.
         </p>
       </div>
 
@@ -96,21 +98,19 @@ export function ForgotPasswordForm({ onBack }: ForgotPasswordFormProps) {
         </div>
 
         {message && (
-          <div className={`p-3 rounded-md text-sm ${
-            isSuccess 
-              ? 'bg-green-50 text-green-700 border border-green-200' 
-              : 'bg-red-50 text-red-700 border border-red-200'
-          }`}>
+          <div
+            className={`p-3 rounded-md text-sm ${
+              isSuccess
+                ? "bg-green-50 text-green-700 border border-green-200"
+                : "bg-red-50 text-red-700 border border-red-200"
+            }`}
+          >
             {message}
           </div>
         )}
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={isLoading || !email}
-        >
-          {isLoading ? 'Sending...' : 'Send Reset Link'}
+        <Button type="submit" className="w-full" disabled={isLoading || !email}>
+          {isLoading ? "Sending..." : "Send Reset Link"}
         </Button>
 
         <Button
