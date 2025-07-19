@@ -10,6 +10,7 @@ import LoginForm from "@/components/auth/LoginForm";
 import RegisterForm from "@/components/auth/RegisterForm";
 import { ResetPasswordForm } from "@/components/auth/ResetPasswordForm";
 import { Button } from "@/components/ui/button";
+import OtpLoginForm from "./OtpLoginForm";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ export function AuthModal({
 }: AuthModalProps) {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(defaultTab === "register");
+  const [isOtpLogin, setIsOtpLogin] = useState(false);
 
   const onSuccess = () => {
     onOpenChange(false);
@@ -57,8 +59,8 @@ export function AuthModal({
   }
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-4 sm:p-6 overflow-y-auto max-h-[90vh] md:max-h-[80vh]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[425px] max-w-[90vw] p-4 sm:p-6 overflow-y-auto max-h-[90vh] md:max-h-[80vh] gap-0">
+        <DialogHeader className="mb-4">
           <DialogTitle className="text-center text-xl sm:text-2xl font-bold">
             {mode === "subscribe" ? "Login to Subscribe" : "Welcome to Aayuv"}
           </DialogTitle>
@@ -69,6 +71,11 @@ export function AuthModal({
 
         {showForgotPassword ? (
           <ResetPasswordForm onBack={() => setShowForgotPassword(false)} />
+        ) : isOtpLogin ? (
+          <OtpLoginForm
+            onSuccess={onSuccess}
+            onBack={() => setIsOtpLogin(false)}
+          />
         ) : isRegistering ? (
           <>
             <RegisterForm onSuccess={onSuccess} />
@@ -91,6 +98,17 @@ export function AuthModal({
                 Sign up
               </Button>
             </p>
+            <p className="text-sm text-center !m-0">Or</p>
+            <Button
+              variant="link"
+              onClick={() => {
+                setIsOtpLogin(true);
+                setShowForgotPassword(false);
+              }}
+              className="!p-0"
+            >
+              Login with OTP
+            </Button>
           </>
         )}
       </DialogContent>
