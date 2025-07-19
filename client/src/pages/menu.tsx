@@ -1,14 +1,13 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
 import MenuCard from "@/components/menu/MenuCard";
 import NutritionModal from "@/components/menu/NutritionModal";
-import { Meal } from "@shared/schema";
 import { format } from "date-fns";
 import { XMarkIcon, MagnifyingGlassIcon } from "@heroicons/react/20/solid";
 import { useDebounce } from "use-debounce";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 import { getCurrentISTDate } from "@/lib/timezone-utils";
+import { useMeals } from "../hooks/use-meals";
 
 const tabs = [
   { id: "all", name: "All Meals" },
@@ -28,20 +27,7 @@ const Menu = () => {
   const [mealData, setMealData] = useState<any>();
   const [scrolled, setScrolled] = useState(false);
   const isMobile = useIsMobile();
-
-  const {
-    data: meals,
-    isLoading,
-    error,
-  } = useQuery<Meal[]>({
-    queryKey: ["/api/meals"],
-    queryFn: async () => {
-      const response = await fetch(`/api/meals`);
-      if (!response.ok) throw new Error("Failed to fetch meals");
-      return response.json();
-    },
-    staleTime: 10 * 60 * 1000,
-  });
+  const { data: meals, isLoading, error } = useMeals();
 
   useEffect(() => {
     const handleScroll = () => {

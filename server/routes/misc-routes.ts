@@ -1,7 +1,7 @@
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
 import { storage } from "../storage";
-import { ContactReview } from "../../shared/mongoModels";
+import { ContactReview, getNextSequence } from "../../shared/mongoModels";
 import { serveImageFromMongoDB } from "../upload";
 import contactRoutes from "../contact-routes";
 import { router as deliveryRoutes } from "../delivery-status";
@@ -63,6 +63,7 @@ export function registerMiscRoutes(app: Express) {
   app.post("/api/contact-review", async (req, res) => {
     try {
       const { name, email, phone, message, rating } = req.body;
+      const id = await getNextSequence("contactReviewId");
 
       if (!name || !email || !message) {
         return res.status(400).json({
@@ -84,6 +85,7 @@ export function registerMiscRoutes(app: Express) {
       }
 
       const contactReview = new ContactReview({
+        id,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         phone: phone?.trim() || null,
@@ -105,6 +107,18 @@ export function registerMiscRoutes(app: Express) {
       console.error("Error saving contact/review:", error);
       res.status(500).json({
         error: "Failed to submit your message. Please try again.",
+      });
+    }
+  });
+  app.get("/api/contact-review", async (req, res) => {
+    try {
+      const reviews = await ContactReview.find().sort({ submittedAt: -1 });
+
+      res.status(200).json(reviews);
+    } catch (error) {
+      console.error("Error fetching contact/reviews:", error);
+      res.status(500).json({
+        error: "Failed to fetch contact/reviews. Please try again.",
       });
     }
   });

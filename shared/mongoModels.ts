@@ -472,6 +472,11 @@ export async function getNextSequence(name: string): Promise<number> {
 
 // Contact Review Schema
 const contactReviewSchema = new mongoose.Schema({
+  id: {
+    type: Number,
+    unique: true,
+    required: true,
+  },
   name: { type: String, required: true },
   email: { type: String, required: true },
   phone: { type: String },

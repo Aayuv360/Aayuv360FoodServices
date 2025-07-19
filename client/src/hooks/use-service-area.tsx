@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
-import { useQuery } from "@tanstack/react-query"; // or 'react-query' depending on your version
 import { LocationCoords } from "./use-geolocation";
-import { apiRequest } from "@/lib/queryClient";
+import { useKitchens } from "./use-commonServices";
 
 export interface Kitchen {
   id: number;
@@ -46,13 +45,7 @@ export const useServiceArea = () => {
     data: kitchens = [],
     isLoading: isKitchensLoading,
     error: kitchensError,
-  } = useQuery<Kitchen[]>({
-    queryKey: ["/api/locations"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/locations");
-      return res.json();
-    },
-  });
+  } = useKitchens();
 
   const [state, setState] = useState<ServiceAreaState>({
     isWithinServiceArea: false,

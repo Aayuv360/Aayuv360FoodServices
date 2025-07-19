@@ -17,9 +17,25 @@ import {
   Star,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMeals } from "@/hooks/use-meals";
+import { useKitchens, useReviews } from "@/hooks/use-commonServices";
 
+export interface Kitchen {
+  id: number;
+  area: string;
+  pincode: string;
+  deliveryFee: number;
+  lnt: number;
+  lng: number;
+  serviceRadius: number;
+  status: string;
+}
 const AboutUs = () => {
   const { toast } = useToast();
+  const { data: meals } = useMeals();
+  const { data: kitchens = [] } = useKitchens();
+  const { data: reviews } = useReviews();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -77,24 +93,6 @@ const AboutUs = () => {
       [e.target.name]: e.target.value,
     });
   };
-
-  const locations = [
-    {
-      city: "Hyderabad",
-      areas: ["Gachibowli"],
-      status: "Active",
-    },
-    // {
-    //   city: "Bangalore",
-    //   areas: ["Whitefield", "Koramangala", "Indiranagar"],
-    //   status: "Coming Soon"
-    // },
-    // {
-    //   city: "Chennai",
-    //   areas: ["OMR", "Velachery", "Anna Nagar"],
-    //   status: "Coming Soon"
-    // }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
@@ -171,19 +169,30 @@ const AboutUs = () => {
             >
               <Card className="p-3 text-center">
                 <Users className="h-12 w-12 text-orange-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900">10,000+</h3>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {reviews?.length}+
+                </h3>
                 <p className="text-gray-600">Happy Customers</p>
               </Card>
               <Card className="p-3 text-center">
                 <Leaf className="h-12 w-12 text-green-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900">38</h3>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {meals?.length}
+                </h3>
                 <p className="text-gray-600">Millet Recipes</p>
               </Card>
               <Card className="p-3 text-center">
                 <MapPin className="h-12 w-12 text-blue-500 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-gray-900">15+</h3>
-                <p className="text-gray-600">Service Areas</p>
+                <h3 className="text-2xl font-bold text-gray-900">
+                  {kitchens?.length
+                    ? `${kitchens.length}${kitchens.length > 1 ? "+" : ""}`
+                    : "0"}
+                </h3>
+                <p className="text-gray-600">
+                  {kitchens?.length === 1 ? "Service Area" : "Service Areas"}
+                </p>
               </Card>
+
               <Card className="p-3 text-center">
                 <Heart className="h-12 w-12 text-red-500 mx-auto mb-4" />
                 <h3 className="text-2xl font-bold text-gray-900">100%</h3>
@@ -214,9 +223,8 @@ const AboutUs = () => {
           </motion.div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {locations.map((location, index) => (
+            {kitchens?.map((location, index) => (
               <motion.div
-                key={location.city}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
@@ -226,28 +234,28 @@ const AboutUs = () => {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-xl font-bold text-gray-900">
-                        {location.city}
+                        Hyderabad
                       </CardTitle>
                       <Badge
                         variant={
-                          location.status === "Active" ? "default" : "secondary"
+                          location?.status === "Active"
+                            ? "default"
+                            : "secondary"
                         }
                         className={
-                          location.status === "Active" ? "bg-green-500" : ""
+                          location?.status === "Active" ? "bg-green-500" : ""
                         }
                       >
-                        {location.status}
+                        {location?.status || "Coming soon..."}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {location.areas.map((area) => (
-                        <div key={area} className="flex items-center">
-                          <MapPin className="h-4 w-4 text-orange-500 mr-2" />
-                          <span className="text-gray-600">{area}</span>
-                        </div>
-                      ))}
+                      <div className="flex items-center">
+                        <MapPin className="h-4 w-4 text-orange-500 mr-2" />
+                        <span className="text-gray-600">{location?.area}</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
