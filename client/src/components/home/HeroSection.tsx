@@ -26,9 +26,7 @@ const HeroSection = ({ subScrButName }: any) => {
   const highlightTag = (
     <div
       className={`inline-flex items-center ${
-        isMobile
-          ? "px-3 py-1 mb-4 text-white/90"
-          : "px-4 py-2 mb-6 text-white/90"
+        isMobile ? "px-3 py-1 text-white/90" : "px-4 py-2 text-white/90"
       } bg-white/10 backdrop-blur-sm rounded-full`}
     >
       <Sparkles size={isMobile ? 20 : 16} className="mr-2 animate-pulse" />
@@ -40,8 +38,8 @@ const HeroSection = ({ subScrButName }: any) => {
     <h1
       className={`font-bold text-white mb-4 ${
         isMobile
-          ? "text-4xl leading-snug"
-          : "text-5xl md:text-6xl leading-tight mb-6"
+          ? "text-3xl leading-snug"
+          : "text-4xl md:text-5xl leading-tight"
       }`}
     >
       Nourish Your Body with{" "}
@@ -59,8 +57,8 @@ const HeroSection = ({ subScrButName }: any) => {
     <p
       className={`text-white/90 ${
         isMobile
-          ? "text-base mb-6 max-w-md mx-auto"
-          : "text-lg md:text-xl mb-8 max-w-lg"
+          ? "text-base mb-3 max-w-md mx-auto"
+          : "text-lg md:text-xl mb-4 max-w-lg"
       }`}
     >
       Discover the magic of traditional Hyderabad cuisine with our modern

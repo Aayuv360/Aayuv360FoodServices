@@ -9,10 +9,14 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { PerformantOrderTracking } from "@/components/home/PerformantOrderTracking";
+import React, { useEffect } from "react";
 
 const Home = () => {
   const isMobile = useIsMobile();
   const { user } = useAuth();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const { data: subscriptions = [] } = useQuery<any[]>({
     queryKey: ["/api/subscriptions"],
     queryFn: async () => {
