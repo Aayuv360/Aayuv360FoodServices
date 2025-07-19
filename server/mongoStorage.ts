@@ -51,10 +51,10 @@ export class MongoDBStorage implements IStorage {
           `Initializing sample meals... (found ${mealsCount}, need ${milletMeals.length})`,
         );
 
-        // Clear existing meals if count doesn't match
-        if (mealsCount > 0 && mealsCount !== milletMeals.length) {
-          console.log("Clearing existing meals to ensure fresh data...");
-          await Meal.deleteMany({});
+        // Skip clearing existing meals - preserve data modifications made through admin panel
+        if (mealsCount > 0) {
+          console.log(`Found ${mealsCount} existing meals - preserving current data`);
+          return;
         }
 
         // Prepare meal items with required category field
