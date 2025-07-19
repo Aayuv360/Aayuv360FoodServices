@@ -117,32 +117,33 @@ const HeroSection = ({ subScrButName }: any) => {
 
   return (
     <section className="relative overflow-hidden py-5 md:py-8">
-      {/* Background Gradient and Animations */}
       <div className="absolute inset-0 bg-gradient-to-r from-orange-500/90 to-amber-500/90"></div>
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute w-96 h-96 -top-48 -left-48 bg-white/10 rounded-full animate-rotate-slow"></div>
         <div className="absolute w-96 h-96 -bottom-48 -right-48 bg-white/10 rounded-full animate-rotate-slow delay-1000"></div>
       </div>
-
-      {/* Content */}
-      <div className="container mx-auto px-4 relative z-10">
-        <div
-          className={`transition-all duration-1000 transform ${
-            isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-          } ${isMobile ? "text-center" : "max-w-2xl mx-auto md:mx-0"}`}
-        >
-          {highlightTag}
-          {headline}
-          {description}
+      <div className="container mx-auto">
+        <div className="max-w-7xl mx-auto">
           <div
-            className={`flex ${
-              isMobile
-                ? "flex-col items-center gap-4"
-                : "flex-col sm:flex-row gap-4"
-            }`}
+            className={`transition-all duration-1000 transform ${
+              isVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-10 opacity-0"
+            } ${isMobile ? "text-center" : "max-w-2xl mx-auto md:mx-0"}`}
           >
-            {menuButton}
-            {subscriptionButton}
+            {highlightTag}
+            {headline}
+            {description}
+            <div
+              className={`flex ${
+                isMobile
+                  ? "flex-col items-center gap-4"
+                  : "flex-col sm:flex-row gap-4"
+              }`}
+            >
+              {menuButton}
+              {subscriptionButton}
+            </div>
           </div>
         </div>
       </div>
