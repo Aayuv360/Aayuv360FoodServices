@@ -41,7 +41,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
   } = useGeolocation({
     enableHighAccuracy: true,
     timeout: 10000,
-    maximumAge: 300000, // 5 minutes
+    maximumAge: 0,
   });
 
   const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
@@ -55,11 +55,12 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
   }, [hasRequestedLocation, getCurrentPosition]);
 
   useEffect(() => {
-    // Only update if currentLocation is different from state
-    if (currentLocation && 
-        (!location || 
-         location.lat !== currentLocation.lat || 
-         location.lng !== currentLocation.lng)) {
+    if (
+      currentLocation &&
+      (!location ||
+        location.lat !== currentLocation.lat ||
+        location.lng !== currentLocation.lng)
+    ) {
       setLocation(currentLocation);
     }
   }, [currentLocation, location]);

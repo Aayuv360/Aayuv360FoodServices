@@ -1,22 +1,22 @@
-
-export const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI";
+export const GOOGLE_MAPS_API_KEY =
+  import.meta.env.VITE_GOOGLE_MAPS_API_KEY ||
+  "AIzaSyAnwH0jPc54BR-sdRBybXkwIo5QjjGceSI";
 
 export const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
 export const GEOLOCATION_OPTIONS = {
   enableHighAccuracy: true,
   timeout: 20000,
-  maximumAge: 60000, // 1 minute for better accuracy
+  maximumAge: 0,
 };
 
-export const DEFAULT_MAP_CENTER = { 
-  lat: 17.385044, 
-  lng: 78.486671 
+export const DEFAULT_MAP_CENTER = {
+  lat: 17.385044,
+  lng: 78.486671,
 };
 
 export const DEFAULT_ZOOM = 18;
 
-// Enhanced map options for better accuracy
 export const ENHANCED_MAP_OPTIONS = {
   clickableIcons: false,
   gestureHandling: "greedy" as const,
@@ -24,14 +24,14 @@ export const ENHANCED_MAP_OPTIONS = {
   streetViewControl: false,
   fullscreenControl: true,
   zoomControl: true,
-  mapTypeId: 'roadmap' as const,
+  mapTypeId: "roadmap" as const,
   styles: [
     {
-      featureType: 'poi',
-      elementType: 'labels',
-      stylers: [{ visibility: 'on' }]
-    }
-  ]
+      featureType: "poi",
+      elementType: "labels",
+      stylers: [{ visibility: "on" }],
+    },
+  ],
 };
 
 export const MAP_OPTIONS = {
@@ -45,7 +45,7 @@ export const ADDRESS_TYPES = ["Home", "Office", "Hotel", "Others"] as const;
 
 export const GEOCODING_COMPONENT_TYPES = [
   "subpremise",
-  "premise", 
+  "premise",
   "street_number",
   "route",
   "neighborhood",

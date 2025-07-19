@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from "react";
 
 export interface LocationCoords {
   lat: number;
@@ -29,21 +29,21 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
   const defaultOptions: GeolocationOptions = {
     enableHighAccuracy: true,
     timeout: 20000,
-    maximumAge: 60000, // Cache for 1 minute to improve performance
+    maximumAge: 0,
     ...options,
   };
 
   const getCurrentPosition = useCallback(() => {
     if (!navigator.geolocation) {
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
-        error: 'Geolocation is not supported by this browser',
+        error: "Geolocation is not supported by this browser",
         isLoading: false,
       }));
       return;
     }
 
-    setState(prev => ({ ...prev, isLoading: true, error: null }));
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -58,32 +58,37 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
         });
       },
       (error) => {
-        let errorMessage = 'Unable to retrieve location';
-        
+        let errorMessage = "Unable to retrieve location";
+
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location access denied. Please enable location permissions.';
+            errorMessage =
+              "Location access denied. Please enable location permissions.";
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable.';
+            errorMessage = "Location information is unavailable.";
             break;
           case error.TIMEOUT:
-            errorMessage = 'Location request timed out. Please try again.';
+            errorMessage = "Location request timed out. Please try again.";
             break;
         }
 
-        setState(prev => ({
+        setState((prev) => ({
           ...prev,
           isLoading: false,
           error: errorMessage,
         }));
       },
-      defaultOptions
+      defaultOptions,
     );
-  }, [defaultOptions.enableHighAccuracy, defaultOptions.timeout, defaultOptions.maximumAge]);
+  }, [
+    defaultOptions.enableHighAccuracy,
+    defaultOptions.timeout,
+    defaultOptions.maximumAge,
+  ]);
 
   const clearError = useCallback(() => {
-    setState(prev => ({ ...prev, error: null }));
+    setState((prev) => ({ ...prev, error: null }));
   }, []);
 
   return {

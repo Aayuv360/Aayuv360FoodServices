@@ -836,96 +836,92 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
             </div>
             <div>
               <div className="mb-6">
-                {savedAddresses.length > 0 ? (
-                  <>
-                    <div className="flex justify-end mb-4">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="rounded-full"
+                <>
+                  <div className="flex justify-end mb-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="rounded-full"
+                      onClick={() => {
+                        setAddressModalOpen(true),
+                          setAddressModalAction("addressAdd");
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add New Address
+                    </Button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {savedAddresses.map((address) => (
+                      <div
+                        key={address.id}
+                        className={`p-4 rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md ${
+                          selectedAddress?.id === address.id
+                            ? "border-primary"
+                            : "border-gray-200 hover:border-primary/50"
+                        }`}
                         onClick={() => {
-                          setAddressModalOpen(true),
-                            setAddressModalAction("addressAdd");
+                          selectAddress(address);
+                          form.setValue("useNewAddress", false);
+                          setAddressModalAction("addressAdd");
                         }}
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add New Address
-                      </Button>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {savedAddresses.map((address) => (
-                        <div
-                          key={address.id}
-                          className={`p-4 rounded-2xl cursor-pointer transition-transform hover:-translate-y-1 border-2 bg-white shadow-md ${
-                            selectedAddress?.id === address.id
-                              ? "border-primary"
-                              : "border-gray-200 hover:border-primary/50"
-                          }`}
-                          onClick={() => {
-                            selectAddress(address);
-                            form.setValue("useNewAddress", false);
-                            setAddressModalAction("addressAdd");
-                          }}
-                        >
-                          <div className="flex justify-between">
-                            <div className="flex gap-2 items-center">
-                              <span className="text-xl font-bold text-gray-800 mb-1">
-                                {address.label}
-                              </span>
-                              {address.isDefault && (
-                                <Badge variant="outline" className="text-xs">
-                                  Default
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingAddress(address);
-                                  setAddressModalOpen(true);
-                                  setAddressModalAction("addressEdit");
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeletingAddress(address);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                              {selectedAddress?.id === address.id && (
-                                <Check className="h-5 w-5 text-primary" />
-                              )}
-                            </div>
+                        <div className="flex justify-between">
+                          <div className="flex gap-2 items-center">
+                            <span className="text-xl font-bold text-gray-800 mb-1">
+                              {address.label}
+                            </span>
+                            {address.isDefault && (
+                              <Badge variant="outline" className="text-xs">
+                                Default
+                              </Badge>
+                            )}
                           </div>
-                          <div className="flex flex-col">
-                            <p className="text-sm text-gray-600">
-                              {address?.address}
-                            </p>
-
-                            <p className="text-sm text-gray-600">
-                              Phone: {address?.phone}
-                            </p>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingAddress(address);
+                                setAddressModalOpen(true);
+                                setAddressModalAction("addressEdit");
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeletingAddress(address);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                            {selectedAddress?.id === address.id && (
+                              <Check className="h-5 w-5 text-primary" />
+                            )}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <></>
-                )}
+                        <div className="flex flex-col">
+                          <p className="text-sm text-gray-600">
+                            {address?.address}
+                          </p>
+
+                          <p className="text-sm text-gray-600">
+                            Phone: {address?.phone}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </>
               </div>
 
               <div className="mt-5 bg-orange-50 border-l-4 border-orange-400 p-6 rounded-xl shadow-sm">
@@ -940,18 +936,8 @@ const SubscriptionCRUD = ({ previousPlansData }: any) => {
                           return (
                             <>
                               <div className="flex justify-center">
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className="rounded-full"
-                                  onClick={() => {
-                                    setAddressModalOpen(true),
-                                      setAddressModalAction("addressAdd");
-                                  }}
-                                >
-                                  <Plus className="h-4 w-4 mr-1" />
-                                  Add New Address
-                                </Button>
+                                Add a new address and select an address to
+                                proceed.
                               </div>
                             </>
                           );
