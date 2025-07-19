@@ -2,19 +2,9 @@ import type { Express, Request, Response } from "express";
 import { Meal as MealModel, CurryOption } from "../../shared/mongoModels";
 import { formatCurryOptions } from "../curry-formatter";
 import { upload, processImage, deleteImage } from "../upload";
-import { authenticateToken } from "../jwt-middleware";
+import { authenticateToken, requireAdmin } from "../jwt-middleware";
 
 export function registerMealRoutes(app: Express) {
-  const isAdmin = (req: Request, res: Response, next: Function) => {
-    const user = req.user as any;
-    if (!user || user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Admin privileges required." });
-    }
-    next();
-  };
-
   app.get("/api/meals", async (req, res) => {
     try {
       console.log("Fetching all meals directly from MongoDB...");
@@ -133,7 +123,7 @@ export function registerMealRoutes(app: Express) {
   app.get(
     "/api/admin/meals/:id",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     async (req, res) => {
       try {
         const meals = await MealModel.find().lean();
@@ -186,7 +176,7 @@ export function registerMealRoutes(app: Express) {
   app.post(
     "/api/admin/upload-image",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     upload.single("image"),
     async (req, res) => {
       try {
@@ -205,93 +195,103 @@ export function registerMealRoutes(app: Express) {
       }
     },
   );
-  app.get("/api/admin/meals", authenticateToken, isAdmin, async (req, res) => {
-    try {
-      const meals = await MealModel.find().lean();
+  app.get(
+    "/api/admin/meals",
+    authenticateToken,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const meals = await MealModel.find().lean();
 
-      const globalCurryOptions = await CurryOption.find().lean();
+        const globalCurryOptions = await CurryOption.find().lean();
 
-      const enhancedMeals = meals.map((meal) => {
-        if (meal.curryOptions && meal.curryOptions.length > 0) {
-          if (
-            typeof meal.curryOptions[0] === "object" &&
-            !Array.isArray(meal.curryOptions[0])
-          ) {
-            return meal;
+        const enhancedMeals = meals.map((meal) => {
+          if (meal.curryOptions && meal.curryOptions.length > 0) {
+            if (
+              typeof meal.curryOptions[0] === "object" &&
+              !Array.isArray(meal.curryOptions[0])
+            ) {
+              return meal;
+            }
+
+            return {
+              ...meal,
+              curryOptions: meal.curryOptions.map((option: any) => {
+                if (Array.isArray(option)) {
+                  return {
+                    id: option[0],
+                    name: option[1],
+                    priceAdjustment: option[2],
+                  };
+                }
+                return option;
+              }),
+            };
+          } else {
+            const mealSpecificOptions = globalCurryOptions.filter(
+              (option: any) =>
+                option.mealId === null || option.mealId === meal.id,
+            );
+
+            return {
+              ...meal,
+              curryOptions: formatCurryOptions(mealSpecificOptions, meal.id),
+            };
           }
-
-          return {
-            ...meal,
-            curryOptions: meal.curryOptions.map((option: any) => {
-              if (Array.isArray(option)) {
-                return {
-                  id: option[0],
-                  name: option[1],
-                  priceAdjustment: option[2],
-                };
-              }
-              return option;
-            }),
-          };
-        } else {
-          const mealSpecificOptions = globalCurryOptions.filter(
-            (option: any) =>
-              option.mealId === null || option.mealId === meal.id,
-          );
-
-          return {
-            ...meal,
-            curryOptions: formatCurryOptions(mealSpecificOptions, meal.id),
-          };
-        }
-      });
-
-      console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
-      res.json(enhancedMeals);
-    } catch (err) {
-      console.error("Error fetching meals:", err);
-      res.status(500).json({ message: "Error fetching meals" });
-    }
-  });
-  app.post("/api/admin/meals", authenticateToken, isAdmin, async (req, res) => {
-    try {
-      let mealData = { ...req.body };
-      console.log("Admin: Creating new meal in MongoDB...");
-
-      if (mealData.curryOptions && Array.isArray(mealData.curryOptions)) {
-        mealData.curryOptions = mealData.curryOptions.map((option: any) => {
-          if (
-            typeof option === "object" &&
-            !Array.isArray(option) &&
-            option.id
-          ) {
-            return [option.id, option.name, option.priceAdjustment];
-          }
-          return option;
         });
+
+        console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
+        res.json(enhancedMeals);
+      } catch (err) {
+        console.error("Error fetching meals:", err);
+        res.status(500).json({ message: "Error fetching meals" });
       }
+    },
+  );
+  app.post(
+    "/api/admin/meals",
+    authenticateToken,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        let mealData = { ...req.body };
+        console.log("Admin: Creating new meal in MongoDB...");
 
-      const newMeal = await MealModel.create(mealData);
-      console.log(`Admin: Created new meal with ID ${newMeal.id}`);
+        if (mealData.curryOptions && Array.isArray(mealData.curryOptions)) {
+          mealData.curryOptions = mealData.curryOptions.map((option: any) => {
+            if (
+              typeof option === "object" &&
+              !Array.isArray(option) &&
+              option.id
+            ) {
+              return [option.id, option.name, option.priceAdjustment];
+            }
+            return option;
+          });
+        }
 
-      const responseData = {
-        ...newMeal.toObject(),
-        curryOptions: newMeal.curryOptions
-          ? formatCurryOptions(newMeal.curryOptions, newMeal.id)
-          : [],
-      };
+        const newMeal = await MealModel.create(mealData);
+        console.log(`Admin: Created new meal with ID ${newMeal.id}`);
 
-      res.status(201).json(responseData);
-    } catch (err) {
-      console.error("Error creating meal:", err);
-      res.status(500).json({ message: "Error creating meal" });
-    }
-  });
+        const responseData = {
+          ...newMeal.toObject(),
+          curryOptions: newMeal.curryOptions
+            ? formatCurryOptions(newMeal.curryOptions, newMeal.id)
+            : [],
+        };
+
+        res.status(201).json(responseData);
+      } catch (err) {
+        console.error("Error creating meal:", err);
+        res.status(500).json({ message: "Error creating meal" });
+      }
+    },
+  );
 
   app.put(
     "/api/admin/meals/:id",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     async (req, res) => {
       try {
         const mealId = parseInt(req.params.id);

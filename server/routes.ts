@@ -22,7 +22,7 @@ import { registerPaymentRoutes } from "./routes/payment-routes";
 import { registerLocationRoutes } from "./routes/location-routes";
 import { registerMiscRoutes } from "./routes/misc-routes";
 import { registerProfileRoutes } from "./routes/profile-routes";
-import { authenticateToken } from "./jwt-middleware";
+import { authenticateToken, requireAdmin } from "./jwt-middleware";
 import { registerTestAuthRoutes } from "./test-auth";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -122,21 +122,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Curry Options routes
-  const isAdmin = (req: Request, res: Response, next: Function) => {
-    const user = req.user as any;
-    if (!user || user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Admin privileges required." });
-    }
-    next();
-  };
-
   app.get(
     "/api/admin/curry-options",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     async (req, res) => {
       try {
         const curryOptions = await CurryOption.find().lean();
@@ -151,7 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post(
     "/api/admin/curry-options",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     async (req, res) => {
       try {
         const curryOption = await CurryOption.create(req.body);
@@ -165,7 +154,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put(
     "/api/admin/curry-options/:id",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     async (req, res) => {
       try {
         const id = req.params.id;
@@ -206,7 +195,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch(
     "/api/admin/curry-options/:id",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     async (req, res) => {
       try {
         const { id } = req.params;
@@ -233,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete(
     "/api/admin/curry-options/:id",
     authenticateToken,
-    isAdmin,
+    requireAdmin,
     async (req, res) => {
       try {
         const { id } = req.params;

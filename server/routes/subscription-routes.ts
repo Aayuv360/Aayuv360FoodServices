@@ -4,7 +4,7 @@ import { insertSubscriptionSchema } from "../../shared/schema";
 import { getNextSequence } from "../../shared/mongoModels";
 import { logAPIRequest } from "../logger";
 import { z } from "zod";
-import { authenticateToken } from "../jwt-middleware";
+import { authenticateToken, requireAdmin } from "../jwt-middleware";
 
 function calculateSubscriptionStatus(subscription: any) {
   try {
@@ -125,16 +125,6 @@ function calculateSubscriptionStatus(subscription: any) {
 }
 
 export function registerSubscriptionRoutes(app: Express) {
-  const isManagerOrAdmin = (req: Request, res: Response, next: Function) => {
-    const user = req.user as any;
-    if (!user || (user.role !== "manager" && user.role !== "admin")) {
-      return res
-        .status(403)
-        .json({ message: "Access denied. Manager privileges required." });
-    }
-    next();
-  };
-
   app.get("/api/subscription-plans", async (req, res) => {
     const startTime = Date.now();
     try {
@@ -458,7 +448,7 @@ export function registerSubscriptionRoutes(app: Express) {
   // Admin subscription plan routes
   app
     .route("/api/admin/subscription-plans")
-    .get(authenticateToken, isManagerOrAdmin, async (req, res) => {
+    .get(authenticateToken, requireAdmin, async (req, res) => {
       try {
         const plans = await mongoStorage.getAllSubscriptionPlans();
         const plansWithMenuItems = plans;
@@ -496,7 +486,7 @@ export function registerSubscriptionRoutes(app: Express) {
         res.status(500).json({ message: "Error fetching subscription plans" });
       }
     })
-    .post(authenticateToken, isManagerOrAdmin, async (req, res) => {
+    .post(authenticateToken, requireAdmin, async (req, res) => {
       try {
         const { action, planData, planId } = req.body;
 
@@ -545,7 +535,7 @@ export function registerSubscriptionRoutes(app: Express) {
   app.put(
     "/api/admin/subscription-plans/:id",
     authenticateToken,
-    isManagerOrAdmin,
+    requireAdmin,
     async (req: Request, res: Response) => {
       try {
         console.log("🚀 SUBSCRIPTION PLAN UPDATE WORKING!");
