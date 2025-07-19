@@ -130,7 +130,7 @@ const PerformantOrderTrackingComponent = () => {
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
-    refetchInterval: 2 * 60 * 1000,
+    // refetchInterval: 2 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
   });

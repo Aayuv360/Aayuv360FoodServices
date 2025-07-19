@@ -24,9 +24,9 @@ const Home = () => {
     },
     enabled: !!user,
   });
-  
+
   const hasActiveSubscription = user && subscriptions.length > 0;
-  
+
   return (
     <>
       <HeroSection
@@ -37,7 +37,6 @@ const Home = () => {
         }
       />
 
-      {/* Active Order Tracking - Shows after payment for recent orders */}
       {user && <PerformantOrderTracking />}
 
       {!isMobile && !hasActiveSubscription && <HowItWorks />}
@@ -45,7 +44,7 @@ const Home = () => {
       {!hasActiveSubscription && (
         <SubscriptionPlans previousPlansData={subscriptions} />
       )}
-      
+
       <Menu />
     </>
   );

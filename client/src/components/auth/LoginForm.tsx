@@ -106,9 +106,13 @@ export default function LoginForm({
         />
         <div className="!my-1">
           <Button
+            type="button"
             variant="link"
             className="w-full h-auto"
-            onClick={onForgotPassword}
+            onClick={(e) => {
+              e.preventDefault();
+              onForgotPassword?.();
+            }}
             disabled={isLoading}
           >
             Forgot Password?
