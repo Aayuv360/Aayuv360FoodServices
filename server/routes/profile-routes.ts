@@ -327,12 +327,6 @@ export function registerProfileRoutes(app: Express) {
 
         await storage.deleteUser(userId);
 
-        req.logout((err) => {
-          if (err) {
-            console.error("Error during logout:", err);
-          }
-        });
-
         return res.json({
           message:
             "Account deleted successfully. All your data has been removed.",

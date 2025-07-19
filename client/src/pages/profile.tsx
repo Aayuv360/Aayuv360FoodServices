@@ -82,11 +82,6 @@ const Profile = () => {
     setCurrentTab(tabParam || "profile");
   }, [location.search]);
 
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
   const { data: orders = [], isLoading: isLoadingOrders } = useQuery<any[]>({
     queryKey: ["/api/orders"],
     enabled: currentTab === "orders",
@@ -141,7 +136,6 @@ const Profile = () => {
     updateProfileMutation.mutate(values);
   };
 
-  // Add money to wallet mutation
   const addMoneyMutation = useMutation({
     mutationFn: async (payload: {
       amount: number;
@@ -168,7 +162,6 @@ const Profile = () => {
     },
   });
 
-  // Delete account immediately mutation
   const deleteAccountMutation = useMutation({
     mutationFn: async (reason: string) => {
       const res = await apiRequest("POST", "/api/profile/delete-account", {
@@ -181,7 +174,6 @@ const Profile = () => {
         title: "Account deleted successfully",
         description: "Your account and all data have been permanently deleted",
       });
-      // Automatically logout after successful deletion
       setTimeout(() => {
         logout();
         navigate("/");
@@ -306,10 +298,10 @@ const Profile = () => {
                   <UserCircle className="h-16 w-16 sm:h-20 sm:w-20 text-primary" />
                   <div className="text-center">
                     <h2 className="text-lg sm:text-xl font-bold">
-                      {user.name}
+                      {user?.name}
                     </h2>
                     <p className="text-gray-500 text-xs sm:text-sm">
-                      {user.email}
+                      {user?.email}
                     </p>
                   </div>
                 </div>
