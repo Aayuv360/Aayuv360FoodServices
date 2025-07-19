@@ -47,17 +47,17 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
     setIsLoading(true);
     try {
       const response = await apiRequest("POST", "/api/auth/register", values);
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.message || "Registration failed");
       }
-      
+
       toast({
         title: "Registration successful",
         description: "You can now login with your credentials",
       });
-      
+
       if (onSuccess) onSuccess();
     } catch (error: any) {
       toast({
@@ -72,7 +72,10 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-2.5 sm:space-y-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-2.5 sm:space-y-4"
+      >
         <FormField
           control={form.control}
           name="username"
@@ -80,10 +83,10 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             <FormItem>
               <FormLabel className="text-xs sm:text-sm">Username</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Choose a username" 
-                  className="text-xs sm:text-sm h-8 sm:h-10" 
-                  {...field} 
+                <Input
+                  placeholder="Choose a username"
+                  className="text-xs sm:text-sm h-8 sm:h-10"
+                  {...field}
                 />
               </FormControl>
               <FormMessage className="text-xs" />
@@ -97,11 +100,11 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             <FormItem>
               <FormLabel className="text-xs sm:text-sm">Email</FormLabel>
               <FormControl>
-                <Input 
-                  type="email" 
-                  placeholder="Enter your email" 
-                  className="text-xs sm:text-sm h-8 sm:h-10" 
-                  {...field} 
+                <Input
+                  type="email"
+                  placeholder="Enter your email"
+                  className="text-xs sm:text-sm h-8 sm:h-10"
+                  {...field}
                 />
               </FormControl>
               <FormMessage className="text-xs" />
@@ -115,10 +118,10 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             <FormItem>
               <FormLabel className="text-xs sm:text-sm">Full Name</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="Enter your full name" 
-                  className="text-xs sm:text-sm h-8 sm:h-10" 
-                  {...field} 
+                <Input
+                  placeholder="Enter your full name"
+                  className="text-xs sm:text-sm h-8 sm:h-10"
+                  {...field}
                 />
               </FormControl>
               <FormMessage className="text-xs" />
@@ -132,29 +135,29 @@ export default function RegisterForm({ onSuccess }: RegisterFormProps) {
             <FormItem>
               <FormLabel className="text-xs sm:text-sm">Password</FormLabel>
               <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder="Create a password" 
-                  className="text-xs sm:text-sm h-8 sm:h-10" 
-                  {...field} 
+                <Input
+                  type="password"
+                  placeholder="Create a password"
+                  className="text-xs sm:text-sm h-8 sm:h-10"
+                  {...field}
                 />
               </FormControl>
               <FormMessage className="text-xs" />
             </FormItem>
           )}
         />
-        <Button 
-          type="submit" 
-          className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2 mt-1 sm:mt-2" 
+        <Button
+          type="submit"
+          className="w-full text-xs sm:text-sm h-auto py-1.5 sm:py-2 mt-1 sm:mt-2"
           disabled={isLoading}
         >
           {isLoading ? (
             <>
               <Loader2 className="mr-1.5 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-              Creating account...
+              Sign up...
             </>
           ) : (
-            "Create Account"
+            "Sign up"
           )}
         </Button>
       </form>

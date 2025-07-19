@@ -66,16 +66,15 @@ export default function LoginForm({
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-3 sm:space-y-4"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3">
         <FormField
           control={form.control}
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-xs sm:text-sm">Username</FormLabel>
+              <FormLabel className="text-xs sm:text-sm">
+                Email or Username
+              </FormLabel>
               <FormControl>
                 <Input
                   placeholder="Enter your username"
@@ -105,11 +104,10 @@ export default function LoginForm({
             </FormItem>
           )}
         />
-        <div>
+        <div className="!my-1">
           <Button
-            type="button"
             variant="link"
-            className="w-full text-xs sm:text-sm h-auto py-1 text-blue-600 hover:text-blue-800"
+            className="w-full h-auto"
             onClick={onForgotPassword}
             disabled={isLoading}
           >
