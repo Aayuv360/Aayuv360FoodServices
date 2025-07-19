@@ -25,17 +25,8 @@ const Menu = () => {
   const today = format(getCurrentISTDate(), "MMMM d, yyyy");
   const [nutritionModalOpen, setNutritionModalOpen] = useState(false);
   const [mealData, setMealData] = useState<any>();
-  const [scrolled, setScrolled] = useState(false);
   const isMobile = useIsMobile();
   const { data: meals, isLoading, error } = useMeals();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const filteredMeals = useMemo(() => {
     if (!meals) return [];
@@ -75,9 +66,7 @@ const Menu = () => {
       <div className="container mx-auto">
         <div className="max-w-7xl mx-auto py-6">
           <div
-            className={`${isMobile ? "top-14" : "top-16"} z-40 bg-gray-50 transition-shadow ${
-              scrolled ? "shadow-sm border-b border-gray-200" : ""
-            }`}
+            className={`${isMobile ? "top-14" : "top-16"} z-40 bg-gray-50 transition-shadow`}
           >
             <div>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 sm:gap-4">

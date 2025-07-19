@@ -1,11 +1,14 @@
 import { getCurrentISTDate } from "@/lib/timezone-utils";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, FileText, Clock, AlertTriangle } from "lucide-react";
 
 const Terms = () => {
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const sections = [
     {
       id: "acceptance",

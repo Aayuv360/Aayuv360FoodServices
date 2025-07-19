@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,9 @@ const FAQs = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [expandedFAQ, setExpandedFAQ] = useState<string | null>(null);
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const categories = [
     {
       id: "all",

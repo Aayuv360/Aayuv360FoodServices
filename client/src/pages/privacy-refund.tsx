@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,9 @@ import {
 
 const PrivacyRefund = () => {
   const [activeTab, setActiveTab] = useState<"privacy" | "refund">("privacy");
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const privacySections = [
     {
       id: "collection",
