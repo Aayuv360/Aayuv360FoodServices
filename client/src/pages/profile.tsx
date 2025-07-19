@@ -104,12 +104,6 @@ const Profile = () => {
     enabled: !!user && currentTab === "profile",
   });
 
-  // Deletion status query
-  const { data: deletionStatus } = useQuery({
-    queryKey: ["/api/profile/deletion-status"],
-    enabled: !!user && currentTab === "profile",
-  });
-
   const defaultValues: ProfileFormValues = {
     name: user?.name || "",
     email: user?.email || "",
@@ -149,7 +143,11 @@ const Profile = () => {
 
   // Add money to wallet mutation
   const addMoneyMutation = useMutation({
-    mutationFn: async (payload: { amount: number; paymentMethod?: string; paymentDetails?: any }) => {
+    mutationFn: async (payload: {
+      amount: number;
+      paymentMethod?: string;
+      paymentDetails?: any;
+    }) => {
       const res = await apiRequest("POST", "/api/profile/wallet/add", payload);
       return res.json();
     },
@@ -163,7 +161,8 @@ const Profile = () => {
     onError: (error: any) => {
       toast({
         title: "Failed to add money",
-        description: error.message || "There was an error adding money to your wallet",
+        description:
+          error.message || "There was an error adding money to your wallet",
         variant: "destructive",
       });
     },
@@ -172,7 +171,9 @@ const Profile = () => {
   // Delete account immediately mutation
   const deleteAccountMutation = useMutation({
     mutationFn: async (reason: string) => {
-      const res = await apiRequest("POST", "/api/profile/delete-account", { reason });
+      const res = await apiRequest("POST", "/api/profile/delete-account", {
+        reason,
+      });
       return res.json();
     },
     onSuccess: () => {
@@ -189,7 +190,8 @@ const Profile = () => {
     onError: (error: any) => {
       toast({
         title: "Failed to delete account",
-        description: error.message || "There was an error deleting your account",
+        description:
+          error.message || "There was an error deleting your account",
         variant: "destructive",
       });
     },
@@ -204,9 +206,13 @@ const Profile = () => {
     if (amount > 0) {
       try {
         // First create a Razorpay order for wallet top-up
-        const orderRes = await apiRequest("POST", "/api/profile/wallet/create-order", { amount });
+        const orderRes = await apiRequest(
+          "POST",
+          "/api/profile/wallet/create-order",
+          { amount },
+        );
         const orderData = await orderRes.json();
-        
+
         // Use Razorpay payment integration with proper order ID
         const { success } = await payWithRazorpay(
           orderData.amount,
@@ -218,9 +224,9 @@ const Profile = () => {
             addMoneyMutation.mutate({
               amount,
               paymentMethod: "razorpay",
-              paymentDetails: paymentDetails
+              paymentDetails: paymentDetails,
             });
-          }
+          },
         );
 
         if (success) {
@@ -231,7 +237,8 @@ const Profile = () => {
         console.error("Payment failed:", error);
         toast({
           title: "Payment Failed",
-          description: "There was an error processing your payment. Please try again.",
+          description:
+            "There was an error processing your payment. Please try again.",
           variant: "destructive",
         });
       }
@@ -464,7 +471,6 @@ const Profile = () => {
                             )}
                           />
 
-
                           <div>
                             <Button
                               type="submit"
@@ -493,12 +499,14 @@ const Profile = () => {
                           Danger Zone
                         </span>
                       </div>
-                      
+
                       <p className="text-sm text-gray-600 mb-4">
-                        <strong>Warning:</strong> This will permanently delete your account and all associated data. This action cannot be undone.
+                        <strong>Warning:</strong> This will permanently delete
+                        your account and all associated data. This action cannot
+                        be undone.
                       </p>
-                      <Button 
-                        variant="destructive" 
+                      <Button
+                        variant="destructive"
                         onClick={handleDeleteAccount}
                         disabled={deleteAccountMutation.isPending}
                       >
@@ -1037,7 +1045,8 @@ const Profile = () => {
           <DialogHeader>
             <DialogTitle>Add Money to Wallet</DialogTitle>
             <DialogDescription>
-              Enter the amount you want to add to your wallet. Payment will be processed securely through Razorpay.
+              Enter the amount you want to add to your wallet. Payment will be
+              processed securely through Razorpay.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -1062,7 +1071,11 @@ const Profile = () => {
             </Button>
             <Button
               onClick={confirmAddMoney}
-              disabled={!walletAmount || Number(walletAmount) <= 0 || addMoneyMutation.isPending}
+              disabled={
+                !walletAmount ||
+                Number(walletAmount) <= 0 ||
+                addMoneyMutation.isPending
+              }
             >
               {addMoneyMutation.isPending ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1077,10 +1090,16 @@ const Profile = () => {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-red-600">Delete Account Permanently</DialogTitle>
+            <DialogTitle className="text-red-600">
+              Delete Account Permanently
+            </DialogTitle>
             <DialogDescription>
               <div className="space-y-2 text-gray-700">
-                <p><strong className="text-red-600">⚠️ Warning:</strong> This will permanently delete your account and all associated data including:</p>
+                <p>
+                  <strong className="text-red-600">⚠️ Warning:</strong> This
+                  will permanently delete your account and all associated data
+                  including:
+                </p>
                 <ul className="list-disc list-inside space-y-1 text-sm">
                   <li>Profile information</li>
                   <li>Order history</li>
@@ -1088,7 +1107,9 @@ const Profile = () => {
                   <li>Wallet balance</li>
                   <li>Saved addresses</li>
                 </ul>
-                <p className="font-medium text-red-600">This action cannot be undone.</p>
+                <p className="font-medium text-red-600">
+                  This action cannot be undone.
+                </p>
                 <p>Are you sure you want to permanently delete your account?</p>
               </div>
             </DialogDescription>
