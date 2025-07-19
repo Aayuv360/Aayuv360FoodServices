@@ -23,11 +23,11 @@ import { getCurrentISTDate } from "./timezone-utils";
 export class MongoDBStorage implements IStorage {
   constructor() {
     // JWT authentication doesn't need session store
-    setTimeout(() => {
-      this.initializeSampleMeals().catch((err) =>
-        console.error("Error initializing sample meals:", err),
-      );
-    }, 2000);
+    // setTimeout(() => {
+    //   this.initializeSampleMeals().catch((err) =>
+    //     console.error("Error initializing sample meals:", err),
+    //   );
+    // }, 2000);
   }
 
   private async initializeSampleMeals(): Promise<void> {
@@ -52,10 +52,15 @@ export class MongoDBStorage implements IStorage {
         );
 
         // Skip clearing existing meals - preserve data modifications made through admin panel
-        if (mealsCount > 0) {
-          console.log(`Found ${mealsCount} existing meals - preserving current data`);
-          return;
-        }
+
+        // if (mealsCount > 0 && mealsCount !== milletMeals.length) {
+        //   console.log("Clearing existing meals to ensure fresh data...");
+        //   await Meal.deleteMany({});
+        // }
+        // if (mealsCount > 0) {
+        //   console.log(`Found ${mealsCount} existing meals - preserving current data`);
+        //   return;
+        // }
 
         // Prepare meal items with required category field
         const preparedMeals = milletMeals.map((meal: MealDataItem) => {
@@ -457,8 +462,10 @@ export class MongoDBStorage implements IStorage {
     try {
       const id = await getNextSequence("order");
       // Generate a unique order number: ORD + timestamp + random
-      const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
-      
+      const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000)
+        .toString()
+        .padStart(3, "0")}`;
+
       const newOrder = new Order({
         ...orderData,
         id,
