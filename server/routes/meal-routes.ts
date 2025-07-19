@@ -45,6 +45,27 @@ export function registerMealRoutes(app: Express) {
       res.status(500).json({ message: "Error fetching meals" });
     }
   });
+  app.delete(
+    "/api/admin/meals/:id",
+    authenticateToken,
+    requireAdmin,
+    async (req, res) => {
+      try {
+        const mealId = parseInt(req.params.id);
+
+        const deletedMeal = await MealModel.findOneAndDelete({ id: mealId });
+
+        if (!deletedMeal) {
+          return res.status(404).json({ message: "Meal not found" });
+        }
+
+        res.json({ message: "Meal deleted successfully", deletedMeal });
+      } catch (err) {
+        console.error("Error deleting meal:", err);
+        res.status(500).json({ message: "Error deleting meal" });
+      }
+    },
+  );
 
   app.get("/api/meals/:id", async (req, res) => {
     try {
