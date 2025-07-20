@@ -3,7 +3,7 @@ import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
-import { LocateFixed, Loader2, AlertCircle, ArrowLeft, X } from "lucide-react";
+import { LocateFixed, Loader2, AlertCircle, ArrowLeft, X, MapPin } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useGeolocation } from "@/hooks/use-geolocation";
