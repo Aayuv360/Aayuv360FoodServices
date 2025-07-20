@@ -45,8 +45,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     addNewAddress,
     isUpdateAddress,
     getCurrentLocation,
-    selectAddress,
     isLoading: locationLoading,
+    selectedAddress,
   } = useLocationManager();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -95,21 +95,11 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           landmark: editingAddress.addressLine2 || "",
         });
         setAddressType(editingAddress.name || "Home");
-      } else {
-        getCurrentPosition();
       }
     };
 
     initializeFromEditingAddress();
   }, [isLoaded, editingAddress]);
-
-  useEffect(() => {
-    if (coords && !editingAddress) {
-      setCurrentMapLocation(coords);
-      reverseGeocode(coords);
-      checkServiceAvailability(coords);
-    }
-  }, [coords, editingAddress]);
 
   useEffect(() => {
     setIsAddressModalOpen(addressModalOpen);
@@ -127,6 +117,20 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       setCurrentStep("map");
     }
   }, [isMobile]);
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const coords = await getCurrentLocation();
+        checkServiceAvailability(coords);
+        setCurrentMapLocation(coords);
+        reverseGeocode(coords);
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const reverseGeocode = (location: { lat: number; lng: number }) => {
     if (!window.google) return;
@@ -214,47 +218,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     try {
       setIsLoading(true);
       const coords = await getCurrentLocation();
-
       checkServiceAvailability(coords);
-      if (window.google && window.google.maps) {
-        const geocoder = new window.google.maps.Geocoder();
-        const result = await new Promise<google.maps.GeocoderResult[]>(
-          (resolve, reject) => {
-            geocoder.geocode({ location: coords }, (results, status) => {
-              if (status === "OK" && results) {
-                resolve(results);
-              } else {
-                reject(new Error("Geocoding failed"));
-              }
-            });
-          },
-        );
-
-        if (result.length > 0) {
-          const address = result[0].formatted_address;
-          const currentLocationAddress = {
-            id: Date.now(),
-            label: "Current Location",
-            address: address,
-            coords,
-            pincode: "",
-            isDefault: false,
-          };
-
-          selectAddress(currentLocationAddress);
-        }
-      } else {
-        const currentLocationAddress = {
-          id: Date.now(),
-          label: "Current Location",
-          address: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
-          coords,
-          pincode: "",
-          isDefault: false,
-        };
-
-        selectAddress(currentLocationAddress);
-      }
+      setCurrentMapLocation(coords);
+      reverseGeocode(coords);
     } catch (error) {
       console.error("Error getting current location:", error);
     } finally {
