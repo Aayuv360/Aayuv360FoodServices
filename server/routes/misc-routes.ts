@@ -63,7 +63,7 @@ export function registerMiscRoutes(app: Express) {
   app.post("/api/contact-review", async (req, res) => {
     try {
       const { name, email, phone, message, rating } = req.body;
-      const id = await getNextSequence("contactReviewId");
+      const nextId = await getNextSequence("contactReviewId");
 
       if (!name || !email || !message) {
         return res.status(400).json({
@@ -85,7 +85,7 @@ export function registerMiscRoutes(app: Express) {
       }
 
       const contactReview = new ContactReview({
-        id,
+        id: nextId,
         name: name.trim(),
         email: email.toLowerCase().trim(),
         phone: phone?.trim() || null,
@@ -101,7 +101,7 @@ export function registerMiscRoutes(app: Express) {
 
       res.status(201).json({
         message: "Thank you for your feedback! We'll get back to you soon.",
-        id: contactReview._id,
+        id: contactReview.id,
       });
     } catch (error) {
       console.error("Error saving contact/review:", error);
