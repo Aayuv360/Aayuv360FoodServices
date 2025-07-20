@@ -188,7 +188,7 @@ const LocationSelector = () => {
   };
 
   useEffect(() => {
-    if (!selectedAddress && isLoaded) {
+    if (!selectedAddress && isLoaded && !user) {
       const timer = setTimeout(() => {
         if (!selectedAddress) {
           handleCurrentLocation();

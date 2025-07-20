@@ -52,7 +52,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
       setHasRequestedLocation(true);
       getCurrentPosition();
     }
-  }, [hasRequestedLocation, getCurrentPosition]);
+  }, [hasRequestedLocation]);
 
   useEffect(() => {
     if (
@@ -69,7 +69,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
     if (location) {
       checkServiceAvailability(location);
     }
-  }, [location, checkServiceAvailability]);
+  }, [location]);
 
   const requestLocation = () => {
     getCurrentPosition();

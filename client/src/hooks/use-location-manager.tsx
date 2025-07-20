@@ -98,7 +98,7 @@ export const useLocationManager = () => {
     if (activeLocation) {
       checkLocationServiceArea(activeLocation);
     }
-  }, [activeLocation, checkServiceAvailability]);
+  }, [activeLocation]);
 
   const getCurrentLocationAsync = useCallback(async () => {
     setIsLoading(true);
