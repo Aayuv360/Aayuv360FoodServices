@@ -236,8 +236,7 @@ We strive to make the refund process as smooth as possible.`,
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
       <PageBreadcrumb />
-      <div className="pt-16">
-        <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -369,7 +368,6 @@ We strive to make the refund process as smooth as possible.`,
             </CardContent>
           </Card>
         </motion.div>
-        </div>
       </div>
     </div>
   );

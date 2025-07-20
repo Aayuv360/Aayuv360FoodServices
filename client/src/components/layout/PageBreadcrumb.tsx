@@ -85,10 +85,11 @@ export const PageBreadcrumb: React.FC<PageBreadcrumbProps> = ({ items }) => {
     };
   }, [location]);
 
-  // Handle scroll for sticky behavior
+  // Handle scroll for sticky behavior - position below header
   useEffect(() => {
     const handleScroll = () => {
-      setIsSticky(window.scrollY > 100);
+      // Assume header height is ~80px, start sticking after scrolling past initial position
+      setIsSticky(window.scrollY > 150);
     };
 
     window.addEventListener('scroll', handleScroll);
@@ -105,7 +106,7 @@ export const PageBreadcrumb: React.FC<PageBreadcrumbProps> = ({ items }) => {
       transition={{ duration: 0.3 }}
       className={`w-full bg-gradient-to-r from-orange-50 to-amber-50 border-b border-orange-100/50 shadow-sm transition-all duration-300 ${
         isSticky 
-          ? 'fixed top-0 left-0 right-0 z-50 backdrop-blur-sm bg-orange-50/95 shadow-lg' 
+          ? 'sticky top-20 z-40 backdrop-blur-sm bg-orange-50/95 shadow-lg' 
           : 'relative'
       }`}
     >

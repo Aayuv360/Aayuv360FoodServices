@@ -197,8 +197,7 @@ const FAQs = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-yellow-50">
       <PageBreadcrumb />
-      <div className="pt-16">
-        <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -371,7 +370,6 @@ const FAQs = () => {
             </CardContent>
           </Card>
         </motion.div>
-        </div>
       </div>
     </div>
   );
