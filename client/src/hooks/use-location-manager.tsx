@@ -3,30 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "./use-auth";
 import { toast } from "./use-toast";
-export interface LocationCoords {
-  lat: number;
-  lng: number;
-}
+import { useRecoilState, useRecoilValue } from "recoil";
+import {
+  currentLocationState,
+  selectedAddressState,
+  savedAddressesState,
+  locationLoadingState,
+  locationErrorState,
+  activeLocationState,
+  LocationCoords,
+  SavedAddress,
+} from "@/Recoil/recoil";
 
-export interface SavedAddress {
-  id: number;
-  label: string;
-  address: string;
-  coords: LocationCoords;
-  pincode?: string;
-  isDefault?: boolean;
-  phone?: number;
-  userName?: string;
-  addressLine1?: string;
-  addressLine2?: string;
-}
 export const useLocationManager = () => {
   const [currentLocation, setCurrentLocation] =
-    useState<LocationCoords | null>();
-  const [selectedAddress, setSelectedAddress] = useState<SavedAddress | null>();
-  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>();
+    useRecoilState(currentLocationState);
+  const [selectedAddress, setSelectedAddress] =
+    useRecoilState(selectedAddressState);
+  const [savedAddresses, setSavedAddresses] =
+    useRecoilState(savedAddressesState);
+  const [isLoading, setIsLoading] = useRecoilState(locationLoadingState);
+  const [error, setError] = useRecoilState(locationErrorState);
   const [isUpdateAddress, setIsUpdateAddress] = useState(false);
   const { user } = useAuth();
 

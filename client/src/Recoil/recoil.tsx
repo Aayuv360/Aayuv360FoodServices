@@ -53,3 +53,50 @@ export const mapLoadState = atom<boolean>({
   key: "mapLoadState",
   default: false,
 });
+export const currentLocationState = atom<LocationCoords | null>({
+  key: "currentLocationState",
+  default: null,
+});
+
+export const selectedAddressState = atom<SavedAddress | null>({
+  key: "selectedAddressState",
+  default: null,
+});
+
+export const savedAddressesState = atom<SavedAddress[]>({
+  key: "savedAddressesState",
+  default: [],
+});
+
+export const locationLoadingState = atom<boolean>({
+  key: "locationLoadingState",
+  default: false,
+});
+
+export const locationErrorState = atom<string | null>({
+  key: "locationErrorState",
+  default: null,
+});
+
+export const serviceAreaState = atom<{
+  isWithinServiceArea: boolean;
+  distanceFromCurrent: number | null;
+  serviceMessage: string;
+}>({
+  key: "serviceAreaState",
+  default: {
+    isWithinServiceArea: false,
+    distanceFromCurrent: null,
+    serviceMessage: "",
+  },
+});
+
+export const activeLocationState = selector<LocationCoords | null>({
+  key: "activeLocationState",
+  get: ({ get }) => {
+    const selectedAddress = get(selectedAddressState);
+    const currentLocation = get(currentLocationState);
+
+    return selectedAddress?.coords || currentLocation;
+  },
+});

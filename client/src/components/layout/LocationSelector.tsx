@@ -47,7 +47,11 @@ const LocationSelector = () => {
 
   const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
     useServiceArea();
-
+  useEffect(() => {
+    if (selectedAddress?.coords) {
+      checkServiceAvailability(selectedAddress.coords);
+    }
+  }, [selectedAddress]);
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,

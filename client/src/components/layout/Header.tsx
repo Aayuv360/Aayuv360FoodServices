@@ -28,7 +28,7 @@ const Header = () => {
     if (selectedAddress?.coords) {
       checkServiceAvailability(selectedAddress.coords);
     }
-  }, [selectedAddress, checkServiceAvailability]);
+  }, [selectedAddress]);
 
   const openAuthModal = (
     mode: "normal" | "subscribe" = "normal",
