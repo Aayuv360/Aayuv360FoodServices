@@ -79,6 +79,14 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
+  // Auto-fetch location when modal opens for new addresses
+  useEffect(() => {
+    if (addressModalOpen && !editingAddress && isLoaded) {
+      console.log("Auto-fetching current location for new address");
+      getCurrentPosition();
+    }
+  }, [addressModalOpen, editingAddress, isLoaded, getCurrentPosition]);
+
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -103,16 +111,17 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           landmark: editingAddress.addressLine2 || "",
         });
         setAddressType(editingAddress.name || "Home");
-      } else {
-        getCurrentPosition();
       }
     };
 
-    initializeFromEditingAddress();
+    if (editingAddress) {
+      initializeFromEditingAddress();
+    }
   }, [isLoaded, editingAddress]);
 
   useEffect(() => {
     if (coords && !editingAddress) {
+      console.log("Setting current location from GPS:", coords);
       setCurrentMapLocation(coords);
       reverseGeocode(coords);
       checkServiceAvailability(coords);
@@ -219,6 +228,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   if (!isLoaded) return <div>Loading map...</div>;
 
   const handleGetCurrentLocation = () => {
+    console.log("Manual location request triggered");
     getCurrentPosition();
   };
 
@@ -659,19 +669,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         </div>
 
         <div className="space-y-4">
-          {/* Accuracy and Service Info */}
-          {accuracy && !geoError && (
-            <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-green-600" />
-                <span className="text-sm text-green-800">
-                  Location accuracy: ±{Math.round(accuracy)}m
-                  {accuracy < 50 ? " (High accuracy)" : accuracy < 100 ? " (Good accuracy)" : " (Approximate)"}
-                </span>
-              </div>
-            </div>
-          )}
-
           {(serviceLoading || geoError) && (
             <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
               <div className="flex items-center gap-2">
@@ -687,21 +684,12 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             </div>
           )}
 
-          {/* Map Instructions */}
-          <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
-            <div className="flex items-start gap-2">
-              <LocateFixed className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
-              <div className="text-sm text-orange-800">
-                <p className="font-medium mb-1">For better accuracy:</p>
-                <ul className="text-xs space-y-1">
-                  <li>• Click anywhere on the map to set exact location</li>
-                  <li>• Drag the marker to fine-tune position</li>
-                  <li>• Switch to satellite view for visual reference</li>
-                  <li>• Zoom in for precise placement</li>
-                </ul>
-              </div>
+          {/* Simple instruction */}
+          {!geoError && (
+            <div className="p-2 rounded text-center text-sm text-gray-600">
+              Click on the map or drag the marker to set your exact location
             </div>
-          </div>
+          )}
 
           {!isWithinServiceArea ? (
             <div className="m-auto">
