@@ -62,6 +62,11 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
   const { payWithRazorpay } = useRazorpay();
   const [expandedOrderId, setExpandedOrderId] = useState<number | null>(null);
   const [showAddMoneyDialog, setShowAddMoneyDialog] = useState(false);
@@ -345,7 +350,7 @@ const Profile = () => {
                   <Button
                     variant="ghost"
                     className="w-full justify-start text-xs sm:text-sm h-auto py-1.5 sm:py-2 text-destructive hover:text-destructive/90 hover:bg-destructive/10"
-                    onClick={logout}
+                    onClick={handleLogout}
                   >
                     <LogOut className="mr-1.5 sm:mr-2 h-3.5 w-3.5 sm:h-4 sm:w-4" />
                     Logout
