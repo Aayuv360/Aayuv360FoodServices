@@ -3,7 +3,7 @@ import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
-import { LocateFixed, Loader2, AlertCircle, ArrowLeft, X, MapPin } from "lucide-react";
+import { LocateFixed, Loader2, AlertCircle, ArrowLeft, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -52,12 +52,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     isLoading: geoLoading,
     getCurrentPosition,
     error: geoError,
-    accuracy,
-  } = useGeolocation({
-    enableHighAccuracy: true,
-    timeout: 30000, // Longer timeout for better accuracy
-    maximumAge: 30000, // Allow short cache for repeated requests
-  });
+  } = useGeolocation();
   const {
     isWithinServiceArea,
     checkServiceAvailability,
@@ -78,14 +73,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
-
-  // Auto-fetch location when modal opens for new addresses
-  useEffect(() => {
-    if (addressModalOpen && !editingAddress && isLoaded) {
-      console.log("Auto-fetching current location for new address");
-      getCurrentPosition();
-    }
-  }, [addressModalOpen, editingAddress, isLoaded, getCurrentPosition]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -111,17 +98,16 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           landmark: editingAddress.addressLine2 || "",
         });
         setAddressType(editingAddress.name || "Home");
+      } else {
+        getCurrentPosition();
       }
     };
 
-    if (editingAddress) {
-      initializeFromEditingAddress();
-    }
+    initializeFromEditingAddress();
   }, [isLoaded, editingAddress]);
 
   useEffect(() => {
     if (coords && !editingAddress) {
-      console.log("Setting current location from GPS:", coords);
       setCurrentMapLocation(coords);
       reverseGeocode(coords);
       checkServiceAvailability(coords);
@@ -228,7 +214,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   if (!isLoaded) return <div>Loading map...</div>;
 
   const handleGetCurrentLocation = () => {
-    console.log("Manual location request triggered");
     getCurrentPosition();
   };
 
@@ -314,14 +299,8 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           <GoogleMap
             mapContainerStyle={{ width: "100%", height: "100%" }}
             center={currentMapLocation}
-            zoom={19} // Higher zoom for better accuracy
-            options={{
-              ...ENHANCED_MAP_OPTIONS,
-              clickableIcons: true,
-              mapTypeControl: true,
-              minZoom: 15,
-              maxZoom: 20,
-            }}
+            zoom={18}
+            options={ENHANCED_MAP_OPTIONS}
             onClick={(e) => {
               if (e.latLng) {
                 const newLoc = {
@@ -623,34 +602,17 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             <GoogleMap
               mapContainerStyle={{ width: "100%", height: "100%" }}
               center={currentMapLocation}
-              zoom={19} // Higher zoom for better accuracy
+              zoom={18}
               options={{
-                clickableIcons: true, // Enable landmarks
+                clickableIcons: false,
                 gestureHandling: "greedy",
-                mapTypeControl: true, // Allow satellite view
+                mapTypeControl: false,
                 streetViewControl: false,
-                fullscreenControl: true,
-                zoomControl: true,
-                minZoom: 15,
-                maxZoom: 20,
-              }}
-              onClick={(e) => {
-                if (e.latLng) {
-                  const newLoc = {
-                    lat: e.latLng.lat(),
-                    lng: e.latLng.lng(),
-                  };
-                  setCurrentMapLocation(newLoc);
-                  reverseGeocode(newLoc);
-                  checkServiceAvailability(newLoc);
-                }
               }}
             >
               <Marker
                 position={currentMapLocation}
                 draggable
-                animation={google.maps.Animation.DROP}
-                title="Drag to adjust your exact location or click anywhere on the map"
                 onDragEnd={(e) => {
                   const latLng = e.latLng;
                   if (!latLng) return;
@@ -681,13 +643,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
                   {geoError && geoError}
                 </span>
               </div>
-            </div>
-          )}
-
-          {/* Simple instruction */}
-          {!geoError && (
-            <div className="p-2 rounded text-center text-sm text-gray-600">
-              Click on the map or drag the marker to set your exact location
             </div>
           )}
 
