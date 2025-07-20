@@ -1,57 +1,34 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useRecoilState, useRecoilValue } from "recoil";
-import {
-  currentLocationState,
-  selectedAddressState,
-  savedAddressesState,
-  locationLoadingState,
-  locationErrorState,
-  serviceAreaState,
-  activeLocationState,
-  LocationCoords,
-  SavedAddress,
-} from "@/Recoil/recoil";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "./use-auth";
-import { useServiceArea } from "./use-service-area";
 import { toast } from "./use-toast";
+export interface LocationCoords {
+  lat: number;
+  lng: number;
+}
 
-const calculateDistance = (
-  coord1: LocationCoords,
-  coord2: LocationCoords,
-): number => {
-  const toRad = (value: number) => (value * Math.PI) / 180;
-  const R = 6371;
-
-  const dLat = toRad(coord2.lat - coord1.lat);
-  const dLng = toRad(coord2.lng - coord1.lng);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRad(coord1.lat)) *
-      Math.cos(toRad(coord2.lat)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
-};
-
+export interface SavedAddress {
+  id: number;
+  label: string;
+  address: string;
+  coords: LocationCoords;
+  pincode?: string;
+  isDefault?: boolean;
+  phone?: number;
+  userName?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+}
 export const useLocationManager = () => {
   const [currentLocation, setCurrentLocation] =
-    useRecoilState(currentLocationState);
-  const [selectedAddress, setSelectedAddress] =
-    useRecoilState(selectedAddressState);
-  const [savedAddresses, setSavedAddresses] =
-    useRecoilState(savedAddressesState);
-  const [isLoading, setIsLoading] = useRecoilState(locationLoadingState);
-  const [error, setError] = useRecoilState(locationErrorState);
-  const [serviceArea, setServiceArea] = useRecoilState(serviceAreaState);
-  const activeLocation = useRecoilValue(activeLocationState);
+    useState<LocationCoords | null>();
+  const [selectedAddress, setSelectedAddress] = useState<SavedAddress | null>();
+  const [savedAddresses, setSavedAddresses] = useState<SavedAddress[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>();
   const [isUpdateAddress, setIsUpdateAddress] = useState(false);
   const { user } = useAuth();
-  const { checkServiceAvailability, getServiceMessage } = useServiceArea();
 
   const {
     data: addressesData = [],
@@ -94,12 +71,6 @@ export const useLocationManager = () => {
     }
   }, [user, isSuccess]);
 
-  useEffect(() => {
-    if (activeLocation) {
-      checkLocationServiceArea(activeLocation);
-    }
-  }, [activeLocation]);
-
   const getCurrentLocationAsync = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -109,8 +80,8 @@ export const useLocationManager = () => {
         (resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
-            timeout: 30000, // Consistent timeout
-            maximumAge: 60000, // Allow some caching for consistency
+            timeout: 20000,
+            maximumAge: 60000,
           });
         },
       );
@@ -119,7 +90,6 @@ export const useLocationManager = () => {
         lat: position.coords.latitude,
         lng: position.coords.longitude,
       };
-
       setCurrentLocation(coords);
       setIsLoading(false);
       return coords;
@@ -139,28 +109,6 @@ export const useLocationManager = () => {
       throw new Error(errorMessage);
     }
   }, [setCurrentLocation, setIsLoading, setError]);
-
-  const checkLocationServiceArea = useCallback(
-    async (location: LocationCoords) => {
-      try {
-        checkServiceAvailability(location);
-
-        let distanceFromCurrent = null;
-        if (currentLocation && selectedAddress) {
-          distanceFromCurrent = calculateDistance(currentLocation, location);
-        }
-
-        setServiceArea({
-          isWithinServiceArea: true,
-          distanceFromCurrent,
-          serviceMessage: getServiceMessage(),
-        });
-      } catch (error) {
-        console.error("Failed to check service area:", error);
-      }
-    },
-    [currentLocation, selectedAddress],
-  );
 
   const addNewAddress = async (
     editingAddress: any,
@@ -290,10 +238,8 @@ export const useLocationManager = () => {
     currentLocation,
     selectedAddress,
     savedAddresses,
-    activeLocation,
     isLoading,
     error,
-    serviceArea,
     getCurrentLocation: getCurrentLocationAsync,
     selectAddress,
     selectCurrentLocation,
@@ -301,7 +247,6 @@ export const useLocationManager = () => {
     deleteAddress,
     refreshSavedAddresses: refetchSavedAddresses,
     clearError,
-    checkLocationServiceArea,
     isUpdateAddress,
   };
 };

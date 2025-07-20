@@ -1,7 +1,9 @@
 import { useCallback, useState } from "react";
-import { LocationCoords } from "./use-geolocation";
 import { useKitchens } from "./use-commonServices";
-
+interface LocationCoords {
+  lat: number;
+  lng: number;
+}
 export interface Kitchen {
   id: number;
   area: string;

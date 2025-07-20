@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { LocateFixed, Loader2, AlertCircle, ArrowLeft, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
-import { useGeolocation } from "@/hooks/use-geolocation";
 import { useServiceArea } from "@/hooks/use-service-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useUIContext } from "@/contexts/UIContext";
@@ -42,23 +41,21 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
   >([]);
-  const { addNewAddress, isUpdateAddress } = useLocationManager();
+  const {
+    addNewAddress,
+    isUpdateAddress,
+    getCurrentLocation,
+    selectAddress,
+    isLoading: locationLoading,
+  } = useLocationManager();
+  const [isLoading, setIsLoading] = useState(false);
+
   const [addressType, setAddressType] = useState(
     editingAddress?.name || "Home",
   );
 
-  const {
-    coords,
-    isLoading: geoLoading,
-    getCurrentPosition,
-    error: geoError,
-  } = useGeolocation();
-  const {
-    isWithinServiceArea,
-    checkServiceAvailability,
-    getServiceMessage,
-    isLoading: serviceLoading,
-  } = useServiceArea();
+  const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
+    useServiceArea();
 
   const [addressDetails, setAddressDetails] = useState({
     landmark: "",
@@ -213,8 +210,56 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 
   if (!isLoaded) return <div>Loading map...</div>;
 
-  const handleGetCurrentLocation = () => {
-    getCurrentPosition();
+  const handleGetCurrentLocation = async () => {
+    try {
+      setIsLoading(true);
+      const coords = await getCurrentLocation();
+
+      checkServiceAvailability(coords);
+      if (window.google && window.google.maps) {
+        const geocoder = new window.google.maps.Geocoder();
+        const result = await new Promise<google.maps.GeocoderResult[]>(
+          (resolve, reject) => {
+            geocoder.geocode({ location: coords }, (results, status) => {
+              if (status === "OK" && results) {
+                resolve(results);
+              } else {
+                reject(new Error("Geocoding failed"));
+              }
+            });
+          },
+        );
+
+        if (result.length > 0) {
+          const address = result[0].formatted_address;
+          const currentLocationAddress = {
+            id: Date.now(),
+            label: "Current Location",
+            address: address,
+            coords,
+            pincode: "",
+            isDefault: false,
+          };
+
+          selectAddress(currentLocationAddress);
+        }
+      } else {
+        const currentLocationAddress = {
+          id: Date.now(),
+          label: "Current Location",
+          address: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
+          coords,
+          pincode: "",
+          isDefault: false,
+        };
+
+        selectAddress(currentLocationAddress);
+      }
+    } catch (error) {
+      console.error("Error getting current location:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConfirmLocation = () => {
@@ -333,21 +378,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
             />
           </GoogleMap>
         </div>
-
-        {(serviceLoading || geoError) && (
-          <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-            <div className="flex items-center gap-2">
-              {serviceLoading && (
-                <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-              )}
-              {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
-              <span className="text-sm">
-                {serviceLoading && "Checking service availability..."}
-                {geoError && geoError}
-              </span>
-            </div>
-          </div>
-        )}
 
         <div
           className={`p-3 rounded-lg border ${
@@ -631,21 +661,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         </div>
 
         <div className="space-y-4">
-          {(serviceLoading || geoError) && (
-            <div className="p-3 rounded-lg bg-blue-50 border border-blue-200">
-              <div className="flex items-center gap-2">
-                {serviceLoading && (
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
-                )}
-                {geoError && <AlertCircle className="h-4 w-4 text-red-600" />}
-                <span className="text-sm">
-                  {serviceLoading && "Checking service availability..."}
-                  {geoError && geoError}
-                </span>
-              </div>
-            </div>
-          )}
-
           {!isWithinServiceArea ? (
             <div className="m-auto">
               <div

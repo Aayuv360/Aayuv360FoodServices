@@ -43,20 +43,11 @@ const LocationSelector = () => {
     selectAddress,
     isLoading: locationLoading,
     getCurrentLocation,
-    checkLocationServiceArea,
   } = useLocationManager();
 
-  const {
-    isWithinServiceArea,
-    checkServiceAvailability,
-    getServiceMessage,
-    isLoading: serviceLoading,
-  } = useServiceArea();
-  useEffect(() => {
-    if (selectedAddress?.coords) {
-      checkServiceAvailability(selectedAddress.coords);
-    }
-  }, [selectedAddress, checkServiceAvailability]);
+  const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
+    useServiceArea();
+
   const { isLoaded } = useLoadScript({
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries: GOOGLE_MAPS_LIBRARIES,
@@ -81,8 +72,7 @@ const LocationSelector = () => {
       setIsLoading(true);
       const coords = await getCurrentLocation();
 
-      await checkServiceAvailability(coords);
-      console.log(coords);
+      checkServiceAvailability(coords);
       if (window.google && window.google.maps) {
         const geocoder = new window.google.maps.Geocoder();
         const result = await new Promise<google.maps.GeocoderResult[]>(
@@ -109,7 +99,6 @@ const LocationSelector = () => {
           };
 
           selectAddress(currentLocationAddress);
-          checkLocationServiceArea(coords);
         }
       } else {
         const currentLocationAddress = {
@@ -122,7 +111,6 @@ const LocationSelector = () => {
         };
 
         selectAddress(currentLocationAddress);
-        checkLocationServiceArea(coords);
       }
     } catch (error) {
       console.error("Error getting current location:", error);
@@ -166,7 +154,7 @@ const LocationSelector = () => {
             lng: place.geometry.location.lng(),
           };
 
-          await checkServiceAvailability(coords);
+          checkServiceAvailability(coords);
 
           const tempAddress = {
             id: Date.now(),
@@ -178,7 +166,6 @@ const LocationSelector = () => {
           };
 
           selectAddress(tempAddress);
-          checkLocationServiceArea(coords);
           setSearchInput("");
           setSuggestions([]);
         }
@@ -187,7 +174,7 @@ const LocationSelector = () => {
   };
 
   useEffect(() => {
-    if (!selectedAddress && isLoaded && !user) {
+    if (!selectedAddress && isLoaded) {
       const timer = setTimeout(() => {
         if (!selectedAddress) {
           handleCurrentLocation();
@@ -195,7 +182,7 @@ const LocationSelector = () => {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [user, selectedAddress, isLoaded]);
+  }, [selectedAddress, isLoaded]);
 
   return (
     <>

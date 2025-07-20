@@ -4,7 +4,6 @@ import CartSidebar from "@/components/cart/CartSidebar";
 import { AuthModal } from "@/components/auth/AuthModal";
 import MobileHeader from "./MobileHeader";
 import DesktopHeader from "./DesktopHeader";
-import { useLocation } from "react-router-dom";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { useServiceArea } from "@/hooks/use-service-area";
 import { AlertCircle, CheckCircle } from "lucide-react";
@@ -21,10 +20,10 @@ const Header = () => {
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
 
   const isMobile = useIsMobile();
-  const { selectedAddress, serviceArea } = useLocationManager();
+  const { selectedAddress } = useLocationManager();
   const { isWithinServiceArea, getServiceMessage, checkServiceAvailability } =
     useServiceArea();
-    
+
   useEffect(() => {
     if (selectedAddress?.coords) {
       checkServiceAvailability(selectedAddress.coords);
