@@ -3,7 +3,6 @@ import { mongoStorage } from "../mongoStorage";
 import { storage } from "../storage";
 import { ContactReview, getNextSequence } from "../../shared/mongoModels";
 import { serveImageFromMongoDB } from "../upload";
-import contactRoutes from "../contact-routes";
 import { router as deliveryRoutes } from "../delivery-status";
 import { router as notificationRoutes } from "../notifications";
 import { authenticateToken } from "../jwt-middleware";
@@ -12,7 +11,6 @@ export function registerMiscRoutes(app: Express) {
   app.get("/api/images/:id", serveImageFromMongoDB);
   app.use(deliveryRoutes);
   app.use(notificationRoutes);
-  app.use(contactRoutes);
 
   app.get("/api/curry-options", async (req, res) => {
     try {

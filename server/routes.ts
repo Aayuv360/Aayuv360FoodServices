@@ -11,7 +11,6 @@ import { setupAuth } from "./auth";
 import { router as deliveryRoutes } from "./delivery-status";
 import { router as notificationRoutes } from "./notifications";
 import { router as trackingRoutes } from "./real-time-tracking";
-import contactRoutes from "./contact-routes";
 import { registerAuthRoutes } from "./routes/auth-routes";
 import { registerMealRoutes as registerMealRoutesNew } from "./routes/meal-routes";
 import { registerCartRoutes } from "./routes/cart-routes";
@@ -49,7 +48,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.use("/api/delivery", deliveryRoutes);
   app.use("/api/notifications", notificationRoutes);
-  app.use("/api/contact", contactRoutes);
   app.get("/api/images/:id", serveImageFromMongoDB);
   app.get("/api/addresses", authenticateToken, async (req, res) => {
     try {

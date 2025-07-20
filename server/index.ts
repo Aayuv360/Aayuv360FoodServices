@@ -10,10 +10,8 @@ import rateLimit from "express-rate-limit";
 import { router as deliveryRoutes } from "./delivery-status";
 import { router as notificationRoutes } from "./notifications";
 import { router as trackingRoutes } from "./real-time-tracking";
-import contactRoutes from "./contact-routes";
 import { envValidator } from "./env-validator";
 import cookieParser from "cookie-parser";
-import { setupAuth } from "./auth";
 
 envValidator.printStatus();
 if (!envValidator.isValid()) {
@@ -33,7 +31,6 @@ console.log(
 
 const app = express();
 
-// Configure trust proxy for rate limiting (required for Replit/Render environments)
 app.set("trust proxy", 1);
 if (process.env.NODE_ENV === "production") {
   app.use((req, res, next) => {
@@ -68,18 +65,15 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
-// Rate limiting with proper trust proxy configuration
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 100,
   message: "Too many requests from this IP, please try again later.",
   standardHeaders: true,
   legacyHeaders: false,
-  trustProxy: true, // Trust proxy headers for accurate IP detection
 });
 
-// Security middleware
-app.disable('x-powered-by'); // Hide Express.js
+app.disable("x-powered-by");
 app.use("/api/", apiLimiter);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: false, limit: "10mb" }));
@@ -179,7 +173,6 @@ async function connectToDatabase() {
     app.use("/api", trackingRoutes);
     app.use("/", deliveryRoutes);
     app.use("/", notificationRoutes);
-    app.use("/", contactRoutes);
 
     const preferredPort = config.PORT;
     let port = preferredPort;
