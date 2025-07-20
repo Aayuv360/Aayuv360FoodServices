@@ -4,7 +4,6 @@ import {
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
 import { type User } from "@shared/schema";
 import { apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -36,7 +35,6 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const {
     data: user,
@@ -135,7 +133,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         title: "Logged out",
         description: "You have been logged out successfully",
       });
-      navigate("/");
     },
     onError: (error: Error) => {
       toast({
