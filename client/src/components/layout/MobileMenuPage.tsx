@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { LogOut, ChefHat, ClipboardList, User } from "lucide-react";
 import { motion } from "framer-motion";
@@ -46,7 +46,25 @@ const MobileMenuPage = ({
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setMobilePage?.(false);
+      // Only navigate to home if currently on profile page
+      if (location.pathname === "/profile") {
+        navigate("/");
+      }
+    } catch (error) {
+      setMobilePage?.(false);
+      // If logout fails and we're on profile page, still navigate to home
+      if (location.pathname === "/profile") {
+        navigate("/");
+      }
+    }
+  };
 
   return (
     <>
@@ -78,10 +96,7 @@ const MobileMenuPage = ({
             <MenuItem
               icon={<LogOut />}
               text="Logout"
-              click={() => {
-                logout();
-                setMobilePage?.(false);
-              }}
+              click={handleLogout}
             />
           </motion.div>
         </div>

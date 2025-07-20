@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import {
@@ -31,6 +31,22 @@ const DesktopHeader = ({
   const { user, logout } = useAuth();
   const { cartItems } = useCart();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Only navigate to home if currently on profile page
+      if (location.pathname === "/profile") {
+        navigate("/");
+      }
+    } catch (error) {
+      // If logout fails and we're on profile page, still navigate to home
+      if (location.pathname === "/profile") {
+        navigate("/");
+      }
+    }
+  };
   const scrollToMenuSection = () => {
     const menuSection = document.getElementById("menu-section");
     if (menuSection) {
@@ -106,7 +122,7 @@ const DesktopHeader = ({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="w-5 h-5 ml-1" />
                 Logout
               </DropdownMenuItem>
