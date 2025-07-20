@@ -115,14 +115,14 @@ function App() {
           <TooltipProvider>
             <UIProvider>
               <LocationProvider>
-                <AuthProvider>
-                  <CartProvider>
-                    <BrowserRouter>
+                <BrowserRouter>
+                  <AuthProvider>
+                    <CartProvider>
                       <Toaster />
                       <Router />
-                    </BrowserRouter>
-                  </CartProvider>
-                </AuthProvider>
+                    </CartProvider>
+                  </AuthProvider>
+                </BrowserRouter>
               </LocationProvider>
             </UIProvider>
           </TooltipProvider>
