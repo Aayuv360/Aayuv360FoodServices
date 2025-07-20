@@ -32,16 +32,14 @@ const DesktopHeader = ({
   const { cartItems } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const handleLogout = async () => {
     try {
       await logout();
-      // Only navigate to home if currently on profile page
       if (location.pathname === "/profile") {
         navigate("/");
       }
     } catch (error) {
-      // If logout fails and we're on profile page, still navigate to home
       if (location.pathname === "/profile") {
         navigate("/");
       }

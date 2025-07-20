@@ -48,18 +48,16 @@ const MobileMenuPage = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [cartOpen, setCartOpen] = useState(false);
-  
+
   const handleLogout = async () => {
     try {
       await logout();
       setMobilePage?.(false);
-      // Only navigate to home if currently on profile page
       if (location.pathname === "/profile") {
         navigate("/");
       }
     } catch (error) {
       setMobilePage?.(false);
-      // If logout fails and we're on profile page, still navigate to home
       if (location.pathname === "/profile") {
         navigate("/");
       }
@@ -93,11 +91,7 @@ const MobileMenuPage = ({
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <MenuItem
-              icon={<LogOut />}
-              text="Logout"
-              click={handleLogout}
-            />
+            <MenuItem icon={<LogOut />} text="Logout" click={handleLogout} />
           </motion.div>
         </div>
       </div>
