@@ -6,8 +6,8 @@ export const GOOGLE_MAPS_LIBRARIES: "places"[] = ["places"];
 
 export const GEOLOCATION_OPTIONS = {
   enableHighAccuracy: true,
-  timeout: 20000,
-  maximumAge: 0,
+  timeout: 30000, // Increased for better accuracy
+  maximumAge: 60000, // Allow 1 minute cache
 };
 
 export const DEFAULT_MAP_CENTER = {
@@ -15,19 +15,31 @@ export const DEFAULT_MAP_CENTER = {
   lng: 78.486671,
 };
 
-export const DEFAULT_ZOOM = 18;
+export const DEFAULT_ZOOM = 19; // Higher zoom for better accuracy
 
 export const ENHANCED_MAP_OPTIONS = {
-  clickableIcons: false,
+  clickableIcons: true, // Enable clicking on landmarks for better reference
   gestureHandling: "greedy" as const,
-  mapTypeControl: false,
+  mapTypeControl: true, // Allow switching to satellite view
   streetViewControl: false,
   fullscreenControl: true,
   zoomControl: true,
   mapTypeId: "roadmap" as const,
+  minZoom: 12, // Prevent zooming out too much
+  maxZoom: 20, // Allow high zoom for precision
   styles: [
     {
       featureType: "poi",
+      elementType: "labels",
+      stylers: [{ visibility: "on" }],
+    },
+    {
+      featureType: "poi.business",
+      elementType: "labels",
+      stylers: [{ visibility: "on" }],
+    },
+    {
+      featureType: "road",
       elementType: "labels",
       stylers: [{ visibility: "on" }],
     },

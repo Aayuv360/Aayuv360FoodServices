@@ -109,8 +109,8 @@ export const useLocationManager = () => {
         (resolve, reject) => {
           navigator.geolocation.getCurrentPosition(resolve, reject, {
             enableHighAccuracy: true,
-            timeout: 20000,
-            maximumAge: 0,
+            timeout: 30000, // Consistent timeout
+            maximumAge: 60000, // Allow some caching for consistency
           });
         },
       );

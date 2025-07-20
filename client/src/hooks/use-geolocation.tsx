@@ -28,8 +28,8 @@ export const useGeolocation = (options: GeolocationOptions = {}) => {
 
   const defaultOptions: GeolocationOptions = {
     enableHighAccuracy: true,
-    timeout: 20000,
-    maximumAge: 0,
+    timeout: 30000, // Increased timeout for better accuracy
+    maximumAge: 60000, // Allow 1 minute cache for better performance
     ...options,
   };
 

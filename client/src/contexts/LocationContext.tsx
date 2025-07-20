@@ -41,8 +41,8 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
     clearError,
   } = useGeolocation({
     enableHighAccuracy: true,
-    timeout: 10000,
-    maximumAge: 0,
+    timeout: 30000, // Consistent with other hooks
+    maximumAge: 60000, // Allow some caching
   });
 
   const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
@@ -53,7 +53,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
       setHasRequestedLocation(true);
       getCurrentPosition();
     }
-  }, [hasRequestedLocation]);
+  }, [hasRequestedLocation, getCurrentPosition]);
 
   useEffect(() => {
     if (
@@ -70,7 +70,7 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
     if (location) {
       checkServiceAvailability(location);
     }
-  }, [location]);
+  }, [location, checkServiceAvailability]);
 
   const requestLocation = useCallback(() => {
     getCurrentPosition();
