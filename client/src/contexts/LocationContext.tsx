@@ -3,6 +3,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useCallback,
   ReactNode,
 } from "react";
 import { useGeolocation, LocationCoords } from "../hooks/use-geolocation";
@@ -71,13 +72,13 @@ export const LocationProvider: React.FC<LocationProviderProps> = ({
     }
   }, [location]);
 
-  const requestLocation = () => {
+  const requestLocation = useCallback(() => {
     getCurrentPosition();
-  };
+  }, [getCurrentPosition]);
 
-  const clearLocationError = () => {
+  const clearLocationError = useCallback(() => {
     clearError();
-  };
+  }, [clearError]);
 
   const serviceMessage = getServiceMessage();
 

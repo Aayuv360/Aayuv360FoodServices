@@ -159,13 +159,7 @@ export const useLocationManager = () => {
         console.error("Failed to check service area:", error);
       }
     },
-    [
-      checkServiceAvailability,
-      currentLocation,
-      selectedAddress,
-      getServiceMessage,
-      setServiceArea,
-    ],
+    [currentLocation, selectedAddress],
   );
 
   const addNewAddress = async (
