@@ -123,7 +123,8 @@ const Terms = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <PageBreadcrumb />
-      <div className="container mx-auto px-4 py-12">
+      <div className="pt-16">
+        <div className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -193,6 +194,7 @@ const Terms = () => {
             </CardContent>
           </Card>
         </motion.div>
+        </div>
       </div>
     </div>
   );

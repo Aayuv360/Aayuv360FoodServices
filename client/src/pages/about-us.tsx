@@ -100,8 +100,9 @@ const AboutUs = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
       <PageBreadcrumb />
-      {/* Hero Section */}
-      <section className="relative py-6 overflow-hidden">
+      <div className="pt-16">
+        {/* Hero Section */}
+        <section className="relative py-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10"></div>
         <div className="container mx-auto relative z-10">
           <motion.div
@@ -397,6 +398,7 @@ const AboutUs = () => {
           </div>
         </div>
       </section>
+      </div>
     </div>
   );
 };

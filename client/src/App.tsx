@@ -15,6 +15,7 @@ import {
   usePerformanceMonitoring,
   useMemoryOptimization,
 } from "@/hooks/use-performance";
+import { useNavigationTracking } from "@/hooks/use-navigation-tracking";
 import { ProtectedRoute } from "@/components/protected-route";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
@@ -42,6 +43,7 @@ function Router() {
   useKeyboardNavigation();
   usePerformanceMonitoring();
   useMemoryOptimization();
+  useNavigationTracking();
 
   return (
     <div className="flex flex-col min-h-screen">
