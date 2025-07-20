@@ -293,9 +293,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           variant="link"
           onClick={handleGetCurrentLocation}
           className="text-sm"
-          disabled={geoLoading}
+          disabled={isLoading || locationLoading}
         >
-          {geoLoading ? (
+          {isLoading || locationLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
             </>
@@ -580,9 +580,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           variant="link"
           onClick={handleGetCurrentLocation}
           className="text-sm"
-          disabled={geoLoading}
+          disabled={isLoading || locationLoading}
         >
-          {geoLoading ? (
+          {isLoading || locationLoading ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" /> Getting location...
             </>
