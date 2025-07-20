@@ -19,6 +19,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useMeals } from "@/hooks/use-meals";
 import { useKitchens, useReviews } from "@/hooks/use-commonServices";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 
 export interface Kitchen {
   id: number;
@@ -98,6 +99,7 @@ const AboutUs = () => {
   }, []);
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50">
+      <PageBreadcrumb />
       {/* Hero Section */}
       <section className="relative py-6 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10"></div>

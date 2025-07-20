@@ -12,6 +12,7 @@ import {
   AlertCircle,
   CheckCircle,
 } from "lucide-react";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 
 const PrivacyRefund = () => {
   const [activeTab, setActiveTab] = useState<"privacy" | "refund">("privacy");
@@ -234,6 +235,7 @@ We strive to make the refund process as smooth as possible.`,
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
+      <PageBreadcrumb />
       <div className="container mx-auto py-6">
         <motion.div
           initial={{ opacity: 0, y: 30 }}

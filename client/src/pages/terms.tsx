@@ -4,6 +4,7 @@ import React, { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, FileText, Clock, AlertTriangle } from "lucide-react";
+import PageBreadcrumb from "@/components/layout/PageBreadcrumb";
 
 const Terms = () => {
   useEffect(() => {
@@ -121,6 +122,7 @@ const Terms = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <PageBreadcrumb />
       <div className="container mx-auto px-4 py-12">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
