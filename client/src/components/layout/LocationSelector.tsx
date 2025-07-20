@@ -42,7 +42,6 @@ const LocationSelector = () => {
     savedAddresses,
     selectAddress,
     isLoading: locationLoading,
-    refreshSavedAddresses,
     getCurrentLocation,
     checkLocationServiceArea,
   } = useLocationManager();
@@ -197,11 +196,6 @@ const LocationSelector = () => {
       return () => clearTimeout(timer);
     }
   }, [user, selectedAddress, isLoaded]);
-
-  const handleNewAddressAdded = (addressData: any) => {
-    setIsNewAddressModalOpen(false);
-    refreshSavedAddresses();
-  };
 
   return (
     <>

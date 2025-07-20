@@ -104,7 +104,7 @@ export default function LoginForm({
             </FormItem>
           )}
         />
-        <div className="!my-1">
+        <div className="float-right !my-1">
           <Button
             type="button"
             variant="link"

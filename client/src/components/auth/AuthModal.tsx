@@ -98,7 +98,7 @@ export function AuthModal({
                 Sign up
               </Button>
             </p>
-            <p className="text-sm text-center !m-0">Or</p>
+            {/* <p className="text-sm text-center !m-0">Or</p>
             <Button
               variant="link"
               onClick={() => {
@@ -108,7 +108,7 @@ export function AuthModal({
               className="!p-0"
             >
               Login with OTP
-            </Button>
+            </Button> */}
           </>
         )}
       </DialogContent>

@@ -5,7 +5,6 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { CartProvider } from "@/hooks/use-cart";
-import { LocationProvider } from "@/contexts/LocationContext";
 import { UIProvider } from "@/contexts/UIContext";
 import {
   AccessibilityProvider,
@@ -116,16 +115,14 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <TooltipProvider>
             <UIProvider>
-              <LocationProvider>
-                <BrowserRouter>
-                  <AuthProvider>
-                    <CartProvider>
-                      <Toaster />
-                      <Router />
-                    </CartProvider>
-                  </AuthProvider>
-                </BrowserRouter>
-              </LocationProvider>
+              <BrowserRouter>
+                <AuthProvider>
+                  <CartProvider>
+                    <Toaster />
+                    <Router />
+                  </CartProvider>
+                </AuthProvider>
+              </BrowserRouter>
             </UIProvider>
           </TooltipProvider>
         </QueryClientProvider>
