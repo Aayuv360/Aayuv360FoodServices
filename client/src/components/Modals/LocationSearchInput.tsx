@@ -17,12 +17,12 @@ export const LocationSearchInput = ({
   <div className="relative">
     <Search
       strokeWidth={3}
-      className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 w-5 h-5 "
+      className="absolute left-3 top-[75%] -translate-y-1/2 text-orange-500 w-5 h-5"
     />
 
     {locationSearch !== "" && (
       <X
-        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground w-4 h-4"
+        className="absolute right-3 top-[75%] -translate-y-1/2 cursor-pointer text-muted-foreground w-4 h-4"
         onClick={() => setLocationSearch("")}
       />
     )}

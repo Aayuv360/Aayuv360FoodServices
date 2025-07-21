@@ -62,7 +62,7 @@ const Profile = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  
+
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -747,7 +747,7 @@ const Profile = () => {
                         asChild
                         className="bg-primary hover:bg-primary/90 text-xs sm:text-sm h-auto py-1.5 sm:py-2"
                       >
-                        <a href="/menu">Browse Menu</a>
+                        <a href="/">Browse Menu</a>
                       </Button>
                     </div>
                   ) : (

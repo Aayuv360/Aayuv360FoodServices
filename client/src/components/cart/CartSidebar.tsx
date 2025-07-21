@@ -25,7 +25,12 @@ import { Address } from "./Address";
 import DeleteAddressDialog from "../Modals/DeleteAddressDialog";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { Drawer } from "./Drawer";
-
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 interface CartSidebarProps {
   open: boolean;
   onClose: () => void;
@@ -339,18 +344,18 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   };
   const renderCartSummary = () => (
     <div className="flex flex-col max-h-[92.5vh]">
-      <div className="flex-1 overflow-y-auto pl-4 pb-4">
+      <div className="flex-1 overflow-y-auto pb-4">
         {cartItems.length === 0 ? (
           <div className="text-center py-6 sm:py-8">
             <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto text-gray-300 mb-3 sm:mb-4">
               <ShoppingCartIcon className="w-full h-full" />
             </div>
-            <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">
+            <p className="text-gray-500 mb-3 sm:mb-4 text-xs sm:text-sm">
               Your cart is empty
             </p>
             <Button
               onClick={() => {
-                navigate("/menu");
+                navigate("/");
                 onClose();
               }}
               className="text-xs sm:text-sm py-1.5 sm:py-2 h-auto"
@@ -373,11 +378,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     />
                   </div>
                   <div className="flex-grow px-2 sm:px-3">
-                    <div className="font-semibold text-base">
+                    <span className="text-sm sm:text-base font-bold text-gray-900">
                       {item.meal?.name}
-                    </div>
+                    </span>
                     {item?.meal?.selectedCurry && (
-                      <p className="text-sm text-gray-600">
+                      <p className="text-xs sm:text-sm text-gray-600">
                         with {item.meal?.selectedCurry?.name}
                         {item.meal?.selectedCurry?.priceAdjustment > 0 && (
                           <span className="text-primary ml-1">
@@ -393,7 +398,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         )}
                       </p>
                     )}
-                    <p className="text-primary text-md font-extrabold">
+                    <p className="text-sm sm:text-md text-primary font-extrabold">
                       {formatPrice(calculateMealPrice(item))}
                     </p>
                   </div>
@@ -426,11 +431,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         <Plus className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
                       </Button>
                     </div>
-                    {item?.meal?.curryOptions?.length > 0 && (
+                    {(item?.meal?.curryOptions?.length ?? 0) > 0 && (
                       <Button
                         variant="link"
                         size="sm"
-                        className="p-0 h-5 sm:h-6 text-[10px] sm:text-xs text-primary"
+                        className="p-0 h-5 sm:h-6 font-semibold text-xs sm:text-sm text-primary"
                         onClick={() => handleCustomizeItem(item)}
                       >
                         Customize
@@ -441,47 +446,72 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               ))}
             </div>
 
-            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-sm font-medium mb-4 flex items-center justify-center shadow-sm animate-bounce">
+            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium mb-4 flex items-center justify-center shadow-sm animate-bounce">
               🎉 You saved ₹25 on this order!
             </div>
 
-            <div className="border-t border-orange-200 p-4 ">
-              <h3 className="font-bold mb-3 text-gray-800 text-lg">
-                💰 Bill Details
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between text-gray-700">
-                  <span>Items Total</span>
-                  <span>{formatPrice(calculateCartTotal)}</span>
-                </div>
-                <div className="flex justify-between text-gray-700">
-                  <span>Delivery Charge</span>
-                  <span>
-                    {formatPrice(deliveryType === "express" ? 60 : 40)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-700">
-                  <span>Taxes</span>
-                  <span>{formatPrice(20)}</span>
-                </div>
-                <div className="border-t border-dashed border-orange-300 pt-3 flex justify-between font-extrabold text-lg">
-                  <span className="text-gray-900">Total</span>
-                  <span className="text-primary">
-                    {formatPrice(
-                      calculateCartTotal +
-                        (deliveryType === "express" ? 60 : 40) +
-                        20,
-                    )}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <Accordion
+              type="single"
+              collapsible
+              className="border-t border-orange-200"
+            >
+              <AccordionItem value="bill-details">
+                <AccordionTrigger className="px-4 pt-4">
+                  <div>
+                    <div className="flex gap-2 text-sm sm:text-base font-bold text-gray-900">
+                      <span>💰 To pay</span>
+                      <span className="text-primary">
+                        {formatPrice(
+                          calculateCartTotal +
+                            (deliveryType === "express" ? 60 : 40) +
+                            20,
+                        )}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-700 pl-7">
+                      Incl. all taxes & charges
+                    </p>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                  <div className="pt-4">
+                    <div className="px-4 space-y-2 text-xs sm:text-sm">
+                      <div className="flex justify-between text-gray-700">
+                        <span>Items Total</span>
+                        <span>{formatPrice(calculateCartTotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-gray-700">
+                        <span>Delivery Charge</span>
+                        <span>
+                          {formatPrice(deliveryType === "express" ? 60 : 40)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-gray-700">
+                        <span>Taxes</span>
+                        <span>{formatPrice(20)}</span>
+                      </div>
+                    </div>
 
-            <div className="mt-6 bg-yellow-50 p-4 mr-4 rounded-xl text-sm text-gray-700 flex items-start gap-3 shadow-inner border border-yellow-200">
-              <Info size={18} className="text-orange-600 mt-0.5" />
-              <p>
-                Orders can be cancelled before confirmation. Once confirmed,
-                refunds follow our refund policy.
+                    <div className="border-t border-dashed border-orange-300 px-4 pt-2 mt-2 flex justify-between font-extrabold text-sm sm:text-base">
+                      <span className="text-gray-900">To pay</span>
+                      <span className="text-primary">
+                        {formatPrice(
+                          calculateCartTotal +
+                            (deliveryType === "express" ? 60 : 40) +
+                            20,
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+
+            <div className="mt-6 bg-yellow-50 p-4 mx-4 rounded-xl flex items-start gap-3 shadow-inner border border-yellow-200">
+              <Info className="text-orange-600 mt-0.5 w-5 h-5" />
+              <p className="text-xs text-gray-700">
+                Please double-check your order and delivery details before
+                placing it. Orders are non-refundable once confirmed.
               </p>
             </div>
           </>
@@ -542,8 +572,10 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     className="group flex items-center cursor-pointer hover:opacity-90 transition-opacity duration-200"
                     onClick={handlePreviousStep}
                   >
-                    <ArrowLeft className="transition-transform duration-200 group-hover:-translate-x-1" />
-                    <h2 className="font-bold text-lg ">Delivery Address</h2>
+                    <ArrowLeft className="transition-transform duration-200 group-hover:-translate-x-1 w-4 h-4 sm:w-5 sm:h-5" />
+                    <h2 className="font-bold text-sm sm:text-lg ml-1">
+                      Delivery Address
+                    </h2>
                   </div>
                 </div>
                 <Button
@@ -554,7 +586,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     setAddressModalAction("addressAdd");
                   }}
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4 mr-1" />
                   <span>Add Address</span>
                 </Button>
               </div>
@@ -569,11 +601,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                           ? "border-primary bg-primary/5"
                           : ""
                       }`}
-                      onClick={() => selectAddress(address)}
+                      onClick={() => {
+                        selectAddress(address);
+                        handlePreviousStep();
+                      }}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
-                          <div className="font-semibold   text-base sm:text-sm">
+                          <div className="font-semibold text-sm sm:text-base">
                             {address.label}
                           </div>
                           {address.isDefault && (
@@ -600,22 +635,21 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                               setDeletingAddress(address);
                             }}
                           />
-                          {selectedAddress?.id === address.id && (
+                          {/* {selectedAddress?.id === address.id && (
                             <Check className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
-                          )}
+                          )} */}
                         </div>
                       </div>
 
-                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5">
+                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5 mt-1">
                         <p className="line-clamp-1">{address.address}</p>
-
                         <p>Phone: {address.phone}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-6 text-gray-500 mt-4">
+                <div className="text-center py-6 text-xs sm:text-sm text-gray-500 mt-4">
                   No saved addresses found
                 </div>
               )}

@@ -30,7 +30,9 @@ export const AddressForm = ({
   onSubmit,
 }: AddressFormProps) => {
   return (
-    <>
+    <div className="text-sm sm:text-base">
+      {" "}
+      {/* Responsive wrapper */}
       <form
         id="address-form"
         onSubmit={(e) => {
@@ -55,7 +57,7 @@ export const AddressForm = ({
             <Button
               key={label}
               type="button"
-              className={`w-full sm:w-auto rounded-2xl ${
+              className={`w-full sm:w-auto text-sm sm:text-base rounded-2xl ${
                 addressType !== label &&
                 "bg-white hover:text-gray-700 hover:bg-orange-100"
               }`}
@@ -69,9 +71,11 @@ export const AddressForm = ({
         </div>
 
         <div>
-          <Label>Flat No. / House / Building name</Label>
+          <Label className="text-sm sm:text-base">
+            Flat No. / House / Building name
+          </Label>
           <Input
-            className="w-full"
+            className="w-full text-sm sm:text-base"
             name="addressLine1"
             placeholder="Flat No./House/Building name"
             defaultValue={editingAddress?.addressLine1 || ""}
@@ -80,9 +84,9 @@ export const AddressForm = ({
         </div>
 
         <div>
-          <Label>Area / Locality</Label>
+          <Label className="text-sm sm:text-base">Area / Locality</Label>
           <Input
-            className="w-full"
+            className="w-full text-sm sm:text-base"
             name="addressLine2"
             placeholder="Landmark, Area, Locality, etc."
             value={addressDetails.landmark}
@@ -97,23 +101,23 @@ export const AddressForm = ({
         </div>
 
         <div>
-          <Label>Near by landmark</Label>
+          <Label className="text-sm sm:text-base">Near by landmark</Label>
           <Input
-            className="w-full"
+            className="w-full text-sm sm:text-base"
             name="nearbyLandmark"
             placeholder="Near by landmark"
             defaultValue={editingAddress?.nearbyLandmark || ""}
           />
         </div>
 
-        <div className="text-primary">
+        <div className="text-primary text-sm sm:text-base">
           Provide your information for delivery
         </div>
 
         <div className="!mt-1">
-          <Label>Name</Label>
+          <Label className="text-sm sm:text-base">Name</Label>
           <Input
-            className="w-full"
+            className="w-full text-sm sm:text-base"
             name="userName"
             placeholder="Your name"
             defaultValue={editingAddress?.userName || user?.username || ""}
@@ -122,9 +126,9 @@ export const AddressForm = ({
         </div>
 
         <div>
-          <Label>Phone Number</Label>
+          <Label className="text-sm sm:text-base">Phone Number</Label>
           <Input
-            className="w-full"
+            className="w-full text-sm sm:text-base"
             name="phone"
             placeholder="10-digit mobile number"
             maxLength={10}
@@ -137,6 +141,7 @@ export const AddressForm = ({
             }}
           />
         </div>
+
         <div className="flex items-center space-x-2 pt-2">
           <input
             type="checkbox"
@@ -145,7 +150,7 @@ export const AddressForm = ({
             id="isDefault"
             className="accent-primary w-4 h-4"
           />
-          <Label htmlFor="isDefault" className="text-sm">
+          <Label htmlFor="isDefault" className="text-sm sm:text-base">
             Set as default address
           </Label>
         </div>
@@ -154,6 +159,7 @@ export const AddressForm = ({
           <Button
             type="submit"
             disabled={!isWithinServiceArea || isUpdateAddress}
+            className="text-sm sm:text-base"
           >
             {isUpdateAddress ? (
               <div className="flex items-center gap-2">
@@ -170,6 +176,6 @@ export const AddressForm = ({
           </Button>
         </div>
       </form>
-    </>
+    </div>
   );
 };

@@ -37,12 +37,6 @@ import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
 import { SubscriptionManagement } from "@/components/OrderMagament/SubscriptionManagement";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 export default function OrderManagementPage() {
   const { user } = useAuth();
@@ -134,9 +128,12 @@ export default function OrderManagementPage() {
       cancelled: "bg-red-100 text-red-800",
     };
 
-    const displayText = status === "in_transit" ? "In Transit" : 
-                       status === "out_for_delivery" ? "Out for Delivery" :
-                       status.charAt(0).toUpperCase() + status.slice(1);
+    const displayText =
+      status === "in_transit"
+        ? "In Transit"
+        : status === "out_for_delivery"
+          ? "Out for Delivery"
+          : status.charAt(0).toUpperCase() + status.slice(1);
 
     return (
       <Badge className={statusStyles[status as keyof typeof statusStyles]}>
@@ -210,7 +207,9 @@ export default function OrderManagementPage() {
                   <SelectItem value="confirmed">Confirmed</SelectItem>
                   <SelectItem value="preparing">Preparing</SelectItem>
                   <SelectItem value="in_transit">In Transit</SelectItem>
-                  <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+                  <SelectItem value="out_for_delivery">
+                    Out for Delivery
+                  </SelectItem>
                   <SelectItem value="nearby">Nearby</SelectItem>
                   <SelectItem value="delivered">Delivered</SelectItem>
                   <SelectItem value="cancelled">Cancelled</SelectItem>
@@ -281,9 +280,7 @@ export default function OrderManagementPage() {
                                   <SelectItem value="out_for_delivery">
                                     Out for Delivery
                                   </SelectItem>
-                                  <SelectItem value="nearby">
-                                    Nearby
-                                  </SelectItem>
+                                  <SelectItem value="nearby">Nearby</SelectItem>
                                   <SelectItem value="delivered">
                                     Delivered
                                   </SelectItem>

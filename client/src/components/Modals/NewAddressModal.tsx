@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
-import { LocateFixed, Loader2, AlertCircle, ArrowLeft, X } from "lucide-react";
+import {
+  LocateFixed,
+  MapPinned,
+  AlertCircle,
+  ArrowLeft,
+  X,
+} from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useServiceArea } from "@/hooks/use-service-area";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -160,14 +166,14 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       handleGetCurrentLocation();
     } else {
       const loc = {
-        lat: editingAddress.latitude,
-        lng: editingAddress.longitude,
+        lat: editingAddress?.latitude,
+        lng: editingAddress?.longitude,
       };
 
       setCurrentMapLocation(loc);
       checkServiceAvailability(loc);
       reverseGeocode(loc);
-      setAddressType(editingAddress.name || "Home");
+      setAddressType(editingAddress?.name || "Home");
     }
   }, [addressModalAction, addressModalOpen]);
 
@@ -198,33 +204,35 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   };
 
   const renderMapStep = () => (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between p-4 border-b bg-white">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setAddressModalOpen(false)}
-            className="p-2"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-          <div className="font-bold text-lg">Select Location</div>
+    <div className="flex flex-col h-full text-base sm:text-sm">
+      <div className="flex items-center justify-between p-4 sm:p-2 border-b bg-white">
+        <div className="font-bold flex items-center text-lg sm:text-lg gap-2">
+          <MapPinned className="h-5 w-5 sm:h-4 sm:w-4" /> Location
         </div>
+
         <Button
-          type="button"
-          variant="link"
-          onClick={handleGetCurrentLocation}
-          className="text-sm"
-          disabled={locationLoading}
+          variant="ghost"
+          size="sm"
+          onClick={() => setAddressModalOpen(false)}
+          className="p-2 sm:p-1"
         >
-          <>
-            <LocateFixed className="h-4 w-4" />
-          </>
+          <X className="!h-5 !w-5 sm:h-4 sm:w-4" />
         </Button>
       </div>
 
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+      <div className="flex-1 p-4 sm:p-2 overflow-y-auto">
+        <div className="float-right">
+          <Button
+            type="button"
+            variant="link"
+            onClick={handleGetCurrentLocation}
+            className="text-sm sm:text-base font-semibold p-0"
+            disabled={locationLoading}
+          >
+            <LocateFixed className="h-4 w-4 sm:h-3 sm:w-3" /> Detect Location
+          </Button>
+        </div>
+
         <LocationSearchInput
           locationSearch={locationSearch}
           setLocationSearch={setLocationSearch}
@@ -232,31 +240,33 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           fetchSuggestions={fetchSuggestions}
           handleSuggestionClick={handleSuggestionClick}
         />
+        <div className="pt-4 sm:pt-2">
+          <GoogleMapDisplay
+            currentMapLocation={currentMapLocation}
+            setCurrentMapLocation={setCurrentMapLocation}
+            reverseGeocode={reverseGeocode}
+            checkServiceAvailability={checkServiceAvailability}
+          />
+        </div>
 
-        <GoogleMapDisplay
-          currentMapLocation={currentMapLocation}
-          setCurrentMapLocation={setCurrentMapLocation}
-          reverseGeocode={reverseGeocode}
-          checkServiceAvailability={checkServiceAvailability}
-        />
         <div
-          className={`p-3 rounded-lg border ${
+          className={`p-3 sm:p-2 mt-4 sm:mt-2 rounded-lg border ${
             isWithinServiceArea
               ? "bg-green-50 border-green-200 text-green-800"
               : "bg-red-50 border-red-200 text-red-800"
           }`}
         >
           <div className="flex items-start gap-2">
-            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-            <span className="text-sm">{getServiceMessage()}</span>
+            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0 sm:h-3 sm:w-3" />
+            <span className="text-sm sm:text-xs">{getServiceMessage()}</span>
           </div>
         </div>
 
-        <div className="flex justify-end pt-4">
+        <div className="flex justify-end pt-4 sm:pt-2">
           <Button
             onClick={handleConfirmLocation}
             disabled={!isWithinServiceArea}
-            className="w-full"
+            className="w-full text-sm sm:text-xs"
           >
             Confirm Location
           </Button>
@@ -268,14 +278,14 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
   const renderFormStep = () => (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 border-b bg-white">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
             onClick={handleBackToMap}
             className="p-2"
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="!h-5 !w-5" />
           </Button>
           <div className="font-bold text-lg">
             {addressModalAction === "addressEdit"
@@ -289,13 +299,13 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           onClick={() => setAddressModalOpen(false)}
           className="p-2"
         >
-          <X className="h-5 w-5" />
+          <X className="!h-5 !w-5" />
         </Button>
       </div>
 
       <div className="flex-1 p-4 space-y-4 overflow-y-auto">
         <div className="p-3 bg-gray-50 rounded-lg border">
-          <div className="text-sm font-medium mb-1">Selected Location:</div>
+          <div className="text-sm font-medium mb-1">Location:</div>
           <div className="text-sm text-gray-600">{locationSearch}</div>
         </div>
         <AddressForm
@@ -330,7 +340,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           className="text-sm font-semibold"
           disabled={locationLoading}
         >
-          <LocateFixed className="h-5 w-5" /> Use Current Location
+          <LocateFixed className="h-5 w-5" /> Detect Location
         </Button>
       </div>
 
