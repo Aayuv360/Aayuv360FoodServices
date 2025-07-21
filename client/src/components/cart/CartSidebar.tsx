@@ -66,7 +66,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { initiatePayment } = useRazorpay();
-  console.log("cartItems", cartItems);
   const { savedAddresses, selectAddress, deleteAddress, selectedAddress } =
     useLocationManager();
   const notSavedAddress = savedAddresses?.find(
@@ -364,7 +363,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             <div className="max-h-96 overflow-y-auto">
               {cartItems.map((item) => (
                 <div key={item.id} className="flex items-center gap-2 p-4">
-                  <>{console.log("item", item)}</>
                   <div>
                     <img
                       src={item.meal?.imageUrl || "/placeholder-meal.jpg"}

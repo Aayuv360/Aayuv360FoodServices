@@ -18,32 +18,35 @@ export const DEFAULT_MAP_CENTER = {
 export const DEFAULT_ZOOM = 19; // Higher zoom for better accuracy
 
 export const ENHANCED_MAP_OPTIONS = {
-  clickableIcons: true, // Enable clicking on landmarks for better reference
-  gestureHandling: "greedy" as const,
-  mapTypeControl: true, // Allow switching to satellite view
+  clickableIcons: false,
+  gestureHandling: "greedy",
+  mapTypeControl: false,
   streetViewControl: false,
-  fullscreenControl: true,
-  zoomControl: true,
-  mapTypeId: "roadmap" as const,
-  minZoom: 12, // Prevent zooming out too much
-  maxZoom: 20, // Allow high zoom for precision
-  styles: [
-    {
-      featureType: "poi",
-      elementType: "labels",
-      stylers: [{ visibility: "on" }],
-    },
-    {
-      featureType: "poi.business",
-      elementType: "labels",
-      stylers: [{ visibility: "on" }],
-    },
-    {
-      featureType: "road",
-      elementType: "labels",
-      stylers: [{ visibility: "on" }],
-    },
-  ],
+  // clickableIcons: true,
+  // gestureHandling: "greedy" as const,
+  // streetViewControl: false,
+  // fullscreenControl: true,
+  // zoomControl: true,
+  // mapTypeId: "roadmap" as const,
+  // minZoom: 18,
+  // maxZoom: 20,
+  // styles: [
+  //   {
+  //     featureType: "poi",
+  //     elementType: "labels",
+  //     stylers: [{ visibility: "on" }],
+  //   },
+  //   {
+  //     featureType: "poi.business",
+  //     elementType: "labels",
+  //     stylers: [{ visibility: "on" }],
+  //   },
+  //   {
+  //     featureType: "road",
+  //     elementType: "labels",
+  //     stylers: [{ visibility: "on" }],
+  //   },
+  // ],
 };
 
 export const MAP_OPTIONS = {

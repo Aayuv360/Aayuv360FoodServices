@@ -145,7 +145,7 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
 
   const handleAddToCurry = async (
     selectedMeal: Meal,
-    selectedCurryOption: any
+    selectedCurryOption: any,
   ) => {
     try {
       if (!user) {
@@ -155,7 +155,6 @@ export function MealCardActions({ meal }: MealCardActionsProps) {
       }
 
       const existingItem = cartItems.find((item) => {
-        console.log(item, selectedCurryOption);
         return (
           item.meal?.id === selectedMeal.id &&
           item.meal?.selectedCurry?.id === selectedCurryOption?.id
