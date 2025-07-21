@@ -1,8 +1,13 @@
-
 import type { Express, Request, Response } from "express";
 import { mongoStorage } from "../mongoStorage";
-import { CartItem as CartItemModel, Meal as MealModel } from "../../shared/mongoModels";
-import { authenticateToken, optionalAuthenticateToken } from "../jwt-middleware";
+import {
+  CartItem as CartItemModel,
+  Meal as MealModel,
+} from "../../shared/mongoModels";
+import {
+  authenticateToken,
+  optionalAuthenticateToken,
+} from "../jwt-middleware";
 
 export function registerCartRoutes(app: Express) {
   app.get("/api/cart", optionalAuthenticateToken, async (req, res) => {
@@ -38,7 +43,7 @@ export function registerCartRoutes(app: Express) {
             ...item,
             meal: mealWithCurryOption,
           };
-        })
+        }),
       );
 
       res.json(enrichedCartItems);
@@ -62,45 +67,22 @@ export function registerCartRoutes(app: Express) {
         curryOptionPrice = req.body.selectedCurry.priceAdjustment || 0;
       }
 
-      const mealDetails = await MealModel.findOne({
-        id: req.body.mealId,
-      }).lean();
-
-      const mealCurryOptions =
-        req.body.curryOptions || mealDetails?.curryOptions || [];
       const cartItemData = {
         ...req.body,
         userId,
         curryOptionId,
         curryOptionName,
         curryOptionPrice,
-        curryOptions: mealCurryOptions,
       };
 
       const cartItem = await mongoStorage.addToCart(cartItemData);
       const mealFromStorage = await mongoStorage.getMeal(cartItem.mealId);
 
-      let mealWithCurryOption = mealFromStorage;
-
-      const mealWithOptions = await MealModel.findOne({
-        id: mealFromStorage?.id,
-      }).lean();
-
-      mealWithCurryOption = {
-        ...mealWithCurryOption,
-        curryOptions: mealWithOptions?.curryOptions || mealCurryOptions || [],
+      const mealWithCurryOption = {
+        ...mealFromStorage,
+        curryOptions: req.body?.curryOptions || [],
+        selectedCurry: req.body.selectedCurry,
       };
-
-      if (curryOptionId && curryOptionName) {
-        mealWithCurryOption = {
-          ...mealWithCurryOption,
-          selectedCurry: {
-            id: curryOptionId,
-            name: curryOptionName,
-            priceAdjustment: curryOptionPrice || 0,
-          },
-        };
-      }
 
       res.status(201).json({ ...cartItem, meal: mealWithCurryOption });
     } catch (err) {
@@ -124,7 +106,7 @@ export function registerCartRoutes(app: Express) {
 
       const updatedItem = await mongoStorage.updateCartItemQuantity(
         itemId,
-        quantity
+        quantity,
       );
       const meal = await mongoStorage.getMeal(updatedItem.mealId);
 
@@ -217,7 +199,14 @@ export function registerCartRoutes(app: Express) {
   app.post("/api/cart/add", authenticateToken, async (req, res) => {
     try {
       const userId = req.user!.id;
-      const { mealId, quantity = 1, curryOptionId, curryOptionName, curryOptionPrice, notes } = req.body;
+      const {
+        mealId,
+        quantity = 1,
+        curryOptionId,
+        curryOptionName,
+        curryOptionPrice,
+        notes,
+      } = req.body;
 
       if (!mealId) {
         return res.status(400).json({ message: "Meal ID is required" });
@@ -235,16 +224,13 @@ export function registerCartRoutes(app: Express) {
         existingItem = await CartItemModel.findOne({
           userId,
           mealId,
-          curryOptionId
+          curryOptionId,
         }).lean();
       } else {
         existingItem = await CartItemModel.findOne({
           userId,
           mealId,
-          $or: [
-            { curryOptionId: { $exists: false } },
-            { curryOptionId: null }
-          ]
+          $or: [{ curryOptionId: { $exists: false } }, { curryOptionId: null }],
         }).lean();
       }
 
@@ -253,9 +239,9 @@ export function registerCartRoutes(app: Express) {
         const updatedItem = await CartItemModel.findByIdAndUpdate(
           existingItem._id,
           { $inc: { quantity: quantity } },
-          { new: true }
+          { new: true },
         ).lean();
-        
+
         return res.json(updatedItem);
       } else {
         // Create new cart item
@@ -266,7 +252,7 @@ export function registerCartRoutes(app: Express) {
           curryOptionId,
           curryOptionName,
           curryOptionPrice: curryOptionPrice || 0,
-          notes: notes || null
+          notes: notes || null,
         });
 
         const savedItem = await newCartItem.save();
@@ -283,7 +269,13 @@ export function registerCartRoutes(app: Express) {
     try {
       const userId = req.user!.id;
       const itemId = req.params.id;
-      const { quantity, curryOptionId, curryOptionName, curryOptionPrice, notes } = req.body;
+      const {
+        quantity,
+        curryOptionId,
+        curryOptionName,
+        curryOptionPrice,
+        notes,
+      } = req.body;
 
       const updatedItem = await CartItemModel.findOneAndUpdate(
         { _id: itemId, userId },
@@ -292,9 +284,9 @@ export function registerCartRoutes(app: Express) {
           ...(curryOptionId !== undefined && { curryOptionId }),
           ...(curryOptionName !== undefined && { curryOptionName }),
           ...(curryOptionPrice !== undefined && { curryOptionPrice }),
-          ...(notes !== undefined && { notes })
+          ...(notes !== undefined && { notes }),
         },
-        { new: true }
+        { new: true },
       ).lean();
 
       if (!updatedItem) {
@@ -316,7 +308,7 @@ export function registerCartRoutes(app: Express) {
 
       const deletedItem = await CartItemModel.findOneAndDelete({
         _id: itemId,
-        userId
+        userId,
       }).lean();
 
       if (!deletedItem) {
@@ -334,7 +326,7 @@ export function registerCartRoutes(app: Express) {
   app.delete("/api/cart", authenticateToken, async (req, res) => {
     try {
       const userId = req.user!.id;
-      
+
       await CartItemModel.deleteMany({ userId });
       res.json({ message: "Cart cleared" });
     } catch (err) {

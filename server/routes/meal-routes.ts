@@ -12,29 +12,19 @@ export function registerMealRoutes(app: Express) {
       const globalCurryOptions = await CurryOption.find().lean();
 
       const enhancedMeals = meals.map((meal) => {
-        let curryOptionsArray = [];
-
-        if (meal.curryOptions && meal.curryOptions.length > 0) {
-          curryOptionsArray = meal.curryOptions.map((option: any) => [
-            option.id,
-            option.name,
-            option.priceAdjustment,
-          ]);
-        } else {
-          const mealSpecificOptions = globalCurryOptions.filter(
-            (option: any) =>
-              option.mealId === null || option.mealId === meal.id,
-          );
-          curryOptionsArray = mealSpecificOptions.map((option: any) => [
-            option.id,
-            option.name,
-            option.priceAdjustment,
-          ]);
-        }
+        const mealSpecificOptions = globalCurryOptions.filter((option: any) =>
+          option.mealIds.includes(meal.id),
+        );
+        const curryOptionsArray = mealSpecificOptions.map((option: any) => [
+          option.id,
+          option.name,
+          option.priceAdjustment,
+          option.description,
+        ]);
 
         return {
           ...meal,
-          curryOptions: curryOptionsArray,
+          curryOptions: curryOptionsArray ?? [],
         };
       });
 
@@ -69,36 +59,31 @@ export function registerMealRoutes(app: Express) {
 
   app.get("/api/meals/:id", async (req, res) => {
     try {
-      const mealId = parseInt(req.params.id);
-      const meal = await MealModel.findOne({ id: mealId }).lean();
+      const mealId = req.params.id;
+      const meal = await MealModel.findById(mealId).lean();
 
       if (!meal) {
         return res.status(404).json({ message: "Meal not found" });
       }
 
-      let curryOptionsArray = [];
+      const curryOptions = await CurryOption.find({
+        $or: [
+          { mealIds: { $exists: false } },
+          { mealIds: { $size: 0 } },
+          { mealIds: meal.id.toString() },
+        ],
+      }).lean();
 
-      if (meal.curryOptions && meal.curryOptions.length > 0) {
-        curryOptionsArray = meal.curryOptions.map((option: any) => [
-          option.id,
-          option.name,
-          option.priceAdjustment,
-        ]);
-      } else {
-        const globalCurryOptions = await CurryOption.find({
-          $or: [{ mealId: null }, { mealId: mealId }],
-        }).lean();
-
-        curryOptionsArray = globalCurryOptions.map((option: any) => [
-          option.id,
-          option.name,
-          option.priceAdjustment,
-        ]);
-      }
+      const formattedCurryOptions = curryOptions.map((option: any) => ({
+        id: option.id,
+        name: option.name,
+        priceAdjustment: option.priceAdjustment,
+        description: option.description,
+      }));
 
       const enhancedMeal = {
         ...meal,
-        curryOptions: curryOptionsArray,
+        curryOptions: formattedCurryOptions,
       };
 
       res.json(enhancedMeal);
@@ -108,39 +93,6 @@ export function registerMealRoutes(app: Express) {
     }
   });
 
-  app.get("/api/meals/type/:type", async (req, res) => {
-    try {
-      const mealType = req.params.type;
-      const meals = await MealModel.find({ mealType }).lean();
-      const globalCurryOptions = await CurryOption.find().lean();
-
-      const enhancedMeals = meals.map((meal) => {
-        let curryOptionsArray = [];
-
-        if (meal.curryOptions && meal.curryOptions.length > 0) {
-          curryOptionsArray = meal.curryOptions;
-        } else {
-          curryOptionsArray = globalCurryOptions.map((option) => [
-            option._id.toString(),
-            option.name,
-            option.priceAdjustment,
-          ]);
-        }
-
-        return {
-          ...meal,
-          curryOptions: curryOptionsArray,
-        };
-      });
-
-      res.json(enhancedMeals);
-    } catch (err) {
-      console.error("Error fetching meals by type:", err);
-      res.status(500).json({ message: "Error fetching meals by type" });
-    }
-  });
-
-  // Admin meal routes
   app.get(
     "/api/admin/meals/:id",
     authenticateToken,
@@ -151,38 +103,23 @@ export function registerMealRoutes(app: Express) {
         const globalCurryOptions = await CurryOption.find().lean();
 
         const enhancedMeals = meals.map((meal) => {
-          if (meal.curryOptions && meal.curryOptions.length > 0) {
-            if (
-              typeof meal.curryOptions[0] === "object" &&
-              !Array.isArray(meal.curryOptions[0])
-            ) {
-              return meal;
-            }
+          const mealSpecificOptions = globalCurryOptions.filter(
+            (option: any) =>
+              Array.isArray(option.mealIds) &&
+              option.mealIds.includes(meal._id.toString()),
+          );
 
-            return {
-              ...meal,
-              curryOptions: meal.curryOptions.map((option: any) => {
-                if (Array.isArray(option)) {
-                  return {
-                    id: option[0],
-                    name: option[1],
-                    priceAdjustment: option[2],
-                  };
-                }
-                return option;
-              }),
-            };
-          } else {
-            const mealSpecificOptions = globalCurryOptions.filter(
-              (option: any) =>
-                option.mealId === null || option.mealId === meal.id,
-            );
+          const curryOptionsArray = mealSpecificOptions.map((option: any) => ({
+            id: option._id,
+            name: option.name,
+            priceAdjustment: option.priceAdjustment,
+            description: option.description,
+          }));
 
-            return {
-              ...meal,
-              curryOptions: formatCurryOptions(mealSpecificOptions, meal.id),
-            };
-          }
+          return {
+            ...meal,
+            curryOptions: curryOptionsArray,
+          };
         });
 
         console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
@@ -222,46 +159,28 @@ export function registerMealRoutes(app: Express) {
     requireAdmin,
     async (req, res) => {
       try {
+        console.log("Fetching all meals directly from MongoDB...");
         const meals = await MealModel.find().lean();
-
         const globalCurryOptions = await CurryOption.find().lean();
 
         const enhancedMeals = meals.map((meal) => {
-          if (meal.curryOptions && meal.curryOptions.length > 0) {
-            if (
-              typeof meal.curryOptions[0] === "object" &&
-              !Array.isArray(meal.curryOptions[0])
-            ) {
-              return meal;
-            }
+          const mealSpecificOptions = globalCurryOptions.filter((option: any) =>
+            option.mealIds.includes(meal.id),
+          );
+          const curryOptionsArray = mealSpecificOptions.map((option: any) => [
+            option.id,
+            option.name,
+            option.priceAdjustment,
+            option.description,
+          ]);
 
-            return {
-              ...meal,
-              curryOptions: meal.curryOptions.map((option: any) => {
-                if (Array.isArray(option)) {
-                  return {
-                    id: option[0],
-                    name: option[1],
-                    priceAdjustment: option[2],
-                  };
-                }
-                return option;
-              }),
-            };
-          } else {
-            const mealSpecificOptions = globalCurryOptions.filter(
-              (option: any) =>
-                option.mealId === null || option.mealId === meal.id,
-            );
-
-            return {
-              ...meal,
-              curryOptions: formatCurryOptions(mealSpecificOptions, meal.id),
-            };
-          }
+          return {
+            ...meal,
+            curryOptions: curryOptionsArray ?? [],
+          };
         });
 
-        console.log(`Admin: Retrieved ${meals.length} meals from MongoDB`);
+        console.log(`Retrieved ${meals.length} meals from MongoDB`);
         res.json(enhancedMeals);
       } catch (err) {
         console.error("Error fetching meals:", err);
@@ -297,7 +216,7 @@ export function registerMealRoutes(app: Express) {
         const responseData = {
           ...newMeal.toObject(),
           curryOptions: newMeal.curryOptions
-            ? formatCurryOptions(newMeal.curryOptions, newMeal.id)
+            ? formatCurryOptions(newMeal.curryOptions)
             : [],
         };
 
@@ -361,7 +280,7 @@ export function registerMealRoutes(app: Express) {
           ...result,
           curryOptions:
             result.curryOptions && result.curryOptions.length > 0
-              ? formatCurryOptions(result.curryOptions, mealId)
+              ? formatCurryOptions(result.curryOptions)
               : formatCurryOptions(
                   globalCurryOptions.filter((option: any) => {
                     const legacyMatch =
@@ -371,7 +290,6 @@ export function registerMealRoutes(app: Express) {
                       option.mealIds.includes(mealId);
                     return legacyMatch || arrayMatch;
                   }),
-                  mealId,
                 ),
         };
 

@@ -2,7 +2,6 @@ import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { mongoStorage } from "./mongoStorage";
-import { registerMealRoutes } from "./meals-routes";
 import { CurryOption } from "../shared/mongoModels";
 import { serveImageFromMongoDB } from "./upload";
 import { insertAddressSchema } from "@shared/schema";
@@ -34,7 +33,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
 
   registerAuthRoutes(app);
-  registerMealRoutes(app);
   registerMealRoutesNew(app);
   registerCartRoutes(app);
   registerSubscriptionRoutes(app);
