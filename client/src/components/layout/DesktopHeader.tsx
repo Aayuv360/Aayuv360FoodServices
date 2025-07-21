@@ -60,13 +60,15 @@ const DesktopHeader = ({
   };
   return (
     <div className="flex items-center justify-between">
-      <Link to="/" className="flex items-center">
-        <div className="h-10 w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
-          A
-        </div>
-        <h1 className="text-2xl font-bold text-primary">Aayuv</h1>
+      <div className="flex items-center">
+        <Link to="/" className="flex items-center">
+          <div className="h-10 w-10 mr-2 bg-primary rounded-full flex items-center justify-center text-white text-lg font-bold">
+            A
+          </div>
+          <h1 className="text-2xl font-bold text-primary">Aayuv</h1>
+        </Link>
         <LocationSelector />
-      </Link>
+      </div>
 
       <div className="flex items-center gap-4">
         <button

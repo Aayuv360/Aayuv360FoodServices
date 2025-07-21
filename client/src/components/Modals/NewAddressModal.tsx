@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { GoogleMap, Marker, useLoadScript } from "@react-google-maps/api";
+import { GoogleMap, Marker } from "@react-google-maps/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
@@ -8,12 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/use-auth";
 import { useServiceArea } from "@/hooks/use-service-area";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { useUIContext } from "@/contexts/UIContext";
-import {
-  GOOGLE_MAPS_API_KEY,
-  GOOGLE_MAPS_LIBRARIES,
-  ENHANCED_MAP_OPTIONS,
-} from "@/lib/location-constants";
+import { ENHANCED_MAP_OPTIONS } from "@/lib/location-constants";
 import { useLocationManager } from "@/hooks/use-location-manager";
 
 const DEFAULT_COORDS = { lat: 17.406657556136498, lng: 78.48462445101225 };
@@ -35,7 +30,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
 }) => {
   const { user } = useAuth();
   const isMobile = useIsMobile();
-  const { setIsAddressModalOpen } = useUIContext();
   const [currentStep, setCurrentStep] = useState<"map" | "form">("map");
   const [locationSearch, setLocationSearch] = useState("");
   const [suggestions, setSuggestions] = useState<
@@ -46,9 +40,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     isUpdateAddress,
     getCurrentLocation,
     isLoading: locationLoading,
-    selectedAddress,
   } = useLocationManager();
-  const [isLoading, setIsLoading] = useState(false);
 
   const [addressType, setAddressType] = useState(
     editingAddress?.name || "Home",
@@ -66,50 +58,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     lng: number;
   }>(DEFAULT_COORDS);
 
-  const { isLoaded } = useLoadScript({
-    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
-    libraries: GOOGLE_MAPS_LIBRARIES,
-  });
-
-  useEffect(() => {
-    if (!isLoaded) return;
-
-    const initializeFromEditingAddress = async () => {
-      if (editingAddress) {
-        const loc = {
-          lat: editingAddress.latitude,
-          lng: editingAddress.longitude,
-        };
-
-        setCurrentMapLocation(loc);
-        checkServiceAvailability(loc);
-
-        const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ location: loc }, (results, status) => {
-          if (status === "OK" && results?.[0]) {
-            setLocationSearch(results[0].formatted_address || "");
-          }
-        });
-
-        setAddressDetails({
-          landmark: editingAddress.addressLine2 || "",
-        });
-        setAddressType(editingAddress.name || "Home");
-      }
-    };
-
-    initializeFromEditingAddress();
-  }, [isLoaded, editingAddress]);
-
-  useEffect(() => {
-    setIsAddressModalOpen(addressModalOpen);
-    if (!addressModalOpen) {
-      setLocationSearch("");
-      fetchSuggestions("");
-      setCurrentStep("map");
-    }
-  }, [addressModalOpen, setIsAddressModalOpen]);
-
   useEffect(() => {
     if (!isMobile) {
       setCurrentStep("form");
@@ -117,20 +65,6 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
       setCurrentStep("map");
     }
   }, [isMobile]);
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const coords = await getCurrentLocation();
-        checkServiceAvailability(coords);
-        setCurrentMapLocation(coords);
-        reverseGeocode(coords);
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
 
   const reverseGeocode = (location: { lat: number; lng: number }) => {
     if (!window.google) return;
@@ -212,21 +146,31 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     });
   };
 
-  if (!isLoaded) return <div>Loading map...</div>;
-
   const handleGetCurrentLocation = async () => {
     try {
-      setIsLoading(true);
       const coords = await getCurrentLocation();
       checkServiceAvailability(coords);
       setCurrentMapLocation(coords);
       reverseGeocode(coords);
     } catch (error) {
       console.error("Error getting current location:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
+  useEffect(() => {
+    if (addressModalAction !== "addressEdit") {
+      handleGetCurrentLocation();
+    } else {
+      const loc = {
+        lat: editingAddress.latitude,
+        lng: editingAddress.longitude,
+      };
+
+      setCurrentMapLocation(loc);
+      checkServiceAvailability(loc);
+      reverseGeocode(loc);
+      setAddressType(editingAddress.name || "Home");
+    }
+  }, [addressModalAction, addressModalOpen]);
 
   const handleConfirmLocation = () => {
     if (isMobile && isWithinServiceArea) {
@@ -259,9 +203,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           variant="link"
           onClick={handleGetCurrentLocation}
           className="text-sm"
-          disabled={isLoading || locationLoading}
+          disabled={locationLoading}
         >
-          {isLoading || locationLoading ? (
+          {locationLoading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
             </>
@@ -546,9 +490,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           variant="link"
           onClick={handleGetCurrentLocation}
           className="text-sm"
-          disabled={isLoading || locationLoading}
+          disabled={locationLoading}
         >
-          {isLoading || locationLoading ? (
+          {locationLoading ? (
             <>
               <Loader2 className="h-5 w-5 animate-spin" /> Getting location...
             </>
@@ -648,6 +592,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
               onSubmit={(e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target as HTMLFormElement);
+
                 const addressData = {
                   name: formData.get("addressName") as string,
                   phone: formData.get("phone") as string,

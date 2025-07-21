@@ -151,7 +151,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     return false;
   };
   const handleCustomizeItem = (item: any) => {
-    setCustomizingMeal(item.meal);
+    if (!item.meal.curryOptions.length) {
+      addMealDirectlyToCart(item.meal);
+    } else {
+      setCustomizingMeal(item.meal);
+    }
   };
   const calculateMealPrice = useCallback((item: any): number => {
     const basePrice = item.meal?.price || 0;
@@ -294,6 +298,45 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       });
     } finally {
       setIsCreatingOrder(false);
+    }
+  };
+  const addMealDirectlyToCart = async (meal: any) => {
+    try {
+      const defaultCurryOption = {
+        id: "regular",
+        name: "Regular Curry",
+        priceAdjustment: 0,
+      };
+
+      const mealWithDefaultCurry = {
+        ...meal,
+        curryOption: defaultCurryOption,
+      };
+
+      const existingItem = cartItems.find((item) => item.meal?.id === meal.id);
+
+      if (existingItem) {
+        await updateCartItem(existingItem.id, existingItem.quantity + 1);
+
+        toast({
+          title: "Quantity increased",
+          description: `${meal.name} quantity increased`,
+        });
+      } else {
+        await addToCart(mealWithDefaultCurry);
+
+        toast({
+          title: "Added to cart",
+          description: `${meal.name} added to your cart`,
+        });
+      }
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+      toast({
+        title: "Error",
+        description: "There was an error updating your cart. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

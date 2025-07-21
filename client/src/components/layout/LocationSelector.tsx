@@ -192,7 +192,7 @@ const LocationSelector = () => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center py-2 px-2 sm:px-4 max-w-[200px] sm:max-w-[300px] rounded-md hover:bg-gray-50">
+          <button className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-2 px-2 sm:px-4 max-w-[200px] sm:max-w-[300px] rounded-md">
             <MapPin className="h-4 w-4 sm:h-5 sm:w-5 hover:text-primary flex-shrink-0" />
             <div className="whitespace-nowrap overflow-hidden text-ellipsis font-medium">
               {displayText}
