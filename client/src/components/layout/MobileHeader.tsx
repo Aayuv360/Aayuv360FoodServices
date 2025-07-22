@@ -17,7 +17,6 @@ const MobileHeader = () => {
     "login",
   );
   const [authRedirectUrl, setAuthRedirectUrl] = useState("");
-  console.log(user);
   const openAuthModal = (
     mode: "normal" | "subscribe" = "normal",
     redirectUrl = "",

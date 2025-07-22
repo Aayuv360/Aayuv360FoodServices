@@ -67,7 +67,7 @@ export default function OrderTrackingPage() {
   };
 
   const handleStatusUpdate = (status: string) => {
-    console.log("Order status updated:", status);
+    //
   };
 
   if (!orderId) {

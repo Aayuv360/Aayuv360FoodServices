@@ -22,15 +22,10 @@ export default function OtpLoginForm({ onSuccess, onBack }: OtpLoginFormProps) {
 
     const formattedPhoneNumber = `+91${phoneNumber}`;
 
-    // Simulate sending OTP (replace with real API call)
-    console.log("Sending OTP to:", formattedPhoneNumber);
-
     setOtpSent(true);
   };
 
   const handleVerifyOtp = () => {
-    // Simulate OTP verification (replace with real API logic)
-    console.log("Verifying OTP:", otp);
     onSuccess();
   };
 

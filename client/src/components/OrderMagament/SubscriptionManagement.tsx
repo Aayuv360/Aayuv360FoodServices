@@ -220,7 +220,6 @@ export function SubscriptionManagement() {
                   const dayIndex = Math.floor(
                     (today.getTime() - start.getTime()) / (1000 * 60 * 60 * 24),
                   );
-                  console.log(dayIndex);
                   const todayMenu = subscription.menuItems?.[dayIndex];
 
                   return (

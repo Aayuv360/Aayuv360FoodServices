@@ -84,7 +84,6 @@ export const useServiceArea = () => {
       try {
         let nearestKitchen: Kitchen | null = null;
         let minDistance = Infinity;
-        console.log(userLocation, "userLocation");
         kitchens.forEach((kitchen) => {
           const distance = calculateDistance(userLocation, {
             lat: kitchen.lnt,

@@ -43,7 +43,6 @@ export function SubscriptionPlanManagement() {
   const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Query to fetch subscription plans from MongoDB
   const { data: subscriptionPlans, isLoading: isLoadingPlans } = useQuery({
     queryKey: ["/api/admin/subscription-plans"],
     queryFn: async () => {
@@ -58,7 +57,6 @@ export function SubscriptionPlanManagement() {
     },
   });
 
-  // Mutation for updating plan using single unified endpoint
   const updatePlanMutation = useMutation({
     mutationFn: async (planData: Partial<Plan>) => {
       const res = await apiRequest("POST", "/api/admin/subscription-plans", {
@@ -75,26 +73,20 @@ export function SubscriptionPlanManagement() {
       return await res.json();
     },
     onSuccess: async (data) => {
-      console.log("✅ Plan update successful:", data);
-
-      // Clear cache and refresh data
       queryClient.removeQueries({
         queryKey: ["/api/admin/subscription-plans"],
       });
       queryClient.removeQueries({ queryKey: ["/api/subscription-plans"] });
 
-      // Wait a moment for database to sync then refetch
       setTimeout(() => {
         queryClient.refetchQueries({
           queryKey: ["/api/admin/subscription-plans"],
         });
       }, 100);
 
-      // Clear the form and close dialog
       setIsEditDialogOpen(false);
       setEditingPlan(null);
 
-      // Show success message
       toast({
         title: "Success",
         description: "Subscription plan updated successfully",
@@ -127,12 +119,11 @@ export function SubscriptionPlanManagement() {
 
   const getPlansForDietary = (dietary: string) => {
     if (!subscriptionPlans) return [];
-    
-    // Handle grouped API response structure
-    const group = subscriptionPlans.find((group: any) => 
-      group.dietaryPreference === dietary
+
+    const group = subscriptionPlans.find(
+      (group: any) => group.dietaryPreference === dietary,
     );
-    
+
     return group ? group.plans : [];
   };
 
@@ -140,7 +131,8 @@ export function SubscriptionPlanManagement() {
     const plans = getPlansForDietary(dietary);
     return plans.find(
       (plan: any) =>
-        plan.planType === type || plan?.name?.toLowerCase() === type.toLowerCase(),
+        plan.planType === type ||
+        plan?.name?.toLowerCase() === type.toLowerCase(),
     );
   };
 
@@ -172,7 +164,6 @@ export function SubscriptionPlanManagement() {
       });
       setIsEditDialogOpen(true);
     } else {
-      // Create new plan
       setEditingPlan({
         id: `${dietary}_${type}`,
         type: type as "basic" | "premium" | "family",
@@ -241,12 +232,14 @@ export function SubscriptionPlanManagement() {
     }
   };
 
-  const updateMenuItem = (dayNumber: number, field: 'main' | 'sides', value: string | string[]) => {
+  const updateMenuItem = (
+    dayNumber: number,
+    field: "main" | "sides",
+    value: string | string[],
+  ) => {
     if (editingPlan && editingPlan.menuItems) {
-      const updatedMenuItems = editingPlan.menuItems.map(item => 
-        item.day === dayNumber 
-          ? { ...item, [field]: value }
-          : item
+      const updatedMenuItems = editingPlan.menuItems.map((item) =>
+        item.day === dayNumber ? { ...item, [field]: value } : item,
       );
       setEditingPlan({
         ...editingPlan,
@@ -257,55 +250,67 @@ export function SubscriptionPlanManagement() {
 
   const addSideDish = (dayNumber: number) => {
     if (editingPlan && editingPlan.menuItems) {
-      const menuItem = editingPlan.menuItems.find(item => item.day === dayNumber);
+      const menuItem = editingPlan.menuItems.find(
+        (item) => item.day === dayNumber,
+      );
       if (menuItem) {
-        updateMenuItem(dayNumber, 'sides', [...menuItem.sides, '']);
+        updateMenuItem(dayNumber, "sides", [...menuItem.sides, ""]);
       }
     }
   };
 
   const removeSideDish = (dayNumber: number, index: number) => {
     if (editingPlan && editingPlan.menuItems) {
-      const menuItem = editingPlan.menuItems.find(item => item.day === dayNumber);
+      const menuItem = editingPlan.menuItems.find(
+        (item) => item.day === dayNumber,
+      );
       if (menuItem) {
-        updateMenuItem(dayNumber, 'sides', menuItem.sides.filter((_, i) => i !== index));
+        updateMenuItem(
+          dayNumber,
+          "sides",
+          menuItem.sides.filter((_, i) => i !== index),
+        );
       }
     }
   };
 
   const updateSideDish = (dayNumber: number, index: number, value: string) => {
     if (editingPlan && editingPlan.menuItems) {
-      const menuItem = editingPlan.menuItems.find(item => item.day === dayNumber);
+      const menuItem = editingPlan.menuItems.find(
+        (item) => item.day === dayNumber,
+      );
       if (menuItem) {
         const currentSides = [...menuItem.sides];
         currentSides[index] = value;
-        updateMenuItem(dayNumber, 'sides', currentSides);
+        updateMenuItem(dayNumber, "sides", currentSides);
       }
     }
   };
 
   const addMenuItem = () => {
     if (editingPlan && editingPlan.menuItems) {
-      const maxDay = Math.max(...editingPlan.menuItems.map(item => item.day));
+      const maxDay = Math.max(...editingPlan.menuItems.map((item) => item.day));
       const newDay = maxDay + 1;
       const newMenuItem: MenuItem = {
         day: newDay,
-        main: '',
-        sides: ['']
+        main: "",
+        sides: [""],
       };
       setEditingPlan({
         ...editingPlan,
-        menuItems: [...editingPlan.menuItems, newMenuItem]
+        menuItems: [...editingPlan.menuItems, newMenuItem],
       });
     }
   };
 
   const removeMenuItem = (dayNumber: number) => {
     if (editingPlan && editingPlan.menuItems) {
-      const updatedMenuItems = editingPlan.menuItems.filter(item => item.day !== dayNumber);
+      const updatedMenuItems = editingPlan.menuItems.filter(
+        (item) => item.day !== dayNumber,
+      );
       setEditingPlan({
         ...editingPlan,
-        menuItems: updatedMenuItems
+        menuItems: updatedMenuItems,
       });
     }
   };
@@ -316,7 +321,6 @@ export function SubscriptionPlanManagement() {
         <h2 className="text-2xl font-semibold">Subscription Plan Management</h2>
       </div>
 
-      {/* Dietary Preference Buttons */}
       <div className="flex gap-4">
         {dietaryPreferences.map((dietary) => (
           <Button
@@ -330,7 +334,6 @@ export function SubscriptionPlanManagement() {
         ))}
       </div>
 
-      {/* Plans Grid */}
       {isLoadingPlans ? (
         <div className="flex justify-center items-center py-8">
           <Loader2 className="h-6 w-6 animate-spin" />
@@ -410,14 +413,16 @@ export function SubscriptionPlanManagement() {
                           </h4>
                           <div className="text-xs space-y-1">
                             {plan.menuItems.map((item: MenuItem) => (
-                                <div key={item.day}>
-                                  <span className="font-medium">Day {item.day}:</span>{" "}
-                                  {item.main}
-                                  {item.sides && item.sides.length > 0 &&
-                                    ` + ${item.sides.join(", ")}`}
-                                </div>
-                              ),
-                            )}
+                              <div key={item.day}>
+                                <span className="font-medium">
+                                  Day {item.day}:
+                                </span>{" "}
+                                {item.main}
+                                {item.sides &&
+                                  item.sides.length > 0 &&
+                                  ` + ${item.sides.join(", ")}`}
+                              </div>
+                            ))}
                           </div>
                         </div>
                       )}
@@ -553,65 +558,80 @@ export function SubscriptionPlanManagement() {
                   </Button>
                 </div>
                 <div className="space-y-4">
-                  {editingPlan.menuItems && editingPlan.menuItems.map((item: MenuItem) => (
-                    <div key={item.day} className="border rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-3">
-                        <h4 className="font-medium">Day {item.day}</h4>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => removeMenuItem(item.day)}
-                          className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                      <div className="space-y-3">
-                        <div>
-                          <label className="text-xs font-medium text-gray-600">Main Dish</label>
-                          <Input
-                            value={item.main}
-                            onChange={(e) => updateMenuItem(item.day, 'main', e.target.value)}
-                            placeholder={`Enter main dish for Day ${item.day}`}
-                            className="mt-1"
-                          />
+                  {editingPlan.menuItems &&
+                    editingPlan.menuItems.map((item: MenuItem) => (
+                      <div key={item.day} className="border rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium">Day {item.day}</h4>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeMenuItem(item.day)}
+                            className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
                         </div>
-                        <div>
-                          <div className="flex justify-between items-center mb-2">
-                            <label className="text-xs font-medium text-gray-600">Side Dishes</label>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => addSideDish(item.day)}
-                              className="h-6 px-2 text-xs"
-                            >
-                              Add Side
-                            </Button>
+                        <div className="space-y-3">
+                          <div>
+                            <label className="text-xs font-medium text-gray-600">
+                              Main Dish
+                            </label>
+                            <Input
+                              value={item.main}
+                              onChange={(e) =>
+                                updateMenuItem(item.day, "main", e.target.value)
+                              }
+                              placeholder={`Enter main dish for Day ${item.day}`}
+                              className="mt-1"
+                            />
                           </div>
-                          <div className="space-y-2">
-                            {item.sides.map((side: string, index: number) => (
-                              <div key={index} className="flex gap-2">
-                                <Input
-                                  value={side}
-                                  onChange={(e) => updateSideDish(item.day, index, e.target.value)}
-                                  placeholder={`Enter side dish ${index + 1}`}
-                                  className="text-sm"
-                                />
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => removeSideDish(item.day, index)}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <X className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            ))}
+                          <div>
+                            <div className="flex justify-between items-center mb-2">
+                              <label className="text-xs font-medium text-gray-600">
+                                Side Dishes
+                              </label>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addSideDish(item.day)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                Add Side
+                              </Button>
+                            </div>
+                            <div className="space-y-2">
+                              {item.sides.map((side: string, index: number) => (
+                                <div key={index} className="flex gap-2">
+                                  <Input
+                                    value={side}
+                                    onChange={(e) =>
+                                      updateSideDish(
+                                        item.day,
+                                        index,
+                                        e.target.value,
+                                      )
+                                    }
+                                    placeholder={`Enter side dish ${index + 1}`}
+                                    className="text-sm"
+                                  />
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() =>
+                                      removeSideDish(item.day, index)
+                                    }
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             </div>

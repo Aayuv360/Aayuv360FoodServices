@@ -113,7 +113,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (!user) {
       throw new Error("authentication_required");
     }
-    console.log("mealUseCaart", meal);
     try {
       setLoading(true);
 

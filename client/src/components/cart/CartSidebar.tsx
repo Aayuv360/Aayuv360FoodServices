@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Minus,
@@ -77,7 +77,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { initiatePayment } = useRazorpay();
-  const { distance } = useServiceArea();
+  const { distance, checkServiceAvailability } = useServiceArea();
   const { savedAddresses, selectAddress, deleteAddress, selectedAddress } =
     useLocationManager();
   const notSavedAddress = savedAddresses?.find(
@@ -86,6 +86,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const handleDeleteAddress = async (addressId: number) => {
     deleteAddress(addressId);
   };
+  useEffect(() => {
+    if (selectedAddress) {
+      checkServiceAvailability(selectedAddress?.coords);
+    }
+  }, [selectedAddress]);
 
   const calculateCartTotal = useMemo((): number => {
     let total = 0;
@@ -174,7 +179,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     !isLoading && discountCharges
       ? calculateTotalPayable({
           itemTotal: calculateCartTotal,
-          selectedLocationRange: distance?.toFixed(1),
+          selectedLocationRange: Number(distance?.toFixed(1)) ?? 5,
           data: discountCharges,
         })
       : null;

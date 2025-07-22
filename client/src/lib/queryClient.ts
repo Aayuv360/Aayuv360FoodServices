@@ -19,16 +19,18 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  // If unauthorized and not already trying to refresh, attempt token refresh
-  if (res.status === 401 && !url.includes('/api/auth/refresh') && !url.includes('/api/auth/login')) {
+  if (
+    res.status === 401 &&
+    !url.includes("/api/auth/refresh") &&
+    !url.includes("/api/auth/login")
+  ) {
     try {
-      const refreshRes = await fetch('/api/auth/refresh', {
-        method: 'POST',
-        credentials: 'include',
+      const refreshRes = await fetch("/api/auth/refresh", {
+        method: "POST",
+        credentials: "include",
       });
-      
+
       if (refreshRes.ok) {
-        // Retry original request with new token
         res = await fetch(url, {
           method,
           headers: data ? { "Content-Type": "application/json" } : {},
@@ -37,7 +39,7 @@ export async function apiRequest(
         });
       }
     } catch (refreshError) {
-      console.log('Token refresh failed:', refreshError);
+      //
     }
   }
 
@@ -57,13 +59,17 @@ export const getQueryFn: <T>(options: {
 
     // If unauthorized and not already trying to refresh, attempt token refresh
     const url = queryKey[0] as string;
-    if (res.status === 401 && !url.includes('/api/auth/refresh') && !url.includes('/api/auth/login')) {
+    if (
+      res.status === 401 &&
+      !url.includes("/api/auth/refresh") &&
+      !url.includes("/api/auth/login")
+    ) {
       try {
-        const refreshRes = await fetch('/api/auth/refresh', {
-          method: 'POST',
-          credentials: 'include',
+        const refreshRes = await fetch("/api/auth/refresh", {
+          method: "POST",
+          credentials: "include",
         });
-        
+
         if (refreshRes.ok) {
           // Retry original request with new token
           res = await fetch(url, {
@@ -71,7 +77,7 @@ export const getQueryFn: <T>(options: {
           });
         }
       } catch (refreshError) {
-        console.log('Token refresh failed in query:', refreshError);
+        //
       }
     }
 

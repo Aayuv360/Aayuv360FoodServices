@@ -52,7 +52,6 @@ export const calculateTotalPayable = ({
   data,
 }: Charges) => {
   const { delivery, discount, tax, fees } = data;
-
   let fullDeliveryFee;
 
   if (selectedLocationRange <= (delivery?.minDistance ?? 5)) {
