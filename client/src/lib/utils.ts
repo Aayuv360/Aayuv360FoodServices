@@ -9,6 +9,7 @@ interface Charges {
       extraPerKm: number;
       peakCharge?: number;
       freeDeliveryThreshold: number;
+      DeliveryFeeFreePercentage?: number;
     };
     discount: {
       flatDiscount: number;
@@ -57,7 +58,8 @@ export const calculateTotalPayable = ({
   let deliveryDiscount = 0;
 
   if (itemTotal > delivery.freeDeliveryThreshold) {
-    deliveryFee = fullDeliveryFee * 0.5;
+    const discountPercentage = delivery?.DeliveryFeeFreePercentage ?? 50;
+    deliveryFee = fullDeliveryFee * (discountPercentage / 100);
     deliveryDiscount = fullDeliveryFee - deliveryFee;
   }
 

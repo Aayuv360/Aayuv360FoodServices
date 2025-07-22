@@ -11,6 +11,7 @@ interface DeliverySettings {
   extraPerKm?: number;
   peakCharge?: number;
   freeDeliveryThreshold?: number;
+  DeliveryFeeFreePercentage?: number;
 }
 
 interface DiscountSettings {
@@ -189,6 +190,7 @@ const AdminSettingsPage: React.FC = () => {
           "extraPerKm",
           "peakCharge",
           "freeDeliveryThreshold",
+          "DeliveryFeeFreePercentage",
         ])}
 
         {renderSection("discount", ["flatDiscount", "minOrderValue"])}
