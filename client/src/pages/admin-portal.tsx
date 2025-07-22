@@ -68,6 +68,7 @@ import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import AdminMealCard from "@/components/admin/AdminMealCard";
 import ImageUpload from "@/components/admin/ImageUpload";
+import AdminSettingsPage from "@/components/admin/AdminSettingsPage";
 
 export default function AdminPortalPage() {
   const { user } = useAuth();
@@ -84,9 +85,6 @@ export default function AdminPortalPage() {
   const [selectedMealIds, setSelectedMealIds] = useState<number[]>([]);
   const [mealImageUrl, setMealImageUrl] = useState<string | null>(null);
 
-  // Curry options parsing function removed - now handled by backend
-
-  // Query to fetch users
   const { data: users, isLoading: isLoadingUsers } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: async () => {
@@ -556,6 +554,9 @@ export default function AdminPortalPage() {
           <TabsTrigger value="locations">Locations</TabsTrigger>
           <TabsTrigger value="subscription-plans">
             Subscription Plans
+          </TabsTrigger>
+          <TabsTrigger value="DiscoutDelivaryCharges">
+            Discout and delivary charges{" "}
           </TabsTrigger>
         </TabsList>
 
@@ -1381,6 +1382,9 @@ export default function AdminPortalPage() {
 
         <TabsContent value="subscription-plans" className="space-y-4">
           <SubscriptionPlanManagement />
+        </TabsContent>
+        <TabsContent value="DiscoutDelivaryCharges" className="space-y-4">
+          <AdminSettingsPage />
         </TabsContent>
       </Tabs>
     </div>

@@ -1,24 +1,39 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-
+interface Charges {
+  itemTotal: number;
+  selectedLocationRange: number;
+  data: {
+    delivery: {
+      baseFee: number;
+      extraPerKm: number;
+      peakCharge?: number;
+      freeDeliveryThreshold: number;
+    };
+    discount: {
+      flatDiscount: number;
+      minOrderValue: number;
+    };
+    tax: {
+      gstPercent: number;
+      serviceTax: number;
+    };
+    fees: {
+      smallOrderFee: number;
+      packagingFee: number;
+    };
+  };
+}
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/**
- * Format a price to a localized currency string
- * @param price Price in rupees
- * @param currency Currency code (default: INR)
- * @returns Formatted price string
- */
 export function formatPrice(
   price: number | undefined,
   currency: string = "INR",
 ): string {
   if (price === undefined) return "₹0";
 
-  // Check if price is likely in paise (high value) or already in rupees (lower value)
-  // A typical millet meal shouldn't cost more than ₹1000, so we use that as threshold
   const finalPrice = price;
 
   return new Intl.NumberFormat("en-IN", {
@@ -28,3 +43,56 @@ export function formatPrice(
     maximumFractionDigits: 0,
   }).format(finalPrice);
 }
+
+export const calculateTotalPayable = ({
+  itemTotal,
+  selectedLocationRange,
+  data,
+}: Charges) => {
+  const { delivery, discount, tax, fees } = data;
+
+  const fullDeliveryFee =
+    delivery.baseFee + (selectedLocationRange - 1) * delivery.extraPerKm;
+  let deliveryFee = fullDeliveryFee;
+  let deliveryDiscount = 0;
+
+  if (itemTotal > delivery.freeDeliveryThreshold) {
+    deliveryFee = fullDeliveryFee * 0.5;
+    deliveryDiscount = fullDeliveryFee - deliveryFee;
+  }
+
+  const discountAmount =
+    itemTotal >= discount.minOrderValue ? discount.flatDiscount : 0;
+
+  const smallOrderFee =
+    itemTotal < discount.minOrderValue ? fees.smallOrderFee : 0;
+  const packagingFee = fees.packagingFee;
+
+  const subTotal =
+    itemTotal - discountAmount + deliveryFee + smallOrderFee + packagingFee;
+
+  const gstAmount = (subTotal * tax.gstPercent) / 100;
+  const serviceTaxAmount = (subTotal * tax.serviceTax) / 100;
+  const totalTax = gstAmount + serviceTaxAmount;
+
+  const toPay = subTotal + totalTax;
+
+  return {
+    toPay: toPay.toFixed(2),
+    itemTotal: itemTotal.toFixed(2),
+    gst: gstAmount.toFixed(2),
+    serviceTax: serviceTaxAmount.toFixed(2),
+    discount: discountAmount.toFixed(2),
+    deliveryFee: deliveryFee.toFixed(2),
+    deliveryDiscount:
+      deliveryDiscount > 0 ? deliveryDiscount.toFixed(2) : undefined,
+    smallOrderFee: smallOrderFee.toFixed(2),
+    packagingFee: packagingFee.toFixed(2),
+    taxesAndCharges: (
+      deliveryFee +
+      smallOrderFee +
+      packagingFee +
+      totalTax
+    ).toFixed(2),
+  };
+};

@@ -2,6 +2,7 @@ import { connectToMongoDB } from "./db";
 import {
   User as UserModel,
   SubscriptionPlan as SubscriptionPlanModel,
+  DiscountAndDeliverySettings,
 } from "../shared/mongoModels";
 import { milletMeals, MealDataItem } from "./mealData";
 import { Meal as MealModel } from "../shared/mongoModels";
@@ -249,6 +250,36 @@ export async function seedDatabase() {
       console.log(
         `${subscriptionPlans.length} subscription plans added successfully to MongoDB`,
       );
+    }
+    const existingSettings = await DiscountAndDeliverySettings.findOne();
+
+    if (!existingSettings) {
+      console.log("Inserting default discount and delivery settings...");
+
+      const inserSettings = {
+        delivery: {
+          baseFee: 50,
+          extraPerKm: 10,
+          peakCharge: 20,
+          freeDeliveryThreshold: 500,
+        },
+        discount: {
+          flatDiscount: 50,
+          minOrderValue: 300,
+        },
+        tax: {
+          gstPercent: 18,
+          serviceTax: 5,
+        },
+        fees: {
+          smallOrderFee: 15,
+          packagingFee: 5,
+        },
+      };
+
+      await DiscountAndDeliverySettings.create(inserSettings);
+
+      console.log("Default discount and delivery settings inserted.");
     }
 
     console.log("Database seeding completed successfully");

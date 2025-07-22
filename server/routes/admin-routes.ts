@@ -4,6 +4,7 @@ import { analyticsService } from "../analytics";
 import { updateOrderDeliveryStatus } from "../delivery-status";
 import { logAPIRequest } from "../logger";
 import { authenticateToken, requireAdmin } from "../jwt-middleware";
+import { DiscountAndDeliverySettings } from "@shared/mongoModels";
 
 export function registerAdminRoutes(app: Express) {
   app.get(
@@ -286,39 +287,42 @@ export function registerAdminRoutes(app: Express) {
   );
 
   app.post(
-    "/api/admin/update-prices",
+    "/api/DiscountAndDeliverySettings",
     authenticateToken,
     requireAdmin,
     async (req, res) => {
       try {
-        console.log("Starting price update process...");
-        const { Meal: MealModel } = await import("../../shared/mongoModels");
-        const meals = await MealModel.find({});
-        console.log(`Found ${meals.length} meals to update`);
+        const settingsData = req.body;
 
-        const updates = [];
-        for (const meal of meals) {
-          const oldPrice = meal.price;
-          const newPrice = Math.round(oldPrice / 100);
-          console.log(
-            `Updating meal '${meal.name}': ${oldPrice} -> ${newPrice}`,
+        const updatedSettings =
+          await DiscountAndDeliverySettings.findOneAndUpdate(
+            {},
+            { $set: settingsData },
+            {
+              new: true,
+              upsert: true,
+              runValidators: true,
+            },
           );
 
-          meal.price = newPrice;
-          updates.push(meal.save());
-        }
-
-        await Promise.all(updates);
-        console.log("Price update completed successfully!");
-
-        res.json({
-          success: true,
-          message: `Updated prices for ${meals.length} meals`,
-        });
+        res.status(200).json(updatedSettings);
       } catch (err) {
-        console.error("Error updating meal prices:", err);
-        res.status(500).json({ message: "Error updating meal prices" });
+        console.error("Error updating settings:", err);
+
+        res.status(500).json({ message: "Error updating settings" });
       }
     },
   );
+  app.get("/api/DiscountAndDeliverySettings", async (req, res) => {
+    try {
+      const settings = await DiscountAndDeliverySettings.findOne({});
+      if (!settings) {
+        return res.status(404).json({ message: "Settings not found" });
+      }
+      res.json(settings);
+    } catch (err) {
+      console.error("Error fetching settings:", err);
+      res.status(500).json({ message: "Error fetching settings" });
+    }
+  });
 }

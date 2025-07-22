@@ -16,7 +16,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { useRazorpay } from "@/hooks/use-razorpay";
-import { formatPrice } from "@/lib/utils";
+import { calculateTotalPayable, formatPrice } from "@/lib/utils";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import { CurryOptionsModal } from "@/components/menu/CurryOptionsModal";
@@ -31,6 +31,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useDiscountAndDeliverySettings } from "@/hooks/use-commonServices";
 interface CartSidebarProps {
   open: boolean;
   onClose: () => void;
@@ -58,7 +59,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [deletingAddress, setDeletingAddress] = useState<any>(null);
   const [isPaymentInProgress, setIsPaymentInProgress] = useState(false);
-
+  const {
+    data: discountCharges,
+    isLoading,
+    isError,
+  } = useDiscountAndDeliverySettings();
   const {
     cartItems,
     loading,
@@ -164,6 +169,14 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
     return (basePrice + curryAdjustment) * item.quantity;
   }, []);
+  const priceResult =
+    !isLoading && discountCharges
+      ? calculateTotalPayable({
+          itemTotal: calculateCartTotal,
+          selectedLocationRange: 5,
+          data: discountCharges,
+        })
+      : null;
 
   const handleNextStep = async () => {
     if (!user) {
@@ -446,9 +459,15 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               ))}
             </div>
 
-            <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium mb-4 flex items-center justify-center shadow-sm animate-bounce">
-              🎉 You saved ₹25 on this order!
-            </div>
+            {(Number(priceResult?.discount) > 0 ||
+              Number(priceResult?.deliveryDiscount) > 0) && (
+              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium mb-4 flex items-center justify-center shadow-sm animate-bounce">
+                🎉 You saved ₹
+                {Number(priceResult?.discount) +
+                  Number(priceResult?.deliveryDiscount || 0)}{" "}
+                on this order!
+              </div>
+            )}
 
             <Accordion
               type="single"
@@ -461,11 +480,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     <div className="flex gap-2 text-sm sm:text-base font-bold text-gray-900">
                       <span>💰 To pay</span>
                       <span className="text-primary">
-                        {formatPrice(
-                          calculateCartTotal +
-                            (deliveryType === "express" ? 60 : 40) +
-                            20,
-                        )}
+                        ₹{priceResult?.toPay}
                       </span>
                     </div>
                     <p className="text-xs text-gray-700 pl-7">
@@ -475,31 +490,45 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="pt-4">
-                    <div className="px-4 space-y-2 text-xs sm:text-sm">
-                      <div className="flex justify-between text-gray-700">
+                    <div className="px-4 space-y-2 text-xs sm:text-sm text-gray-700">
+                      <div className="flex justify-between">
                         <span>Items Total</span>
-                        <span>{formatPrice(calculateCartTotal)}</span>
+                        <span>₹{priceResult?.itemTotal}</span>
                       </div>
-                      <div className="flex justify-between text-gray-700">
+
+                      {priceResult?.discount !== "0.00" && (
+                        <div className="flex justify-between text-green-700">
+                          <span>Item Discount</span>
+                          <span>- ₹{priceResult?.discount}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between">
                         <span>Delivery Charge</span>
-                        <span>
-                          {formatPrice(deliveryType === "express" ? 60 : 40)}
-                        </span>
+                        <span>₹{priceResult?.deliveryFee}</span>
                       </div>
-                      <div className="flex justify-between text-gray-700">
-                        <span>Taxes</span>
-                        <span>{formatPrice(20)}</span>
+
+                      {priceResult?.deliveryDiscount && (
+                        <div className="flex justify-between text-green-700">
+                          <span>Delivery Fee Discount</span>
+                          <span>- ₹{priceResult?.deliveryDiscount}</span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between">
+                        <span>GST</span>
+                        <span>₹{priceResult?.gst}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Service Tax</span>
+                        <span>₹{priceResult?.serviceTax}</span>
                       </div>
                     </div>
 
                     <div className="border-t border-dashed border-orange-300 px-4 pt-2 mt-2 flex justify-between font-extrabold text-sm sm:text-base">
                       <span className="text-gray-900">To pay</span>
                       <span className="text-primary">
-                        {formatPrice(
-                          calculateCartTotal +
-                            (deliveryType === "express" ? 60 : 40) +
-                            20,
-                        )}
+                        ₹{priceResult?.toPay}
                       </span>
                     </div>
                   </div>

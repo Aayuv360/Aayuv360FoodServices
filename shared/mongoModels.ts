@@ -659,3 +659,42 @@ export const DeletionRequest = mongoose.model<IDeletionRequest>(
   "DeletionRequest",
   DeletionRequestSchema,
 );
+
+const deliverySchema = new mongoose.Schema({
+  baseFee: { type: Number, required: true, min: 0 },
+  extraPerKm: { type: Number, required: true, min: 0 },
+  peakCharge: { type: Number, required: true, min: 0 },
+  freeDeliveryThreshold: { type: Number, required: true, min: 0 },
+});
+
+const discountSchema = new mongoose.Schema({
+  flatDiscount: { type: Number, required: true, min: 0 },
+  minOrderValue: { type: Number, required: true, min: 0 },
+});
+
+const taxSchema = new mongoose.Schema({
+  gstPercent: { type: Number, required: true, min: 0, max: 100 },
+  serviceTax: { type: Number, required: true, min: 0, max: 100 },
+});
+
+const feesSchema = new mongoose.Schema({
+  smallOrderFee: { type: Number, required: true, min: 0 },
+  packagingFee: { type: Number, required: true, min: 0 },
+});
+
+const discountSettingsSchema = new mongoose.Schema(
+  {
+    delivery: { type: deliverySchema, required: true },
+    discount: { type: discountSchema, required: true },
+    tax: { type: taxSchema, required: true },
+    fees: { type: feesSchema, required: true },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+export const DiscountAndDeliverySettings = mongoose.model(
+  "DiscountAndDelivery",
+  discountSettingsSchema,
+);
