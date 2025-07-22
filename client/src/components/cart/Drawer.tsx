@@ -56,10 +56,10 @@ export const Drawer = ({
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto">{children}</div>
+          <div className="flex-1 overflow-y-auto py-4">{children}</div>
 
           {footer && (
-            <div className="sticky bottom-0 z-50 bg-white/95 backdrop-blur-md border-t p-4 rounded-t-xl shadow-[0_-4px_12px_rgba(0,0,0,0.25)]">
+            <div className="sticky bottom-0 z-50 bg-white/95 backdrop-blur-md border-t p-4 rounded-t-2xl shadow-[0_-4px_12px_rgba(0,0,0,0.25)]">
               {footer}
             </div>
           )}

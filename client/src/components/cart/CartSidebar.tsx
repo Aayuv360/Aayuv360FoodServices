@@ -478,7 +478,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
             <Accordion
               type="single"
               collapsible
-              className="border-t border-orange-200"
+              className="border-t border-orange-200 mb-4"
             >
               <AccordionItem value="bill-details">
                 <AccordionTrigger className="px-4 pt-4">
@@ -542,8 +542,8 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               </AccordionItem>
             </Accordion>
 
-            <div className="mt-6 bg-yellow-50 p-4 mx-4 rounded-xl flex items-start gap-3 shadow-inner border border-yellow-200">
-              <Info className="text-orange-600 mt-0.5 w-5 h-5" />
+            <div className="mt-4 bg-yellow-50 p-4 mx-4 rounded-xl flex items-center gap-3 shadow-inner border border-yellow-200">
+              <Info className="text-orange-600 w-5 h-5 shrink-0" />
               <p className="text-xs text-gray-700">
                 Please double-check your order and delivery details before
                 placing it. Orders are non-refundable once confirmed.
