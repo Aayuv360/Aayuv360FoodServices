@@ -10,6 +10,7 @@ interface Charges {
       peakCharge?: number;
       freeDeliveryThreshold: number;
       DeliveryFeeFreePercentage?: number;
+      minDistance?: number;
     };
     discount: {
       flatDiscount: number;
@@ -52,8 +53,17 @@ export const calculateTotalPayable = ({
 }: Charges) => {
   const { delivery, discount, tax, fees } = data;
 
-  const fullDeliveryFee =
-    delivery.baseFee + (selectedLocationRange - 1) * delivery.extraPerKm;
+  let fullDeliveryFee;
+
+  if (selectedLocationRange <= (delivery?.minDistance ?? 5)) {
+    fullDeliveryFee = delivery.baseFee;
+  } else {
+    fullDeliveryFee =
+      delivery.baseFee +
+      (selectedLocationRange - (delivery?.minDistance ?? 5)) *
+        delivery.extraPerKm;
+  }
+
   let deliveryFee = fullDeliveryFee;
   let deliveryDiscount = 0;
 

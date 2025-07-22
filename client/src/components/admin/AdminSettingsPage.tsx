@@ -12,6 +12,7 @@ interface DeliverySettings {
   peakCharge?: number;
   freeDeliveryThreshold?: number;
   DeliveryFeeFreePercentage?: number;
+  minDistance?: number;
 }
 
 interface DiscountSettings {
@@ -130,7 +131,7 @@ const AdminSettingsPage: React.FC = () => {
                 {key.replace(/([A-Z])/g, " $1")}:
               </span>
               <span className="text-gray-900 font-semibold">
-                ₹{(settings?.[section]?.[key] as number) ?? "N/A"}
+                {(settings?.[section]?.[key] as number) ?? "N/A"}
               </span>
             </div>
           ))}
@@ -191,6 +192,7 @@ const AdminSettingsPage: React.FC = () => {
           "peakCharge",
           "freeDeliveryThreshold",
           "DeliveryFeeFreePercentage",
+          "minDistance",
         ])}
 
         {renderSection("discount", ["flatDiscount", "minOrderValue"])}

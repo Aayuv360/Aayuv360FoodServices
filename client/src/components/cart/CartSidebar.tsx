@@ -32,6 +32,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useDiscountAndDeliverySettings } from "@/hooks/use-commonServices";
+import { useServiceArea } from "@/hooks/use-service-area";
 interface CartSidebarProps {
   open: boolean;
   onClose: () => void;
@@ -76,12 +77,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { initiatePayment } = useRazorpay();
+  const { distance } = useServiceArea();
   const { savedAddresses, selectAddress, deleteAddress, selectedAddress } =
     useLocationManager();
   const notSavedAddress = savedAddresses?.find(
     (item) => item.id === selectedAddress?.id,
   );
-
   const handleDeleteAddress = async (addressId: number) => {
     deleteAddress(addressId);
   };
@@ -173,7 +174,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     !isLoading && discountCharges
       ? calculateTotalPayable({
           itemTotal: calculateCartTotal,
-          selectedLocationRange: 5,
+          selectedLocationRange: distance?.toFixed(1),
           data: discountCharges,
         })
       : null;

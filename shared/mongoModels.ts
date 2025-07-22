@@ -666,6 +666,7 @@ const deliverySchema = new mongoose.Schema({
   peakCharge: { type: Number, required: true, min: 0 },
   freeDeliveryThreshold: { type: Number, required: true, min: 0 },
   DeliveryFeeFreePercentage: { type: Number, required: true, min: 0, max: 100 },
+  minDistance: { type: Number, required: true, min: 0, max: 10 },
 });
 
 const discountSchema = new mongoose.Schema({
