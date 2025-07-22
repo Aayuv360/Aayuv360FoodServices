@@ -17,13 +17,13 @@ export const Address: React.FC<AddressProps> = ({
         <div className="flex items-start gap-2 sm:gap-3">
           <MapPin className="text-orange-600 mt-0.5 w-5 h-5 sm:w-6 sm:h-6" />
           <div className="flex flex-col">
-            <span className="font-semibold text-sm sm:text-base">
+            <span className="font-semibold text-sm sm:text-sm">
               Delivering to {selectedAddress?.label}
             </span>
-            <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">
+            <p className="text-xs sm:text-xs text-gray-600 line-clamp-2">
               {selectedAddress?.address}
             </p>
-            <p className="text-xs sm:text-sm text-gray-600">
+            <p className="text-xs sm:text-xs text-gray-600">
               Phone: {selectedAddress?.phone}
             </p>
           </div>
