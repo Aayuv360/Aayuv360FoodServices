@@ -206,9 +206,6 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         throw new Error("Selected address not found");
       }
 
-      const total =
-        calculateCartTotal + (deliveryType === "express" ? 60 : 40) + 20;
-
       const orderIdRes = await apiRequest("POST", "/api/orders/generate-id");
       const { orderId } = await orderIdRes.json();
 
@@ -231,13 +228,13 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           curryOptionPrice: (item.meal as any)?.curryOption?.priceAdjustment,
         })),
         paymentMethod: "razorpay",
-        totalPrice: total,
+        totalPrice: Number(priceResult?.toPay ?? 0),
         deliveryAddressId: selectedAddress?.id,
       };
 
       setIsPaymentInProgress(true);
       initiatePayment({
-        amount: total,
+        amount: Number(priceResult?.toPay ?? 0),
         orderId: orderId,
         description: "Food Order",
         name: "Aayuv Millet Foods",
@@ -579,14 +576,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           ) : isPaymentInProgress ? (
             <>Payment in progress...</>
           ) : (
-            <>
-              💳 Pay{" "}
-              {formatPrice(
-                calculateCartTotal +
-                  (deliveryType === "express" ? 60 : 40) +
-                  20,
-              )}
-            </>
+            <>💳 Pay {Number(priceResult?.toPay ?? 0)}</>
           )}
         </Button>
       </div>
