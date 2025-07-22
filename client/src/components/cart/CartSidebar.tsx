@@ -359,7 +359,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
     setCurrentStep("delivery");
   };
   const renderCartSummary = () => (
-    <div className="flex flex-col max-h-[92.5vh]">
+    <div className="flex flex-col">
       <div className="flex-1 overflow-y-auto pb-4">
         {cartItems.length === 0 ? (
           <div className="text-center py-6 sm:py-8">
@@ -381,9 +381,12 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           </div>
         ) : (
           <>
-            <div className="max-h-96 overflow-y-auto">
+            <div>
               {cartItems.map((item) => (
-                <div key={item.id} className="flex items-center gap-2 p-4">
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 px-4 py-3"
+                >
                   <div>
                     <img
                       src={item.meal?.imageUrl || "/placeholder-meal.jpg"}
@@ -394,11 +397,11 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     />
                   </div>
                   <div className="flex-grow px-2 sm:px-3">
-                    <span className="text-sm sm:text-base font-bold text-gray-900">
+                    <span className="text-xs sm:text-sm font-bold text-gray-900">
                       {item.meal?.name}
                     </span>
                     {item?.meal?.selectedCurry && (
-                      <p className="text-xs sm:text-sm text-gray-600">
+                      <p className="text-xs sm:text-xs text-gray-600">
                         with {item.meal?.selectedCurry?.name}
                         {item.meal?.selectedCurry?.priceAdjustment > 0 && (
                           <span className="text-primary ml-1">
@@ -451,7 +454,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                       <Button
                         variant="link"
                         size="sm"
-                        className="p-0 h-5 sm:h-6 font-semibold text-xs sm:text-sm text-primary"
+                        className="p-0 h-5 sm:h-6 font-semibold text-xs sm:text-xs text-primary"
                         onClick={() => handleCustomizeItem(item)}
                       >
                         Customize
@@ -464,7 +467,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
 
             {(Number(priceResult?.discount) > 0 ||
               Number(priceResult?.deliveryDiscount) > 0) && (
-              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium mb-4 flex items-center justify-center shadow-sm animate-bounce">
+              <div className="bg-green-100 text-green-800 px-4 py-2 rounded-xl text-xs sm:text-sm font-medium m-4 flex items-center justify-center shadow-sm animate-bounce">
                 🎉 You saved ₹
                 {Number(priceResult?.discount) +
                   Number(priceResult?.deliveryDiscount || 0)}{" "}
@@ -549,43 +552,53 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
           </>
         )}
       </div>
-
-      <div className="sticky bottom-0 bg-white px-4 py-2 border-t border-gray-200 z-10 shadow-md">
-        {selectedAddress && notSavedAddress ? (
-          <Address selectedAddress={selectedAddress} onEdit={addressChange} />
-        ) : (
-          <div className="flex justify-end w-full mb-4 mt-1">
-            <Button
-              variant="link"
-              className="text-xs sm:text-sm flex items-center"
-              onClick={addressChange}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              <span>Add Address</span>
-            </Button>
-          </div>
-        )}
-
-        <Button
-          onClick={handleNextStep}
-          className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
-          disabled={loading || isCreatingOrder || isPaymentInProgress}
-        >
-          {isCreatingOrder ? (
-            <>Processing...</>
-          ) : isPaymentInProgress ? (
-            <>Payment in progress...</>
-          ) : (
-            <>💳 Pay {Number(priceResult?.toPay ?? 0)}</>
-          )}
-        </Button>
-      </div>
     </div>
   );
 
   return (
     <>
-      <Drawer open={open} onClose={onClose} title="🛒 Your Cart">
+      <Drawer
+        open={open}
+        onClose={onClose}
+        title="🛒 Your Cart"
+        footer={
+          currentStep === "cart" && (
+            <div>
+              {selectedAddress && notSavedAddress ? (
+                <Address
+                  selectedAddress={selectedAddress}
+                  onEdit={addressChange}
+                />
+              ) : (
+                <div className="flex justify-end w-full mb-4 mt-1">
+                  <Button
+                    variant="link"
+                    className="text-xs sm:text-sm flex items-center"
+                    onClick={addressChange}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    <span>Add Address</span>
+                  </Button>
+                </div>
+              )}
+
+              <Button
+                onClick={handleNextStep}
+                className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
+                disabled={loading || isCreatingOrder || isPaymentInProgress}
+              >
+                {isCreatingOrder ? (
+                  <>Processing...</>
+                ) : isPaymentInProgress ? (
+                  <>Payment in progress...</>
+                ) : (
+                  <>💳 Pay {Number(priceResult?.toPay ?? 0)}</>
+                )}
+              </Button>
+            </div>
+          )
+        }
+      >
         <div className="flex-grow overflow-auto">
           {currentStep === "cart" && renderCartSummary()}
 

@@ -15,6 +15,7 @@ interface DrawerProps {
   className?: string;
   width?: string;
   title?: ReactNode;
+  footer?: ReactNode;
 }
 
 export const Drawer = ({
@@ -24,6 +25,7 @@ export const Drawer = ({
   className = "",
   width = "w-full sm:max-w-md",
   title,
+  footer,
 }: DrawerProps) => {
   return (
     <Dialog as="div" className="relative z-50" open={open} onClose={onClose}>
@@ -31,7 +33,7 @@ export const Drawer = ({
       <div className="fixed inset-0 overflow-hidden flex justify-end">
         <DialogPanel
           className={cn(
-            "h-full bg-white shadow-xl overflow-y-auto",
+            "h-full bg-white shadow-xl flex flex-col",
             width,
             className,
           )}
@@ -54,7 +56,13 @@ export const Drawer = ({
             </button>
           </div>
 
-          <div>{children}</div>
+          <div className="flex-1 overflow-y-auto">{children}</div>
+
+          {footer && (
+            <div className="sticky bottom-0 z-50 bg-white/95 backdrop-blur-md border-t p-4 rounded-t-xl shadow-[0_-4px_12px_rgba(0,0,0,0.25)]">
+              {footer}
+            </div>
+          )}
         </DialogPanel>
       </div>
     </Dialog>
