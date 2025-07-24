@@ -80,7 +80,9 @@ const Profile = () => {
   const toggleOrderDetails = (orderId: number) => {
     setExpandedOrderId((prev) => (prev === orderId ? null : orderId));
   };
-
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search);
     const tabParam = searchParams.get("tab");

@@ -45,8 +45,9 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     isUpdateAddress,
     getCurrentLocation,
     isLoading: locationLoading,
+    savedAddresses,
   } = useLocationManager();
-
+  const isDefaultAddressChecked = savedAddresses.length === 0;
   const [addressType, setAddressType] = useState(
     editingAddress?.name || "Home",
   );
@@ -319,6 +320,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
           isUpdateAddress={isUpdateAddress}
           addressModalAction={addressModalAction}
           onSubmit={handleSubmitAddress}
+          defaultChecked={isDefaultAddressChecked}
         />
       </div>
     </div>

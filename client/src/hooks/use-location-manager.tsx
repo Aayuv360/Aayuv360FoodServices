@@ -3,14 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useAuth } from "./use-auth";
 import { toast } from "./use-toast";
-import { useRecoilState, useRecoilValue } from "recoil";
+import { useRecoilState } from "recoil";
 import {
   currentLocationState,
   selectedAddressState,
   savedAddressesState,
   locationLoadingState,
   locationErrorState,
-  activeLocationState,
   LocationCoords,
   SavedAddress,
 } from "@/Recoil/recoil";
@@ -65,6 +64,10 @@ export const useLocationManager = () => {
       setSelectedAddress(null);
     } else {
       setSavedAddresses(addressesData);
+      // const defaultAddress = addressesData?.find((item) => item.isDefault);
+      // if (defaultAddress) {
+      //   selectAddress(defaultAddress);
+      // }
     }
   }, [user, isSuccess]);
 

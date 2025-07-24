@@ -11,7 +11,7 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.4",
+    "@headlessui/react": "^2.2.5",
     "@heroicons/react": "^2.2.0",
     "@hookform/resolvers": "^3.10.0",
     "@jridgewell/trace-mapping": "^0.3.25",
@@ -127,7 +127,7 @@
     "@types/ws": "^8.5.13",
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "^10.4.21",
-    "drizzle-kit": "^0.31.4",
+    "drizzle-kit": "^0.18.1",
     "esbuild": "^0.25.0",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.17",

@@ -15,6 +15,7 @@ interface AddressFormProps {
   isUpdateAddress: boolean;
   addressModalAction: string;
   onSubmit: (addressData: any) => void;
+  defaultChecked: boolean;
 }
 
 export const AddressForm = ({
@@ -28,6 +29,7 @@ export const AddressForm = ({
   isUpdateAddress,
   addressModalAction,
   onSubmit,
+  defaultChecked,
 }: AddressFormProps) => {
   return (
     <div className="text-sm sm:text-base">
@@ -146,7 +148,9 @@ export const AddressForm = ({
           <input
             type="checkbox"
             name="isDefault"
-            defaultChecked={editingAddress?.isDefault || false}
+            defaultChecked={
+              editingAddress?.isDefault || defaultChecked || false
+            }
             id="isDefault"
             className="accent-primary w-4 h-4"
           />

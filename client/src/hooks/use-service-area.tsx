@@ -107,6 +107,7 @@ export const useServiceArea = () => {
           isLoading: false,
           error: null,
         });
+        return isWithinServiceArea;
       } catch (error) {
         setState((prev) => ({
           ...prev,
