@@ -177,7 +177,7 @@ const LocationSelector = () => {
     deleteAddress(addressId);
   };
   const renderLocationPanel = () => (
-    <div className="w-full sm:w-80 bg-white rounded-t-lg sm:rounded-md shadow-lg border p-4">
+    <div className="bg-white rounded-t-lg sm:rounded-md shadow-lg border p-4">
       <div className="flex justify-between items-center border-b pb-2 mb-3">
         <div className="font-semibold text-sm">Select Delivery Location</div>
         <button
@@ -326,18 +326,18 @@ const LocationSelector = () => {
         <div>
           <button
             onClick={() => setIsMobileDialogOpen(true)}
-            className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-2 px-2 sm:px-4 max-w-[300px] rounded-md"
+            className="cursor-pointer gap-1 text-xs text-muted-foreground hover:text-primary transition flex items-center pt-2 px-2"
           >
-            <MapPin className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <MapPin className="h-4 w-4 flex-shrink-0" />
             <span className="truncate font-medium">{getDisplayText()}</span>
-            <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
+            <ChevronDown className="h-3 w-3 ml-1 flex-shrink-0" />
           </button>
 
           <Transition show={isMobileDialogOpen} as={Fragment}>
             <Dialog
               as="div"
               className="relative z-50"
-              onClose={setIsMobileDialogOpen}
+              onClose={() => setIsMobileDialogOpen(false)}
             >
               <TransitionChild
                 as={Fragment}
@@ -351,8 +351,10 @@ const LocationSelector = () => {
                 <div className="fixed inset-0 bg-black/50" />
               </TransitionChild>
 
-              <div className="fixed inset-x-0 bottom-0">
-                {renderLocationPanel()}
+              <div className="fixed inset-0 flex items-end justify-center">
+                <Dialog.Panel className="w-full sm:max-w-md">
+                  {renderLocationPanel()}
+                </Dialog.Panel>
               </div>
             </Dialog>
           </Transition>
@@ -361,15 +363,15 @@ const LocationSelector = () => {
         <Popover className="relative">
           <PopoverButton
             onClick={() => setIsPopoverOpen(true)}
-            className="cursor-pointer gap-1 text-xs sm:text-sm text-muted-foreground hover:text-primary transition flex items-center pt-2 px-2 sm:px-4 max-w-[300px] rounded-md"
+            className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center mt-2 ml-4 focus-visible:outline-none"
           >
-            <MapPin className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+            <MapPin className="!h-5 !w-5 mb-1 mr-1" />
             <span className="truncate font-medium">{getDisplayText()}</span>
-            <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1 flex-shrink-0" />
+            <ChevronDown className="!h-5 !w-5 ml-1 flex-shrink-0" />
           </PopoverButton>
           {isPopoverOpen && (
-            <PopoverPanel className="absolute z-50 mt-2">
-              {renderLocationPanel()}
+            <PopoverPanel className="absolute z-50 mt-3 left-1/2 -translate-x-1/2">
+              <div className="!w-[400px]">{renderLocationPanel()}</div>
             </PopoverPanel>
           )}
         </Popover>
