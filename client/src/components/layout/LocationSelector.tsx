@@ -3,7 +3,6 @@ import {
   MapPin,
   ChevronDown,
   Plus,
-  Navigation,
   Edit,
   Trash2,
   X,
@@ -53,25 +52,11 @@ const LocationSelector = () => {
 
   const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
     useServiceArea();
-
   useEffect(() => {
     if (selectedAddress?.coords) {
       checkServiceAvailability(selectedAddress.coords);
     }
   }, [selectedAddress]);
-
-  useEffect(() => {
-    if (!selectedAddress) {
-      const timer = setTimeout(() => {
-        handleCurrentLocation();
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [selectedAddress]);
-
-  useEffect(() => {
-    if (searchInput === "") setSuggestions([]);
-  }, [searchInput]);
 
   const getDisplayText = () => {
     if (selectedAddress?.address) {
@@ -133,7 +118,6 @@ const LocationSelector = () => {
   const handleCurrentLocation = async () => {
     try {
       const coords = await getCurrentLocation();
-      const isServiceable = checkServiceAvailability(coords);
 
       const geocoder = new window.google.maps.Geocoder();
       const results = await new Promise<google.maps.GeocoderResult[]>(
@@ -144,6 +128,8 @@ const LocationSelector = () => {
           });
         },
       );
+      const isServiceable = checkServiceAvailability(coords);
+
       if (!isServiceable) {
         return;
       }

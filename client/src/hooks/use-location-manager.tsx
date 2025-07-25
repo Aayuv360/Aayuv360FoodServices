@@ -59,16 +59,52 @@ export const useLocationManager = () => {
   });
 
   useEffect(() => {
-    if (!user) {
-      setSavedAddresses([]);
-      setSelectedAddress(null);
-    } else {
+    const handleDefaultOrCurrentLocation = async () => {
+      if (!user) {
+        setSavedAddresses([]);
+        setSelectedAddress(null);
+        return;
+      }
+
       setSavedAddresses(addressesData);
-      // const defaultAddress = addressesData?.find((item) => item.isDefault);
-      // if (defaultAddress) {
-      //   selectAddress(defaultAddress);
-      // }
-    }
+      const defaultAddress = addressesData?.find((item) => item.isDefault);
+
+      if (defaultAddress) {
+        setSelectedAddress(defaultAddress);
+      } else {
+        try {
+          const coords = await getCurrentLocationAsync();
+          const geocoder = new window.google.maps.Geocoder();
+
+          const results = await new Promise<google.maps.GeocoderResult[]>(
+            (resolve, reject) => {
+              geocoder.geocode({ location: coords }, (res, status) => {
+                if (status === "OK" && res) resolve(res);
+                else reject("Geocode failed");
+              });
+            },
+          );
+
+          const address =
+            results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
+
+          const location = {
+            id: Date.now(),
+            label: "Current Location",
+            address,
+            coords,
+            pincode: "",
+            isDefault: false,
+          };
+
+          setSelectedAddress(location);
+        } catch (err) {
+          console.error("Auto-detect location failed:", err);
+        }
+      }
+    };
+
+    handleDefaultOrCurrentLocation();
   }, [user, isSuccess]);
 
   const getCurrentLocationAsync = useCallback(async () => {

@@ -77,26 +77,3 @@ export const locationErrorState = atom<string | null>({
   key: "locationErrorState",
   default: null,
 });
-
-export const serviceAreaState = atom<{
-  isWithinServiceArea: boolean;
-  distanceFromCurrent: number | null;
-  serviceMessage: string;
-}>({
-  key: "serviceAreaState",
-  default: {
-    isWithinServiceArea: false,
-    distanceFromCurrent: null,
-    serviceMessage: "",
-  },
-});
-
-export const activeLocationState = selector<LocationCoords | null>({
-  key: "activeLocationState",
-  get: ({ get }) => {
-    const selectedAddress = get(selectedAddressState);
-    const currentLocation = get(currentLocationState);
-
-    return selectedAddress?.coords || currentLocation;
-  },
-});
