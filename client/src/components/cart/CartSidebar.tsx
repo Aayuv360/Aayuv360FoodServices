@@ -91,7 +91,9 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
       checkServiceAvailability(selectedAddress?.coords);
     }
   }, [selectedAddress]);
-
+  useEffect(() => {
+    setCurrentStep("cart");
+  }, [open]);
   const calculateCartTotal = useMemo((): number => {
     let total = 0;
 
