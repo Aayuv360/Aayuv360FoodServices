@@ -26,8 +26,18 @@ import { NewAddressModal } from "@/components/Modals/NewAddressModal";
 import DeleteAddressDialog from "../Modals/DeleteAddressDialog";
 import { LocationSearchInput } from "../Modals/LocationSearchInput";
 import { Button } from "@/components/ui/button";
+import { useLoadScript } from "@react-google-maps/api";
+import {
+  GOOGLE_MAPS_API_KEY,
+  GOOGLE_MAPS_LIBRARIES,
+} from "@/lib/location-constants";
 
 const LocationSelector = () => {
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+  });
+
   const [isNewAddressModalOpen, setIsNewAddressModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [addressModalAction, setAddressModalAction] = useState<string>("");
@@ -52,11 +62,15 @@ const LocationSelector = () => {
 
   const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
     useServiceArea();
+
   useEffect(() => {
     if (selectedAddress?.coords) {
       checkServiceAvailability(selectedAddress.coords);
     }
   }, [selectedAddress]);
+
+  if (loadError) return <div>Failed to load Google Maps</div>;
+  if (!isLoaded) return <div>Loading map services...</div>;
 
   const getDisplayText = () => {
     if (selectedAddress?.address) {
@@ -95,9 +109,8 @@ const LocationSelector = () => {
           lng: place.geometry.location.lng(),
         };
         const isServiceable = checkServiceAvailability(coords);
-        if (!isServiceable) {
-          return;
-        }
+        if (!isServiceable) return;
+
         const tempAddress = {
           id: Date.now(),
           label: "Search Result",
@@ -128,11 +141,10 @@ const LocationSelector = () => {
           });
         },
       );
-      const isServiceable = checkServiceAvailability(coords);
 
-      if (!isServiceable) {
-        return;
-      }
+      const isServiceable = checkServiceAvailability(coords);
+      if (!isServiceable) return;
+
       const address =
         results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
       const location = {
@@ -147,9 +159,7 @@ const LocationSelector = () => {
       selectAddress(location);
       isMobile ? setIsMobileDialogOpen(false) : setIsPopoverOpen(false);
     } catch (err) {
-      console.error("Error getting location", err);
-    } finally {
-      //
+      console.error("Error detecting location:", err);
     }
   };
 
@@ -159,9 +169,11 @@ const LocationSelector = () => {
     setIsNewAddressModalOpen(true);
     setIsMobileDialogOpen(false);
   };
+
   const handleDeleteAddress = async (addressId: number) => {
     deleteAddress(addressId);
   };
+
   const renderLocationPanel = () => (
     <div className="bg-white rounded-t-lg sm:rounded-md shadow-lg border p-4">
       <div className="flex justify-between items-center border-b pb-2 mb-3">
@@ -174,17 +186,19 @@ const LocationSelector = () => {
           <X className="h-5 w-5 text-muted-foreground" />
         </button>
       </div>
+
       <div className="flex">
         <Button
           onClick={handleCurrentLocation}
           variant="link"
           className="py-2 ml-auto"
         >
-          <LocateFixed className="!h-5 !w-5" /> Detect Location
+          <LocateFixed className="!h-5 !w-5" />
+          Detect Location
         </Button>
       </div>
 
-      <div className={`py-2`}>
+      <div className="py-2">
         <div
           className={`p-2 rounded-lg border text-xs ${
             isWithinServiceArea
@@ -194,11 +208,7 @@ const LocationSelector = () => {
         >
           <div className="flex items-center gap-2">
             <AlertCircle className="h-3 w-3 flex-shrink-0" />
-            <span
-              className={`${isMobile ? "text-xs" : "text-xs"} leading-tight`}
-            >
-              {getServiceMessage()}
-            </span>
+            <span>{getServiceMessage()}</span>
           </div>
         </div>
       </div>
@@ -296,9 +306,9 @@ const LocationSelector = () => {
             onClick={() => setIsMobileDialogOpen(true)}
             className="cursor-pointer gap-1 text-xs text-muted-foreground hover:text-primary transition flex items-center pt-2 px-2"
           >
-            <MapPin className="h-4 w-4 flex-shrink-0" />
+            <MapPin className="h-4 w-4" />
             <span className="truncate font-medium">{getDisplayText()}</span>
-            <ChevronDown className="h-3 w-3 ml-1 flex-shrink-0" />
+            <ChevronDown className="h-3 w-3 ml-1" />
           </button>
 
           <Transition show={isMobileDialogOpen} as={Fragment}>
@@ -331,15 +341,15 @@ const LocationSelector = () => {
         <Popover className="relative">
           <PopoverButton
             onClick={() => setIsPopoverOpen(true)}
-            className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center mt-2 ml-4 focus-visible:outline-none"
+            className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center mt-2 ml-4"
           >
-            <MapPin className="!h-5 !w-5 mb-1 mr-1" />
+            <MapPin className="h-5 w-5 mb-1 mr-1" />
             <span className="truncate font-medium">{getDisplayText()}</span>
-            <ChevronDown className="!h-5 !w-5 ml-1 flex-shrink-0" />
+            <ChevronDown className="h-5 w-5 ml-1" />
           </PopoverButton>
           {isPopoverOpen && (
             <PopoverPanel className="absolute z-50 mt-3">
-              <div className="!w-[400px]">{renderLocationPanel()}</div>
+              <div className="w-[400px]">{renderLocationPanel()}</div>
             </PopoverPanel>
           )}
         </Popover>
@@ -352,6 +362,7 @@ const LocationSelector = () => {
         editingAddress={editingAddress}
         setEditingAddress={setEditingAddress}
       />
+
       <DeleteAddressDialog
         open={isDeleteAddrModalOpen}
         address={deleteAddressData}
