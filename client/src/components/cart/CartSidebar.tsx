@@ -576,7 +576,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               {!notSavedAddress ? (
                 <Button
                   onClick={addressChange}
-                  className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
+                  className="w-full flex-1 font-bold text-base sm:text-lg h-auto rounded-[2rem] shadow-md"
                   disabled={loading || isCreatingOrder || isPaymentInProgress}
                 >
                   Procced to checkout
@@ -584,7 +584,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
               ) : (
                 <Button
                   onClick={handleNextStep}
-                  className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
+                  className="w-full flex-1 font-bold text-base sm:text-lg h-auto rounded-[2rem] shadow-md"
                   disabled={loading || isCreatingOrder || isPaymentInProgress}
                 >
                   {isCreatingOrder ? (
@@ -592,7 +592,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                   ) : isPaymentInProgress ? (
                     <>Payment in progress...</>
                   ) : (
-                    <>💳 Pay {Number(priceResult?.toPay ?? 0)}</>
+                    <>💳 Pay {priceResult?.toPay ?? 0}</>
                   )}
                 </Button>
               )}

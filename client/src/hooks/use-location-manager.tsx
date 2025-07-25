@@ -71,35 +71,35 @@ export const useLocationManager = () => {
         //   setSelectedAddress(defaultAddress);
         // }
       }
-      // try {
-      //   const coords = await getCurrentLocationAsync();
-      //   const geocoder = new window.google.maps.Geocoder();
+      try {
+        const coords = await getCurrentLocationAsync();
+        const geocoder = new window.google.maps.Geocoder();
 
-      //   const results = await new Promise<google.maps.GeocoderResult[]>(
-      //     (resolve, reject) => {
-      //       geocoder.geocode({ location: coords }, (res, status) => {
-      //         if (status === "OK" && res) resolve(res);
-      //         else reject("Geocode failed");
-      //       });
-      //     },
-      //   );
+        const results = await new Promise<google.maps.GeocoderResult[]>(
+          (resolve, reject) => {
+            geocoder.geocode({ location: coords }, (res, status) => {
+              if (status === "OK" && res) resolve(res);
+              else reject("Geocode failed");
+            });
+          },
+        );
 
-      //   const address =
-      //     results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
+        const address =
+          results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
 
-      //   const location = {
-      //     id: Date.now(),
-      //     label: "Current Location",
-      //     address,
-      //     coords,
-      //     pincode: "",
-      //     isDefault: false,
-      //   };
+        const location = {
+          id: Date.now(),
+          label: "Current Location",
+          address,
+          coords,
+          pincode: "",
+          isDefault: false,
+        };
 
-      //   setSelectedAddress(location);
-      // } catch (err) {
-      //   console.error("Auto-detect location failed:", err);
-      // }
+        setSelectedAddress(location);
+      } catch (err) {
+        console.error("Auto-detect location failed:", err);
+      }
     };
 
     handleDefaultOrCurrentLocation();
