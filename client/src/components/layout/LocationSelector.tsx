@@ -36,10 +36,10 @@ const LocationSelector = () => {
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
   >([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
   const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
-  const [deletingAddress, setDeletingAddress] = useState<any>(null);
+  const [isDeleteAddrModalOpen, setIsDeleteAddrModalOpen] = useState(false);
+  const [deleteAddressData, setDeleteAddressData] = useState<any>(null);
 
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -274,7 +274,8 @@ const LocationSelector = () => {
                     onClick={(e) => {
                       e.stopPropagation();
                       setIsMobileDialogOpen(false);
-                      handleDeleteAddress(address.id);
+                      setDeleteAddressData(address);
+                      setIsDeleteAddrModalOpen(true);
                     }}
                     className="h-4 w-4 text-muted-foreground hover:text-destructive"
                   />
@@ -366,12 +367,16 @@ const LocationSelector = () => {
         setEditingAddress={setEditingAddress}
       />
       <DeleteAddressDialog
-        open={!!deletingAddress}
-        address={deletingAddress}
-        onCancel={() => setDeletingAddress(null)}
+        open={isDeleteAddrModalOpen}
+        address={deleteAddressData}
+        onCancel={() => {
+          setIsDeleteAddrModalOpen(false);
+          setDeleteAddressData(null);
+        }}
         onConfirm={(id) => {
           handleDeleteAddress(id);
-          setDeletingAddress(null);
+          setIsDeleteAddrModalOpen(false);
+          setDeleteAddressData(null);
         }}
       />
     </>

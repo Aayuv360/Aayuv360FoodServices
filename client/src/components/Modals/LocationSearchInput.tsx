@@ -28,7 +28,7 @@ export const LocationSearchInput = ({
     )}
 
     <Input
-      className="w-full pl-9 pr-9"
+      className="pl-9 pr-9 text-sm"
       placeholder="Search for your location"
       value={locationSearch}
       onChange={(e) => {
