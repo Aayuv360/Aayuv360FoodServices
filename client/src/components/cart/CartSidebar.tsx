@@ -564,37 +564,36 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
         footer={
           currentStep === "cart" && (
             <div>
-              {selectedAddress && notSavedAddress ? (
+              {selectedAddress && notSavedAddress && (
                 <Address
                   selectedAddress={selectedAddress}
                   onEdit={addressChange}
                 />
-              ) : (
-                <div className="flex justify-end w-full mb-4 mt-1">
-                  <Button
-                    variant="link"
-                    className="text-xs sm:text-sm flex items-center"
-                    onClick={addressChange}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    <span>Add Address</span>
-                  </Button>
-                </div>
               )}
 
-              <Button
-                onClick={handleNextStep}
-                className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
-                disabled={loading || isCreatingOrder || isPaymentInProgress}
-              >
-                {isCreatingOrder ? (
-                  <>Processing...</>
-                ) : isPaymentInProgress ? (
-                  <>Payment in progress...</>
-                ) : (
-                  <>💳 Pay {Number(priceResult?.toPay ?? 0)}</>
-                )}
-              </Button>
+              {!notSavedAddress ? (
+                <Button
+                  onClick={addressChange}
+                  className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
+                  disabled={loading || isCreatingOrder || isPaymentInProgress}
+                >
+                  Procced to checkout
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleNextStep}
+                  className="w-full flex-1 text-xs sm:text-sm h-auto rounded-xl shadow-md"
+                  disabled={loading || isCreatingOrder || isPaymentInProgress}
+                >
+                  {isCreatingOrder ? (
+                    <>Processing...</>
+                  ) : isPaymentInProgress ? (
+                    <>Payment in progress...</>
+                  ) : (
+                    <>💳 Pay {Number(priceResult?.toPay ?? 0)}</>
+                  )}
+                </Button>
+              )}
             </div>
           )
         }
