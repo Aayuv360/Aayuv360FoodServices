@@ -12,17 +12,17 @@ export const LocationSearchInput = ({
   setLocationSearch: (value: string) => void;
   suggestions: google.maps.places.AutocompletePrediction[];
   fetchSuggestions: (input: string) => void;
-  handleSuggestionClick: (placeId: string, description: string) => void;
+  handleSuggestionClick: (sug: any) => void;
 }) => (
   <div className="relative">
     <Search
       strokeWidth={3}
-      className="absolute left-3 top-[75%] -translate-y-1/2 text-orange-500 w-5 h-5"
+      className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 w-5 h-5"
     />
 
     {locationSearch !== "" && (
       <X
-        className="absolute right-3 top-[75%] -translate-y-1/2 cursor-pointer text-muted-foreground w-4 h-4"
+        className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-muted-foreground w-4 h-4"
         onClick={() => setLocationSearch("")}
       />
     )}
@@ -44,9 +44,7 @@ export const LocationSearchInput = ({
           <div
             key={suggestion.place_id}
             className="p-2 hover:bg-gray-100 cursor-pointer text-sm"
-            onClick={() =>
-              handleSuggestionClick(suggestion.place_id, suggestion.description)
-            }
+            onClick={() => handleSuggestionClick(suggestion)}
           >
             {suggestion.description}
           </div>

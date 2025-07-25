@@ -15,7 +15,7 @@ interface AddressFormProps {
   isUpdateAddress: boolean;
   addressModalAction: string;
   onSubmit: (addressData: any) => void;
-  defaultChecked: boolean;
+  defaultChecked?: boolean;
 }
 
 export const AddressForm = ({

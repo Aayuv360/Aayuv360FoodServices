@@ -131,12 +131,14 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
     );
   };
 
-  const handleSuggestionClick = (placeId: string, description: string) => {
+  const handleSuggestionClick = (
+    suggestion: google.maps.places.AutocompletePrediction,
+  ) => {
     const service = new window.google.maps.places.PlacesService(
       document.createElement("div"),
     );
 
-    service.getDetails({ placeId }, (place, status) => {
+    service.getDetails({ placeId: suggestion.place_id }, (place, status) => {
       if (status === "OK" && place?.geometry?.location) {
         const loc = {
           lat: place.geometry.location.lat(),
@@ -146,7 +148,7 @@ export const NewAddressModal: React.FC<NewAddressModalProps> = ({
         setCurrentMapLocation(loc);
         reverseGeocode(loc);
         checkServiceAvailability(loc);
-        setLocationSearch(description);
+        setLocationSearch(suggestion?.description);
         setSuggestions([]);
       }
     });

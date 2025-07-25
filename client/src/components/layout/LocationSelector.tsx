@@ -4,11 +4,11 @@ import {
   ChevronDown,
   Plus,
   Navigation,
-  Search,
   Edit,
   Trash2,
   X,
   AlertCircle,
+  LocateFixed,
 } from "lucide-react";
 import {
   Dialog,
@@ -19,14 +19,14 @@ import {
   TransitionChild,
 } from "@headlessui/react";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { useAuth } from "@/hooks/use-auth";
 import { useServiceArea } from "@/hooks/use-service-area";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { NewAddressModal } from "@/components/Modals/NewAddressModal";
-
 import DeleteAddressDialog from "../Modals/DeleteAddressDialog";
+import { LocationSearchInput } from "../Modals/LocationSearchInput";
+import { Button } from "@/components/ui/button";
 
 const LocationSelector = () => {
   const [isNewAddressModalOpen, setIsNewAddressModalOpen] = useState(false);
@@ -47,7 +47,6 @@ const LocationSelector = () => {
     selectedAddress,
     savedAddresses,
     selectAddress,
-    isLoading: locationLoading,
     getCurrentLocation,
     deleteAddress,
   } = useLocationManager();
@@ -133,9 +132,8 @@ const LocationSelector = () => {
 
   const handleCurrentLocation = async () => {
     try {
-      setIsLoading(true);
       const coords = await getCurrentLocation();
-      checkServiceAvailability(coords);
+      const isServiceable = checkServiceAvailability(coords);
 
       const geocoder = new window.google.maps.Geocoder();
       const results = await new Promise<google.maps.GeocoderResult[]>(
@@ -146,7 +144,9 @@ const LocationSelector = () => {
           });
         },
       );
-
+      if (!isServiceable) {
+        return;
+      }
       const address =
         results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
       const location = {
@@ -163,7 +163,7 @@ const LocationSelector = () => {
     } catch (err) {
       console.error("Error getting location", err);
     } finally {
-      setIsLoading(false);
+      //
     }
   };
 
@@ -185,10 +185,20 @@ const LocationSelector = () => {
             isMobile ? setIsMobileDialogOpen(false) : setIsPopoverOpen(false)
           }
         >
-          <X className="h-4 w-4 text-muted-foreground" />
+          <X className="h-5 w-5 text-muted-foreground" />
         </button>
       </div>
-      <div className={`${isMobile ? "py-2" : "py-2"}`}>
+      <div className="flex">
+        <Button
+          onClick={handleCurrentLocation}
+          variant="link"
+          className="py-2 ml-auto"
+        >
+          <LocateFixed className="!h-5 !w-5" /> Detect Location
+        </Button>
+      </div>
+
+      <div className={`py-2`}>
         <div
           className={`p-2 rounded-lg border text-xs ${
             isWithinServiceArea
@@ -206,45 +216,16 @@ const LocationSelector = () => {
           </div>
         </div>
       </div>
-      <div className="relative mb-3">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <Input
-          placeholder="Search area, landmark..."
-          value={searchInput}
-          onChange={(e) => {
-            setSearchInput(e.target.value);
-            fetchSuggestions(e.target.value);
-          }}
-          className="pl-10"
-        />
-      </div>
+
+      <LocationSearchInput
+        locationSearch={searchInput}
+        setLocationSearch={setSearchInput}
+        suggestions={suggestions}
+        fetchSuggestions={fetchSuggestions}
+        handleSuggestionClick={handlePlaceSelect}
+      />
 
       <div className="max-h-[50vh] overflow-y-auto">
-        {suggestions.length > 0 && (
-          <div className="mb-4">
-            {suggestions.map((s) => (
-              <div
-                key={s.place_id}
-                className="p-2 hover:bg-gray-100 cursor-pointer flex text-sm"
-                onClick={() => handlePlaceSelect(s)}
-              >
-                <MapPin className="h-4 w-4 mr-2 mt-1 text-gray-400" />
-                {s.description}
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div
-          onClick={handleCurrentLocation}
-          className="p-2 hover:bg-gray-100 cursor-pointer flex items-center text-sm"
-        >
-          <Navigation className="h-4 w-4 mr-2" />
-          {isLoading || locationLoading
-            ? "Getting location..."
-            : "Use Current Location"}
-        </div>
-
         {savedAddresses.length > 0 && (
           <>
             <div className="mt-4 mb-1 text-xs text-gray-500 uppercase">
@@ -370,7 +351,7 @@ const LocationSelector = () => {
             <ChevronDown className="!h-5 !w-5 ml-1 flex-shrink-0" />
           </PopoverButton>
           {isPopoverOpen && (
-            <PopoverPanel className="absolute z-50 mt-3 left-1/2 -translate-x-1/2">
+            <PopoverPanel className="absolute z-50 mt-3">
               <div className="!w-[400px]">{renderLocationPanel()}</div>
             </PopoverPanel>
           )}
