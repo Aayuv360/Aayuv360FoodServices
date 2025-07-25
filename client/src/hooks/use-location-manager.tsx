@@ -63,44 +63,42 @@ export const useLocationManager = () => {
       if (!user) {
         setSavedAddresses([]);
         setSelectedAddress(null);
-        return;
-      }
-
-      setSavedAddresses(addressesData);
-      const defaultAddress = addressesData?.find((item) => item.isDefault);
-
-      if (defaultAddress) {
-        setSelectedAddress(defaultAddress);
       } else {
-        try {
-          const coords = await getCurrentLocationAsync();
-          const geocoder = new window.google.maps.Geocoder();
+        setSavedAddresses(addressesData);
+        // const defaultAddress = addressesData?.find((item) => item.isDefault);
 
-          const results = await new Promise<google.maps.GeocoderResult[]>(
-            (resolve, reject) => {
-              geocoder.geocode({ location: coords }, (res, status) => {
-                if (status === "OK" && res) resolve(res);
-                else reject("Geocode failed");
-              });
-            },
-          );
+        // if (defaultAddress) {
+        //   setSelectedAddress(defaultAddress);
+        // }
+      }
+      try {
+        const coords = await getCurrentLocationAsync();
+        const geocoder = new window.google.maps.Geocoder();
 
-          const address =
-            results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
+        const results = await new Promise<google.maps.GeocoderResult[]>(
+          (resolve, reject) => {
+            geocoder.geocode({ location: coords }, (res, status) => {
+              if (status === "OK" && res) resolve(res);
+              else reject("Geocode failed");
+            });
+          },
+        );
 
-          const location = {
-            id: Date.now(),
-            label: "Current Location",
-            address,
-            coords,
-            pincode: "",
-            isDefault: false,
-          };
+        const address =
+          results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
 
-          setSelectedAddress(location);
-        } catch (err) {
-          console.error("Auto-detect location failed:", err);
-        }
+        const location = {
+          id: Date.now(),
+          label: "Current Location",
+          address,
+          coords,
+          pincode: "",
+          isDefault: false,
+        };
+
+        setSelectedAddress(location);
+      } catch (err) {
+        console.error("Auto-detect location failed:", err);
       }
     };
 
