@@ -44,7 +44,7 @@ const Header = () => {
   return (
     <>
       <header className="bg-white shadow-sm sticky top-0 z-40">
-        {selectedAddress && (
+        {/* {selectedAddress && (
           <div
             className={`py-2 px-4 text-sm ${
               isWithinServiceArea
@@ -61,7 +61,7 @@ const Header = () => {
               <span className="text-center">{getServiceMessage()}</span>
             </div>
           </div>
-        )}
+        )} */}
 
         <div className="container mx-auto px-3 sm:px-4 py-3 sm:py-4">
           {isMobile ? (

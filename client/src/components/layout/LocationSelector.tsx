@@ -11,12 +11,11 @@ import {
 } from "lucide-react";
 import {
   Dialog,
-  Popover,
   Transition,
-  PopoverButton,
-  PopoverPanel,
+  DialogPanel,
   TransitionChild,
 } from "@headlessui/react";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { useLocationManager } from "@/hooks/use-location-manager";
 import { useAuth } from "@/hooks/use-auth";
@@ -45,10 +44,10 @@ const LocationSelector = () => {
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompletePrediction[]
   >([]);
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [isMobileDialogOpen, setIsMobileDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteAddrModalOpen, setIsDeleteAddrModalOpen] = useState(false);
   const [deleteAddressData, setDeleteAddressData] = useState<any>(null);
+  const [pendingAddress, setPendingAddress] = useState<any>(null);
 
   const isMobile = useIsMobile();
   const { user } = useAuth();
@@ -62,6 +61,17 @@ const LocationSelector = () => {
 
   const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
     useServiceArea();
+  const [isPendingServiceable, setIsPendingServiceable] =
+    useState<boolean>(true);
+
+  useEffect(() => {
+    if (pendingAddress?.coords) {
+      const result = checkServiceAvailability(pendingAddress.coords);
+      setIsPendingServiceable(!!result);
+    } else {
+      setIsPendingServiceable(true);
+    }
+  }, [pendingAddress]);
 
   useEffect(() => {
     if (selectedAddress?.coords) {
@@ -108,22 +118,18 @@ const LocationSelector = () => {
           lat: place.geometry.location.lat(),
           lng: place.geometry.location.lng(),
         };
-        const isServiceable = checkServiceAvailability(coords);
-        if (!isServiceable) return;
 
-        const tempAddress = {
+        setPendingAddress({
           id: Date.now(),
           label: "Search Result",
           address: suggestion.description,
           coords,
           pincode: "",
           isDefault: false,
-        };
+        });
 
-        selectAddress(tempAddress);
         setSearchInput("");
         setSuggestions([]);
-        isMobile ? setIsMobileDialogOpen(false) : setIsPopoverOpen(false);
       }
     });
   };
@@ -131,7 +137,6 @@ const LocationSelector = () => {
   const handleCurrentLocation = async () => {
     try {
       const coords = await getCurrentLocation();
-
       const geocoder = new window.google.maps.Geocoder();
       const results = await new Promise<google.maps.GeocoderResult[]>(
         (resolve, reject) => {
@@ -141,23 +146,16 @@ const LocationSelector = () => {
           });
         },
       );
-
-      const isServiceable = checkServiceAvailability(coords);
-      if (!isServiceable) return;
-
       const address =
         results[0]?.formatted_address || `${coords.lat}, ${coords.lng}`;
-      const location = {
+      setPendingAddress({
         id: Date.now(),
         label: "Current Location",
         address,
         coords,
         pincode: "",
         isDefault: false,
-      };
-
-      selectAddress(location);
-      isMobile ? setIsMobileDialogOpen(false) : setIsPopoverOpen(false);
+      });
     } catch (err) {
       console.error("Error detecting location:", err);
     }
@@ -167,193 +165,200 @@ const LocationSelector = () => {
     setEditingAddress(addr);
     setAddressModalAction("addressEdit");
     setIsNewAddressModalOpen(true);
-    setIsMobileDialogOpen(false);
+    setIsDialogOpen(false);
   };
 
   const handleDeleteAddress = async (addressId: number) => {
     deleteAddress(addressId);
   };
 
-  const renderLocationPanel = () => (
-    <div className="bg-white rounded-t-lg sm:rounded-md shadow-lg border p-4">
-      <div className="flex justify-between items-center border-b pb-2 mb-3">
-        <div className="font-semibold text-sm">Select Delivery Location</div>
-        <button
-          onClick={() =>
-            isMobile ? setIsMobileDialogOpen(false) : setIsPopoverOpen(false)
-          }
-        >
-          <X className="h-5 w-5 text-muted-foreground" />
-        </button>
-      </div>
-
-      <div className="flex">
-        <Button
-          onClick={handleCurrentLocation}
-          variant="link"
-          className="py-2 ml-auto"
-        >
-          <LocateFixed className="!h-5 !w-5" />
-          Detect Location
-        </Button>
-      </div>
-
-      <div className="py-2">
-        <div
-          className={`p-2 rounded-lg border text-xs ${
-            isWithinServiceArea
-              ? "bg-green-50 border-green-200 text-green-800"
-              : "bg-red-50 border-red-200 text-red-800"
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-3 w-3 flex-shrink-0" />
-            <span>{getServiceMessage()}</span>
-          </div>
-        </div>
-      </div>
-
-      <LocationSearchInput
-        locationSearch={searchInput}
-        setLocationSearch={setSearchInput}
-        suggestions={suggestions}
-        fetchSuggestions={fetchSuggestions}
-        handleSuggestionClick={handlePlaceSelect}
-      />
-
-      <div className="max-h-[50vh] overflow-y-auto">
-        {savedAddresses.length > 0 && (
-          <>
-            <div className="mt-4 mb-1 text-xs text-gray-500 uppercase">
-              Saved Addresses
-            </div>
-            {savedAddresses.map((address: any) => (
-              <div
-                key={address.id}
-                onClick={() =>
-                  selectAddress({
-                    id: address.id,
-                    label: address.label || "Address",
-                    address: `${address.addressLine1}, ${address.addressLine2 || ""}, ${address.city || ""}`,
-                    coords: {
-                      lat: address.latitude || 0,
-                      lng: address.longitude || 0,
-                    },
-                    pincode: address.pincode,
-                    isDefault: address.isDefault,
-                    phone: address?.phone,
-                  })
-                }
-                className="px-2 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-start text-sm"
-              >
-                <div>
-                  <div className="font-medium">
-                    {address.label}
-                    {address.isDefault && (
-                      <Badge className="ml-2 !text-xs">Default</Badge>
-                    )}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {address.addressLine1}, {address.addressLine2},{" "}
-                    {address.city}
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-1">
-                  <Edit
-                    className="h-4 w-4 text-muted-foreground hover:text-primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEditAddress(address);
-                    }}
-                  />
-                  <Trash2
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setIsMobileDialogOpen(false);
-                      setDeleteAddressData(address);
-                      setIsDeleteAddrModalOpen(true);
-                    }}
-                    className="h-4 w-4 text-muted-foreground hover:text-destructive"
-                  />
-                </div>
-              </div>
-            ))}
-          </>
-        )}
-
-        {user && (
-          <div
-            className="mt-4 p-2 hover:bg-gray-100 cursor-pointer flex items-center text-sm"
-            onClick={() => {
-              setAddressModalAction("addressAdd");
-              setIsNewAddressModalOpen(true);
-              isMobile ? setIsMobileDialogOpen(false) : setIsPopoverOpen(false);
-            }}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Address
-          </div>
-        )}
-      </div>
-    </div>
-  );
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setSearchInput("");
+    setSuggestions([]);
+    setPendingAddress(null);
+  };
 
   return (
-    <>
-      {isMobile ? (
-        <div>
-          <button
-            onClick={() => setIsMobileDialogOpen(true)}
-            className="cursor-pointer gap-1 text-xs text-muted-foreground hover:text-primary transition flex items-center pt-2 px-2"
-          >
-            <MapPin className="h-4 w-4" />
-            <span className="truncate font-medium">{getDisplayText()}</span>
-            <ChevronDown className="h-3 w-3 ml-1" />
-          </button>
+    <div>
+      <button
+        onClick={() => setIsDialogOpen(true)}
+        className="cursor-pointer gap-1 text-xs text-muted-foreground hover:text-primary transition flex items-center pt-2 px-2"
+      >
+        <MapPin className="h-4 w-4" />
+        <span className="truncate font-medium">{getDisplayText()}</span>
+        <ChevronDown className="h-3 w-3 ml-1" />
+      </button>
 
-          <Transition show={isMobileDialogOpen} as={Fragment}>
-            <Dialog
-              as="div"
-              className="relative z-50"
-              onClose={() => setIsMobileDialogOpen(false)}
-            >
-              <TransitionChild
-                as={Fragment}
-                enter="ease-out duration-200"
-                enterFrom="opacity-0"
-                enterTo="opacity-100"
-                leave="ease-in duration-100"
-                leaveFrom="opacity-100"
-                leaveTo="opacity-0"
+      <Transition show={isDialogOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={closeDialog}>
+          <TransitionChild
+            as={Fragment}
+            enter="ease-out duration-200"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-100"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/50" />
+          </TransitionChild>
+
+          <div
+            className={`fixed inset-0 flex ${isMobile ? "items-end" : "items-center"} justify-center`}
+          >
+            <DialogPanel className="w-full sm:max-w-md overflow-y-auto">
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 50, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white rounded-t-lg sm:rounded-md shadow-lg border p-4 flex flex-col min-h-[50vh] max-h-[90vh]"
               >
-                <div className="fixed inset-0 bg-black/50" />
-              </TransitionChild>
+                <div className="flex justify-between items-center border-b pb-2 mb-3">
+                  <div className="font-semibold text-sm">
+                    Select Delivery Location
+                  </div>
+                  <button onClick={closeDialog}>
+                    <X className="h-5 w-5 text-muted-foreground" />
+                  </button>
+                </div>
 
-              <div className="fixed inset-0 flex items-end justify-center">
-                <Dialog.Panel className="w-full sm:max-w-md">
-                  {renderLocationPanel()}
-                </Dialog.Panel>
-              </div>
-            </Dialog>
-          </Transition>
-        </div>
-      ) : (
-        <Popover className="relative">
-          <PopoverButton
-            onClick={() => setIsPopoverOpen(true)}
-            className="cursor-pointer text-sm text-muted-foreground hover:text-primary transition flex items-center mt-2 ml-4"
-          >
-            <MapPin className="h-5 w-5 mb-1 mr-1" />
-            <span className="truncate font-medium">{getDisplayText()}</span>
-            <ChevronDown className="h-5 w-5 ml-1" />
-          </PopoverButton>
-          {isPopoverOpen && (
-            <PopoverPanel className="absolute z-50 mt-3">
-              <div className="w-[400px]">{renderLocationPanel()}</div>
-            </PopoverPanel>
-          )}
-        </Popover>
-      )}
+                <div className="flex">
+                  <Button
+                    onClick={handleCurrentLocation}
+                    variant="link"
+                    className="py-2 ml-auto"
+                  >
+                    <LocateFixed className="!h-5 !w-5" />
+                    Detect Location
+                  </Button>
+                </div>
+
+                <LocationSearchInput
+                  locationSearch={searchInput}
+                  setLocationSearch={setSearchInput}
+                  suggestions={suggestions}
+                  fetchSuggestions={fetchSuggestions}
+                  handleSuggestionClick={handlePlaceSelect}
+                />
+
+                <div className="flex-1 overflow-y-auto mt-2">
+                  {savedAddresses.length > 0 && (
+                    <>
+                      <div className="mt-4 font-semibold text-xs">
+                        Saved Addresses
+                      </div>
+                      {savedAddresses.map((address: any) => (
+                        <div
+                          key={address.id}
+                          onClick={() =>
+                            setPendingAddress({
+                              id: address.id,
+                              label: address.label || "Address",
+                              address: `${address.addressLine1}, ${address.addressLine2 || ""}, ${address.city || ""}`,
+                              coords: {
+                                lat: address.latitude || 0,
+                                lng: address.longitude || 0,
+                              },
+                              pincode: address.pincode,
+                              isDefault: address.isDefault,
+                              phone: address?.phone,
+                            })
+                          }
+                          className="px-2 py-2 hover:bg-gray-100 cursor-pointer flex justify-between items-start text-sm"
+                        >
+                          <div>
+                            <div className="font-semibold text-xs">
+                              {address.label}
+                              {address.isDefault && (
+                                <Badge className="ml-2 !text-xs">Default</Badge>
+                              )}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {address.addressLine1}, {address.addressLine2}
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-1">
+                            <Edit
+                              className="h-4 w-4 text-muted-foreground hover:text-primary"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditAddress(address);
+                              }}
+                            />
+                            <Trash2
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setIsDialogOpen(false);
+                                setDeleteAddressData(address);
+                                setIsDeleteAddrModalOpen(true);
+                              }}
+                              className="h-4 w-4 text-muted-foreground hover:text-destructive"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {user && (
+                    <div
+                      className="mt-4 p-2 hover:bg-gray-100 cursor-pointer flex items-center text-sm"
+                      onClick={() => {
+                        setAddressModalAction("addressAdd");
+                        setIsNewAddressModalOpen(true);
+                        setIsDialogOpen(false);
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add New Address
+                    </div>
+                  )}
+                </div>
+
+                {/* Bottom Confirm Section */}
+                {pendingAddress && (
+                  <div className="mt-4 pt-3 border-t border-gray-200">
+                    {!isPendingServiceable && (
+                      <div className="py-2">
+                        <div className="p-2 rounded-lg border text-xs bg-red-50 border-red-200 text-red-800">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-3 w-3 flex-shrink-0" />
+                            <span>{getServiceMessage()}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div className="mb-2">
+                      <div className="font-semibold text-xs mb-1">
+                        Selected Location:
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {pendingAddress.address}
+                      </div>
+                    </div>
+                    <Button
+                      disabled={!isPendingServiceable}
+                      onClick={() => {
+                        selectAddress(pendingAddress);
+                        setPendingAddress(null);
+                        setIsDialogOpen(false);
+                      }}
+                      className="w-full"
+                      variant={isPendingServiceable ? "default" : "secondary"}
+                    >
+                      {isPendingServiceable
+                        ? "Confirm Location"
+                        : "Not in Service Area"}
+                    </Button>
+                  </div>
+                )}
+              </motion.div>
+            </DialogPanel>
+          </div>
+        </Dialog>
+      </Transition>
 
       <NewAddressModal
         addressModalOpen={isNewAddressModalOpen}
@@ -376,7 +381,7 @@ const LocationSelector = () => {
           setDeleteAddressData(null);
         }}
       />
-    </>
+    </div>
   );
 };
 
