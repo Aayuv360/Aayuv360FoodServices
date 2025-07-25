@@ -647,7 +647,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2">
-                          <div className="font-semibold text-sm sm:text-base">
+                          <div className="font-semibold text-xs sm:text-sm">
                             {address.label}
                           </div>
                           {address.isDefault && (
@@ -680,7 +680,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                         </div>
                       </div>
 
-                      <div className="text-xs sm:text-sm text-gray-600 space-y-0.5 mt-1">
+                      <div className="text-xs text-gray-600 space-y-0.5">
                         <p className="line-clamp-1">{address.address}</p>
                         <p>Phone: {address.phone}</p>
                       </div>
@@ -701,7 +701,7 @@ const CartSidebar = ({ open, onClose }: CartSidebarProps) => {
                 addressModalAction={addressModalAction}
               />
 
-              <div className="text-xs sm:text-sm text-gray-500 mt-6 sm:mt-8">
+              <div className="text-xs text-gray-500 mt-6 sm:mt-8">
                 <p>
                   We currently deliver only in Hyderabad, within a 10km radius
                   of our service locations.
