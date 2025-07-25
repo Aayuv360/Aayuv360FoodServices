@@ -59,8 +59,7 @@ const LocationSelector = () => {
     deleteAddress,
   } = useLocationManager();
 
-  const { isWithinServiceArea, checkServiceAvailability, getServiceMessage } =
-    useServiceArea();
+  const { checkServiceAvailability, getServiceMessage } = useServiceArea();
   const [isPendingServiceable, setIsPendingServiceable] =
     useState<boolean>(true);
 
@@ -207,13 +206,13 @@ const LocationSelector = () => {
           <div
             className={`fixed inset-0 flex ${isMobile ? "items-end" : "items-center"} justify-center`}
           >
-            <DialogPanel className="w-full sm:max-w-md overflow-y-auto">
+            <DialogPanel className="w-full sm:max-w-md">
               <motion.div
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 50, opacity: 0 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white rounded-t-lg sm:rounded-md shadow-lg border p-4 flex flex-col min-h-[50vh] max-h-[90vh]"
+                className={`bg-white rounded-t-lg sm:rounded-md shadow-lg border p-4 flex flex-col ${"min-h-[50vh]"} max-h-[90vh]`}
               >
                 <div className="flex justify-between items-center border-b pb-2 mb-3">
                   <div className="font-semibold text-sm">
@@ -243,7 +242,7 @@ const LocationSelector = () => {
                   handleSuggestionClick={handlePlaceSelect}
                 />
 
-                <div className="flex-1 overflow-y-auto mt-2">
+                <div className="flex-1 mt-2">
                   {savedAddresses.length > 0 && (
                     <>
                       <div className="mt-4 font-semibold text-xs">
